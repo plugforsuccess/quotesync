@@ -2,6 +2,7 @@
 // Append-only, typed/tagged note feed for a single case. Each note is permanent
 // and attributed (server-stamped) — the serious-logging replacement for the old
 // single free-text notes field.
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useCaseNotes, NOTE_TYPES, NOTE_TYPE_COLOR } from '../../../hooks/useCaseNotes';
 import CopyButton from '../../../components/CopyButton';
@@ -33,7 +34,7 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
   return (
     <div style={{ marginTop: 8 }}>
       <label className="dark-label">
-        Case Log
+        <T k="pages.components.retention.casenotesfeed.429500">Case Log</T>
       </label>
 
       {/* Add */}
@@ -55,9 +56,9 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
 
       {/* Feed */}
       {isLoading ? (
-        <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>Loading…</div>
+        <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}><T k="pages.components.retention.casenotesfeed.5f02f0">Loading…</T></div>
       ) : notes.length === 0 ? (
-        <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>No notes yet.</div>
+        <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}><T k="pages.components.retention.casenotesfeed.83fdfd">No notes yet.</T></div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {notes.map(n => (

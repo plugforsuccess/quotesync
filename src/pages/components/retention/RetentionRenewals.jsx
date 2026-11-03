@@ -1,6 +1,7 @@
 // src/pages/components/retention/RetentionRenewals.jsx
 // Renewal triage view — lifted from RenewalsPage.jsx
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -167,7 +168,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
               {formatDate(policy.renewal_date)}
               {daysUntil != null && (
                 <span style={{ fontWeight: 600, color: daysUntil < 21 ? '#F87171' : daysUntil <= 45 ? '#FBBF24' : 'var(--qs-dim)' }} title={daysUntil < 21 ? 'Bill is out — human save window' : daysUntil <= 45 ? 'Proactive window — call before the bill' : 'Not yet posted'}>
-                  ({daysUntil} days)
+                  ({daysUntil} <T k="pages.components.retention.retentionrenewals.e6d2be">days)</T>
                 </span>
               )}
             </span>
@@ -203,7 +204,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
           {policy.last_contact_channel === 'ai_voice' && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(99,102,241,0.15)', color: '#818CF8' }}>
               <Bot className="w-3 h-3" />
-              AI Call
+              <T k="pages.components.retention.retentionrenewals.d3f361">AI Call</T>
             </span>
           )}
 
@@ -226,13 +227,13 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
 
           {policy.amount_due > 0 && (
             <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 700, background: 'rgba(239,68,68,0.15)', color: '#F87171' }}>
-              ${policy.amount_due} due
+              ${policy.amount_due} <T k="pages.components.retention.retentionrenewals.d6692d">due</T>
             </span>
           )}
 
           {policy.customer_tenure_years != null && policy.customer_tenure_years > 0 && (
             <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(168,85,247,0.15)', color: '#C084FC' }} title={tenureHint || 'Customer tenure'}>
-              {policy.customer_tenure_years}yr tenure
+              {policy.customer_tenure_years}<T k="pages.components.retention.retentionrenewals.48ecdd">yr tenure</T>
             </span>
           )}
 
@@ -241,14 +242,14 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
             className="btn-ghost"
             style={{ fontSize: 12, padding: '4px 10px' }}
           >
-            Log Contact
+            <T k="pages.components.retention.retentionrenewals.a8284d">Log Contact</T>
           </button>
           {policy.human_followup_required && !policy.followup_completed_at && onMarkComplete && (
             <button
               onClick={() => onMarkComplete(policy)}
               style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'rgba(52,211,153,0.15)', color: '#34D399', fontWeight: 600 }}
             >
-              Mark Complete
+              <T k="pages.components.retention.retentionrenewals.7b9e53">Mark Complete</T>
             </button>
           )}
           <Link
@@ -256,7 +257,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
             className="btn-ghost"
             style={{ fontSize: 12, padding: '4px 10px' }}
           >
-            View
+            <T k="pages.components.retention.retentionrenewals.4351cf">View</T>
           </Link>
         </div>
       </div>
@@ -315,7 +316,7 @@ function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen 
           {Array.isArray(policies) && policies.length > 0 ? (
             policies.map((p) => <RenewalCard key={p.id} policy={p} onLogContact={onLogContact} onMarkComplete={onMarkComplete} />)
           ) : (
-            <p style={{ fontSize: 13, color: 'var(--qs-muted)', padding: '8px 0' }}>No policies in this bucket.</p>
+            <p style={{ fontSize: 13, color: 'var(--qs-muted)', padding: '8px 0' }}><T k="pages.components.retention.retentionrenewals.94bee1">No policies in this bucket.</T></p>
           )}
         </div>
       )}
@@ -374,7 +375,7 @@ export default function RetentionRenewals({ agencyId }) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '48px 0', color: 'var(--qs-dim)' }}>
         <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
-        Loading renewals...
+        <T k="pages.components.retention.retentionrenewals.dd5e79">Loading renewals...</T>
       </div>
     );
   }
@@ -382,7 +383,7 @@ export default function RetentionRenewals({ agencyId }) {
   if (error) {
     return (
       <div style={{ padding: 16, borderRadius: 8, background: 'var(--qs-danger-subtle)', color: 'var(--qs-danger)', fontSize: 13 }}>
-        Failed to load renewals: {error.message}
+        <T k="pages.components.retention.retentionrenewals.8fdee3">Failed to load renewals:</T> {error.message}
       </div>
     );
   }
@@ -393,9 +394,9 @@ export default function RetentionRenewals({ agencyId }) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 0' }}>
         <RefreshCw size={40} style={{ color: 'var(--qs-border)', margin: '0 auto 16px' }} />
-        <h2 style={{ color: 'var(--qs-bright)', marginBottom: 8 }}>No renewals uploaded yet</h2>
+        <h2 style={{ color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.components.retention.retentionrenewals.b056df">No renewals uploaded yet</T></h2>
         <p style={{ color: 'var(--qs-dim)', fontSize: 13 }}>
-          Upload your Allstate Renewal report using the Import tab.
+          <T k="pages.components.retention.retentionrenewals.49bedd">Upload your Allstate Renewal report using the Import tab.</T>
         </p>
       </div>
     );

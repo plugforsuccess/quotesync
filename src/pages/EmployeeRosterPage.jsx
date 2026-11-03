@@ -3,6 +3,7 @@
 // Route: /admin/agency/employees
 // Access: platform_admin, platform_master_admin
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Plus, RefreshCw, ShieldOff, AlertCircle, Edit2, UserX, ShieldCheck, BarChart3 } from 'lucide-react';
@@ -157,8 +158,8 @@ const EmployeeRosterPage = () => {
       <div className="dark-page flex items-center justify-center">
         <div className="text-center">
           <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-qs-bright mb-2">Access Denied</h2>
-          <p className="text-qs-dim">You do not have permission to view this page.</p>
+          <h2 className="text-2xl font-bold text-qs-bright mb-2"><T k="pages.employeerosterpage.095afb">Access Denied</T></h2>
+          <p className="text-qs-dim"><T k="pages.employeerosterpage.d22f74">You do not have permission to view this page.</T></p>
         </div>
       </div>
     );
@@ -169,14 +170,14 @@ const EmployeeRosterPage = () => {
       <div className="dark-page flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-qs-card rounded-lg p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-qs-bright mb-4">Failed to Load</h2>
+          <h2 className="text-2xl font-bold text-qs-bright mb-4"><T k="pages.employeerosterpage.078f4f">Failed to Load</T></h2>
           <p className="text-qs-dim mb-6">{error.message}</p>
           <button
             onClick={() => refetch()}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
-            Retry
+            <T k="pages.employeerosterpage.6327b4">Retry</T>
           </button>
         </div>
       </div>
@@ -192,8 +193,8 @@ const EmployeeRosterPage = () => {
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-primary-600" />
               <div>
-                <h1 className="dark-heading text-2xl font-bold">Employee Roster</h1>
-                <p className="dark-subheading">Manage team members, roles, and verification</p>
+                <h1 className="dark-heading text-2xl font-bold"><T k="pages.employeerosterpage.84c406">Employee Roster</T></h1>
+                <p className="dark-subheading"><T k="pages.employeerosterpage.b8a28b">Manage team members, roles, and verification</T></p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -210,7 +211,7 @@ const EmployeeRosterPage = () => {
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Add Employee
+                <T k="pages.employeerosterpage.3aa4cd">Add Employee</T>
               </button>
             </div>
           </div>
@@ -232,11 +233,11 @@ const EmployeeRosterPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="dark-card-elevated">
             <div className="text-2xl font-bold" style={{ color: '#10B981' }}>{activeCount}</div>
-            <div className="text-sm text-emerald-400">Active Employees</div>
+            <div className="text-sm text-emerald-400"><T k="pages.employeerosterpage.40cb64">Active Employees</T></div>
           </div>
           <div className="dark-card-elevated">
             <div className="text-2xl font-bold" style={{ color: '#F59E0B' }}>{onLeaveCount}</div>
-            <div className="text-sm text-amber-400">On Leave</div>
+            <div className="text-sm text-amber-400"><T k="pages.employeerosterpage.ee1cf8">On Leave</T></div>
           </div>
           <div className={`rounded-lg border p-4 ${
             verificationDueCount > 0
@@ -247,7 +248,7 @@ const EmployeeRosterPage = () => {
               {verificationDueCount}
             </div>
             <div className={`text-sm ${verificationDueCount > 0 ? 'text-red-400' : 'text-qs-subtle'}`}>
-              Verification Due
+              <T k="pages.employeerosterpage.9995d9">Verification Due</T>
             </div>
           </div>
         </div>
@@ -273,12 +274,12 @@ const EmployeeRosterPage = () => {
         {isLoading ? (
           <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-3" />
-            <p className="text-qs-dim text-sm">Loading employees...</p>
+            <p className="text-qs-dim text-sm"><T k="pages.employeerosterpage.2043b0">Loading employees...</T></p>
           </div>
         ) : filteredEmployees.length === 0 ? (
           <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
             <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-qs-bright mb-2">No employees found</h2>
+            <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.employeerosterpage.3ddf4c">No employees found</T></h2>
             <p className="text-qs-dim">
               {statusFilter === 'all'
                 ? 'Add your first employee to get started.'
@@ -291,13 +292,13 @@ const EmployeeRosterPage = () => {
               <table className="w-full min-w-[700px] text-sm">
                 <thead className="bg-qs-elevated border-b border-qs-border">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Role</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Allstate Bind ID</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Hired</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Last Verified</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-qs-subtle uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider"><T k="pages.employeerosterpage.49ee30">Name</T></th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider"><T k="pages.employeerosterpage.bbbabd">Role</T></th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider"><T k="pages.employeerosterpage.ec53a8">Status</T></th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider"><T k="pages.employeerosterpage.c72ae3">Allstate Bind ID</T></th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider"><T k="pages.employeerosterpage.04b907">Hired</T></th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider"><T k="pages.employeerosterpage.aa98db">Last Verified</T></th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-qs-subtle uppercase tracking-wider"><T k="pages.employeerosterpage.06df33">Actions</T></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-qs-border">
@@ -327,17 +328,17 @@ const EmployeeRosterPage = () => {
                         <td className="px-4 py-3">
                           {emp.employment_status === 'active' && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-900/20 text-emerald-400">
-                              Active
+                              <T k="pages.employeerosterpage.4d3d76">Active</T>
                             </span>
                           )}
                           {emp.employment_status === 'on_leave' && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-900/20 text-amber-400">
-                              On Leave
+                              <T k="pages.employeerosterpage.ee1cf8">On Leave</T>
                             </span>
                           )}
                           {emp.employment_status === 'terminated' && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-qs-elevated text-qs-subtle">
-                              Terminated
+                              <T k="pages.employeerosterpage.fba9c4">Terminated</T>
                             </span>
                           )}
                         </td>
@@ -355,7 +356,7 @@ const EmployeeRosterPage = () => {
                                 : formatDate(emp.last_verified_at)}
                             </span>
                           ) : (
-                            <span className="text-red-400 font-medium">Never</span>
+                            <span className="text-red-400 font-medium"><T k="pages.employeerosterpage.6e7b34">Never</T></span>
                           )}
                           {/* Inline verify form */}
                           {verifyingId === emp.id && (

@@ -3,6 +3,7 @@
 // and ZIP has enough quotes to mean anything, shows progress toward the first one
 // over a blurred preview instead of a blank screen. Cards on phones, a table above.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo, useState } from 'react';
 import { useRateCheckWinMap } from '../../../hooks/useRateChecks';
 import { policyTypeLabel } from './format';
@@ -30,19 +31,19 @@ export default function WinMap({ agencyId }) {
   const closest = useMemo(() => [...data].filter(r => r.zip5 && Number(r.quoted) < MIN_QUOTES)
     .sort((a, b) => Number(b.quoted) - Number(a.quoted))[0] || null, [data]);
 
-  if (isLoading) return <div className="dark-card p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</div>;
-  if (error) return <div className="dark-card p-8 text-center text-red-600">Error loading this report.</div>;
+  if (isLoading) return <div className="dark-card p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.winmaptab.5f02f0">Loading…</T></div>;
+  if (error) return <div className="dark-card p-8 text-center text-red-600"><T k="pages.components.ratechecks.winmaptab.a17dad">Error loading this report.</T></div>;
 
   if (!ready.length) {
     const have = closest ? Number(closest.quoted) : 0;
     return (
       <div className="dark-card relative overflow-hidden" style={{ padding: 0 }}>
         <div className="p-5">
-          <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>Building your win map</h2>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.winmaptab.16b6c2">Building your win map</T></h2>
           <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             {closest
-              ? <>{have} of {MIN_QUOTES} quotes toward your first ZIP <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}>({closest.zip5} · {closest.carrier || 'Unknown'}{closest.policy_type ? ` ${policyTypeLabel(closest.policy_type).toLowerCase()}` : ''})</span></>
-              : <>Enter Allstate&apos;s price on {MIN_QUOTES} rate checks from the same carrier and ZIP to see your first win rate.</>}
+              ? <>{have} <T k="pages.components.ratechecks.winmaptab.8bf885">of</T> {MIN_QUOTES} <T k="pages.components.ratechecks.winmaptab.0dc602">quotes toward your first ZIP</T> <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}>({closest.zip5} · {closest.carrier || 'Unknown'}{closest.policy_type ? ` ${policyTypeLabel(closest.policy_type).toLowerCase()}` : ''})</span></>
+              : <><T k="pages.components.ratechecks.winmaptab.726bd9">Enter Allstate's price on</T> {MIN_QUOTES} <T k="pages.components.ratechecks.winmaptab.5592f0">rate checks from the same carrier and ZIP to see your first win rate.</T></>}
           </p>
           <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: 'var(--qs-elevated)' }} role="progressbar" aria-valuemin={0} aria-valuemax={MIN_QUOTES} aria-valuenow={have}>
             <div className="h-full rounded-full bg-primary-600" style={{ width: `${(have / MIN_QUOTES) * 100}%` }} />
@@ -62,19 +63,19 @@ export default function WinMap({ agencyId }) {
   return (
     <div className="dark-card overflow-hidden" style={{ padding: 0 }}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 text-sm" style={{ borderBottom: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }}>
-        <span>How often Allstate beats each carrier, by ZIP.</span>
+        <span><T k="pages.components.ratechecks.winmaptab.59c8a6">How often Allstate beats each carrier, by ZIP.</T></span>
         <label className="whitespace-nowrap sm:ml-auto">
-          At least
+          <T k="pages.components.ratechecks.winmaptab.0198c3">At least</T>
           <input type="number" min={1} value={minQuoted} onChange={e => setMinQuoted(Math.max(1, Number(e.target.value) || 1))}
             className="mx-1.5 w-14 rounded px-2 py-1" style={inputStyle} aria-label="Minimum quotes" />
-          quotes
+          <T k="pages.components.ratechecks.winmaptab.2150fd">quotes</T>
         </label>
         <button type="button" onClick={() => setSortDir(d => (d === 'desc' ? 'asc' : 'desc'))} className="whitespace-nowrap font-semibold text-primary-600 md:hidden">
-          Win rate {sortDir === 'desc' ? '↓' : '↑'}
+          <T k="pages.components.ratechecks.winmaptab.5d88e8">Win rate</T> {sortDir === 'desc' ? '↓' : '↑'}
         </button>
       </div>
       {rows.length === 0 ? (
-        <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>No carrier and ZIP has {minQuoted}+ quotes yet.</div>
+        <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.winmaptab.3895c2">No carrier and ZIP has</T> {minQuoted}<T k="pages.components.ratechecks.winmaptab.842696">+ quotes yet.</T></div>
       ) : (
         <>
           <ul className="md:hidden">
@@ -82,7 +83,7 @@ export default function WinMap({ agencyId }) {
               <li key={`${r.carrier}-${r.policy_type}-${r.zip5}`} className="flex items-center justify-between gap-3 px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
                 <span className="min-w-0">
                   <span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}>{r.carrier || '—'} <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>{policyTypeLabel(r.policy_type)}</span></span>
-                  <span className="block text-sm" style={{ color: 'var(--qs-subtle)' }}>{r.zip5 || '—'} · {r.wins} of {r.quoted} won{r.avg_savings_when_won != null ? ` · saves ${money(r.avg_savings_when_won)}` : ''}</span>
+                  <span className="block text-sm" style={{ color: 'var(--qs-subtle)' }}>{r.zip5 || '—'} · {r.wins} <T k="pages.components.ratechecks.winmaptab.8bf885">of</T> {r.quoted} <T k="pages.components.ratechecks.winmaptab.7b63d1">won</T>{r.avg_savings_when_won != null ? ` · saves ${money(r.avg_savings_when_won)}` : ''}</span>
                 </span>
                 <span className="shrink-0 text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{r.win_rate_pct != null ? `${Math.round(r.win_rate_pct)}%` : '—'}</span>
               </li>
@@ -94,9 +95,9 @@ export default function WinMap({ agencyId }) {
                 <tr style={{ background: 'var(--qs-elevated)' }}>
                   {['Their carrier', 'Policy', 'ZIP', 'Quotes', 'Wins'].map(h => <th key={h} className={thCls} style={thStyle}>{h}</th>)}
                   <th className={thCls} style={thStyle}>
-                    <button onClick={() => setSortDir(d => (d === 'desc' ? 'asc' : 'desc'))} className="uppercase">Win rate {sortDir === 'desc' ? '↓' : '↑'}</button>
+                    <button onClick={() => setSortDir(d => (d === 'desc' ? 'asc' : 'desc'))} className="uppercase"><T k="pages.components.ratechecks.winmaptab.5d88e8">Win rate</T> {sortDir === 'desc' ? '↓' : '↑'}</button>
                   </th>
-                  <th className={thCls} style={thStyle}>Avg savings</th>
+                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.winmaptab.77e44d">Avg savings</T></th>
                 </tr>
               </thead>
               <tbody>

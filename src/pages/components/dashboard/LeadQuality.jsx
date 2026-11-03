@@ -1,6 +1,7 @@
 // src/pages/components/dashboard/LeadQuality.jsx
 // Section 3: Lead Quality & Scoring — histogram, splits, channel table
 
+import { T } from '../../../components/SiteCopy';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
 } from 'recharts';
@@ -21,7 +22,7 @@ function ScoreHistogram({ data }) {
   const SCORE_COLORS = [ct.data.red, ct.data.amber, ct.data.amber, ct.data.green, ct.data.green];
   return (
     <div className="dark-card">
-      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Score Distribution</h3>
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.e04b83">Score Distribution</T></h3>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
           <XAxis dataKey="bucket" tick={{ fontSize: 11, fill: 'var(--qs-dim)' }} />
@@ -58,7 +59,7 @@ function OwnerRenterCard({ owners, renters }) {
 
   return (
     <div className="dark-card">
-      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Owner vs. Renter</h3>
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.b815dc">Owner vs. Renter</T></h3>
       <div className="flex items-center gap-2 mb-2">
         <div className="flex-1 h-4 rounded-full overflow-hidden flex" style={{ background: 'var(--qs-elevated)' }}>
           <div
@@ -74,15 +75,15 @@ function OwnerRenterCard({ owners, renters }) {
       <div className="flex justify-between text-xs" style={{ color: 'var(--qs-dim)' }}>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-primary-500 inline-block" />
-          Owners: {owners} ({ownerPct}%)
+          <T k="pages.components.dashboard.leadquality.01acd2">Owners:</T> {owners} ({ownerPct}%)
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-          Renters: {renters} ({renterPct}%)
+          <T k="pages.components.dashboard.leadquality.130d3b">Renters:</T> {renters} ({renterPct}%)
         </span>
       </div>
       {renterPct > 60 && (
-        <p className="text-xs text-amber-600 mt-2">High renter ratio — consider adjusting ad targeting for homeowners.</p>
+        <p className="text-xs text-amber-600 mt-2"><T k="pages.components.dashboard.leadquality.35b37a">High renter ratio — consider adjusting ad targeting for homeowners.</T></p>
       )}
     </div>
   );
@@ -103,8 +104,8 @@ function IntentMixCard({ intentMix }) {
   if (total === 0) {
     return (
       <div className="dark-card">
-        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Product Intent Mix</h3>
-        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}>No data</p>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.03364c">Product Intent Mix</T></h3>
+        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.leadquality.42a7b2">No data</T></p>
       </div>
     );
   }
@@ -115,7 +116,7 @@ function IntentMixCard({ intentMix }) {
 
   return (
     <div className="dark-card">
-      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Product Intent Mix</h3>
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.03364c">Product Intent Mix</T></h3>
       <div className="space-y-2">
         {entries.map(([key, count]) => {
           const pct = Math.round((count / total) * 100);
@@ -155,11 +156,11 @@ function RiskProfileCard({ riskProfile }) {
 
   return (
     <div className="dark-card">
-      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Risk Profile</h3>
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.52eb38">Risk Profile</T></h3>
 
       {totalDriving > 0 && (
         <div className="mb-3">
-          <p className="text-xs mb-1" style={{ color: 'var(--qs-subtle)' }}>Driving Record</p>
+          <p className="text-xs mb-1" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.leadquality.36e031">Driving Record</T></p>
           <div className="flex items-center gap-2 h-4 rounded-full overflow-hidden" style={{ background: 'var(--qs-elevated)' }}>
             {drivingData.map(d => (
               <div
@@ -183,7 +184,7 @@ function RiskProfileCard({ riskProfile }) {
 
       {totalClaims > 0 && (
         <div>
-          <p className="text-xs mb-1" style={{ color: 'var(--qs-subtle)' }}>Home Claims</p>
+          <p className="text-xs mb-1" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.leadquality.b5d8f3">Home Claims</T></p>
           <div className="flex items-center gap-2 h-4 rounded-full overflow-hidden" style={{ background: 'var(--qs-elevated)' }}>
             <div
               className="h-full rounded-l-full"
@@ -195,18 +196,18 @@ function RiskProfileCard({ riskProfile }) {
             />
           </div>
           <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--qs-subtle)' }}>
-            <span>0-1 Claims: {Math.round((claims01 / totalClaims) * 100)}%</span>
-            <span>2+ Claims: {Math.round((claims2plus / totalClaims) * 100)}%</span>
+            <span><T k="pages.components.dashboard.leadquality.eba974">0-1 Claims:</T> {Math.round((claims01 / totalClaims) * 100)}%</span>
+            <span><T k="pages.components.dashboard.leadquality.65140d">2+ Claims:</T> {Math.round((claims2plus / totalClaims) * 100)}%</span>
           </div>
         </div>
       )}
 
       {totalDriving === 0 && totalClaims === 0 && (
-        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}>No risk data available</p>
+        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.leadquality.305ba6">No risk data available</T></p>
       )}
 
       {incidents3plus > 0 && totalDriving > 0 && (incidents3plus / totalDriving) > 0.15 && (
-        <p className="text-xs text-red-600 mt-2">High share of 3+ incident leads — ad targeting may be pulling high-risk profiles.</p>
+        <p className="text-xs text-red-600 mt-2"><T k="pages.components.dashboard.leadquality.529b5e">High share of 3+ incident leads — ad targeting may be pulling high-risk profiles.</T></p>
       )}
     </div>
   );
@@ -218,24 +219,24 @@ function ChannelTable({ channels }) {
   if (!channels || channels.length === 0) {
     return (
       <div className="dark-card">
-        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Channel Performance</h3>
-        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}>No channel data available</p>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.5f2ec5">Channel Performance</T></h3>
+        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.leadquality.e31115">No channel data available</T></p>
       </div>
     );
   }
 
   return (
     <div className="dark-card">
-      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Channel Performance</h3>
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.5f2ec5">Channel Performance</T></h3>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--qs-border)' }}>
-              <th className="text-left py-2 pr-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Channel</th>
-              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Leads</th>
-              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Conv Rate</th>
-              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Avg Score</th>
-              <th className="text-left py-2 pl-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Top Intent</th>
+              <th className="text-left py-2 pr-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.leadquality.781dc9">Channel</T></th>
+              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.leadquality.ae5361">Leads</T></th>
+              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.leadquality.90788f">Conv Rate</T></th>
+              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.leadquality.24b362">Avg Score</T></th>
+              <th className="text-left py-2 pl-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.leadquality.80d21b">Top Intent</T></th>
             </tr>
           </thead>
           <tbody>
@@ -276,12 +277,12 @@ function NoPriorInsuranceCallout({ noPriorInsurance, totalCompleted }) {
     <div className="rounded-lg p-4" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
       {autoPct > 15 && (
         <p className="text-xs" style={{ color: 'var(--qs-warning)' }}>
-          {autoPct}% of leads have no prior auto insurance — these are hard to place at standard rates. Consider routing to a non-standard market partner.
+          {autoPct}<T k="pages.components.dashboard.leadquality.5cd19c">% of leads have no prior auto insurance — these are hard to place at standard rates. Consider routing to a non-standard market partner.</T>
         </p>
       )}
       {homePct > 15 && (
         <p className={`text-xs ${autoPct > 15 ? 'mt-1' : ''}`} style={{ color: 'var(--qs-warning)' }}>
-          {homePct}% of leads have no prior home insurance — limited carrier options for first-time buyers.
+          {homePct}<T k="pages.components.dashboard.leadquality.974d52">% of leads have no prior home insurance — limited carrier options for first-time buyers.</T>
         </p>
       )}
     </div>
@@ -298,7 +299,7 @@ export default function LeadQuality({ quality, channels }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Lead Quality & Scoring</h2>
+      <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.leadquality.1b0751">Lead Quality & Scoring</T></h2>
 
       {/* Score Histogram — full width */}
       <ScoreHistogram data={scoreDistribution} />

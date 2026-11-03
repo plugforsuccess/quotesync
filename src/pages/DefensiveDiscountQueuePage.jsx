@@ -1,5 +1,6 @@
 // src/pages/DefensiveDiscountQueuePage.jsx
 // "Defensive Drivers Discount List" — staff work queue (realtime).
+import { T } from '../components/SiteCopy';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Loader2, Download, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
@@ -90,7 +91,7 @@ export default function DefensiveDiscountQueuePage() {
   }
   if (!user) return <Navigate to="/admin-access-8by2X" replace />;
   if (access && !access.isStaff && !access.isPrincipal) {
-    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6">You don’t have access to this queue.</div>;
+    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6"><T k="pages.defensivediscountqueuepage.5f406a">You don’t have access to this queue.</T></div>;
   }
   const canEdit = !!access?.isStaff;
 
@@ -98,9 +99,9 @@ export default function DefensiveDiscountQueuePage() {
     <div className="bg-gray-950 text-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between gap-4 mb-1">
-          <h1 className="text-2xl font-black">Defensive Drivers Discount List</h1>
+          <h1 className="text-2xl font-black"><T k="pages.defensivediscountqueuepage.f5b7d8">Defensive Drivers Discount List</T></h1>
           <button onClick={refetch} className="text-gray-400 hover:text-gray-100 flex items-center gap-1.5 text-sm">
-            <RefreshCw className="w-4 h-4" /> Refresh
+            <RefreshCw className="w-4 h-4" /> <T k="pages.defensivediscountqueuepage.63a6a8">Refresh</T>
           </button>
         </div>
         <p className="text-sm text-gray-400 mb-6">
@@ -128,18 +129,18 @@ export default function DefensiveDiscountQueuePage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-900/80 text-gray-400 text-xs uppercase tracking-wide">
               <tr>
-                <th className="text-left px-4 py-3">Insured</th>
-                <th className="text-left px-4 py-3">Certificate</th>
-                <th className="text-left px-4 py-3">Issued</th>
-                <th className="text-left px-4 py-3">Age</th>
-                <th className="text-left px-4 py-3">Status</th>
-                <th className="text-left px-4 py-3">Assignee</th>
+                <th className="text-left px-4 py-3"><T k="pages.defensivediscountqueuepage.3786a3">Insured</T></th>
+                <th className="text-left px-4 py-3"><T k="pages.defensivediscountqueuepage.eb0f48">Certificate</T></th>
+                <th className="text-left px-4 py-3"><T k="pages.defensivediscountqueuepage.76bfc7">Issued</T></th>
+                <th className="text-left px-4 py-3"><T k="pages.defensivediscountqueuepage.9d8d2d">Age</T></th>
+                <th className="text-left px-4 py-3"><T k="pages.defensivediscountqueuepage.ec53a8">Status</T></th>
+                <th className="text-left px-4 py-3"><T k="pages.defensivediscountqueuepage.780f85">Assignee</T></th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">No items.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500"><T k="pages.defensivediscountqueuepage.0d8e77">No items.</T></td></tr>
               )}
               {filtered.map((r) => (
                 <QueueRow
@@ -226,12 +227,12 @@ function QueueRow({ row, staff, canEdit, expanded, onToggle, onChanged }) {
             {canEdit ? (
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="block">
-                  <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1">Policy reference</span>
+                  <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1"><T k="pages.defensivediscountqueuepage.28eb13">Policy reference</T></span>
                   <input value={policyRef} onChange={(e) => setPolicyRef(e.target.value)} placeholder="Policy # the discount was applied to"
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
                 </label>
                 <label className="block">
-                  <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1">Notes</span>
+                  <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1"><T k="pages.defensivediscountqueuepage.f4c6f8">Notes</T></span>
                   <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes"
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
                 </label>
@@ -244,8 +245,8 @@ function QueueRow({ row, staff, canEdit, expanded, onToggle, onChanged }) {
               </div>
             ) : (
               <div className="text-sm text-gray-300 space-y-1">
-                <p><span className="text-gray-500">Policy reference:</span> {row.policy_ref || '—'}</p>
-                <p><span className="text-gray-500">Notes:</span> {row.notes || '—'}</p>
+                <p><span className="text-gray-500"><T k="pages.defensivediscountqueuepage.612552">Policy reference:</T></span> {row.policy_ref || '—'}</p>
+                <p><span className="text-gray-500"><T k="pages.defensivediscountqueuepage.2a01d5">Notes:</T></span> {row.notes || '—'}</p>
               </div>
             )}
           </td>

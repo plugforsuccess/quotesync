@@ -1,4 +1,5 @@
 // src/pages/components/operating-review/MarkReviewedBar.jsx
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { Check, History, X } from 'lucide-react';
 import {
@@ -94,7 +95,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
           </div>
           {streak > 0 && (
             <div style={{ fontSize: 12, color: 'var(--qs-success)', marginTop: 2, fontWeight: 600 }}>
-              🔥 {streak}-week streak
+              🔥 {streak}<T k="pages.components.operatingreview.markreviewedbar.fcbd68">-week streak</T>
             </div>
           )}
         </div>
@@ -106,7 +107,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
             style={btnSecondary}
           >
             <History size={14} />
-            History
+            <T k="pages.components.operatingreview.markreviewedbar.16d2b3">History</T>
           </button>
 
           {!isReviewed && !showNoteInput && (
@@ -116,7 +117,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
               style={btnPrimary}
             >
               <Check size={14} />
-              Mark this week reviewed
+              <T k="pages.components.operatingreview.markreviewedbar.42c7ae">Mark this week reviewed</T>
             </button>
           )}
 
@@ -128,7 +129,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
               border: '1px solid rgba(16, 185, 129, 0.3)',
             }}>
               <Check size={14} />
-              Reviewed
+              <T k="pages.components.operatingreview.markreviewedbar.621761">Reviewed</T>
             </div>
           )}
         </div>
@@ -165,7 +166,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <h2 style={{ margin: 0, fontSize: 16, color: 'var(--qs-bright)', fontWeight: 600 }}>
-                Mark reviewed — optional note
+                <T k="pages.components.operatingreview.markreviewedbar.88b104">Mark reviewed — optional note</T>
               </h2>
               <button
                 type="button"
@@ -193,7 +194,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
                   onClick={() => setShowNoteInput(false)}
                   style={btnSecondary}
                 >
-                  Cancel
+                  <T k="pages.components.operatingreview.markreviewedbar.ea4788">Cancel</T>
                 </button>
                 <button
                   type="button"
@@ -256,7 +257,7 @@ function HistoryModal({ completions, onClose }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <h2 style={{ margin: 0, fontSize: 18, color: 'var(--qs-bright)', fontWeight: 600 }}>
-            Review history (last 6 months)
+            <T k="pages.components.operatingreview.markreviewedbar.07502b">Review history (last 6 months)</T>
           </h2>
           <button
             type="button"
@@ -273,7 +274,7 @@ function HistoryModal({ completions, onClose }) {
         <div style={{ padding: 20, overflowY: 'auto' }}>
           {completions.length === 0 ? (
             <p style={{ color: 'var(--qs-subtle)', margin: 0 }}>
-              No reviews yet. Mark this week reviewed to start your streak.
+              <T k="pages.components.operatingreview.markreviewedbar.a604df">No reviews yet. Mark this week reviewed to start your streak.</T>
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -288,7 +289,7 @@ function HistoryModal({ completions, onClose }) {
                     {formatWeekLabel(c.review_week)}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2 }}>
-                    Reviewed {new Date(c.completed_at).toLocaleDateString('en-US', {
+                    <T k="pages.components.operatingreview.markreviewedbar.621761">Reviewed</T> {new Date(c.completed_at).toLocaleDateString('en-US', {
                       month: 'short', day: 'numeric', year: 'numeric',
                     })}
                   </div>

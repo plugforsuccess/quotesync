@@ -1,4 +1,5 @@
 // src/pages/components/cross-sell/CrossSellUploadModal.jsx
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { parseCrossSellReport } from '../../../lib/crossSellParser';
@@ -282,10 +283,10 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)' }}>
-              Cross-Sell Audit Upload
+              <T k="pages.components.crosssell.crossselluploadmodal.df368f">Cross-Sell Audit Upload</T>
             </div>
             <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2 }}>
-              Allstate cross-sell audit report (.xlsx)
+              <T k="pages.components.crosssell.crossselluploadmodal.4460f2">Allstate cross-sell audit report (.xlsx)</T>
             </div>
           </div>
           {stage !== 'committing' && (
@@ -311,10 +312,10 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
               }}>
                 <div style={{ fontSize: 32 }}>📊</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
-                  Select Cross-Sell Audit Report
+                  <T k="pages.components.crosssell.crossselluploadmodal.411c0d">Select Cross-Sell Audit Report</T>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-                  Excel (.xlsx) · from Allstate Agency Portal
+                  <T k="pages.components.crosssell.crossselluploadmodal.30b438">Excel (.xlsx) · from Allstate Agency Portal</T>
                 </div>
                 <input type="file" accept=".xlsx,.xls"
                   onChange={handleFile} style={{ display: 'none' }} />
@@ -334,7 +335,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
           {stage === 'parsing' && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--qs-dim)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-              <div style={{ fontSize: 14 }}>Parsing report and matching against your queue…</div>
+              <div style={{ fontSize: 14 }}><T k="pages.components.crosssell.crossselluploadmodal.015702">Parsing report and matching against your queue…</T></div>
             </div>
           )}
 
@@ -372,7 +373,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                   fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16,
                   background: 'var(--qs-elevated)', borderRadius: 6, padding: '8px 12px',
                 }}>
-                  {matchSummary.skipped} already in the queue (open or won) — skipped, not re-added.
+                  {matchSummary.skipped} <T k="pages.components.crosssell.crossselluploadmodal.68e1fb">already in the queue (open or won) — skipped, not re-added.</T>
                 </div>
               )}
 
@@ -390,10 +391,10 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                   color: 'var(--qs-subtle)',
                   textTransform: 'uppercase', letterSpacing: '0.06em',
                 }}>
-                  <div>Customer</div>
-                  <div>Has</div>
-                  <div>Pitch</div>
-                  <div>Routing</div>
+                  <div><T k="pages.components.crosssell.crossselluploadmodal.ce2660">Customer</T></div>
+                  <div><T k="pages.components.crosssell.crossselluploadmodal.9f9913">Has</T></div>
+                  <div><T k="pages.components.crosssell.crossselluploadmodal.87f800">Pitch</T></div>
+                  <div><T k="pages.components.crosssell.crossselluploadmodal.786c41">Routing</T></div>
                 </div>
                 <div style={{ maxHeight: 340, overflowY: 'auto' }}>
                   {rows.map((row, i) => {
@@ -447,7 +448,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                   color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
                 }}
               >
-                Commit {rows.length} rows
+                <T k="pages.components.crosssell.crossselluploadmodal.59d5b1">Commit</T> {rows.length} <T k="pages.components.crosssell.crossselluploadmodal.df347a">rows</T>
               </button>
             </div>
           )}
@@ -455,7 +456,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
           {stage === 'committing' && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--qs-dim)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>💾</div>
-              <div style={{ fontSize: 14 }}>Saving cross-sell cases…</div>
+              <div style={{ fontSize: 14 }}><T k="pages.components.crosssell.crossselluploadmodal.b6b776">Saving cross-sell cases…</T></div>
             </div>
           )}
 
@@ -463,17 +464,16 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
               <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>
-                Upload complete
+                <T k="pages.components.crosssell.crossselluploadmodal.f79598">Upload complete</T>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 20, lineHeight: 1.6 }}>
-                {matchSummary.renewal_only + matchSummary.both} renewal cases flagged
-                · {matchSummary.new_lead} outbound pitches in the queue
+                {matchSummary.renewal_only + matchSummary.both} <T k="pages.components.crosssell.crossselluploadmodal.b6a242">renewal cases flagged ·</T> {matchSummary.new_lead} <T k="pages.components.crosssell.crossselluploadmodal.f65ef1">outbound pitches in the queue</T>
               </div>
               <button onClick={onClose} style={{
                 padding: '10px 24px', borderRadius: 8, border: 'none',
                 background: 'var(--qs-elevated)', color: 'var(--qs-dim)',
                 fontSize: 14, cursor: 'pointer',
-              }}>Close</button>
+              }}><T k="pages.components.crosssell.crossselluploadmodal.d3d2e6">Close</T></button>
             </div>
           )}
         </div>

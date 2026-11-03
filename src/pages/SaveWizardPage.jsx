@@ -1,4 +1,5 @@
 // src/pages/SaveWizardPage.jsx — Funnel V2: Single-question-at-a-time wizard
+import { T } from '../components/SiteCopy';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowRight, ArrowLeft, Lock } from 'lucide-react';
 import { useWizard, SESSION_KEYS } from '../hooks/useWizard';
@@ -897,10 +898,10 @@ export default function SaveWizardPage() {
           {currentIndex === 0 && !isConfirmation && (
             <div className="text-center mb-8">
               <h1 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">
-                See How Much You Could Save
+                <T k="pages.savewizardpage.a317fd">See How Much You Could Save</T>
               </h1>
               <p className="text-lg text-white/80">
-                Takes 30 seconds. Zero obligation. Personalized to your ZIP code.
+                <T k="pages.savewizardpage.4d4142">Takes 30 seconds. Zero obligation. Personalized to your ZIP code.</T>
               </p>
             </div>
           )}
@@ -922,7 +923,7 @@ export default function SaveWizardPage() {
                       onClick={() => setSubmitError(null)}
                       className="text-sm text-red-600 underline mt-1 bg-transparent border-0 cursor-pointer p-0"
                     >
-                      Dismiss
+                      <T k="pages.savewizardpage.c8a59e">Dismiss</T>
                     </button>
                   </div>
                 </div>
@@ -974,7 +975,7 @@ export default function SaveWizardPage() {
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:text-black transition-colors bg-transparent border-0 cursor-pointer px-0 py-1 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Back</span>
+                    <span><T k="pages.savewizardpage.0557fa">Back</T></span>
                   </button>
                 </div>
               )}
@@ -987,14 +988,14 @@ export default function SaveWizardPage() {
               <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
                 <div className="flex items-center gap-2 text-white/80 text-sm">
                   <img src="/logos/allstate-logo.svg" alt="Allstate" className="h-5 opacity-80" onError={(e) => { e.target.style.display = 'none'; }} />
-                  <span className="font-semibold">Licensed {funnelAgency?.licensed_states?.[0] || 'GA'} Agent</span>
+                  <span className="font-semibold"><T k="pages.savewizardpage.82e3d4">Licensed</T> {funnelAgency?.licensed_states?.[0] || 'GA'} <T k="pages.savewizardpage.744605">Agent</T></span>
                 </div>
                 <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
-                <span className="text-white/70 text-sm font-medium">500+ Quotes Delivered</span>
+                <span className="text-white/70 text-sm font-medium"><T k="pages.savewizardpage.873cf9">500+ Quotes Delivered</T></span>
               </div>
               <div className="flex items-center justify-center gap-2 text-white/70 text-sm">
                 <Lock className="w-4 h-4" />
-                <span>Your information is never sold to third parties</span>
+                <span><T k="pages.savewizardpage.32f8c2">Your information is never sold to third parties</T></span>
               </div>
             </div>
           )}

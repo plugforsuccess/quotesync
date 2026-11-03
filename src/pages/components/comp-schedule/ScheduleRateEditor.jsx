@@ -1,4 +1,5 @@
 // src/pages/components/comp-schedule/ScheduleRateEditor.jsx
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useMemo } from 'react';
 import { Save, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -114,16 +115,16 @@ export default function ScheduleRateEditor({ scheduleId }) {
   };
 
   if (ratesLoading) {
-    return <div className="text-sm text-[var(--qs-subtle)] py-4">Loading rates…</div>;
+    return <div className="text-sm text-[var(--qs-subtle)] py-4"><T k="pages.components.compschedule.schedulerateeditor.666503">Loading rates…</T></div>;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-[var(--qs-text)]">Commission Rates</h3>
+        <h3 className="text-sm font-medium text-[var(--qs-text)]"><T k="pages.components.compschedule.schedulerateeditor.50fceb">Commission Rates</T></h3>
         <div className="flex items-center gap-3">
           {savedToast && (
-            <span className="text-xs text-[var(--qs-success)]">Saved.</span>
+            <span className="text-xs text-[var(--qs-success)]"><T k="pages.components.compschedule.schedulerateeditor.2bcf4d">Saved.</T></span>
           )}
           <button
             type="button"
@@ -141,7 +142,7 @@ export default function ScheduleRateEditor({ scheduleId }) {
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="text-xs uppercase text-[var(--qs-subtle)]">
-              <th className="text-left px-2 py-2 font-medium">Product</th>
+              <th className="text-left px-2 py-2 font-medium"><T k="pages.components.compschedule.schedulerateeditor.deb105">Product</T></th>
               {visibleTiers.map(t => (
                 <th key={t.tier_key} className="text-right px-2 py-2 font-medium">
                   {t.label}
@@ -206,8 +207,7 @@ export default function ScheduleRateEditor({ scheduleId }) {
       )}
 
       <p className="text-xs text-[var(--qs-dim)]">
-        Leave a cell blank to use the carrier's base commission floor for that product/tier.
-        Inactive products are hidden — configure products in Agency Settings.
+        <T k="pages.components.compschedule.schedulerateeditor.f7959d">Leave a cell blank to use the carrier's base commission floor for that product/tier. Inactive products are hidden — configure products in Agency Settings.</T>
       </p>
     </div>
   );

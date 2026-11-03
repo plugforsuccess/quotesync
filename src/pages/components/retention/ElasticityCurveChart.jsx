@@ -2,6 +2,7 @@
 // Visualizes the retention-elasticity curve: at each renewal premium-increase
 // band, what share of the book actually stayed. The empirical proof behind
 // "who to call first" — and, once calls are logged, the with/without-save lift.
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import {
   BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -54,16 +55,15 @@ export default function ElasticityCurveChart({ agencyId }) {
   }, [curve]);
 
   if (isLoading) {
-    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: 16 }}>Loading elasticity curve…</div>;
+    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: 16 }}><T k="pages.components.retention.elasticitycurvechart.66333a">Loading elasticity curve…</T></div>;
   }
 
   if (curve.length === 0) {
     return (
       <div className="card" style={{ marginBottom: 16, padding: 16, fontSize: 13, color: 'var(--qs-subtle)' }}>
-        <strong style={{ color: 'var(--qs-bright)' }}>Rate-increase elasticity</strong>
+        <strong style={{ color: 'var(--qs-bright)' }}><T k="pages.components.retention.elasticitycurvechart.c5ff45">Rate-increase elasticity</T></strong>
         <div style={{ marginTop: 6 }}>
-          No resolved renewals with a recorded premium change yet. This curve builds as renewals
-          resolve — it shows how much rate increase your book tolerates before customers leave.
+          <T k="pages.components.retention.elasticitycurvechart.007b00">No resolved renewals with a recorded premium change yet. This curve builds as renewals resolve — it shows how much rate increase your book tolerates before customers leave.</T>
         </div>
       </div>
     );
@@ -72,15 +72,14 @@ export default function ElasticityCurveChart({ agencyId }) {
   return (
     <div className="card" style={{ marginBottom: 16, padding: 16 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
-        Rate-increase elasticity — does the book tolerate the increase?
+        <T k="pages.components.retention.elasticitycurvechart.fb849a">Rate-increase elasticity — does the book tolerate the increase?</T>
       </div>
       <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 12 }}>
-        Of resolved renewals in each premium-increase band, the share that stayed.
+        <T k="pages.components.retention.elasticitycurvechart.e67adc">Of resolved renewals in each premium-increase band, the share that stayed.</T>
         {totals.cliff
-          ? <> Retention holds until <strong style={{ color: 'var(--qs-bright)' }}>{totals.cliff.change_bucket}</strong>,
-              where it drops to <strong style={{ color: '#F59E0B' }}>{totals.cliff.retention_rate_pct}%</strong> — call those first.</>
+          ? <> <T k="pages.components.retention.elasticitycurvechart.7a4745">Retention holds until</T> <strong style={{ color: 'var(--qs-bright)' }}>{totals.cliff.change_bucket}</strong><T k="pages.components.retention.elasticitycurvechart.94ed3c">, where it drops to</T> <strong style={{ color: '#F59E0B' }}>{totals.cliff.retention_rate_pct}%</strong> <T k="pages.components.retention.elasticitycurvechart.f47212">— call those first.</T></>
           : ' Retention is holding across all bands so far.'}
-        <span style={{ color: 'var(--qs-dim)' }}> · {totals.policies} resolved renewals · early signal, sharpens with each cycle.</span>
+        <span style={{ color: 'var(--qs-dim)' }}> · {totals.policies} <T k="pages.components.retention.elasticitycurvechart.f187f7">resolved renewals · early signal, sharpens with each cycle.</T></span>
       </div>
 
       <ResponsiveContainer width="100%" height={240}>
@@ -108,12 +107,12 @@ export default function ElasticityCurveChart({ agencyId }) {
       {/* Save-call lift — the ROI line, once interventions are being logged. */}
       <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--qs-border)' }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 6 }}>
-          Save-call lift
+          <T k="pages.components.retention.elasticitycurvechart.007aa2">Save-call lift</T>
         </div>
         {liftRows.length === 0 ? (
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
-            Appears here once reps log save tactics on calls — it will show retention
-            <em> with</em> vs <em>without</em> a save call in each band (the ROI proof).
+            <T k="pages.components.retention.elasticitycurvechart.66e059">Appears here once reps log save tactics on calls — it will show retention</T>
+            <em> <T k="pages.components.retention.elasticitycurvechart.23a58b">with</T></em> <T k="pages.components.retention.elasticitycurvechart.f4842d">vs</T> <em><T k="pages.components.retention.elasticitycurvechart.fc0cb4">without</T></em> <T k="pages.components.retention.elasticitycurvechart.4f8126">a save call in each band (the ROI proof).</T>
           </div>
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -128,11 +127,11 @@ export default function ElasticityCurveChart({ agencyId }) {
                 }}>
                   <div style={{ color: 'var(--qs-subtle)' }}>{b.with.change_bucket ?? b.without?.change_bucket}</div>
                   <div style={{ color: 'var(--qs-bright)', fontWeight: 600 }}>
-                    {w != null ? `${w}%` : '—'} with · {wo != null ? `${wo}%` : '—'} without
+                    {w != null ? `${w}%` : '—'} <T k="pages.components.retention.elasticitycurvechart.205bf1">with ·</T> {wo != null ? `${wo}%` : '—'} <T k="pages.components.retention.elasticitycurvechart.fc0cb4">without</T>
                   </div>
                   {delta != null && (
                     <div style={{ color: delta >= 0 ? 'var(--qs-success, #10B981)' : '#EF4444' }}>
-                      {delta >= 0 ? '+' : ''}{delta} pts from a save call
+                      {delta >= 0 ? '+' : ''}{delta} <T k="pages.components.retention.elasticitycurvechart.085275">pts from a save call</T>
                     </div>
                   )}
                 </div>

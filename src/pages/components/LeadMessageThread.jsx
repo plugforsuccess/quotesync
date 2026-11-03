@@ -1,3 +1,4 @@
+import { T } from '../../components/SiteCopy';
 import { useState } from 'react';
 import { MessageSquare, Phone, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -28,7 +29,7 @@ function MessageBubble({ message }) {
           ${isInbound
             ? 'bg-gray-100 text-gray-900 rounded-tl-sm'
             : 'bg-primary-600 text-white rounded-tr-sm'}`}>
-          {message.body || (message.channel === 'call' ? <em className="opacity-70">Call record</em> : '\u2014')}
+          {message.body || (message.channel === 'call' ? <em className="opacity-70"><T k="pages.components.leadmessagethread.38560a">Call record</T></em> : '\u2014')}
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-400">
           <Icon className="w-3 h-3" />
@@ -68,7 +69,7 @@ export default function LeadMessageThread({ messages = [], isLoading, leadId, le
     return (
       <div className="py-8 text-center">
         <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
-        <p className="text-gray-500 text-sm mt-2">Loading messages...</p>
+        <p className="text-gray-500 text-sm mt-2"><T k="pages.components.leadmessagethread.40a234">Loading messages...</T></p>
       </div>
     );
   }
@@ -79,7 +80,7 @@ export default function LeadMessageThread({ messages = [], isLoading, leadId, le
   return (
     <div>
       {messages.length === 0 ? (
-        <p className="text-gray-500 text-sm text-center py-6">No messages yet</p>
+        <p className="text-gray-500 text-sm text-center py-6"><T k="pages.components.leadmessagethread.981437">No messages yet</T></p>
       ) : (
         <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
           {messages.map((msg) => {
@@ -105,7 +106,7 @@ export default function LeadMessageThread({ messages = [], isLoading, leadId, le
       {/* Manual reply input */}
       <div className="border-t border-gray-200 pt-3 mt-3">
         {!leadPhone ? (
-          <p className="text-sm text-gray-400 text-center">No phone number on file</p>
+          <p className="text-sm text-gray-400 text-center"><T k="pages.components.leadmessagethread.998d19">No phone number on file</T></p>
         ) : (
           <div className="flex gap-2">
             <input

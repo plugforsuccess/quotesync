@@ -3,6 +3,7 @@
 // C (Queue Breakdown), D (Proactivity) + A-F weekly grade.
 // v3: Call log as primary data source, summary report as optional supplement.
 
+import { T } from '../../../components/SiteCopy';
 import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, CheckCircle, XCircle, Shield, Edit3, BarChart2, Info } from 'lucide-react';
 import { GRADE_CONFIG, DEFAULT_TARGETS, calculateGrade, computeMetrics, classifyWeek } from '../../../config/staffPerformanceDefaults';
 import { computeAttendance } from '../../../lib/attendanceUtils';
@@ -66,7 +67,7 @@ function PassFailRow({ label, passed, manual, onToggle }) {
     <tr className="hover:bg-qs-elevated transition-colors">
       <td className="px-4 py-3 text-sm text-qs-bright font-medium">
         {label}
-        {manual && <span className="ml-1.5 text-xs text-qs-muted">(manual)</span>}
+        {manual && <span className="ml-1.5 text-xs text-qs-muted"><T k="pages.components.timeattendance.staffscorecard.3bbaf8">(manual)</T></span>}
       </td>
       <td className="px-4 py-3">
         {manual && onToggle ? (
@@ -84,11 +85,11 @@ function PassFailRow({ label, passed, manual, onToggle }) {
           </button>
         ) : passed ? (
           <span className="inline-flex items-center gap-1 text-sm text-emerald-400 font-medium">
-            <CheckCircle className="w-4 h-4" /> Pass
+            <CheckCircle className="w-4 h-4" /> <T k="pages.components.timeattendance.staffscorecard.b9b57a">Pass</T>
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 text-sm text-red-400 font-medium">
-            <XCircle className="w-4 h-4" /> Fail
+            <XCircle className="w-4 h-4" /> <T k="pages.components.timeattendance.staffscorecard.ceaa07">Fail</T>
           </span>
         )}
       </td>
@@ -133,17 +134,17 @@ export default function StaffScorecard({
     return (
       <div className="bg-qs-card rounded-lg border border-qs-border p-8 text-center">
         <Activity className="w-12 h-12 text-qs-muted mx-auto mb-3" />
-        <p className="text-qs-subtle">No performance data available for this week.</p>
+        <p className="text-qs-subtle"><T k="pages.components.timeattendance.staffscorecard.839c9f">No performance data available for this week.</T></p>
         {classification === 'no_entries' ? (
           <p className="text-sm text-qs-muted mt-1">
-            No attendance entries logged. Upload a call log or enter time to see the scorecard.
+            <T k="pages.components.timeattendance.staffscorecard.1799c1">No attendance entries logged. Upload a call log or enter time to see the scorecard.</T>
           </p>
         ) : isUngradedWeek ? (
           <p className="text-sm text-qs-muted mt-1">
-            Absence week — no grading required.
+            <T k="pages.components.timeattendance.staffscorecard.165ec1">Absence week — no grading required.</T>
           </p>
         ) : (
-          <p className="text-sm text-qs-muted mt-1">Upload a call log or RingCentral XLSX to see the scorecard.</p>
+          <p className="text-sm text-qs-muted mt-1"><T k="pages.components.timeattendance.staffscorecard.d9642b">Upload a call log or RingCentral XLSX to see the scorecard.</T></p>
         )}
       </div>
     );
@@ -250,13 +251,13 @@ export default function StaffScorecard({
             )}
           </div>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-muted)' }}>
-            Not Graded
+            <T k="pages.components.timeattendance.staffscorecard.88bd30">Not Graded</T>
           </span>
         </div>
       ) : (
         <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${gradeConfig.bg} ${gradeConfig.border}`}>
           <div>
-            <h3 className="text-lg font-semibold text-qs-bright">Weekly Performance Grade</h3>
+            <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.staffscorecard.891d58">Weekly Performance Grade</T></h3>
             <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
             {employeeName && (
               <p className="text-xs text-qs-subtle mt-1">
@@ -272,25 +273,25 @@ export default function StaffScorecard({
                       background: '#F59E0B22', border: '1px solid #F59E0B44',
                       color: '#F59E0B', marginLeft: 6,
                     }}>
-                      WFH {Math.round(wfhPct)}%
+                      <T k="pages.components.timeattendance.staffscorecard.cfcc7e">WFH</T> {Math.round(wfhPct)}%
                     </span>
                   ) : null;
                 })()}
               </p>
             )}
             {hasCallLog && (
-              <p className="text-xs text-primary-500 mt-0.5">Based on call log data</p>
+              <p className="text-xs text-primary-500 mt-0.5"><T k="pages.components.timeattendance.staffscorecard.e896d0">Based on call log data</T></p>
             )}
             {classification === 'partial_absence' && (
               <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-                Partial week — targets prorated to {workedDays} worked day{workedDays !== 1 ? 's' : ''}.
+                <T k="pages.components.timeattendance.staffscorecard.ecd5e8">Partial week — targets prorated to</T> {workedDays} <T k="pages.components.timeattendance.staffscorecard.1cee00">worked day</T>{workedDays !== 1 ? 's' : ''}.
                 {ptoDays > 0 && ` ${ptoDays} PTO.`}
                 {sickDays > 0 && ` ${sickDays} sick.`}
               </p>
             )}
             {classification === 'holiday_reduced' && (
               <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-                Holiday week — targets prorated to {workedDays} worked day{workedDays !== 1 ? 's' : ''}.
+                <T k="pages.components.timeattendance.staffscorecard.00294a">Holiday week — targets prorated to</T> {workedDays} <T k="pages.components.timeattendance.staffscorecard.1cee00">worked day</T>{workedDays !== 1 ? 's' : ''}.
               </p>
             )}
           </div>
@@ -305,14 +306,14 @@ export default function StaffScorecard({
       <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
         <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
           <Phone className="w-5 h-5 text-primary-400" />
-          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section A — Activity</h4>
+          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.staffscorecard.aed0b7">Section A — Activity</T></h4>
         </div>
         <table className="w-full">
           <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Metric</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Target</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Actual</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.216ab4">Metric</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.c41a31">Target</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.d57ceb">Actual</T></th>
               <th className="px-4 py-2 w-10" />
             </tr>
           </thead>
@@ -335,14 +336,14 @@ export default function StaffScorecard({
       <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
         <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary-400" />
-          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section B — Efficiency & Quality</h4>
+          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.staffscorecard.6070be">Section B — Efficiency & Quality</T></h4>
         </div>
         <table className="w-full">
           <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Metric</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Target</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Actual</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.216ab4">Metric</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.c41a31">Target</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.d57ceb">Actual</T></th>
               <th className="px-4 py-2 w-10" />
             </tr>
           </thead>
@@ -386,11 +387,11 @@ export default function StaffScorecard({
             {hasLongCall && longestCall && (
               <tr className="hover:bg-qs-elevated transition-colors bg-amber-900/10">
                 <td className="px-4 py-3 text-sm text-amber-300 font-medium">
-                  Longest Call Flag
-                  <span className="ml-1.5 text-xs text-amber-400">(30+ min)</span>
+                  <T k="pages.components.timeattendance.staffscorecard.95bfa9">Longest Call Flag</T>
+                  <span className="ml-1.5 text-xs text-amber-400"><T k="pages.components.timeattendance.staffscorecard.654997">(30+ min)</T></span>
                 </td>
                 <td className="px-4 py-3 text-sm text-amber-400">
-                  {Math.floor(longestCall.call_length_seconds / 60)}:{String(longestCall.call_length_seconds % 60).padStart(2, '0')} min
+                  {Math.floor(longestCall.call_length_seconds / 60)}:{String(longestCall.call_length_seconds % 60).padStart(2, '0')} <T k="pages.components.timeattendance.staffscorecard.d8bd79">min</T>
                 </td>
                 <td colSpan={2} />
               </tr>
@@ -404,16 +405,16 @@ export default function StaffScorecard({
         <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
           <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-primary-400" />
-            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section C — Queue Breakdown</h4>
+            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.staffscorecard.c7a68e">Section C — Queue Breakdown</T></h4>
             <span className="text-xs text-qs-muted ml-auto flex items-center gap-1">
-              <Info className="w-3 h-3" /> Baseline tracking — no grade impact
+              <Info className="w-3 h-3" /> <T k="pages.components.timeattendance.staffscorecard.0a8867">Baseline tracking — no grade impact</T>
             </span>
           </div>
           <div className="p-4">
             <div className="flex items-center gap-6">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-qs-text">Sales</span>
+                  <span className="text-sm font-medium text-qs-text"><T k="pages.components.timeattendance.staffscorecard.11ff9f">Sales</T></span>
                   <span className="text-sm text-qs-dim">{clm.salesCalls} ({clm.salesPct.toFixed(0)}%)</span>
                 </div>
                 <div className="h-3 bg-qs-elevated rounded-full overflow-hidden">
@@ -425,7 +426,7 @@ export default function StaffScorecard({
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-qs-text">Service</span>
+                  <span className="text-sm font-medium text-qs-text"><T k="pages.components.timeattendance.staffscorecard.c2ba7e">Service</T></span>
                   <span className="text-sm text-qs-dim">{clm.serviceCalls} ({clm.servicePct.toFixed(0)}%)</span>
                 </div>
                 <div className="h-3 bg-qs-elevated rounded-full overflow-hidden">
@@ -444,13 +445,13 @@ export default function StaffScorecard({
       <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
         <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary-400" />
-          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section D — Proactivity</h4>
+          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.staffscorecard.5c3cd8">Section D — Proactivity</T></h4>
         </div>
         <table className="w-full">
           <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Category</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Status</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.3adbdb">Category</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.staffscorecard.ec53a8">Status</T></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-qs-border">
@@ -478,18 +479,18 @@ export default function StaffScorecard({
 
       {/* Outbound Call Expectations */}
       <div className="bg-qs-card rounded-lg border border-qs-border p-4">
-        <h4 className="text-sm font-semibold text-qs-bright mb-3">Outbound Call Expectations</h4>
+        <h4 className="text-sm font-semibold text-qs-bright mb-3"><T k="pages.components.timeattendance.staffscorecard.02cf58">Outbound Call Expectations</T></h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="p-3 bg-qs-elevated rounded-lg">
-            <p className="text-xs text-qs-subtle uppercase font-medium">Current Target</p>
+            <p className="text-xs text-qs-subtle uppercase font-medium"><T k="pages.components.timeattendance.staffscorecard.eef693">Current Target</T></p>
             <p className="text-lg font-bold text-qs-bright mt-1">
-              {Math.round(t.outbound_calls_weekly / 5)}/day &middot; {t.outbound_calls_weekly}/week
+              {Math.round(t.outbound_calls_weekly / 5)}<T k="pages.components.timeattendance.staffscorecard.f264da">/day ·</T> {t.outbound_calls_weekly}<T k="pages.components.timeattendance.staffscorecard.f9267e">/week</T>
             </p>
           </div>
           <div className="p-3 bg-primary-900/20 rounded-lg">
-            <p className="text-xs text-primary-500 uppercase font-medium">Grade A Threshold</p>
+            <p className="text-xs text-primary-500 uppercase font-medium"><T k="pages.components.timeattendance.staffscorecard.1b095a">Grade A Threshold</T></p>
             <p className="text-lg font-bold text-primary-300 mt-1">
-              {Math.round(t.grade_a_outbound / 5)}/day &middot; {t.grade_a_outbound}/week
+              {Math.round(t.grade_a_outbound / 5)}<T k="pages.components.timeattendance.staffscorecard.f264da">/day ·</T> {t.grade_a_outbound}<T k="pages.components.timeattendance.staffscorecard.f9267e">/week</T>
             </p>
           </div>
         </div>
@@ -499,18 +500,18 @@ export default function StaffScorecard({
       {hasAttendanceData && (
         <div className="bg-qs-card rounded-lg border border-qs-border p-4">
           <p className="text-xs font-medium text-qs-subtle uppercase tracking-wide mb-3">
-            YTD Attendance ({currentYear})
+            <T k="pages.components.timeattendance.staffscorecard.a2b0b9">YTD Attendance (</T>{currentYear})
           </p>
           <div className="grid grid-cols-3 gap-3">
             <div>
               <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.daysWorked}</p>
-              <p className="text-xs text-qs-subtle mt-0.5">Days Worked</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.10bf2e">Days Worked</T></p>
             </div>
             <div>
               <p className={`text-2xl font-bold ${ytdAttendance.wfh > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
                 {ytdAttendance.wfh}
               </p>
-              <p className="text-xs text-qs-subtle mt-0.5">WFH</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.cfcc7e">WFH</T></p>
               <p className="text-xs text-qs-subtle mt-0.5">
                 {ytdAttendance.daysWorked > 0
                   ? `${Math.round((ytdAttendance.wfh / ytdAttendance.daysWorked) * 100)}% of days`
@@ -521,33 +522,33 @@ export default function StaffScorecard({
               <p className={`text-2xl font-bold ${ytdAttendance.sick > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
                 {ytdAttendance.sick}
               </p>
-              <p className="text-xs text-qs-subtle mt-0.5">Sick</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.cdc714">Sick</T></p>
             </div>
             <div>
               <p className={`text-2xl font-bold ${ytdAttendance.pto > 0 ? 'text-blue-400' : 'text-qs-bright'}`}>
                 {ytdAttendance.pto}
               </p>
-              <p className="text-xs text-qs-subtle mt-0.5">PTO</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.b0fde0">PTO</T></p>
             </div>
             <div>
               <p className="text-sm font-semibold" style={{ color: ptoColor }}>
-                {ptoRemaining} / {ptoAllotment} days
+                {ptoRemaining} / {ptoAllotment} <T k="pages.components.timeattendance.staffscorecard.44fdec">days</T>
               </p>
-              <p className="text-xs text-qs-subtle mt-0.5">PTO Remaining</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.7a8338">PTO Remaining</T></p>
             </div>
             <div>
               <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.appt}</p>
-              <p className="text-xs text-qs-subtle mt-0.5">Appt</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.c4522c">Appt</T></p>
             </div>
             <div>
               <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.early}</p>
-              <p className="text-xs text-qs-subtle mt-0.5">Early Out</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.18ca8a">Early Out</T></p>
             </div>
             <div>
               <p className={`text-2xl font-bold ${ytdAttendance.unexcused > 0 ? 'text-red-400' : 'text-qs-bright'}`}>
                 {ytdAttendance.unexcused}
               </p>
-              <p className="text-xs text-qs-subtle mt-0.5">Unexcused</p>
+              <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.bcc2b5">Unexcused</T></p>
             </div>
           </div>
         </div>

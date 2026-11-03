@@ -1,6 +1,7 @@
 // src/pages/RenewalDetailPage.jsx
 // Full detail view for a single renewal with contact history and consent.
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -85,7 +86,7 @@ export default function RenewalDetailPage() {
     return (
       <div className="flex items-center justify-center py-24">
         <Clock className="w-6 h-6 text-primary-500 animate-spin" />
-        <span className="ml-2 text-gray-500">Loading...</span>
+        <span className="ml-2 text-gray-500"><T k="pages.renewaldetailpage.8524de">Loading...</T></span>
       </div>
     );
   }
@@ -131,7 +132,7 @@ export default function RenewalDetailPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <Link to="/admin/renewals" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
-        <ArrowLeft className="w-4 h-4" /> Back to Renewals
+        <ArrowLeft className="w-4 h-4" /> <T k="pages.renewaldetailpage.fef112">Back to Renewals</T>
       </Link>
 
       {/* Section 1: Policy Summary */}
@@ -156,19 +157,19 @@ export default function RenewalDetailPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-gray-500">Renewal Date</p>
+            <p className="text-gray-500"><T k="pages.renewaldetailpage.68b082">Renewal Date</T></p>
             <p className="font-medium">{formatDate(policy.renewal_date)}</p>
           </div>
           <div>
-            <p className="text-gray-500">Current Premium</p>
+            <p className="text-gray-500"><T k="pages.renewaldetailpage.c97339">Current Premium</T></p>
             <p className="font-medium">{formatCurrency(policy.current_premium)}</p>
           </div>
           <div>
-            <p className="text-gray-500">Renewal Premium</p>
+            <p className="text-gray-500"><T k="pages.renewaldetailpage.37922a">Renewal Premium</T></p>
             <p className="font-medium">{formatCurrency(policy.premium)}</p>
           </div>
           <div>
-            <p className="text-gray-500">Change</p>
+            <p className="text-gray-500"><T k="pages.renewaldetailpage.f4ec5f">Change</T></p>
             <p className={`font-bold ${isIncrease ? 'text-red-600' : pctChange != null && pctChange < 0 ? 'text-green-600' : 'text-gray-700'}`}>
               {pctChange != null ? `${pctChange > 0 ? '+' : ''}${pctChange}%` : '—'}
               {policy.rate_shock_flag && <AlertTriangle className="inline w-4 h-4 ml-1 text-red-500" />}
@@ -196,15 +197,15 @@ export default function RenewalDetailPage() {
             </div>
           )}
           {policy.mortgagee && (
-            <div><span className="text-gray-500">Mortgagee:</span> {policy.mortgagee}</div>
+            <div><span className="text-gray-500"><T k="pages.renewaldetailpage.d19a3b">Mortgagee:</T></span> {policy.mortgagee}</div>
           )}
-          <div><span className="text-gray-500">EFT on File:</span> {policy.eft_on_file ? 'Yes' : policy.eft_on_file === false ? 'No' : '—'}</div>
-          <div><span className="text-gray-500">Multi-Policy:</span> {policy.multi_policy ? 'Yes' : 'No'}</div>
+          <div><span className="text-gray-500"><T k="pages.renewaldetailpage.5abb42">EFT on File:</T></span> {policy.eft_on_file ? 'Yes' : policy.eft_on_file === false ? 'No' : '—'}</div>
+          <div><span className="text-gray-500"><T k="pages.renewaldetailpage.61e95e">Multi-Policy:</T></span> {policy.multi_policy ? 'Yes' : 'No'}</div>
           {policy.customer_tenure_years != null && (
-            <div><span className="text-gray-500">Tenure:</span> <span className="font-medium">{policy.customer_tenure_years} year{policy.customer_tenure_years !== 1 ? 's' : ''}</span></div>
+            <div><span className="text-gray-500"><T k="pages.renewaldetailpage.967117">Tenure:</T></span> <span className="font-medium">{policy.customer_tenure_years} <T k="pages.renewaldetailpage.84cdc7">year</T>{policy.customer_tenure_years !== 1 ? 's' : ''}</span></div>
           )}
           {policy.amount_due != null && (
-            <div><span className="text-gray-500">Amount Due:</span> <span className="font-medium">{formatCurrency(policy.amount_due)}</span></div>
+            <div><span className="text-gray-500"><T k="pages.renewaldetailpage.5d891a">Amount Due:</T></span> <span className="font-medium">{formatCurrency(policy.amount_due)}</span></div>
           )}
         </div>
 
@@ -216,7 +217,7 @@ export default function RenewalDetailPage() {
               {CLAIM_FLAG_LABELS[policy.claim_flag] || policy.claim_flag}
             </span>
             {policy.claim_flag_set_at && (
-              <span className="text-gray-500">— flagged {formatDate(policy.claim_flag_set_at)}</span>
+              <span className="text-gray-500"><T k="pages.renewaldetailpage.13aa54">— flagged</T> {formatDate(policy.claim_flag_set_at)}</span>
             )}
           </div>
         )}
@@ -225,7 +226,7 @@ export default function RenewalDetailPage() {
         {policy.human_only && (
           <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200 text-sm">
             <AlertTriangle className="w-4 h-4 text-orange-500" />
-            <span className="font-medium text-orange-800">Human Only</span>
+            <span className="font-medium text-orange-800"><T k="pages.renewaldetailpage.0ee98c">Human Only</T></span>
             {policy.human_only_reason && (
               <span className="text-orange-600">— {policy.human_only_reason.replace(/_/g, ' ')}</span>
             )}
@@ -237,39 +238,39 @@ export default function RenewalDetailPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <Shield className="w-5 h-5 text-gray-600" />
-          Consent Status
+          <T k="pages.renewaldetailpage.151e97">Consent Status</T>
         </h2>
         {consent ? (
           <div className="space-y-2">
             <div className="flex items-center gap-4 text-sm">
               <span className={`flex items-center gap-1 font-medium ${consent.autodial_consent ? 'text-green-700' : 'text-red-600'}`}>
                 {consent.autodial_consent ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                Auto-dial: {consent.autodial_consent ? 'Consented' : 'Not Consented'}
+                <T k="pages.renewaldetailpage.54bc6c">Auto-dial:</T> {consent.autodial_consent ? 'Consented' : 'Not Consented'}
               </span>
               {consent.autodial_consent_date && (
-                <span className="text-gray-500">as of {formatDate(consent.autodial_consent_date)}</span>
+                <span className="text-gray-500"><T k="pages.renewaldetailpage.22a39b">as of</T> {formatDate(consent.autodial_consent_date)}</span>
               )}
               <Link
                 to="/admin/renewals/consent"
                 className="text-primary-600 hover:text-primary-700 font-medium"
               >
-                Update
+                <T k="pages.renewaldetailpage.069330">Update</T>
               </Link>
             </div>
             {consent.dnc && (
               <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg text-sm">
                 <XCircle className="w-4 h-4 text-red-600" />
-                <span className="font-medium text-red-700">DNC — Do Not Call</span>
-                {consent.dnc_date && <span className="text-red-500">since {formatDate(consent.dnc_date)}</span>}
+                <span className="font-medium text-red-700"><T k="pages.renewaldetailpage.d46c12">DNC — Do Not Call</T></span>
+                {consent.dnc_date && <span className="text-red-500"><T k="pages.renewaldetailpage.503249">since</T> {formatDate(consent.dnc_date)}</span>}
                 {consent.dnc_source && <span className="text-red-400">({consent.dnc_source.replace(/_/g, ' ')})</span>}
               </div>
             )}
           </div>
         ) : (
           <div className="text-sm text-gray-500">
-            No consent record found for this customer.{' '}
+            <T k="pages.renewaldetailpage.e58ee2">No consent record found for this customer.</T>{' '}
             <Link to="/admin/renewals/consent" className="text-primary-600 hover:text-primary-700 font-medium">
-              Add consent record
+              <T k="pages.renewaldetailpage.1a5f94">Add consent record</T>
             </Link>
           </div>
         )}
@@ -280,18 +281,17 @@ export default function RenewalDetailPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Users className="w-5 h-5 text-gray-600" />
-            Household Group
+            <T k="pages.renewaldetailpage.e67490">Household Group</T>
           </h2>
           <p className="text-sm text-gray-600">
-            This policy is part of a multi-policy household group.
-            Group ID: <span className="font-mono text-xs">{policy.customer_group_id}</span>
+            <T k="pages.renewaldetailpage.8e64b4">This policy is part of a multi-policy household group. Group ID:</T> <span className="font-mono text-xs">{policy.customer_group_id}</span>
           </p>
         </div>
       )}
 
       {/* Section 3: Contact Log */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-3">Contact Log</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-3"><T k="pages.renewaldetailpage.179d50">Contact Log</T></h2>
         {policy.attempt_count > 0 ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm">
@@ -306,19 +306,19 @@ export default function RenewalDetailPage() {
               </div>
               <span className="text-gray-500">{formatDateTime(policy.last_contact_date)}</span>
             </div>
-            <p className="text-sm text-gray-500">{policy.attempt_count} total attempt{policy.attempt_count !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-gray-500">{policy.attempt_count} <T k="pages.renewaldetailpage.195a04">total attempt</T>{policy.attempt_count !== 1 ? 's' : ''}</p>
             {policy.followup_notes && (
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{policy.followup_notes}</p>
             )}
             {policy.ai_transcript && (
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">AI Transcript</p>
+                <p className="text-xs font-medium text-gray-500 mb-1"><T k="pages.renewaldetailpage.ef283f">AI Transcript</T></p>
                 <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg whitespace-pre-wrap">{policy.ai_transcript}</p>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-sm text-gray-400">No contact attempts recorded.</p>
+          <p className="text-sm text-gray-400"><T k="pages.renewaldetailpage.5c5e8e">No contact attempts recorded.</T></p>
         )}
       </div>
 
@@ -326,22 +326,22 @@ export default function RenewalDetailPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <User className="w-5 h-5 text-gray-600" />
-          Follow-up Assignment
+          <T k="pages.renewaldetailpage.3f3df1">Follow-up Assignment</T>
         </h2>
         {policy.human_followup_required && (
           <div className="mb-3 flex items-center gap-2 text-sm">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
             <span className="text-amber-700 font-medium">
-              Follow-up required: {FOLLOWUP_LABELS[policy.followup_reason] || policy.followup_reason}
+              <T k="pages.renewaldetailpage.41e3c8">Follow-up required:</T> {FOLLOWUP_LABELS[policy.followup_reason] || policy.followup_reason}
             </span>
             {policy.followup_completed_at && (
-              <span className="text-green-600">— Completed {formatDateTime(policy.followup_completed_at)}</span>
+              <span className="text-green-600"><T k="pages.renewaldetailpage.6cea28">— Completed</T> {formatDateTime(policy.followup_completed_at)}</span>
             )}
           </div>
         )}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm text-gray-600 mb-1">Assign to</label>
+            <label className="block text-sm text-gray-600 mb-1"><T k="pages.renewaldetailpage.773ecc">Assign to</T></label>
             <select
               value={assignTo || policy.assigned_to_id || ''}
               onChange={(e) => setAssignTo(e.target.value)}
@@ -356,7 +356,7 @@ export default function RenewalDetailPage() {
             </select>
           </div>
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm text-gray-600 mb-1">Notes</label>
+            <label className="block text-sm text-gray-600 mb-1"><T k="pages.renewaldetailpage.f4c6f8">Notes</T></label>
             <input
               type="text"
               value={followupNotes}
@@ -377,34 +377,34 @@ export default function RenewalDetailPage() {
 
       {/* Section 5: Actions */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-3">Actions</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-3"><T k="pages.renewaldetailpage.06df33">Actions</T></h2>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setShowContactModal(true)}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
           >
-            Log Contact Attempt
+            <T k="pages.renewaldetailpage.14f222">Log Contact Attempt</T>
           </button>
           <button
             onClick={() => handleStatusChange('renewed')}
             disabled={updateStatus.isPending}
             className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg disabled:opacity-50"
           >
-            Mark Renewed
+            <T k="pages.renewaldetailpage.e7ed44">Mark Renewed</T>
           </button>
           <button
             onClick={() => handleStatusChange('lost')}
             disabled={updateStatus.isPending}
             className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg disabled:opacity-50"
           >
-            Mark Lost
+            <T k="pages.renewaldetailpage.e9c179">Mark Lost</T>
           </button>
           <button
             onClick={() => handleStatusChange('escalated')}
             disabled={updateStatus.isPending}
             className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg disabled:opacity-50"
           >
-            Escalate
+            <T k="pages.renewaldetailpage.e85d79">Escalate</T>
           </button>
           {policy.human_followup_required && !policy.followup_completed_at && (
             <button
@@ -412,7 +412,7 @@ export default function RenewalDetailPage() {
               disabled={updateStatus.isPending}
               className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg disabled:opacity-50"
             >
-              Mark Follow-up Complete
+              <T k="pages.renewaldetailpage.773fa8">Mark Follow-up Complete</T>
             </button>
           )}
         </div>

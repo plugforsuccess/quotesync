@@ -8,6 +8,7 @@
 // active agency member update cases in their own agency, so these client-side
 // reassignments succeed for a principal/manager.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
@@ -192,20 +193,19 @@ export default function WorkloadDistribution({ agencyId }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 760 }}>
       <div className="card">
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
-          Workload Distribution
+          <T k="pages.components.retention.workloaddistribution.ca2069">Workload Distribution</T>
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-          Move a share of one rep&apos;s active cases to another. Picks are spread across
-          urgency so each rep gets a balanced mix.
+          <T k="pages.components.retention.workloaddistribution.e8b963">Move a share of one rep's active cases to another. Picks are spread across urgency so each rep gets a balanced mix.</T>
         </div>
 
         {/* Current workload */}
         <table style={{ marginBottom: 20 }}>
           <thead>
-            <tr><th>Rep</th><th style={{ textAlign: 'right' }}>Cancels</th><th style={{ textAlign: 'right' }}>Renewals</th><th style={{ textAlign: 'right' }}>Total</th></tr>
+            <tr><th><T k="pages.components.retention.workloaddistribution.608033">Rep</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.workloaddistribution.222de6">Cancels</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.workloaddistribution.61583c">Renewals</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.workloaddistribution.96b014">Total</T></th></tr>
           </thead>
           <tbody>
-            {isLoading && <tr><td colSpan={4} style={{ color: 'var(--qs-subtle)' }}>Loading…</td></tr>}
+            {isLoading && <tr><td colSpan={4} style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.retention.workloaddistribution.5f02f0">Loading…</T></td></tr>}
             {!isLoading && rows.map(r => (
               <tr key={r.id}>
                 <td style={{ fontWeight: r.id === 'unassigned' ? 400 : 600, color: r.id === 'unassigned' ? 'var(--qs-subtle)' : 'var(--qs-text)' }}>{r.name}</td>
@@ -220,7 +220,7 @@ export default function WorkloadDistribution({ agencyId }) {
         {/* Controls */}
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ minWidth: 170 }}>
-            <label>From (source)</label>
+            <label><T k="pages.components.retention.workloaddistribution.fe5c75">From (source)</T></label>
             <select value={sourceId} onChange={e => setSourceId(e.target.value)} style={{ width: '100%' }}>
               <option value="">Select rep…</option>
               {byEmp.unassigned && (byEmp.unassigned.cancels + byEmp.unassigned.renewals > 0) && (
@@ -235,7 +235,7 @@ export default function WorkloadDistribution({ agencyId }) {
           </div>
 
           <div style={{ minWidth: 170 }}>
-            <label>To (target)</label>
+            <label><T k="pages.components.retention.workloaddistribution.f9ff1d">To (target)</T></label>
             <select value={targetId} onChange={e => setTargetId(e.target.value)} style={{ width: '100%' }}>
               <option value="">Select rep…</option>
               {employees.filter(e => e.id !== sourceId).map(e => (
@@ -245,7 +245,7 @@ export default function WorkloadDistribution({ agencyId }) {
           </div>
 
           <div style={{ minWidth: 150 }}>
-            <label>Case type</label>
+            <label><T k="pages.components.retention.workloaddistribution.de8189">Case type</T></label>
             <select value={caseType} onChange={e => setCaseType(e.target.value)} style={{ width: '100%' }}>
               <option value="both">Cancels + Renewals</option>
               <option value="cancels">Cancels only</option>
@@ -254,7 +254,7 @@ export default function WorkloadDistribution({ agencyId }) {
           </div>
 
           <div style={{ minWidth: 130 }}>
-            <label>Amount by</label>
+            <label><T k="pages.components.retention.workloaddistribution.5ee68a">Amount by</T></label>
             <select value={mode} onChange={e => setMode(e.target.value)} style={{ width: '100%' }}>
               <option value="pct">Percentage</option>
               <option value="count">Exact count</option>
@@ -264,14 +264,14 @@ export default function WorkloadDistribution({ agencyId }) {
           <div style={{ flex: 1, minWidth: 200 }}>
             {mode === 'pct' ? (
               <>
-                <label>Share to move: {pct}%</label>
+                <label><T k="pages.components.retention.workloaddistribution.08714e">Share to move:</T> {pct}%</label>
                 <input type="range" min={0} max={100} step={5} value={pct}
                   onChange={e => setPct(Number(e.target.value))}
                   style={{ width: '100%', padding: 0, background: 'transparent' }} />
               </>
             ) : (
               <>
-                <label>Cases to move (per type)</label>
+                <label><T k="pages.components.retention.workloaddistribution.e1f759">Cases to move (per type)</T></label>
                 <input type="number" min={0} value={count}
                   onChange={e => setCount(Math.max(0, Number(e.target.value)))}
                   style={{ width: '100%' }} />
@@ -287,9 +287,9 @@ export default function WorkloadDistribution({ agencyId }) {
           fontSize: 13, color: 'var(--qs-dim)',
         }}>
           {sourceId
-            ? <>Will move <strong style={{ color: 'var(--qs-bright)' }}>{previewCancels}</strong> cancel case{previewCancels !== 1 ? 's' : ''} and{' '}
-                <strong style={{ color: 'var(--qs-bright)' }}>{previewRenewals}</strong> renewal{previewRenewals !== 1 ? 's' : ''}
-                {targetEmp ? <> to <strong style={{ color: 'var(--qs-bright)' }}>{empName(targetEmp)}</strong></> : ''}.</>
+            ? <><T k="pages.components.retention.workloaddistribution.e2bf9d">Will move</T> <strong style={{ color: 'var(--qs-bright)' }}>{previewCancels}</strong> <T k="pages.components.retention.workloaddistribution.d9b3a3">cancel case</T>{previewCancels !== 1 ? 's' : ''} <T k="pages.components.retention.workloaddistribution.be5d5d">and</T>{' '}
+                <strong style={{ color: 'var(--qs-bright)' }}>{previewRenewals}</strong> <T k="pages.components.retention.workloaddistribution.4b537a">renewal</T>{previewRenewals !== 1 ? 's' : ''}
+                {targetEmp ? <> <T k="pages.components.retention.workloaddistribution.01b6e2">to</T> <strong style={{ color: 'var(--qs-bright)' }}>{empName(targetEmp)}</strong></> : ''}.</>
             : 'Select a source rep to preview the move.'}
         </div>
 

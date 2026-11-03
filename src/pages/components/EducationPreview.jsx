@@ -1,4 +1,5 @@
 // src/pages/components/EducationPreview.jsx
+import { T } from '../../components/SiteCopy';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, AlertCircle, Shield, TrendingDown } from 'lucide-react';
@@ -38,19 +39,19 @@ const EducationPreview = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
             <BookOpen className="w-4 h-4 text-accent-300" />
-            <span className="text-sm font-semibold text-white/90">Insurance Education</span>
+            <span className="text-sm font-semibold text-white/90"><T k="pages.components.educationpreview.1c9ce4">Insurance Education</T></span>
           </div>
 
           <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
-            Understand What You're
+            <T k="pages.components.educationpreview.0398cc">Understand What You're</T>
             <br />
             <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent">
-              Actually Buying
+              <T k="pages.components.educationpreview.6e8995">Actually Buying</T>
             </span>
           </h2>
 
           <p className="text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
-            Most people overpay because they don't know what questions to ask. Here's what really matters.
+            <T k="pages.components.educationpreview.5be47e">Most people overpay because they don't know what questions to ask. Here's what really matters.</T>
           </p>
         </div>
 
@@ -87,7 +88,7 @@ const EducationPreview = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/50">{guide.readTime}</span>
                   <span className="text-accent-400 text-sm font-semibold group-hover:translate-x-1 transition-transform">
-                    Read →
+                    <T k="pages.components.educationpreview.4e13bd">Read →</T>
                   </span>
                 </div>
               </div>
@@ -99,14 +100,14 @@ const EducationPreview = () => {
         <div className="text-center">
           <div className="inline-block bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
             <p className="text-white/90 mb-4 text-lg">
-              Want the full breakdown? Get the complete guide.
+              <T k="pages.components.educationpreview.42b136">Want the full breakdown? Get the complete guide.</T>
             </p>
             <Link
               to="/store"
               className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-accent-500 to-accent-600 text-white font-bold rounded-xl hover:from-accent-600 hover:to-accent-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-accent-500/50"
             >
               <BookOpen className="w-5 h-5" />
-              Browse Insurance Guides
+              <T k="pages.components.educationpreview.5e2d8d">Browse Insurance Guides</T>
             </Link>
           </div>
         </div>

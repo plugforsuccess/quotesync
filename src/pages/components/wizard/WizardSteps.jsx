@@ -1,5 +1,6 @@
 // src/pages/components/wizard/WizardSteps.jsx
 // Individual question step components for the single-question wizard
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Zap, Shield, Clock, ArrowRight, Star, MapPin, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -143,12 +144,11 @@ export function ZipStep({ value, onChange, onAutoAdvance, isTargetZip: isTargetZ
         <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <XCircle className="w-8 h-8 text-red-400" />
         </div>
-        <StepHeading>We don&apos;t serve your area yet</StepHeading>
+        <StepHeading><T k="pages.components.wizard.wizardsteps.0a1087">We don't serve your area yet</T></StepHeading>
         <p className="text-gray-600 mb-6 leading-relaxed">
-          We&apos;re a licensed {areaLabel} insurance agency and can only offer quotes
-          for {areaLabel} residents at this time.
+          <T k="pages.components.wizard.wizardsteps.0d8795">We're a licensed</T> {areaLabel} <T k="pages.components.wizard.wizardsteps.8233a5">insurance agency and can only offer quotes for</T> {areaLabel} <T k="pages.components.wizard.wizardsteps.2fa64c">residents at this time.</T>
           <br /><br />
-          We&apos;re expanding — check back soon!
+          <T k="pages.components.wizard.wizardsteps.543bd7">We're expanding — check back soon!</T>
         </p>
         <div className="flex flex-col gap-3 items-center">
           <button
@@ -160,14 +160,14 @@ export function ZipStep({ value, onChange, onAutoAdvance, isTargetZip: isTargetZ
             }}
             className="text-primary-600 font-semibold hover:text-primary-700 underline underline-offset-2"
           >
-            Try a different ZIP code
+            <T k="pages.components.wizard.wizardsteps.2458fe">Try a different ZIP code</T>
           </button>
           <button
             type="button"
             onClick={() => navigate('/')}
             className="text-sm text-gray-500 hover:text-gray-700"
           >
-            Back to Home
+            <T k="pages.components.wizard.wizardsteps.6957b0">Back to Home</T>
           </button>
         </div>
       </div>
@@ -176,8 +176,8 @@ export function ZipStep({ value, onChange, onAutoAdvance, isTargetZip: isTargetZ
 
   return (
     <div>
-      <StepHeading>What&apos;s your ZIP code?</StepHeading>
-      <StepDescription>We use this to find discounts specific to your area.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.7ae25f">What's your ZIP code?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.2c2bc3">We use this to find discounts specific to your area.</T></StepDescription>
       <div className="max-w-[200px] mx-auto">
         <input
           type="text"
@@ -196,12 +196,12 @@ export function ZipStep({ value, onChange, onAutoAdvance, isTargetZip: isTargetZ
       </div>
       {!isValid && value.length < 5 && (
         <p className="mt-3 text-sm text-gray-500 text-center">
-          We currently serve {areaLabel} ZIP codes
+          <T k="pages.components.wizard.wizardsteps.e2f555">We currently serve</T> {areaLabel} <T k="pages.components.wizard.wizardsteps.850a0e">ZIP codes</T>
         </p>
       )}
       {isValid && (
         <p className="mt-3 text-sm text-success-600 text-center font-medium">
-          Great, we serve your area!
+          <T k="pages.components.wizard.wizardsteps.60dede">Great, we serve your area!</T>
         </p>
       )}
     </div>
@@ -221,39 +221,39 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
   return (
     <div>
       <h2 className="font-black text-gray-900 text-2xl sm:text-3xl mb-6 text-center leading-tight">
-        Let&apos;s find you potential discounts.
+        <T k="pages.components.wizard.wizardsteps.35ae4f">Let's find you potential discounts.</T>
       </h2>
       <div className="space-y-5 max-w-sm mx-auto">
         {/* Own home */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Do you own your home?</h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.06d2a0">Do you own your home?</T></h5>
           <div className="grid grid-cols-2 gap-3">
-            <ChoiceButton selected={ownsHome === true} onClick={() => { onOwnsHomeChange(true); checkAutoAdvance(true, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full">YES</ChoiceButton>
-            <ChoiceButton selected={ownsHome === false} onClick={() => { onOwnsHomeChange(false); checkAutoAdvance(false, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full">NO</ChoiceButton>
+            <ChoiceButton selected={ownsHome === true} onClick={() => { onOwnsHomeChange(true); checkAutoAdvance(true, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
+            <ChoiceButton selected={ownsHome === false} onClick={() => { onOwnsHomeChange(false); checkAutoAdvance(false, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
           </div>
         </div>
         {/* Married */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Are you married?</h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.7b5265">Are you married?</T></h5>
           <div className="grid grid-cols-2 gap-3">
-            <ChoiceButton selected={maritalStatus === 'married'} onClick={() => { onMaritalStatusChange('married'); checkAutoAdvance(ownsHome, 'married', multipleDrivers, multipleVehicles); }} className="w-full">YES</ChoiceButton>
-            <ChoiceButton selected={maritalStatus === 'single'} onClick={() => { onMaritalStatusChange('single'); checkAutoAdvance(ownsHome, 'single', multipleDrivers, multipleVehicles); }} className="w-full">NO</ChoiceButton>
+            <ChoiceButton selected={maritalStatus === 'married'} onClick={() => { onMaritalStatusChange('married'); checkAutoAdvance(ownsHome, 'married', multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
+            <ChoiceButton selected={maritalStatus === 'single'} onClick={() => { onMaritalStatusChange('single'); checkAutoAdvance(ownsHome, 'single', multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
           </div>
         </div>
         {/* Multiple drivers */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Multiple drivers in your household?</h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.0a5a26">Multiple drivers in your household?</T></h5>
           <div className="grid grid-cols-2 gap-3">
-            <ChoiceButton selected={multipleDrivers === true} onClick={() => { onMultipleDriversChange(true); checkAutoAdvance(ownsHome, maritalStatus, true, multipleVehicles); }} className="w-full">YES</ChoiceButton>
-            <ChoiceButton selected={multipleDrivers === false} onClick={() => { onMultipleDriversChange(false); checkAutoAdvance(ownsHome, maritalStatus, false, multipleVehicles); }} className="w-full">NO</ChoiceButton>
+            <ChoiceButton selected={multipleDrivers === true} onClick={() => { onMultipleDriversChange(true); checkAutoAdvance(ownsHome, maritalStatus, true, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
+            <ChoiceButton selected={multipleDrivers === false} onClick={() => { onMultipleDriversChange(false); checkAutoAdvance(ownsHome, maritalStatus, false, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
           </div>
         </div>
         {/* Multiple vehicles */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Multiple vehicles in your household?</h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.33afa1">Multiple vehicles in your household?</T></h5>
           <div className="grid grid-cols-2 gap-3">
-            <ChoiceButton selected={multipleVehicles === true} onClick={() => { onMultipleVehiclesChange(true); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, true); }} className="w-full">YES</ChoiceButton>
-            <ChoiceButton selected={multipleVehicles === false} onClick={() => { onMultipleVehiclesChange(false); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, false); }} className="w-full">NO</ChoiceButton>
+            <ChoiceButton selected={multipleVehicles === true} onClick={() => { onMultipleVehiclesChange(true); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, true); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
+            <ChoiceButton selected={multipleVehicles === false} onClick={() => { onMultipleVehiclesChange(false); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, false); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
           </div>
         </div>
       </div>
@@ -271,11 +271,11 @@ export function VeteranStatusStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Are you or anyone in your household an active military member or veteran?</StepHeading>
-      <StepDescription>This may qualify you for additional discounts.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.8edc5b">Are you or anyone in your household an active military member or veteran?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.316ab2">This may qualify you for additional discounts.</T></StepDescription>
       <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-        <ChoiceButton selected={value === 'yes'} onClick={() => handleSelect('yes')}>Yes</ChoiceButton>
-        <ChoiceButton selected={value === 'no'} onClick={() => handleSelect('no')}>No</ChoiceButton>
+        <ChoiceButton selected={value === 'yes'} onClick={() => handleSelect('yes')}><T k="pages.components.wizard.wizardsteps.93cba0">Yes</T></ChoiceButton>
+        <ChoiceButton selected={value === 'no'} onClick={() => handleSelect('no')}><T k="pages.components.wizard.wizardsteps.bafd73">No</T></ChoiceButton>
       </div>
     </div>
   );
@@ -291,7 +291,7 @@ export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isR
 
   return (
     <div>
-      <StepHeading>What are you looking to insure?</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.14b741">What are you looking to insure?</T></StepHeading>
       <StepDescription>
         {isRenter
           ? "We'll find you the best rate for your situation."
@@ -322,9 +322,9 @@ export function EarlyPhoneStep({ value, onChange, onSkip }) {
 
   return (
     <div>
-      <StepHeading>What&apos;s your phone number?</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.b2372d">What's your phone number?</T></StepHeading>
       <StepDescription>
-        We&apos;ll text you a link to your quote — no spam, just results.
+        <T k="pages.components.wizard.wizardsteps.7af285">We'll text you a link to your quote — no spam, just results.</T>
       </StepDescription>
       <div className="max-w-[280px] mx-auto">
         <input
@@ -339,8 +339,7 @@ export function EarlyPhoneStep({ value, onChange, onSkip }) {
         />
       </div>
       <p className="mt-4 text-xs text-gray-400 text-center leading-relaxed max-w-sm mx-auto">
-        By entering your number, you agree to receive a text with your quote
-        status. Msg &amp; data rates may apply. Reply STOP to opt out.
+        <T k="pages.components.wizard.wizardsteps.02e45e">By entering your number, you agree to receive a text with your quote status. Msg & data rates may apply. Reply STOP to opt out.</T>
       </p>
       <div className="mt-4 text-center">
         <button
@@ -348,7 +347,7 @@ export function EarlyPhoneStep({ value, onChange, onSkip }) {
           onClick={onSkip}
           className="text-sm text-primary-500 hover:text-primary-600 font-medium transition-colors bg-transparent border-0 cursor-pointer"
         >
-          Skip for now
+          <T k="pages.components.wizard.wizardsteps.131e38">Skip for now</T>
         </button>
       </div>
     </div>
@@ -474,7 +473,7 @@ export function CarrierSelectionStep({ heading, topCarriers, secondTierLabels, v
   return (
     <div>
       <StepHeading>{heading}</StepHeading>
-      <StepDescription>This helps us compare apples to apples.</StepDescription>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.84fe8f">This helps us compare apples to apples.</T></StepDescription>
 
       {/* Logo card grid */}
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
@@ -491,7 +490,7 @@ export function CarrierSelectionStep({ heading, topCarriers, secondTierLabels, v
       {/* Divider */}
       <div className="flex items-center gap-3 mb-4">
         <div className="flex-1 h-px bg-gray-200"></div>
-        <span className="text-xs text-gray-400 font-medium">or select a carrier below</span>
+        <span className="text-xs text-gray-400 font-medium"><T k="pages.components.wizard.wizardsteps.91431d">or select a carrier below</T></span>
         <div className="flex-1 h-px bg-gray-200"></div>
       </div>
 
@@ -530,8 +529,8 @@ export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
 
   return (
     <div>
-      <StepHeading>What are you currently paying for auto insurance?</StepHeading>
-      <StepDescription>Per year is fine — your best estimate works.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.bb88c2">What are you currently paying for auto insurance?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.4da0bc">Per year is fine — your best estimate works.</T></StepDescription>
       <div className="max-w-[240px] mx-auto">
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">$</span>
@@ -553,7 +552,7 @@ export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
           onClick={onSkip}
           className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors bg-transparent border-0 cursor-pointer px-4 py-2 rounded-lg hover:bg-gray-100"
         >
-          Not sure
+          <T k="pages.components.wizard.wizardsteps.ae4ee4">Not sure</T>
         </button>
       </div>
     </div>
@@ -578,8 +577,8 @@ export function CurrentHomePremiumStep({ value, onChange, onSkip }) {
 
   return (
     <div>
-      <StepHeading>What are you currently paying for home insurance?</StepHeading>
-      <StepDescription>Annual premium — check your dec page if you&apos;re not sure.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.83d3f1">What are you currently paying for home insurance?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.ada2cb">Annual premium — check your dec page if you're not sure.</T></StepDescription>
       <div className="max-w-[240px] mx-auto">
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">$</span>
@@ -601,7 +600,7 @@ export function CurrentHomePremiumStep({ value, onChange, onSkip }) {
           onClick={onSkip}
           className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors bg-transparent border-0 cursor-pointer px-4 py-2 rounded-lg hover:bg-gray-100"
         >
-          Not sure
+          <T k="pages.components.wizard.wizardsteps.ae4ee4">Not sure</T>
         </button>
       </div>
     </div>
@@ -626,8 +625,8 @@ export function CoverageLapseStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>How long has it been since you were last insured?</StepHeading>
-      <StepDescription>Continuous coverage often qualifies for better rates.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.a6a79d">How long has it been since you were last insured?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.d7cf69">Continuous coverage often qualifies for better rates.</T></StepDescription>
       <div className="flex flex-col gap-3 max-w-sm mx-auto">
         {COVERAGE_LAPSE_OPTIONS.map((opt) => (
           <ChoiceButton
@@ -665,7 +664,7 @@ export function VehicleYearStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Choose your vehicle year</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.c473d5">Choose your vehicle year</T></StepHeading>
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
         {gridYears.map((year) => (
           <button
@@ -688,7 +687,7 @@ export function VehicleYearStep({ value, onChange, onAutoAdvance }) {
           onClick={() => setShowOlderDropdown(true)}
           className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium py-2"
         >
-          Enter other year
+          <T k="pages.components.wizard.wizardsteps.824248">Enter other year</T>
         </button>
       ) : (
         <select
@@ -765,7 +764,7 @@ export function VehicleMakeStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Choose your vehicle make</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.cf9cb0">Choose your vehicle make</T></StepHeading>
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
         {TOP_VEHICLE_MAKES.map((make) => (
           <VehicleMakeLogoCard
@@ -779,7 +778,7 @@ export function VehicleMakeStep({ value, onChange, onAutoAdvance }) {
 
       <div className="flex items-center gap-3 mb-4">
         <div className="flex-1 h-px bg-gray-200"></div>
-        <span className="text-xs text-gray-400 font-medium">or select below</span>
+        <span className="text-xs text-gray-400 font-medium"><T k="pages.components.wizard.wizardsteps.9d923a">or select below</T></span>
         <div className="flex-1 h-px bg-gray-200"></div>
       </div>
 
@@ -809,7 +808,7 @@ export function VehicleModelStep({ make, value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Choose your vehicle model</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.9bcf18">Choose your vehicle model</T></StepHeading>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md mx-auto">
         {models.map((model) => (
           <ChoiceButton
@@ -826,7 +825,7 @@ export function VehicleModelStep({ make, value, onChange, onAutoAdvance }) {
           onClick={() => handleSelect('Other')}
           className="text-sm"
         >
-          OTHER
+          <T k="pages.components.wizard.wizardsteps.035704">OTHER</T>
         </ChoiceButton>
       </div>
     </div>
@@ -856,8 +855,8 @@ export function VehicleUseStep({ vehicleLabel, value, onChange }) {
 
   return (
     <div>
-      <StepHeading>What do you use your {vehicleLabel || 'vehicle'} for?</StepHeading>
-      <StepDescription>Select all that apply</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.321272">What do you use your</T> {vehicleLabel || 'vehicle'} <T k="pages.components.wizard.wizardsteps.450c90">for?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.88b96a">Select all that apply</T></StepDescription>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
         {VEHICLE_USE_OPTIONS.map((opt) => {
           const isSelected = value?.includes(opt.value);
@@ -907,8 +906,8 @@ export function AutoDrivingRecordStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Any accidents or tickets in the last 3 years?</StepHeading>
-      <StepDescription>Please answer accurately — this affects your quote.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.4b6ff3">Any accidents or tickets in the last 3 years?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.6c44d6">Please answer accurately — this affects your quote.</T></StepDescription>
       <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
         {[
           { label: 'None', value: 'clean' },
@@ -939,8 +938,8 @@ export function HomeClaimsHistoryStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>More than 1 home insurance claim in the last 5 years?</StepHeading>
-      <StepDescription>Please answer accurately — this affects your quote.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.fba413">More than 1 home insurance claim in the last 5 years?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.6c44d6">Please answer accurately — this affects your quote.</T></StepDescription>
       <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
         {[
           { label: 'No', value: '0-1' },
@@ -1016,8 +1015,8 @@ export function DobStep({ value, onChange }) {
 
   return (
     <div>
-      <StepHeading>What is your date of birth?</StepHeading>
-      <StepDescription>Required to generate an accurate quote.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.e7aed3">What is your date of birth?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.fb47ae">Required to generate an accurate quote.</T></StepDescription>
       <div className="max-w-[200px] mx-auto">
         <input
           type="text"
@@ -1075,12 +1074,12 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
 
   return (
     <div>
-      <StepHeading>What is your home address?</StepHeading>
-      <StepDescription>Used to calculate your exact rate — never shared.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.cbfea7">What is your home address?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.bb25e1">Used to calculate your exact rate — never shared.</T></StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <div>
           <label htmlFor={manualMode ? 'street' : undefined} className="block text-sm font-semibold text-gray-700 mb-1.5">
-            Street Address
+            <T k="pages.components.wizard.wizardsteps.aaff97">Street Address</T>
           </label>
           {!manualMode ? (
             <AddressAutocomplete
@@ -1121,18 +1120,18 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
             />
           ) : (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">City</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5"><T k="pages.components.wizard.wizardsteps.57d056">City</T></label>
               <div className={readOnlyClasses}>
                 {city || <span className="text-gray-400">—</span>}
               </div>
             </div>
           )}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">State</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5"><T k="pages.components.wizard.wizardsteps.46a2a4">State</T></label>
             <div className={readOnlyClasses}>{stateCode || 'GA'}</div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">ZIP</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5"><T k="pages.components.wizard.wizardsteps.4348f9">ZIP</T></label>
             <div className={readOnlyClasses}>{zip}</div>
           </div>
         </div>
@@ -1141,9 +1140,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
         {zipMismatch && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
             <p className="text-sm text-amber-800">
-              The ZIP code for this address is <span className="font-semibold">{zipMismatch.corrected}</span>,
-              but you entered <span className="font-semibold">{zipMismatch.original}</span> earlier.
-              We&apos;ll use the address ZIP for your quote.
+              <T k="pages.components.wizard.wizardsteps.d8ef21">The ZIP code for this address is</T> <span className="font-semibold">{zipMismatch.corrected}</span><T k="pages.components.wizard.wizardsteps.533ad5">, but you entered</T> <span className="font-semibold">{zipMismatch.original}</span> <T k="pages.components.wizard.wizardsteps.9bac16">earlier. We'll use the address ZIP for your quote.</T>
             </p>
           </div>
         )}
@@ -1155,7 +1152,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
             onClick={handleSwitchToManual}
             className="text-sm text-primary-600 hover:underline"
           >
-            Can&apos;t find your address? Enter it manually
+            <T k="pages.components.wizard.wizardsteps.15191a">Can't find your address? Enter it manually</T>
           </button>
         ) : (
           <button
@@ -1163,7 +1160,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
             onClick={() => setManualMode(false)}
             className="text-sm text-primary-600 hover:underline"
           >
-            Search for your address instead
+            <T k="pages.components.wizard.wizardsteps.aa8bf0">Search for your address instead</T>
           </button>
         )}
       </div>
@@ -1180,8 +1177,8 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
 
   return (
     <div>
-      <StepHeading>Where should we send your personalized quote?</StepHeading>
-      <StepDescription>{agentName || 'Your agent'} will personally review your info within minutes.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.2800c6">Where should we send your personalized quote?</T></StepHeading>
+      <StepDescription>{agentName || 'Your agent'} <T k="pages.components.wizard.wizardsteps.e41da1">will personally review your info within minutes.</T></StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <div className="grid grid-cols-2 gap-3">
           <InputField
@@ -1223,8 +1220,8 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
         />
         <div className="pt-2 border-t border-gray-100">
           <p className="text-sm font-medium text-gray-700 mb-2">
-            Were you referred by a friend or family member?{' '}
-            <span className="text-gray-400 font-normal">(optional)</span>
+            <T k="pages.components.wizard.wizardsteps.0c4afe">Were you referred by a friend or family member?</T>{' '}
+            <span className="text-gray-400 font-normal"><T k="pages.components.wizard.wizardsteps.f53d1c">(optional)</T></span>
           </p>
           <InputField
             id="referredByName"
@@ -1261,18 +1258,14 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
             />
           </div>
           <p className="text-[11px] text-gray-400 mt-1">
-            Only Georgia-resident referrers are eligible to win the prize —
-            anyone can still refer.
+            <T k="pages.components.wizard.wizardsteps.3a8e32">Only Georgia-resident referrers are eligible to win the prize — anyone can still refer.</T>
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            If someone referred you, add them so they get credit in our
-            monthly giveaway.
+            <T k="pages.components.wizard.wizardsteps.eb5c9b">If someone referred you, add them so they get credit in our monthly giveaway.</T>
           </p>
         </div>
         <p className="text-xs text-gray-500 leading-relaxed">
-          By clicking &apos;Get My Free Quote&apos;, you agree to be contacted by {brandName || 'our agency'} regarding insurance quotes via phone, SMS, and email at the number provided,
-          including through automated technology. Consent is not a condition of purchase. Msg
-          &amp; data rates may apply. Reply STOP to opt out at any time.
+          <T k="pages.components.wizard.wizardsteps.8ce279">By clicking 'Get My Free Quote', you agree to be contacted by</T> {brandName || 'our agency'} <T k="pages.components.wizard.wizardsteps.f8e459">regarding insurance quotes via phone, SMS, and email at the number provided, including through automated technology. Consent is not a condition of purchase. Msg & data rates may apply. Reply STOP to opt out at any time.</T>
         </p>
       </div>
     </div>
@@ -1330,18 +1323,18 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           <CheckCircle className="w-10 h-10 text-white" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2 leading-tight">
-          You&apos;re All Set!
+          <T k="pages.components.wizard.wizardsteps.50d1f8">You're All Set!</T>
         </h2>
         <p className="text-gray-600">
-          {agentName || 'Your agent'} will reach out within the next few minutes to walk you through your options.
+          {agentName || 'Your agent'} <T k="pages.components.wizard.wizardsteps.ae1008">will reach out within the next few minutes to walk you through your options.</T>
         </p>
       </div>
 
       {/* Savings estimate */}
       <div className="bg-success-50 border border-success-200 rounded-xl p-5 text-center">
         <p className="text-sm text-gray-600 mb-2">
-          Based on your info, {answers.ownsHome === true ? 'homeowners' : 'renters'} in{' '}
-          <span className="font-semibold text-gray-900">{answers.zip}</span> typically save:
+          <T k="pages.components.wizard.wizardsteps.846343">Based on your info,</T> {answers.ownsHome === true ? 'homeowners' : 'renters'} <T k="pages.components.wizard.wizardsteps.13b5bf">in</T>{' '}
+          <span className="font-semibold text-gray-900">{answers.zip}</span> <T k="pages.components.wizard.wizardsteps.8cd0d3">typically save:</T>
         </p>
         <p className="text-3xl font-black bg-gradient-to-r from-success-600 to-success-700 bg-clip-text text-transparent mb-2">
           {savings.range}
@@ -1357,11 +1350,11 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
         <div className="flex items-center gap-2 mb-3">
           <Zap className="w-5 h-5 text-accent-500" />
           <h3 className="font-bold text-gray-900">
-            Want Your Exact Savings — Not Just a Range?
+            <T k="pages.components.wizard.wizardsteps.49072d">Want Your Exact Savings — Not Just a Range?</T>
           </h3>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          Sync your current policy and {agentName || 'your agent'} can have your comparison ready before the call.
+          <T k="pages.components.wizard.wizardsteps.a26181">Sync your current policy and</T> {agentName || 'your agent'} <T k="pages.components.wizard.wizardsteps.59a945">can have your comparison ready before the call.</T>
         </p>
         <div className="space-y-2 mb-4">
           {[
@@ -1382,7 +1375,7 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           <div className="absolute inset-0 bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 animate-gradient-x"></div>
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-6 py-3.5 rounded-xl">
             <span className="relative z-10 text-white font-bold text-base">
-              Sync My Policy
+              <T k="pages.components.wizard.wizardsteps.03b047">Sync My Policy</T>
             </span>
             <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
           </div>
@@ -1399,9 +1392,9 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
             <span className="text-xl font-bold text-primary-600">{(agentName || 'A').charAt(0)}</span>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900">About {agentName || 'Your Agent'}</h3>
+            <h3 className="font-bold text-gray-900"><T k="pages.components.wizard.wizardsteps.8f7f4c">About</T> {agentName || 'Your Agent'}</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              {brandName || 'Your agency'} — licensed insurance agent who personally reviews every quote.
+              {brandName || 'Your agency'} <T k="pages.components.wizard.wizardsteps.2cb3c9">— licensed insurance agent who personally reviews every quote.</T>
             </p>
           </div>
         </div>
@@ -1432,10 +1425,9 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
 
   return (
     <div>
-      <StepHeading>See your exact savings before the call?</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.ef8d35">See your exact savings before the call?</T></StepHeading>
       <StepDescription>
-        Sync your {displayCarrier} policy — your agent will have your
-        coverage details ready in advance.
+        <T k="pages.components.wizard.wizardsteps.886ddc">Sync your</T> {displayCarrier} <T k="pages.components.wizard.wizardsteps.6d9135">policy — your agent will have your coverage details ready in advance.</T>
       </StepDescription>
 
       <div className="bg-gradient-to-br from-accent-50 to-white border border-accent-200 rounded-xl p-5 mb-4 max-w-sm mx-auto">
@@ -1470,7 +1462,7 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
         onClick={onSkip}
         className="w-full text-sm text-gray-400 hover:text-gray-600 py-2 transition-colors"
       >
-        Skip for now →
+        <T k="pages.components.wizard.wizardsteps.81b106">Skip for now →</T>
       </button>
     </div>
   );
@@ -1490,8 +1482,8 @@ export function HomeInsuranceStatusStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>What brings you here today?</StepHeading>
-      <StepDescription>This helps your agent prepare for your call.</StepDescription>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.082b0b">What brings you here today?</T></StepHeading>
+      <StepDescription><T k="pages.components.wizard.wizardsteps.5f4d66">This helps your agent prepare for your call.</T></StepDescription>
       <div className="flex flex-col gap-3 max-w-sm mx-auto">
         {options.map(opt => (
           <ChoiceButton
@@ -1522,9 +1514,9 @@ export function HomeOccupancyTypeStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Do you live at this property?</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.71bfa1">Do you live at this property?</T></StepHeading>
       <StepDescription>
-        Rental properties qualify for a different type of coverage.
+        <T k="pages.components.wizard.wizardsteps.a9a70e">Rental properties qualify for a different type of coverage.</T>
       </StepDescription>
       <div className="flex flex-col gap-3 max-w-sm mx-auto">
         {options.map(opt => (
@@ -1540,7 +1532,7 @@ export function HomeOccupancyTypeStep({ value, onChange, onAutoAdvance }) {
       </div>
       {value === 'rental' && (
         <p className="mt-3 text-xs text-amber-600 text-center font-medium">
-          Rental properties need a Dwelling Fire policy — your agent will cover this on the call.
+          <T k="pages.components.wizard.wizardsteps.a034ec">Rental properties need a Dwelling Fire policy — your agent will cover this on the call.</T>
         </p>
       )}
     </div>
@@ -1555,13 +1547,13 @@ export function RoofReplacedRecentlyStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Full roof replacement in the last 5 years?</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.4c343e">Full roof replacement in the last 5 years?</T></StepHeading>
       <StepDescription>
-        Partial repairs don&apos;t count — only a complete replacement.
+        <T k="pages.components.wizard.wizardsteps.cef98c">Partial repairs don't count — only a complete replacement.</T>
       </StepDescription>
       <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
-        <ChoiceButton selected={value === true}  onClick={() => handleSelect(true)}>Yes</ChoiceButton>
-        <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}>No</ChoiceButton>
+        <ChoiceButton selected={value === true}  onClick={() => handleSelect(true)}><T k="pages.components.wizard.wizardsteps.93cba0">Yes</T></ChoiceButton>
+        <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}><T k="pages.components.wizard.wizardsteps.bafd73">No</T></ChoiceButton>
       </div>
     </div>
   );
@@ -1593,15 +1585,15 @@ export function PropertyDetailsStep({ yearBuilt, squareFootage, stories, isPrefi
 
   return (
     <div>
-      <StepHeading>Tell us about your home.</StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.f09c7f">Tell us about your home.</T></StepHeading>
       {isPrefilled && (
         <StepDescription>
-          We pre-filled these from public records — please verify and correct if needed.
+          <T k="pages.components.wizard.wizardsteps.74fe60">We pre-filled these from public records — please verify and correct if needed.</T>
         </StepDescription>
       )}
       {!isPrefilled && (
         <StepDescription>
-          These details help us prepare the most accurate quote.
+          <T k="pages.components.wizard.wizardsteps.a6a328">These details help us prepare the most accurate quote.</T>
         </StepDescription>
       )}
 
@@ -1640,7 +1632,7 @@ export function PropertyDetailsStep({ yearBuilt, squareFootage, stories, isPrefi
         {/* Stories */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Number of Stories
+            <T k="pages.components.wizard.wizardsteps.c241ac">Number of Stories</T>
           </label>
           <div className="grid grid-cols-4 gap-2">
             {STORIES_OPTIONS.map(opt => (
@@ -1662,7 +1654,7 @@ export function PropertyDetailsStep({ yearBuilt, squareFootage, stories, isPrefi
           disabled={!yearBuilt || !squareFootage || !stories}
           className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Continue
+          <T k="pages.components.wizard.wizardsteps.a0bfb8">Continue</T>
         </button>
       </div>
     </div>

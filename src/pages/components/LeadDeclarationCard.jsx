@@ -4,6 +4,7 @@
 // each entry renders its own block with a link to view that original document.
 // Read-only; values may be imperfect, so a confidence flag + the original link
 // let the agent verify against source.
+import { T } from '../../components/SiteCopy';
 import { useState } from 'react';
 import { FileText, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -73,7 +74,7 @@ function DeclarationEntry({ entry }) {
             className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-800 disabled:opacity-60"
           >
             {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
-            View original
+            <T k="pages.components.leaddeclarationcard.773c80">View original</T>
           </button>
         )}
       </div>
@@ -95,7 +96,7 @@ function DeclarationEntry({ entry }) {
 
       {Array.isArray(entry.discounts) && entry.discounts.length > 0 && (
         <div className="mt-4">
-          <dt className="text-gray-500 text-sm mb-1.5">Discounts on current policy</dt>
+          <dt className="text-gray-500 text-sm mb-1.5"><T k="pages.components.leaddeclarationcard.ccfb0d">Discounts on current policy</T></dt>
           <div className="flex flex-wrap gap-1.5">
             {entry.discounts.map((d, i) => (
               <span key={i} className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">{d}</span>
@@ -107,13 +108,13 @@ function DeclarationEntry({ entry }) {
       {/* Mortgagee / lienholder — high-value competitive intel */}
       {Array.isArray(entry.mortgagees) && entry.mortgagees.length > 0 && (
         <div className="mt-4">
-          <dt className="text-gray-500 text-sm mb-1.5">Mortgagee / Lienholder</dt>
+          <dt className="text-gray-500 text-sm mb-1.5"><T k="pages.components.leaddeclarationcard.bd32f9">Mortgagee / Lienholder</T></dt>
           <ul className="space-y-1.5">
             {entry.mortgagees.map((m, i) => (
               <li key={i} className="text-sm text-gray-900">
                 <span className="font-medium">{m.lender_name || 'Lender'}</span>
                 {m.position && <span className="text-gray-400 font-normal"> · {m.position}</span>}
-                {m.loan_number && <span className="text-gray-400 font-normal"> · Loan {m.loan_number}</span>}
+                {m.loan_number && <span className="text-gray-400 font-normal"> <T k="pages.components.leaddeclarationcard.c9e032">· Loan</T> {m.loan_number}</span>}
                 {m.address && <div className="text-xs text-gray-500">{m.address}</div>}
               </li>
             ))}
@@ -124,7 +125,7 @@ function DeclarationEntry({ entry }) {
       {/* Home / dwelling coverages (Coverage A–F) */}
       {entry.property && Object.values(entry.property).some((v) => v != null) && (
         <div className="mt-4">
-          <dt className="text-gray-500 text-sm mb-2">Home Coverages &amp; Property</dt>
+          <dt className="text-gray-500 text-sm mb-2"><T k="pages.components.leaddeclarationcard.261ec2">Home Coverages & Property</T></dt>
           <dl className="grid grid-cols-2 gap-3">
             <Field label="A · Dwelling" value={entry.property.dwelling_coverage_a} />
             <Field label="B · Other Structures" value={entry.property.other_structures_b} />
@@ -147,12 +148,12 @@ function DeclarationEntry({ entry }) {
 
       {Array.isArray(entry.vehicles) && entry.vehicles.length > 0 && (
         <div className="mt-4">
-          <dt className="text-gray-500 text-sm mb-1">Vehicles</dt>
+          <dt className="text-gray-500 text-sm mb-1"><T k="pages.components.leaddeclarationcard.834671">Vehicles</T></dt>
           <ul className="space-y-1.5">
             {entry.vehicles.map((v, i) => (
               <li key={i} className="text-sm text-gray-900">
                 <span className="font-medium">{[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'}</span>
-                {v.vin && <span className="text-gray-400 font-normal"> · VIN {v.vin}</span>}
+                {v.vin && <span className="text-gray-400 font-normal"> <T k="pages.components.leaddeclarationcard.e54c56">· VIN</T> {v.vin}</span>}
                 {(v.lienholder || v.finance_type || v.primary_use || v.annual_mileage != null) && (
                   <div className="text-xs text-gray-500">
                     {[
@@ -171,12 +172,12 @@ function DeclarationEntry({ entry }) {
 
       {Array.isArray(entry.drivers) && entry.drivers.length > 0 && (
         <div className="mt-4">
-          <dt className="text-gray-500 text-sm mb-1">Drivers</dt>
+          <dt className="text-gray-500 text-sm mb-1"><T k="pages.components.leaddeclarationcard.8e64a6">Drivers</T></dt>
           <ul className="space-y-1">
             {entry.drivers.map((d, i) => (
               <li key={i} className="text-sm font-medium text-gray-900">
                 {d.name || 'Driver'}
-                {d.date_of_birth && <span className="text-gray-400 font-normal"> · DOB {d.date_of_birth}</span>}
+                {d.date_of_birth && <span className="text-gray-400 font-normal"> <T k="pages.components.leaddeclarationcard.3159a0">· DOB</T> {d.date_of_birth}</span>}
                 {d.relationship && <span className="text-gray-400 font-normal"> · {d.relationship}</span>}
               </li>
             ))}
@@ -186,7 +187,7 @@ function DeclarationEntry({ entry }) {
 
       {Array.isArray(entry.coverages) && entry.coverages.length > 0 && (
         <div className="mt-4">
-          <dt className="text-gray-500 text-sm mb-2">Coverages</dt>
+          <dt className="text-gray-500 text-sm mb-2"><T k="pages.components.leaddeclarationcard.3d7422">Coverages</T></dt>
           <div className="overflow-hidden rounded-lg border border-gray-100">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-gray-100">
@@ -236,13 +237,13 @@ export default function LeadDeclarationCard({ lead }) {
         <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
           <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800">
-            A document couldn&apos;t be read automatically. The original is on file — open it to review manually.
+            <T k="pages.components.leaddeclarationcard.92c6fc">A document couldn't be read automatically. The original is on file — open it to review manually.</T>
           </p>
         </div>
       )}
 
       {status === 'pending' && declarations.length === 0 && (
-        <p className="text-sm text-gray-500">Document uploaded — extraction in progress.</p>
+        <p className="text-sm text-gray-500"><T k="pages.components.leaddeclarationcard.8bc9d1">Document uploaded — extraction in progress.</T></p>
       )}
 
       {declarations.length > 0 && (

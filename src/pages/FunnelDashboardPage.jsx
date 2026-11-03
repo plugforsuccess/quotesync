@@ -1,6 +1,7 @@
 // src/pages/FunnelDashboardPage.jsx
 // Funnel Performance Dashboard — main page component
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, List, AlertCircle, Users, Phone } from 'lucide-react';
@@ -46,9 +47,9 @@ const FunnelDashboardPage = () => {
       <div className="dark-page flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}>No Agency Access</h2>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.funneldashboardpage.e952ec">No Agency Access</T></h2>
           <p style={{ color: 'var(--qs-dim)' }}>
-            You are not currently associated with an agency. Please contact support if you believe this is an error.
+            <T k="pages.funneldashboardpage.91f7bf">You are not currently associated with an agency. Please contact support if you believe this is an error.</T>
           </p>
         </div>
       </div>
@@ -63,7 +64,7 @@ const FunnelDashboardPage = () => {
           <div>
             <div className="flex items-center gap-3">
               <BarChart3 className="w-6 h-6 text-primary-600" />
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Funnel Dashboard</h1>
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.funneldashboardpage.4ad5af">Funnel Dashboard</T></h1>
             </div>
             <div className="flex items-center gap-4 mt-2">
               <p style={{ color: 'var(--qs-dim)' }}>{currentAgency.agencies?.name || 'Agency'}</p>
@@ -72,7 +73,7 @@ const FunnelDashboardPage = () => {
                 className="text-sm text-primary-600 hover:text-primary-800 inline-flex items-center gap-1"
               >
                 <List className="w-4 h-4" />
-                View Lead Pipeline
+                <T k="pages.funneldashboardpage.986b2a">View Lead Pipeline</T>
               </Link>
             </div>
           </div>
@@ -102,13 +103,13 @@ const FunnelDashboardPage = () => {
         {metricsLoading && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4" />
-            <p style={{ color: 'var(--qs-subtle)' }}>Loading dashboard metrics...</p>
+            <p style={{ color: 'var(--qs-subtle)' }}><T k="pages.funneldashboardpage.fe154b">Loading dashboard metrics...</T></p>
           </div>
         )}
 
         {error && (
           <div className="rounded-lg p-4 mb-6" style={{ background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)' }}>
-            <p className="text-sm" style={{ color: 'var(--qs-danger)' }}>Error loading metrics. Please try refreshing the page.</p>
+            <p className="text-sm" style={{ color: 'var(--qs-danger)' }}><T k="pages.funneldashboardpage.835d39">Error loading metrics. Please try refreshing the page.</T></p>
           </div>
         )}
 
@@ -142,13 +143,13 @@ const FunnelDashboardPage = () => {
                       <Users className="w-5 h-5 text-primary-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>Staffing Capacity</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}><T k="pages.funneldashboardpage.026852">Staffing Capacity</T></p>
                       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-                        {producersNeeded} producer{producersNeeded !== 1 ? 's' : ''} needed
-                        {' '}&middot; {currentProducers} active
+                        {producersNeeded} <T k="pages.funneldashboardpage.f18122">producer</T>{producersNeeded !== 1 ? 's' : ''} <T k="pages.funneldashboardpage.c0ca53">needed</T>
+                        {' '}&middot; {currentProducers} <T k="pages.funneldashboardpage.c76a5e">active</T>
                         {producersNeeded > currentProducers
-                          ? <span className="text-red-600 font-medium"> &middot; Gap: -{producersNeeded - currentProducers}</span>
-                          : <span className="text-green-600 font-medium"> &middot; Comfortable</span>
+                          ? <span className="text-red-600 font-medium"> <T k="pages.funneldashboardpage.36e58c">· Gap: -</T>{producersNeeded - currentProducers}</span>
+                          : <span className="text-green-600 font-medium"> <T k="pages.funneldashboardpage.a773e6">· Comfortable</T></span>
                         }
                       </p>
                     </div>
@@ -157,7 +158,7 @@ const FunnelDashboardPage = () => {
                     to="/admin/staff-performance?tab=capacity"
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
                   >
-                    View Capacity &rarr;
+                    <T k="pages.funneldashboardpage.168b4a">View Capacity →</T>
                   </Link>
                 </div>
               );
@@ -200,9 +201,9 @@ function TeamAvailabilityPanel({ agencyId }) {
       <div className="dark-card">
         <div className="flex items-center gap-3 mb-4">
           <Phone className="w-5 h-5 text-primary-600" />
-          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>Team Availability</h3>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.funneldashboardpage.1b65f9">Team Availability</T></h3>
         </div>
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading...</p>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.funneldashboardpage.8524de">Loading...</T></p>
       </div>
     );
   }
@@ -212,9 +213,9 @@ function TeamAvailabilityPanel({ agencyId }) {
       <div className="dark-card">
         <div className="flex items-center gap-3 mb-4">
           <Phone className="w-5 h-5 text-primary-600" />
-          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>Team Availability</h3>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.funneldashboardpage.1b65f9">Team Availability</T></h3>
         </div>
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No team members have set up availability yet.</p>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.funneldashboardpage.bd63ba">No team members have set up availability yet.</T></p>
       </div>
     );
   }
@@ -224,12 +225,12 @@ function TeamAvailabilityPanel({ agencyId }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Phone className="w-5 h-5 text-primary-600" />
-          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>Team Availability</h3>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.funneldashboardpage.1b65f9">Team Availability</T></h3>
         </div>
         <span className="text-sm font-medium" style={{
           color: availableCount > 0 ? '#22C55E' : 'var(--qs-subtle)',
         }}>
-          {availableCount} available
+          {availableCount} <T k="pages.funneldashboardpage.e4894c">available</T>
         </span>
       </div>
 

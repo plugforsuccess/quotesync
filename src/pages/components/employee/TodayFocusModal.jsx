@@ -3,6 +3,7 @@
 // Opened by clicking the strip. Pulls the names behind the worked/reached/saved
 // counts so the rep (or principal) can see the actual customers.
 
+import { T } from '../../../components/SiteCopy';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
@@ -22,7 +23,7 @@ function Section({ title, color, items, renderRight, onOpen }) {
         {title} ({items.length})
       </div>
       {items.length === 0 ? (
-        <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>None yet today.</div>
+        <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}><T k="pages.components.employee.todayfocusmodal.d6ed99">None yet today.</T></div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {items.map((it, i) => {
@@ -133,18 +134,18 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose, onOpenC
         background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 14,
         padding: '20px 22px', maxHeight: '78vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--qs-bright)' }}>Today's activity</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--qs-bright)' }}><T k="pages.components.employee.todayfocusmodal.cad51f">Today's activity</T></div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--qs-dim)',
             fontSize: 18, lineHeight: 1, cursor: 'pointer' }}>✕</button>
         </div>
 
         {isLoading || !data ? (
-          <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>Loading…</div>
+          <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}><T k="pages.components.employee.todayfocusmodal.5f02f0">Loading…</T></div>
         ) : (
           <>
             <Section title="🎉 Saved" color="#10B981" items={data.saved} onOpen={onOpenCase}
               renderRight={(it) => (
-                <span style={{ color: '#10B981', fontWeight: 700, fontSize: 12 }}>{fmt$(it.premium)} kept</span>
+                <span style={{ color: '#10B981', fontWeight: 700, fontSize: 12 }}>{fmt$(it.premium)} <T k="pages.components.employee.todayfocusmodal.4d8b60">kept</T></span>
               )} />
             <Section title="✅ Reached (proactive)" color="#10B981" items={data.reached} onOpen={onOpenCase} />
             <Section title="📲 Inbound — they called us" color="#60A5FA" items={data.inbound} onOpen={onOpenCase} />

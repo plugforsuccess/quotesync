@@ -66,7 +66,7 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
           ))}
         </ul>
       )}
-      {reasons.length === 0 && !action && notes.length === 0 && <p className="mt-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>Nothing on the page needs special handling.</p>}
+      {reasons.length === 0 && !action && notes.length === 0 && <p className="mt-1 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.decisioncard.33aaed">Nothing on the page needs special handling.</T></p>}
 
       {notes.map((r, i) => (
         <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>
@@ -97,13 +97,13 @@ function StillToAsk({ rc, questions }) {
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>Still to ask</p>
-        {done && <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--qs-success)' }}><Check className="h-3.5 w-3.5" aria-hidden="true" /> All info collected</span>}
+        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.decisioncard.af77ad">Still to ask</T></p>
+        {done && <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--qs-success)' }}><Check className="h-3.5 w-3.5" aria-hidden="true" /> <T k="pages.components.ratechecks.decisioncard.e4b516">All info collected</T></span>}
       </div>
       <ul className="mt-1.5 space-y-2">
         {questions.map(q => <Question key={q} q={q} a={answers[q]} onSave={(patch) => save(q, patch)} />)}
       </ul>
-      {error && <p className="mt-1 text-xs text-red-500" role="alert">Couldn&apos;t save: {error}</p>}
+      {error && <p className="mt-1 text-xs text-red-500" role="alert"><T k="pages.components.ratechecks.decisioncard.da1a84">Couldn't save:</T> {error}</p>}
     </div>
   );
 }
@@ -156,7 +156,7 @@ function Question({ q, a, onSave }) {
                 aria-label={`${label}: details`} className="min-w-0 flex-1 rounded-md px-2 py-2 text-sm"
                 style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }} />
               <button type="button" onClick={() => { onSave({ details: details.trim() || null }); setOpen(false); }}
-                className="rounded-md bg-primary-600 px-3 text-sm font-semibold text-white">Done</button>
+                className="rounded-md bg-primary-600 px-3 text-sm font-semibold text-white"><T k="pages.components.ratechecks.decisioncard.f92965">Done</T></button>
             </div>
           )}
         </>

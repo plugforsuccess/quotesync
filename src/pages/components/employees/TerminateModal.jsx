@@ -1,6 +1,7 @@
 // src/pages/components/employees/TerminateModal.jsx
 // Confirmation dialog for terminating an employee.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useCallback } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 
@@ -50,7 +51,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
           <div className="border-b border-qs-border pb-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-600" />
-              <h3 className="text-lg font-semibold text-qs-bright">Terminate Employee</h3>
+              <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.employees.terminatemodal.16f7bb">Terminate Employee</T></h3>
             </div>
             <button onClick={onClose} className="text-qs-muted hover:text-qs-subtle min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
               <X className="w-5 h-5" />
@@ -60,12 +61,11 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <p className="text-sm text-qs-dim">
-                You are about to terminate <span className="font-semibold text-qs-bright">{displayName} {employee.last_name}</span>.
-                This will mark them as terminated but preserve all historical data.
+                <T k="pages.components.employees.terminatemodal.ad619a">You are about to terminate</T> <span className="font-semibold text-qs-bright">{displayName} {employee.last_name}</span><T k="pages.components.employees.terminatemodal.bc689d">. This will mark them as terminated but preserve all historical data.</T>
               </p>
 
               <div>
-                <label className="dark-label">Termination Date</label>
+                <label className="dark-label"><T k="pages.components.employees.terminatemodal.7ffb09">Termination Date</T></label>
                 <input
                   type="date"
                   required
@@ -76,7 +76,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
               </div>
 
               <div>
-                <label className="dark-label">Reason (optional)</label>
+                <label className="dark-label"><T k="pages.components.employees.terminatemodal.170556">Reason (optional)</T></label>
                 <textarea
                   value={terminationReason}
                   onChange={(e) => setTerminationReason(e.target.value)}
@@ -93,7 +93,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
               >
-                Cancel
+                <T k="pages.components.employees.terminatemodal.ea4788">Cancel</T>
               </button>
               <button
                 type="submit"

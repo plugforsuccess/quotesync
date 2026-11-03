@@ -2,6 +2,7 @@
 // The household view — every policy-bearing record for one customer, across
 // new business, renewals, pending cancels, and terminations. Reached by
 // clicking a result in Customer Search.
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, Link, useLocation } from 'react-router-dom';
@@ -172,7 +173,7 @@ export default function HouseholdDetailPage() {
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '8px 0' }}>
       <Link to={backTo} style={{ fontSize: 13, color: '#3B82F6', textDecoration: 'none' }}>
-        ← Customer Search
+        <T k="pages.householddetailpage.3c71d2">← Customer Search</T>
       </Link>
 
       <div style={{ marginTop: 12, marginBottom: 20 }}>
@@ -198,20 +199,20 @@ export default function HouseholdDetailPage() {
         </div>
         <div style={{ fontSize: 12, marginTop: 4, color: lastTouch ? 'var(--qs-dim)' : 'var(--qs-muted)' }}>
           {lastTouch
-            ? <>Last touched {new Date(lastTouch.touched_at).toLocaleDateString()}{lastTouch.employee_name ? ` by ${lastTouch.employee_name}` : ''} · {lastTouch.source.replace('_', '-')}{lastTouch.result ? ` (${lastTouch.result.replace(/_/g, ' ')})` : ''}{lastTouch.direction === 'inbound' ? ' · customer called in' : ''}</>
+            ? <><T k="pages.householddetailpage.8aa5fd">Last touched</T> {new Date(lastTouch.touched_at).toLocaleDateString()}{lastTouch.employee_name ? ` by ${lastTouch.employee_name}` : ''} · {lastTouch.source.replace('_', '-')}{lastTouch.result ? ` (${lastTouch.result.replace(/_/g, ' ')})` : ''}{lastTouch.direction === 'inbound' ? ' · customer called in' : ''}</>
             : 'Never touched — no logged contact on any queue.'}
         </div>
         {household && (
           <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13 }}>
             <span>
-              <span style={{ color: 'var(--qs-muted)' }}>Active: </span>
+              <span style={{ color: 'var(--qs-muted)' }}><T k="pages.householddetailpage.3d091e">Active:</T> </span>
               {household.active_products?.length
                 ? <span style={{ color: '#34D399', fontWeight: 600 }}>{household.active_products.map(label).join(', ')}</span>
-                : <span style={{ color: 'var(--qs-muted)' }}>none</span>}
+                : <span style={{ color: 'var(--qs-muted)' }}><T k="pages.householddetailpage.334c4a">none</T></span>}
             </span>
             {household.lost_products?.length > 0 && (
               <span>
-                <span style={{ color: 'var(--qs-muted)' }}>Lost: </span>
+                <span style={{ color: 'var(--qs-muted)' }}><T k="pages.householddetailpage.73cac0">Lost:</T> </span>
                 <span style={{ color: '#F87171' }}>{household.lost_products.map(label).join(', ')}</span>
               </span>
             )}
@@ -222,13 +223,13 @@ export default function HouseholdDetailPage() {
             {renewedCount > 0 && (
               <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 11px', borderRadius: 999,
                 background: 'rgba(52,211,153,0.14)', border: '1px solid rgba(52,211,153,0.35)', color: '#34D399' }}>
-                ✅ {renewedCount} renewed
+                ✅ {renewedCount} <T k="pages.householddetailpage.758f0e">renewed</T>
               </span>
             )}
             {cancelSavedCount > 0 && (
               <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 11px', borderRadius: 999,
                 background: 'rgba(52,211,153,0.14)', border: '1px solid rgba(52,211,153,0.35)', color: '#34D399' }}>
-                💚 {cancelSavedCount} cancel save{cancelSavedCount === 1 ? '' : 's'}
+                💚 {cancelSavedCount} <T k="pages.householddetailpage.3785b6">cancel save</T>{cancelSavedCount === 1 ? '' : 's'}
               </span>
             )}
           </div>
@@ -242,7 +243,7 @@ export default function HouseholdDetailPage() {
             fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
             textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10,
           }}>
-            Service requests ({openTasks.length} open)
+            <T k="pages.householddetailpage.a14fff">Service requests (</T>{openTasks.length} <T k="pages.householddetailpage.65669f">open)</T>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {(showResolved ? serviceTasks : openTasks).map(t => {
@@ -302,11 +303,11 @@ export default function HouseholdDetailPage() {
       )}
 
       {isLoading && (
-        <div style={{ color: 'var(--qs-muted)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>Loading…</div>
+        <div style={{ color: 'var(--qs-muted)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}><T k="pages.householddetailpage.5f02f0">Loading…</T></div>
       )}
       {!isLoading && records.length === 0 && (
         <div style={{ color: 'var(--qs-muted)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>
-          No records found for this household.
+          <T k="pages.householddetailpage.d1fd63">No records found for this household.</T>
         </div>
       )}
 
@@ -348,7 +349,7 @@ export default function HouseholdDetailPage() {
               <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--qs-dim)', flexShrink: 0, alignItems: 'center' }}>
                 <span style={{ fontFamily: "'DM Mono', monospace" }}>{fmt$(r.premium)}</span>
                 <span>{fmtDate(r.record_date)}</span>
-                {openable && <span style={{ color: '#3B82F6' }}>Open →</span>}
+                {openable && <span style={{ color: '#3B82F6' }}><T k="pages.householddetailpage.a96b08">Open →</T></span>}
               </div>
             </div>
           );
@@ -362,7 +363,7 @@ export default function HouseholdDetailPage() {
             fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
             textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10,
           }}>
-            Touch history ({touches.length})
+            <T k="pages.householddetailpage.991159">Touch history (</T>{touches.length})
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {touches.map((t, i) => {
@@ -407,7 +408,7 @@ export default function HouseholdDetailPage() {
                     {t.method && t.method !== 'phone' ? ` · ${t.method}` : ''}
                   </span>
                   {t.employee_name && (
-                    <span style={{ color: 'var(--qs-subtle)' }}>by {t.employee_name}</span>
+                    <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.householddetailpage.df3f07">by</T> {t.employee_name}</span>
                   )}
                   {/* Tactic tags — required on reached calls, so show them here:
                       a tagged call without a free-text note is not an empty one. */}

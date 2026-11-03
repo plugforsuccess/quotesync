@@ -2,6 +2,7 @@
 // Displays upload reminder banners on the Retention page.
 // Shows due/overdue reminders with upload order guidance.
 
+import { T } from '../../../components/SiteCopy';
 import { Bell, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { useState } from 'react';
 
@@ -40,7 +41,7 @@ export default function UploadReminderBanner({ reminders }) {
             {hasOverdue ? 'Overdue uploads' : 'Uploads due'}
             {' — '}
             <span style={{ fontWeight: 400, color: 'var(--qs-subtle)' }}>
-              upload in the order shown below
+              <T k="pages.components.retention.uploadreminderbanner.a84aef">upload in the order shown below</T>
             </span>
           </span>
         </div>
@@ -48,7 +49,7 @@ export default function UploadReminderBanner({ reminders }) {
           onClick={() => setDismissed(true)}
           style={{ fontSize: 11, color: 'var(--qs-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
         >
-          Dismiss
+          <T k="pages.components.retention.uploadreminderbanner.c8a59e">Dismiss</T>
         </button>
       </div>
 
@@ -97,14 +98,14 @@ export default function UploadReminderBanner({ reminders }) {
       {current.length > 0 && (
         <div style={{ marginTop: 8, fontSize: 11, color: 'var(--qs-muted)' }}>
           <CheckCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
-          Already uploaded this month:{' '}
+          <T k="pages.components.retention.uploadreminderbanner.27710b">Already uploaded this month:</T>{' '}
           {current.map(r => r.label).join(', ')}
         </div>
       )}
 
       {/* Upload sequence reminder */}
       <div style={{ marginTop: 10, fontSize: 11, color: 'var(--qs-muted)', borderTop: '1px solid var(--qs-border)', paddingTop: 8 }}>
-        Correct upload order: ① Termination → ② Cancellation Audit → ③ Pending Cancel → ④ Renewal
+        <T k="pages.components.retention.uploadreminderbanner.e1df04">Correct upload order: ① Termination → ② Cancellation Audit → ③ Pending Cancel → ④ Renewal</T>
       </div>
     </div>
   );

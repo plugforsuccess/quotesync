@@ -2,6 +2,7 @@
 // Admin panel for resolving unmatched agent names from call log uploads.
 // Maps RC display names (aliases) to employees and optionally backfills past calls.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { UserX, Link2, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 import {
@@ -141,9 +142,9 @@ export default function AgentAliasManager({ orgId, employees }) {
       <div className="flex items-center gap-3 mb-4">
         <UserX className="w-6 h-6 text-amber-400" />
         <div>
-          <h3 className="text-lg font-semibold text-qs-bright">Agent Name Mapping</h3>
+          <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.agentaliasmanager.74dd69">Agent Name Mapping</T></h3>
           <p className="text-sm text-qs-subtle">
-            Resolve unmatched agent names from call log uploads. Aliases persist across future uploads.
+            <T k="pages.components.timeattendance.agentaliasmanager.9858c9">Resolve unmatched agent names from call log uploads. Aliases persist across future uploads.</T>
           </p>
         </div>
       </div>
@@ -164,7 +165,7 @@ export default function AgentAliasManager({ orgId, employees }) {
       {hasUnmatched && (
         <div className="mb-6">
           <h4 className="text-sm font-semibold text-qs-text mb-2">
-            Unmatched Agents ({unmatchedAgents.length})
+            <T k="pages.components.timeattendance.agentaliasmanager.ca2939">Unmatched Agents (</T>{unmatchedAgents.length})
           </h4>
           <div className="space-y-2">
             {unmatchedAgents.map(({ name, nameKey, count }) => (
@@ -174,7 +175,7 @@ export default function AgentAliasManager({ orgId, employees }) {
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-qs-bright truncate">{name}</p>
-                  <p className="text-xs text-qs-subtle">{count} call{count !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-qs-subtle">{count} <T k="pages.components.timeattendance.agentaliasmanager.53b9e9">call</T>{count !== 1 ? 's' : ''}</p>
                 </div>
                 <select
                   value={selectedMapping[name] || ''}
@@ -195,7 +196,7 @@ export default function AgentAliasManager({ orgId, employees }) {
                     onChange={(e) => setBackfillChecked((prev) => ({ ...prev, [name]: e.target.checked }))}
                     className="rounded border-qs-border text-primary-400 focus:ring-primary-500"
                   />
-                  Backfill
+                  <T k="pages.components.timeattendance.agentaliasmanager.7c2eb7">Backfill</T>
                 </label>
                 <button
                   onClick={() => handleSaveAlias(name, nameKey)}
@@ -215,16 +216,16 @@ export default function AgentAliasManager({ orgId, employees }) {
       {hasAliases && (
         <div>
           <h4 className="text-sm font-semibold text-qs-text mb-2">
-            Active Aliases ({aliases.length})
+            <T k="pages.components.timeattendance.agentaliasmanager.2ba47e">Active Aliases (</T>{aliases.length})
           </h4>
           <div className="overflow-x-auto border border-qs-border rounded-lg">
             <table className="w-full text-sm">
               <thead className="bg-qs-elevated">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Alias</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Mapped To</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Source</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Actions</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.agentaliasmanager.effdb9">Alias</T></th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.agentaliasmanager.6d3ccc">Mapped To</T></th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.agentaliasmanager.f31bbd">Source</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.agentaliasmanager.06df33">Actions</T></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-qs-border">

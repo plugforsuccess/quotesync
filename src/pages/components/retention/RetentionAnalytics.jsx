@@ -1,6 +1,7 @@
 // src/pages/components/retention/RetentionAnalytics.jsx
 // Extracted from BookHealthPage.jsx — analytics/reporting tabs.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LineChart, ReferenceLine, Cell } from "recharts";
 import { useQuery } from "@tanstack/react-query";
@@ -162,14 +163,14 @@ function ResolvedTab({ resolvedEvents }) {
         <table style={{ minWidth: 800 }}>
           <thead>
             <tr>
-              <th>Resolution Date</th>
-              <th>Customer</th>
-              <th>Policy</th>
-              <th>Product</th>
-              <th>Premium</th>
-              <th>Status</th>
-              <th>Assigned</th>
-              <th>Notes</th>
+              <th><T k="pages.components.retention.retentionanalytics.d2ecc1">Resolution Date</T></th>
+              <th><T k="pages.components.retention.retentionanalytics.ce2660">Customer</T></th>
+              <th><T k="pages.components.retention.retentionanalytics.51359e">Policy</T></th>
+              <th><T k="pages.components.retention.retentionanalytics.deb105">Product</T></th>
+              <th><T k="pages.components.retention.retentionanalytics.8d5e7e">Premium</T></th>
+              <th><T k="pages.components.retention.retentionanalytics.ec53a8">Status</T></th>
+              <th><T k="pages.components.retention.retentionanalytics.b12715">Assigned</T></th>
+              <th><T k="pages.components.retention.retentionanalytics.f4c6f8">Notes</T></th>
             </tr>
           </thead>
           <tbody>
@@ -198,7 +199,7 @@ function ResolvedTab({ resolvedEvents }) {
             })}
             {resolvedEvents.length === 0 && (
               <tr><td colSpan={8} style={{ textAlign: "center", color: "var(--qs-muted)", padding: "32px 0" }}>
-                No resolved events yet
+                <T k="pages.components.retention.retentionanalytics.23859e">No resolved events yet</T>
               </td></tr>
             )}
           </tbody>
@@ -213,14 +214,14 @@ function TrendsTab({ trendsData }) {
   if (trendsData.length === 0) {
     return (
       <div style={{ textAlign: "center", color: "var(--qs-muted)", padding: "48px 0" }}>
-        No data yet. Upload reports to see trends.
+        <T k="pages.components.retention.retentionanalytics.f2fc1d">No data yet. Upload reports to see trends.</T>
       </div>
     );
   }
 
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 16 }}>Monthly Cancel Volume & Save Rate</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 16 }}><T k="pages.components.retention.retentionanalytics.fb487f">Monthly Cancel Volume & Save Rate</T></div>
       <div className="card" style={{ padding: "20px 12px" }}>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={trendsData}>
@@ -313,9 +314,8 @@ function AttritionTab({ agencyId, currentUserId }) {
               : `✓ Attrition decreased vs prior month`}
           </div>
           <div style={{ fontSize: 12, color: "var(--qs-subtle)" }}>
-            {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} items · {gapAnalysis.priorPoints} pts lost &nbsp;→&nbsp;
-            {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} items · {gapAnalysis.currentPoints} pts lost
-            &nbsp;({gapAnalysis.pointsDelta >= 0 ? "+" : ""}{gapAnalysis.pointsDelta} pts)
+            {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} <T k="pages.components.retention.retentionanalytics.4e7804">items ·</T> {gapAnalysis.priorPoints} <T k="pages.components.retention.retentionanalytics.c6facd">pts lost  → </T>
+            {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} <T k="pages.components.retention.retentionanalytics.4e7804">items ·</T> {gapAnalysis.currentPoints} <T k="pages.components.retention.retentionanalytics.168543">pts lost  (</T>{gapAnalysis.pointsDelta >= 0 ? "+" : ""}{gapAnalysis.pointsDelta} <T k="pages.components.retention.retentionanalytics.7c4cea">pts)</T>
           </div>
         </div>
       )}
@@ -335,27 +335,27 @@ function AttritionTab({ agencyId, currentUserId }) {
         }}>
           <span>⚠</span>
           <span>
-            {gapAnalysis.currentMonth} is in progress ({gapAnalysis.daysIntoMonth} days in) — comparison will change as the month completes.
+            {gapAnalysis.currentMonth} <T k="pages.components.retention.retentionanalytics.7fef71">is in progress (</T>{gapAnalysis.daysIntoMonth} <T k="pages.components.retention.retentionanalytics.c8bf76">days in) — comparison will change as the month completes.</T>
           </span>
         </div>
       )}
 
       {/* Monthly Summary Table */}
       {loading ? (
-        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 20 }}>Loading attrition history\u2026</div>
+        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 20 }}><T k="pages.components.retention.retentionanalytics.e110c8">Loading attrition history\u2026</T></div>
       ) : monthlySummary.length > 0 ? (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Attrition History</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}><T k="pages.components.retention.retentionanalytics.89ba1f">Attrition History</T></div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ minWidth: 500 }}>
               <thead>
                 <tr>
-                  <th>Month</th>
-                  <th>Items Lost</th>
-                  <th>Points Lost</th>
-                  <th>Premium Lost</th>
-                  <th>MoM Items</th>
-                  <th>MoM Points</th>
+                  <th><T k="pages.components.retention.retentionanalytics.7cbb88">Month</T></th>
+                  <th><T k="pages.components.retention.retentionanalytics.90d507">Items Lost</T></th>
+                  <th><T k="pages.components.retention.retentionanalytics.dc7609">Points Lost</T></th>
+                  <th><T k="pages.components.retention.retentionanalytics.9c15c1">Premium Lost</T></th>
+                  <th><T k="pages.components.retention.retentionanalytics.174c43">MoM Items</T></th>
+                  <th><T k="pages.components.retention.retentionanalytics.348225">MoM Points</T></th>
                 </tr>
               </thead>
               <tbody>
@@ -383,11 +383,11 @@ function AttritionTab({ agencyId, currentUserId }) {
           </div>
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>No attrition history yet. Upload your first report below.</div>
+        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}><T k="pages.components.retention.retentionanalytics.853268">No attrition history yet. Upload your first report below.</T></div>
       )}
 
       {/* Upload Section — delegated to shared component */}
-      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Upload Termination Report</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}><T k="pages.components.retention.retentionanalytics.7082ad">Upload Termination Report</T></div>
       <TerminationUploadZone agencyId={agencyId} currentUserId={currentUserId} />
     </div>
   );
@@ -460,13 +460,13 @@ function NetGrowthTab({ agencyId }) {
   });
 
   if (loading) {
-    return <div style={{ color: "var(--qs-subtle)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>Loading…</div>;
+    return <div style={{ color: "var(--qs-subtle)", fontSize: 13, textAlign: "center", padding: "40px 0" }}><T k="pages.components.retention.retentionanalytics.5f02f0">Loading…</T></div>;
   }
 
   if (months.length === 0) {
     return (
       <div style={{ color: "var(--qs-subtle)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
-        No data yet — upload New Business and Termination reports to see portfolio growth.
+        <T k="pages.components.retention.retentionanalytics.f5f297">No data yet — upload New Business and Termination reports to see portfolio growth.</T>
       </div>
     );
   }
@@ -515,19 +515,19 @@ function NetGrowthTab({ agencyId }) {
       {/* Summary Strip */}
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
         <div style={{ flex: 1, background: "var(--qs-elevated)", borderRadius: 10, padding: "16px 20px" }}>
-          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Gained</div>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}><T k="pages.components.retention.retentionanalytics.fda126">Points Gained</T></div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-success)" }}>
             {cur && cur.nb_points > 0 ? cur.nb_points.toLocaleString() : "—"}
           </div>
         </div>
         <div style={{ flex: 1, background: "var(--qs-elevated)", borderRadius: 10, padding: "16px 20px" }}>
-          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Lost</div>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}><T k="pages.components.retention.retentionanalytics.dc7609">Points Lost</T></div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-danger)" }}>
             {cur && cur.lapse_points > 0 ? cur.lapse_points.toLocaleString() : "—"}
           </div>
         </div>
         <div style={{ flex: 1, background: "var(--qs-elevated)", borderRadius: 10, padding: "16px 20px" }}>
-          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Net Points</div>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}><T k="pages.components.retention.retentionanalytics.98a58f">Net Points</T></div>
           {/* Dynamic color — used as style prop */}
           <div style={{ fontSize: 22, fontWeight: 700, color: cur ? (cur.net_points > 0 ? "var(--qs-success)" : cur.net_points < 0 ? "var(--qs-danger)" : "var(--qs-subtle)") : "var(--qs-subtle)" }}>
             {cur ? cur.net_points.toLocaleString() : "—"}
@@ -597,16 +597,16 @@ function NetGrowthTab({ agencyId }) {
         <table>
           <thead>
             <tr>
-              <th>Month</th>
-              <th style={{ textAlign: "right" }}>Points Gained</th>
-              <th style={{ textAlign: "right" }}>Points Lost</th>
-              <th style={{ textAlign: "right" }}>Net Points</th>
-              <th style={{ textAlign: "right" }}>Net Items</th>
-              <th style={{ textAlign: "right" }}>Net YTD</th>
-              <th style={{ textAlign: "right" }}>Items In</th>
-              <th style={{ textAlign: "right" }}>Items Out</th>
-              <th style={{ textAlign: "right" }}>Premium In</th>
-              <th style={{ textAlign: "right" }}>Premium Lost</th>
+              <th><T k="pages.components.retention.retentionanalytics.7cbb88">Month</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.fda126">Points Gained</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.dc7609">Points Lost</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.98a58f">Net Points</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.2a4f99">Net Items</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.fa4e73">Net YTD</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.38053e">Items In</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.d49f86">Items Out</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.6c1c9b">Premium In</T></th>
+              <th style={{ textAlign: "right" }}><T k="pages.components.retention.retentionanalytics.9c15c1">Premium Lost</T></th>
             </tr>
           </thead>
           <tbody>
@@ -650,7 +650,7 @@ function NetGrowthTab({ agencyId }) {
           </tbody>
           <tfoot>
             <tr style={{ borderTop: "2px solid var(--qs-border)", fontWeight: 600 }}>
-              <td style={{ color: "var(--qs-text)" }}>Total</td>
+              <td style={{ color: "var(--qs-text)" }}><T k="pages.components.retention.retentionanalytics.96b014">Total</T></td>
               <td style={{ textAlign: "right", color: "var(--qs-success)" }}>{totals.nb_points.toLocaleString()}</td>
               <td style={{ textAlign: "right", color: "var(--qs-danger)" }}>{totals.lapse_points.toLocaleString()}</td>
               <td style={{ textAlign: "right", color: totals.net_points > 0 ? "var(--qs-success)" : totals.net_points < 0 ? "var(--qs-danger)" : "var(--qs-subtle)" }}>

@@ -3,6 +3,7 @@
 // Parses per-queue daily metrics from the "Queues" sheet and upserts to rc_queue_data.
 // Captures abandoned calls that never reach an agent — invisible in the Call Log.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Upload, BarChart3, AlertCircle, CheckCircle, HelpCircle } from 'lucide-react';
@@ -334,9 +335,9 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
         <div className="flex items-center gap-3">
           <BarChart3 className="w-6 h-6 text-indigo-400" />
           <div>
-            <h3 className="text-lg font-semibold text-qs-bright">Daily Queue Report Upload</h3>
+            <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.queueuploadform.39a7b9">Daily Queue Report Upload</T></h3>
             <p className="text-sm text-qs-subtle">
-              Upload the RingCentral Queues report (XLSX). Captures abandoned calls that the Call Log can't see.
+              <T k="pages.components.timeattendance.queueuploadform.5f0d8b">Upload the RingCentral Queues report (XLSX). Captures abandoned calls that the Call Log can't see.</T>
             </p>
           </div>
         </div>
@@ -350,16 +351,16 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
 
       {showHelp && (
         <div className="mb-4 p-4 bg-primary-900/20 rounded-lg text-sm text-primary-300">
-          <p className="font-medium mb-2">How to export the Queues report from RingCentral:</p>
+          <p className="font-medium mb-2"><T k="pages.components.timeattendance.queueuploadform.c946f4">How to export the Queues report from RingCentral:</T></p>
           <ol className="list-decimal list-inside space-y-1 text-primary-300 mb-3">
-            <li>Go to RingCentral Analytics &rarr; Performance Reports &rarr; Queues</li>
-            <li>Set the date range to the target day</li>
-            <li>Export as XLSX</li>
+            <li><T k="pages.components.timeattendance.queueuploadform.6a2be9">Go to RingCentral Analytics → Performance Reports → Queues</T></li>
+            <li><T k="pages.components.timeattendance.queueuploadform.281d62">Set the date range to the target day</T></li>
+            <li><T k="pages.components.timeattendance.queueuploadform.512979">Export as XLSX</T></li>
           </ol>
-          <p className="font-medium mb-2">Expected sheets:</p>
+          <p className="font-medium mb-2"><T k="pages.components.timeattendance.queueuploadform.a7dedd">Expected sheets:</T></p>
           <ul className="list-disc list-inside space-y-1 text-primary-300">
-            <li><strong>Filters</strong> &mdash; date range auto-detection</li>
-            <li><strong>Queues</strong> &mdash; per-queue breakdown (Name, # Inbound, # Answered, # Abandoned, etc.)</li>
+            <li><strong><T k="pages.components.timeattendance.queueuploadform.f3f43e">Filters</T></strong> <T k="pages.components.timeattendance.queueuploadform.5278b2">— date range auto-detection</T></li>
+            <li><strong><T k="pages.components.timeattendance.queueuploadform.af78cb">Queues</T></strong> <T k="pages.components.timeattendance.queueuploadform.00b9f3">— per-queue breakdown (Name, # Inbound, # Answered, # Abandoned, etc.)</T></li>
           </ul>
         </div>
       )}
@@ -419,12 +420,12 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
                   </div>
                   {uploaded && (
                     <div style={{ fontSize: 9, color: highAbandon ? '#EF4444' : 'var(--qs-muted)', marginTop: 2 }}>
-                      {day.abandonRate}% abn
+                      {day.abandonRate}<T k="pages.components.timeattendance.queueuploadform.41a1ef">% abn</T>
                     </div>
                   )}
                   {missing && (
                     <div style={{ fontSize: 9, color: '#EF4444', marginTop: 2 }}>
-                      missing
+                      <T k="pages.components.timeattendance.queueuploadform.ea2184">missing</T>
                     </div>
                   )}
                 </div>
@@ -435,8 +436,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
           {/* Missing days callout */}
           {weekCoverage.some(d => !d.data && d.isPast && !d.isToday) && (
             <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>
-              {'\u26A0'} {weekCoverage.filter(d => !d.data && d.isPast && !d.isToday).length} day(s)
-              missing queue uploads this week
+              {'\u26A0'} {weekCoverage.filter(d => !d.data && d.isPast && !d.isToday).length} <T k="pages.components.timeattendance.queueuploadform.0c1ffc">day(s) missing queue uploads this week</T>
             </p>
           )}
         </div>
@@ -445,7 +445,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
-          Choose XLSX
+          <T k="pages.components.timeattendance.queueuploadform.b6ccd7">Choose XLSX</T>
           <input
             ref={fileRef}
             type="file"
@@ -456,7 +456,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
         </label>
         {detectedDate && (
           <span className="text-sm text-qs-subtle">
-            Detected date: {formatDateShort(detectedDate)}
+            <T k="pages.components.timeattendance.queueuploadform.5a8434">Detected date:</T> {formatDateShort(detectedDate)}
           </span>
         )}
       </div>
@@ -468,11 +468,11 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
             <table className="w-full text-sm">
               <thead className="bg-qs-elevated">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-subtle">Queue</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">In</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Ans</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Abn</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Abn%</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.queueuploadform.722ad2">Queue</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.queueuploadform.efeb36">In</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.queueuploadform.2168c5">Ans</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.queueuploadform.7cface">Abn</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.queueuploadform.fef586">Abn%</T></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-qs-border">
@@ -490,7 +490,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
                 ))}
                 {/* Totals row */}
                 <tr className="bg-qs-elevated font-medium">
-                  <td className="px-3 py-2 text-qs-bright">Total</td>
+                  <td className="px-3 py-2 text-qs-bright"><T k="pages.components.timeattendance.queueuploadform.96b014">Total</T></td>
                   <td className="px-3 py-2 text-right text-qs-text">{totals.inbound}</td>
                   <td className="px-3 py-2 text-right text-qs-text">{totals.answered}</td>
                   <td className="px-3 py-2 text-right text-qs-text">{totals.abandoned}</td>
@@ -516,7 +516,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
           {!detectedDate && (
             <div className="mt-3 flex items-center gap-2 text-sm text-amber-300 bg-amber-900/20 border border-amber-700/40 rounded-lg p-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              Could not auto-detect report date from Filters sheet. Please verify the file is correct.
+              <T k="pages.components.timeattendance.queueuploadform.3f044c">Could not auto-detect report date from Filters sheet. Please verify the file is correct.</T>
             </div>
           )}
 
@@ -525,10 +525,9 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
             <div className="mt-3 flex items-center gap-2 text-sm text-amber-300 bg-amber-900/20 border border-amber-700/40 rounded-lg p-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>
-                <strong>No agent activity on record for {formatDateShort(detectedDate)}.</strong>{' '}
-                Queue shows {totals.inbound} inbound call{totals.inbound !== 1 ? 's' : ''} with{' '}
-                {totals.abandoned} abandoned &mdash; but no agent calls are logged for this day.
-                Verify staffing coverage.
+                <strong><T k="pages.components.timeattendance.queueuploadform.9d0d36">No agent activity on record for</T> {formatDateShort(detectedDate)}.</strong>{' '}
+                <T k="pages.components.timeattendance.queueuploadform.a56aa3">Queue shows</T> {totals.inbound} <T k="pages.components.timeattendance.queueuploadform.4dc393">inbound call</T>{totals.inbound !== 1 ? 's' : ''} <T k="pages.components.timeattendance.queueuploadform.23a58b">with</T>{' '}
+                {totals.abandoned} <T k="pages.components.timeattendance.queueuploadform.91c5b3">abandoned — but no agent calls are logged for this day. Verify staffing coverage.</T>
               </span>
             </div>
           )}
@@ -551,7 +550,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
               }}
               className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
-              Cancel
+              <T k="pages.components.timeattendance.queueuploadform.ea4788">Cancel</T>
             </button>
           </div>
         </div>

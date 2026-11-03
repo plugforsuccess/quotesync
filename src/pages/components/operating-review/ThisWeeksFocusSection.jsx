@@ -1,4 +1,5 @@
 // src/pages/components/operating-review/ThisWeeksFocusSection.jsx
+import { T } from '../../../components/SiteCopy';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -56,15 +57,15 @@ export default function ThisWeeksFocusSection({ agencyId }) {
     <section style={sectionStyle}>
       <header style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-          This week's focus
+          <T k="pages.components.operatingreview.thisweeksfocussection.8d82c3">This week's focus</T>
         </h2>
         <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 0 }}>
-          Top 5 in each lane. Assign or open. The list refreshes when work resolves.
+          <T k="pages.components.operatingreview.thisweeksfocussection.52d2a2">Top 5 in each lane. Assign or open. The list refreshes when work resolves.</T>
         </p>
       </header>
 
       {isLoading ? (
-        <div style={{ color: 'var(--qs-subtle)', padding: 16 }}>Loading focus list…</div>
+        <div style={{ color: 'var(--qs-subtle)', padding: 16 }}><T k="pages.components.operatingreview.thisweeksfocussection.7b9042">Loading focus list…</T></div>
       ) : (
         <div style={{
           display: 'grid',

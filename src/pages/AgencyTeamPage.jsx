@@ -2,6 +2,7 @@
 // MT-05: Agency Team Management Page
 // Shows all active employees with platform access status
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Users, UserPlus, Trash2, AlertCircle, Mail, Edit2 } from 'lucide-react';
@@ -141,8 +142,8 @@ export default function AgencyTeamPage() {
           <div className="flex items-center gap-3">
             <Users className="w-8 h-8 text-primary-600" />
             <div>
-              <h1 className="text-2xl font-bold text-qs-bright">Team Members</h1>
-              <p className="text-qs-subtle">Manage your agency team</p>
+              <h1 className="text-2xl font-bold text-qs-bright"><T k="pages.agencyteampage.819644">Team Members</T></h1>
+              <p className="text-qs-subtle"><T k="pages.agencyteampage.064ea9">Manage your agency team</T></p>
             </div>
           </div>
           <button
@@ -150,17 +151,17 @@ export default function AgencyTeamPage() {
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
           >
             <UserPlus className="w-4 h-4" />
-            Invite
+            <T k="pages.agencyteampage.c6a00f">Invite</T>
           </button>
         </div>
 
         {/* Invite Modal/Panel */}
         {showInvite && (
           <div className="dark-card mb-6">
-            <h3 className="text-lg font-semibold text-qs-bright mb-4">Invite Team Member</h3>
+            <h3 className="text-lg font-semibold text-qs-bright mb-4"><T k="pages.agencyteampage.f1ff27">Invite Team Member</T></h3>
             <form onSubmit={handleInvite} className="space-y-4">
               <div>
-                <label className="dark-label block text-sm font-medium mb-1">Email Address</label>
+                <label className="dark-label block text-sm font-medium mb-1"><T k="pages.agencyteampage.643a86">Email Address</T></label>
                 <input
                   type="email"
                   value={inviteEmail}
@@ -171,7 +172,7 @@ export default function AgencyTeamPage() {
                 />
               </div>
               <div>
-                <label className="dark-label block text-sm font-medium mb-1">Role</label>
+                <label className="dark-label block text-sm font-medium mb-1"><T k="pages.agencyteampage.bbbabd">Role</T></label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
@@ -206,7 +207,7 @@ export default function AgencyTeamPage() {
                   onClick={() => { setShowInvite(false); setInviteError(null); setInviteSuccess(null); }}
                   className="px-4 py-2 text-qs-text hover:bg-qs-card rounded-lg"
                 >
-                  Cancel
+                  <T k="pages.agencyteampage.ea4788">Cancel</T>
                 </button>
               </div>
             </form>
@@ -216,21 +217,21 @@ export default function AgencyTeamPage() {
         {/* Team Members Table */}
         <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
           <div className="px-6 py-4 border-b border-qs-border">
-            <h2 className="font-semibold text-qs-bright">Team ({employees.length})</h2>
+            <h2 className="font-semibold text-qs-bright"><T k="pages.agencyteampage.512f2a">Team (</T>{employees.length})</h2>
           </div>
           {employees.length === 0 ? (
-            <div className="px-6 py-8 text-center text-qs-subtle">No active employees.</div>
+            <div className="px-6 py-8 text-center text-qs-subtle"><T k="pages.agencyteampage.012167">No active employees.</T></div>
           ) : (
             <div className="overflow-x-auto">
             <table className="w-full min-w-[700px]">
               <thead className="bg-qs-elevated">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Bind ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Hired</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Platform Login</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-qs-subtle uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase"><T k="pages.agencyteampage.49ee30">Name</T></th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase"><T k="pages.agencyteampage.bbbabd">Role</T></th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase"><T k="pages.agencyteampage.08ab35">Bind ID</T></th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase"><T k="pages.agencyteampage.04b907">Hired</T></th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase"><T k="pages.agencyteampage.e9d512">Platform Login</T></th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-qs-subtle uppercase"><T k="pages.agencyteampage.06df33">Actions</T></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-qs-border">
@@ -301,15 +302,15 @@ export default function AgencyTeamPage() {
                       <td className="px-6 py-4">
                         {access ? (
                           <span className="px-2 py-1 bg-emerald-900/20 text-emerald-400 rounded-full text-xs font-medium">
-                            Active
+                            <T k="pages.agencyteampage.4d3d76">Active</T>
                           </span>
                         ) : pending ? (
                           <span className="px-2 py-1 bg-amber-900/20 text-amber-400 rounded-full text-xs font-medium">
-                            Pending
+                            <T k="pages.agencyteampage.2d13df">Pending</T>
                           </span>
                         ) : (
                           <span className="px-2 py-1 bg-qs-elevated text-qs-subtle rounded-full text-xs font-medium">
-                            None
+                            <T k="pages.agencyteampage.6adf97">None</T>
                           </span>
                         )}
                       </td>
@@ -324,10 +325,10 @@ export default function AgencyTeamPage() {
                         </button>
                         {access && isOwner ? (
                           <span className="text-xs text-qs-muted" title="Can't remove the last agency principal">
-                            Owner
+                            <T k="pages.agencyteampage.b6f4a2">Owner</T>
                           </span>
                         ) : access && isSelf ? (
-                          <span className="text-xs text-qs-muted">You</span>
+                          <span className="text-xs text-qs-muted"><T k="pages.agencyteampage.cae8d1">You</T></span>
                         ) : access ? (
                           <button
                             onClick={() => handleRemove(emp.membership_id)}
@@ -348,7 +349,7 @@ export default function AgencyTeamPage() {
                             title="Send platform invite"
                           >
                             <Mail className="w-4 h-4" />
-                            Invite
+                            <T k="pages.agencyteampage.c6a00f">Invite</T>
                           </button>
                         ) : null}
                       </td>

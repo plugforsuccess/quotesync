@@ -22,8 +22,11 @@ import { useAuth } from '../contexts/AuthContext';
 const KEY = ['site_copy'];
 // Pages with editable copy; the copy loads, and the Edit copy button shows, only on these.
 // Agency pages too (the Rate Checks desk): staff-facing lines there are wrapped the same way.
-const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/agency\/leads\/rate-checks(\/|$)/];
-const CORNER_BUTTON = [/^\/ratecheck-privacy$/, /^\/agency\//];
+// Agency pages too: their copy (tab names, headings, empty states, buttons) is marked the
+// same way; what comes from the data isn't.
+const INTERNAL = /^\/(agency|my|admin|news\/(dashboard|editor|archived|standards|preview))(\/|$)/;
+const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, /^\/ratecheck-privacy$/, /^\/courses$/, INTERNAL];
+const CORNER_BUTTON = [/^\/ratecheck-privacy$/, INTERNAL];
 // The last copy seen on this device, so edited text shows at once instead of flashing the default.
 const CACHE = 'qs_site_copy_v1';
 const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE) || 'null') || undefined; } catch { return undefined; } };
@@ -182,7 +185,7 @@ export function SiteCopyProvider({ children }) {
         // (bottom-right on agency pages, clear of their header).
         !CORNER_BUTTON.some(re => re.test(pathname)) ? null : (
           <button type="button" onClick={() => setEditing(true)} aria-label="Edit this page" title="Edit this page"
-            className={`fixed right-4 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0F2D6B] text-white shadow-lg ring-2 ring-white ${pathname.startsWith('/agency/') ? 'bottom-4' : 'top-4'}`}>
+            className={`fixed right-4 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0F2D6B] text-white shadow-lg ring-2 ring-white ${INTERNAL.test(pathname) ? 'bottom-4' : 'top-4'}`}>
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </button>
         )

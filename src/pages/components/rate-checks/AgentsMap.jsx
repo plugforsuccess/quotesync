@@ -9,6 +9,7 @@
 // towns, then every town with a ZIP) and never overlap. Bubbles and names keep
 // their size on screen at any zoom. Label placement and zoom math: mapView.js.
 
+import { T } from '../../../components/SiteCopy';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { GA_COUNTIES, GA_OUTLINE, GA_ZIPS } from './gaMap';
@@ -173,7 +174,7 @@ export default function AgentsMap({ agents, scans, zip, onPickZip, tall = false 
     <div className={`px-3 pb-3 ${tall ? 'flex h-full flex-col' : ''}`}>
       <div className="flex items-center justify-between gap-2 py-2">
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-          {totals.customers ? <><b style={{ color: 'var(--qs-bright)' }}>{totals.customers}</b> customers in <b style={{ color: 'var(--qs-bright)' }}>{totals.zips}</b> ZIPs</> : 'No customers with a Georgia ZIP yet'}
+          {totals.customers ? <><b style={{ color: 'var(--qs-bright)' }}>{totals.customers}</b> <T k="pages.components.ratechecks.agentsmap.4b80d0">customers in</T> <b style={{ color: 'var(--qs-bright)' }}>{totals.zips}</b> <T k="pages.components.ratechecks.agentsmap.10e458">ZIPs</T></> : 'No customers with a Georgia ZIP yet'}
         </p>
         <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--qs-elevated)' }} role="group" aria-label="Map area">
           {[[FULL_VIEW, 'Georgia'], [ATL_VIEW, 'Metro Atlanta']].map(([v, l]) => (
@@ -243,7 +244,7 @@ export default function AgentsMap({ agents, scans, zip, onPickZip, tall = false 
           <span className="min-w-0">
             <b>{zip}</b>{picked ? ` · ${picked.city} · ${picked.customers} customer${picked.customers === 1 ? '' : 's'}, ${picked.agents.length} agent${picked.agents.length === 1 ? '' : 's'}` : ''}
           </span>
-          <button type="button" onClick={() => onPickZip('')} className="min-h-[36px] shrink-0 font-semibold text-primary-600">Show all</button>
+          <button type="button" onClick={() => onPickZip('')} className="min-h-[36px] shrink-0 font-semibold text-primary-600"><T k="pages.components.ratechecks.agentsmap.eb9202">Show all</T></button>
         </div>
       )}
     </div>

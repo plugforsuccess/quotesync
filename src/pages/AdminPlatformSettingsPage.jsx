@@ -2,6 +2,7 @@
 // Platform Settings — Feature flags, role permissions, and CAT factor management
 // Route: /admin/settings (platform_admin and above)
 
+import { T } from '../components/SiteCopy';
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -64,14 +65,14 @@ function FeatureFlagsTab() {
   return (
     <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)' }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>Feature Flags by Agency</h2>
-        <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}>Toggle features on/off per agency</p>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.adminplatformsettingspage.8a0267">Feature Flags by Agency</T></h2>
+        <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}><T k="pages.adminplatformsettingspage.bcc753">Toggle features on/off per agency</T></p>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-              <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left', position: 'sticky', left: 0, background: 'var(--qs-elevated)', zIndex: 1 }}>Agency</th>
+              <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left', position: 'sticky', left: 0, background: 'var(--qs-elevated)', zIndex: 1 }}><T k="pages.adminplatformsettingspage.75ec3e">Agency</T></th>
               {FEATURE_KEYS.map(f => (
                 <th key={f.key} className="dark-section-label" style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }} title={f.description}>
                   {f.label}
@@ -155,14 +156,14 @@ function RolePermissionsTab() {
   return (
     <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)' }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>Role Permissions by Agency</h2>
-        <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}>Set minimum role required for each feature per agency</p>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.adminplatformsettingspage.d22e48">Role Permissions by Agency</T></h2>
+        <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}><T k="pages.adminplatformsettingspage.73e20d">Set minimum role required for each feature per agency</T></p>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-              <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left', position: 'sticky', left: 0, background: 'var(--qs-elevated)', zIndex: 1 }}>Agency</th>
+              <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left', position: 'sticky', left: 0, background: 'var(--qs-elevated)', zIndex: 1 }}><T k="pages.adminplatformsettingspage.75ec3e">Agency</T></th>
               {FEATURE_KEYS.map(f => (
                 <th key={f.key} className="dark-section-label" style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }} title={f.description}>
                   {f.label}
@@ -253,7 +254,7 @@ function CatFactorsTab() {
     <div>
       {/* Filter */}
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <label style={{ fontSize: 13, color: 'var(--qs-dim)' }}>Filter by state:</label>
+        <label style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminplatformsettingspage.ddf54f">Filter by state:</T></label>
         <select
           className="dark-select"
           value={stateFilter}
@@ -264,27 +265,27 @@ function CatFactorsTab() {
           {uniqueStates.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
-          {filtered.length} row{filtered.length !== 1 ? 's' : ''}
+          {filtered.length} <T k="pages.adminplatformsettingspage.f1965a">row</T>{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>CAT Reinsurance Factors</h2>
-          <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}>Click a CAT % cell to edit inline. Factor = 1 - CAT %.</p>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.adminplatformsettingspage.e873d6">CAT Reinsurance Factors</T></h2>
+          <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}><T k="pages.adminplatformsettingspage.5757b1">Click a CAT % cell to edit inline. Factor = 1 - CAT %.</T></p>
         </div>
         {isLoading ? (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--qs-dim)' }}>Loading CAT factors...</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--qs-dim)' }}><T k="pages.adminplatformsettingspage.82cc29">Loading CAT factors...</T></div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}>State</th>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}>Product</th>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'right' }}>CAT %</th>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'right' }}>Factor</th>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}>Effective Date</th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}><T k="pages.adminplatformsettingspage.46a2a4">State</T></th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}><T k="pages.adminplatformsettingspage.deb105">Product</T></th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'right' }}><T k="pages.adminplatformsettingspage.7d1d84">CAT %</T></th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'right' }}><T k="pages.adminplatformsettingspage.3c3ba6">Factor</T></th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}><T k="pages.adminplatformsettingspage.8aafaf">Effective Date</T></th>
                 </tr>
               </thead>
               <tbody>
@@ -349,8 +350,8 @@ const AdminPlatformSettingsPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Settings size={22} style={{ color: 'var(--qs-primary)' }} />
             <div>
-              <h1 className="dark-heading">Platform Settings</h1>
-              <p className="dark-subheading">Feature flags, role permissions, and carrier schedules</p>
+              <h1 className="dark-heading"><T k="pages.adminplatformsettingspage.bc7aef">Platform Settings</T></h1>
+              <p className="dark-subheading"><T k="pages.adminplatformsettingspage.1dd7a5">Feature flags, role permissions, and carrier schedules</T></p>
             </div>
           </div>
         </div>

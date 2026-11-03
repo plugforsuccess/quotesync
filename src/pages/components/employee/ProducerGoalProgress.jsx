@@ -7,6 +7,7 @@
 // Producers run their book in Allstate's CRM, so this is a read-only progress
 // mirror — it never writes production, only reflects it back against the goal.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { Target, TrendingUp, TrendingDown } from 'lucide-react';
 import { useProducerTargets } from '../../../hooks/useProducerTargets';
@@ -126,26 +127,26 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
             <Target className="w-4 h-4" style={{ color: 'var(--qs-info)' }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>Production Goal</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.components.employee.producergoalprogress.1b8e91">Production Goal</T></span>
           </div>
           {premiumGoal > 0 ? (
             <>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                   <span style={{ color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace" }}>
-                    {money(mtd.premium)} of {money(premiumGoal)}
+                    {money(mtd.premium)} <T k="pages.components.employee.producergoalprogress.8bf885">of</T> {money(premiumGoal)}
                   </span>
                   <span style={{ color: ringColor, fontWeight: 700 }}>{Math.round(pct * 100)}%</span>
                 </div>
                 <Bar pct={pct} color={ringColor} />
               </div>
               <span style={{ fontSize: 12, color: onPace ? 'var(--qs-success)' : 'var(--qs-warning)', fontWeight: 600, flexShrink: 0 }}>
-                {onPace ? 'On pace' : 'Behind'} · {remaining}d left
+                {onPace ? 'On pace' : 'Behind'} · {remaining}<T k="pages.components.employee.producergoalprogress.d26339">d left</T>
               </span>
             </>
           ) : (
             <span style={{ fontSize: 13, color: 'var(--qs-dim)', marginLeft: 'auto' }}>
-              {money(mtd.premium)} written this month · no goal set yet
+              {money(mtd.premium)} <T k="pages.components.employee.producergoalprogress.308de7">written this month · no goal set yet</T>
             </span>
           )}
         </div>
@@ -159,7 +160,7 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
         <Target className="w-5 h-5" style={{ color: 'var(--qs-info)' }} />
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>
-          Production Goal
+          <T k="pages.components.employee.producergoalprogress.1b8e91">Production Goal</T>
         </h3>
         <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-subtle)' }}>{monthLabel}</span>
       </div>
@@ -171,13 +172,13 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
               {money(mtd.premium)}
             </div>
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2 }}>
-              written this month · {mtd.items} VC items · {mtd.policies} policies
+              <T k="pages.components.employee.producergoalprogress.c64be1">written this month ·</T> {mtd.items} <T k="pages.components.employee.producergoalprogress.366b47">VC items ·</T> {mtd.policies} <T k="pages.components.employee.producergoalprogress.94422f">policies</T>
             </div>
           </div>
           <div style={{
             marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)', maxWidth: 260, textAlign: 'right',
           }}>
-            No monthly premium goal set yet. Your principal can set one in Planning → Production Goals.
+            <T k="pages.components.employee.producergoalprogress.fd33e6">No monthly premium goal set yet. Your principal can set one in Planning → Production Goals.</T>
           </div>
         </div>
       ) : (
@@ -196,11 +197,11 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
                 {money(mtd.premium)}
               </span>
               <span style={{ fontSize: 14, color: 'var(--qs-subtle)' }}>
-                of {money(premiumGoal)}
+                <T k="pages.components.employee.producergoalprogress.8bf885">of</T> {money(premiumGoal)}
               </span>
               {pct < 1 && (
                 <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-                  {money(premiumGoal - mtd.premium)} to go
+                  {money(premiumGoal - mtd.premium)} <T k="pages.components.employee.producergoalprogress.f8d7aa">to go</T>
                 </span>
               )}
             </div>
@@ -215,7 +216,7 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
                 {onPace ? 'On pace' : 'Behind pace'}
               </span>
               <span style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
-                · projected {money(projected)} ({Math.round(projectedPct * 100)}%) · {remaining} workday{remaining === 1 ? '' : 's'} left
+                <T k="pages.components.employee.producergoalprogress.09e397">· projected</T> {money(projected)} ({Math.round(projectedPct * 100)}%) · {remaining} <T k="pages.components.employee.producergoalprogress.b101dd">workday</T>{remaining === 1 ? '' : 's'} <T k="pages.components.employee.producergoalprogress.811882">left</T>
               </span>
             </div>
 
@@ -223,7 +224,7 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
             {itemsGoal > 0 && (
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 4 }}>
-                  <span>VC items</span>
+                  <span><T k="pages.components.employee.producergoalprogress.7aceec">VC items</T></span>
                   <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-text)' }}>
                     {mtd.items} / {itemsGoal}
                   </span>
@@ -236,13 +237,13 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
           {/* Trailing trend */}
           <div style={{ textAlign: 'center' }}>
             <Sparkline values={spark} />
-            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4 }}>6-mo premium</div>
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4 }}><T k="pages.components.employee.producergoalprogress.f742dd">6-mo premium</T></div>
           </div>
         </div>
       )}
 
       {isLoading && (
-        <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 12 }}>Loading production…</div>
+        <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 12 }}><T k="pages.components.employee.producergoalprogress.8817c9">Loading production…</T></div>
       )}
     </div>
   );

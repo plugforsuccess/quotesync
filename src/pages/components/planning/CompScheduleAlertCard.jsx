@@ -1,4 +1,5 @@
 // src/pages/components/planning/CompScheduleAlertCard.jsx
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
@@ -118,15 +119,15 @@ export default function CompScheduleAlertCard() {
       />
       <div className="flex-1">
         <h3 className="text-base font-semibold text-[var(--qs-bright)]">
-          {announced.carrier_name} {announced.state_code} {yearLabel} compensation schedule announced
+          {announced.carrier_name} {announced.state_code} {yearLabel} <T k="pages.components.planning.compschedulealertcard.c30062">compensation schedule announced</T>
         </h3>
         <p className="text-sm text-[var(--qs-text)] mt-1">
-          Effective <strong>{formatDate(announced.effective_from)}</strong>.{' '}
-          Estimated agency-wide annual impact at current producer targets:{' '}
+          <T k="pages.components.planning.compschedulealertcard.975826">Effective</T> <strong>{formatDate(announced.effective_from)}</strong>.{' '}
+          <T k="pages.components.planning.compschedulealertcard.71d775">Estimated agency-wide annual impact at current producer targets:</T>{' '}
           <strong style={{ color: impactColor }}>
             {sign}${Math.abs(impact.annual).toLocaleString('en-US', { maximumFractionDigits: 0 })}
           </strong>
-          {' '}across {impact.producerCount} active producer{impact.producerCount === 1 ? '' : 's'}.
+          {' '}<T k="pages.components.planning.compschedulealertcard.c55704">across</T> {impact.producerCount} <T k="pages.components.planning.compschedulealertcard.b509ae">active producer</T>{impact.producerCount === 1 ? '' : 's'}.
         </p>
       </div>
       <div className="flex flex-col gap-2">
@@ -134,7 +135,7 @@ export default function CompScheduleAlertCard() {
           to="/agency/comp-schedules"
           className="text-xs px-3 py-1.5 rounded bg-[var(--qs-card)] border border-[var(--qs-border)] text-[var(--qs-text)] hover:bg-[var(--qs-elevated)] text-center"
         >
-          Edit Schedule
+          <T k="pages.components.planning.compschedulealertcard.67d85e">Edit Schedule</T>
         </Link>
       </div>
     </div>

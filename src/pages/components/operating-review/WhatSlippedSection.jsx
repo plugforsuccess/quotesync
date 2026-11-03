@@ -1,4 +1,5 @@
 // src/pages/components/operating-review/WhatSlippedSection.jsx
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
@@ -153,32 +154,32 @@ export default function WhatSlippedSection({ agencyId, reviewWeekStart, priorWee
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-              What slipped last week
+              <T k="pages.components.operatingreview.whatslippedsection.e17300">What slipped last week</T>
             </h2>
             <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 0 }}>
-              Variance checks against last week's expectations.
+              <T k="pages.components.operatingreview.whatslippedsection.e31687">Variance checks against last week's expectations.</T>
             </p>
           </div>
           <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
             {criticalCount > 0 && (
-              <span style={{ color: 'var(--qs-danger)', fontWeight: 600 }}>{criticalCount} critical</span>
+              <span style={{ color: 'var(--qs-danger)', fontWeight: 600 }}>{criticalCount} <T k="pages.components.operatingreview.whatslippedsection.7e85bc">critical</T></span>
             )}
             {criticalCount > 0 && warningCount > 0 && <span> · </span>}
             {warningCount > 0 && (
-              <span style={{ color: 'var(--qs-warning)', fontWeight: 600 }}>{warningCount} warning</span>
+              <span style={{ color: 'var(--qs-warning)', fontWeight: 600 }}>{warningCount} <T k="pages.components.operatingreview.whatslippedsection.7b83d3">warning</T></span>
             )}
             {criticalCount === 0 && warningCount === 0 && !isLoading && (
-              <span style={{ color: 'var(--qs-success)', fontWeight: 600 }}>Clean week ✓</span>
+              <span style={{ color: 'var(--qs-success)', fontWeight: 600 }}><T k="pages.components.operatingreview.whatslippedsection.941fde">Clean week ✓</T></span>
             )}
           </div>
         </div>
       </header>
 
       {isLoading ? (
-        <div style={{ color: 'var(--qs-subtle)', padding: 16 }}>Checking variance…</div>
+        <div style={{ color: 'var(--qs-subtle)', padding: 16 }}><T k="pages.components.operatingreview.whatslippedsection.e41736">Checking variance…</T></div>
       ) : visibleSlips.length === 0 && dismissedSlips.length === 0 ? (
         <div style={{ color: 'var(--qs-subtle)', padding: 16 }}>
-          Nothing to flag. Last week ran clean.
+          <T k="pages.components.operatingreview.whatslippedsection.1a9850">Nothing to flag. Last week ran clean.</T>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -199,7 +200,7 @@ export default function WhatSlippedSection({ agencyId, reviewWeekStart, priorWee
           {dismissedSlips.length > 0 && (
             <details style={{ marginTop: 8 }}>
               <summary style={{ cursor: 'pointer', color: 'var(--qs-subtle)', fontSize: 13 }}>
-                {dismissedSlips.length} dismissed
+                {dismissedSlips.length} <T k="pages.components.operatingreview.whatslippedsection.02cadf">dismissed</T>
               </summary>
               <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {dismissedSlips.map((slip) => {
@@ -272,7 +273,7 @@ function SlipRow({ slip, dismissed, onDismiss, onUndismiss }) {
               cursor: 'pointer',
             }}
           >
-            Dismiss
+            <T k="pages.components.operatingreview.whatslippedsection.c8a59e">Dismiss</T>
           </button>
         )}
         {dismissed && onUndismiss && (
@@ -289,7 +290,7 @@ function SlipRow({ slip, dismissed, onDismiss, onUndismiss }) {
               cursor: 'pointer',
             }}
           >
-            Restore
+            <T k="pages.components.operatingreview.whatslippedsection.2bd339">Restore</T>
           </button>
         )}
       </div>

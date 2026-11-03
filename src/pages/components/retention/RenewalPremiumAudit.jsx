@@ -2,6 +2,7 @@
 // the rep recorded a paid amount on, plus an agency rollup. Answers "did we renew
 // at, above, or below the offer, and by how much."
 
+import { T } from '../../../components/SiteCopy';
 import { useRenewalPremiumAudit } from '../../../hooks/useRenewalPremiumAudit';
 import { titleCaseName } from '../../../lib/names';
 
@@ -28,14 +29,14 @@ function Stat({ label, value, sub, color }) {
 export default function RenewalPremiumAudit({ agencyId }) {
   const { data, isLoading } = useRenewalPremiumAudit(agencyId);
 
-  if (isLoading) return <div className="card" style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>;
+  if (isLoading) return <div className="card" style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.renewalpremiumaudit.5f02f0">Loading…</T></div>;
   if (!data || data.count === 0) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '32px 20px' }}>
         <div style={{ fontSize: 32, marginBottom: 8 }}>📑</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>No renewal premiums recorded yet</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.components.retention.renewalpremiumaudit.d9ec03">No renewal premiums recorded yet</T></div>
         <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 4 }}>
-          Confirm a renewal and enter the premium paid to populate the audit.
+          <T k="pages.components.retention.renewalpremiumaudit.a45f97">Confirm a renewal and enter the premium paid to populate the audit.</T>
         </div>
       </div>
     );
@@ -64,11 +65,10 @@ export default function RenewalPremiumAudit({ agencyId }) {
       {realized && realized.count > 0 && (
         <div className="card" style={{ borderColor: 'rgba(59,130,246,0.35)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 3px' }}>
-            Realized increase per policy
+            <T k="pages.components.retention.renewalpremiumaudit.f29dea">Realized increase per policy</T>
           </h3>
           <p style={{ fontSize: 11, color: 'var(--qs-muted)', margin: '0 0 12px' }}>
-            What retained customers actually pay vs their prior premium (paid − last year) — the renewal
-            offer minus the save discount, net of the rate shock. The "are we growing premium per policy" number.
+            <T k="pages.components.retention.renewalpremiumaudit.a29c87">What retained customers actually pay vs their prior premium (paid − last year) — the renewal offer minus the save discount, net of the rate shock. The "are we growing premium per policy" number.</T>
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
             <Stat label="Avg increase / policy" value={pctStr(realized.avgPct)}
@@ -90,10 +90,10 @@ export default function RenewalPremiumAudit({ agencyId }) {
       )}
 
       <div className="card">
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>By renewal</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}><T k="pages.components.retention.renewalpremiumaudit.fce7b1">By renewal</T></h3>
         <table>
           <thead>
-            <tr><th>Customer</th><th>Policy</th><th>Closed</th><th>Rep</th><th>Offer</th><th>Paid</th><th>vs offer</th><th>vs prior</th></tr>
+            <tr><th><T k="pages.components.retention.renewalpremiumaudit.ce2660">Customer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.51359e">Policy</T></th><th><T k="pages.components.retention.renewalpremiumaudit.03f4a4">Closed</T></th><th><T k="pages.components.retention.renewalpremiumaudit.608033">Rep</T></th><th><T k="pages.components.retention.renewalpremiumaudit.6bb244">Offer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.e0010a">Paid</T></th><th><T k="pages.components.retention.renewalpremiumaudit.83f3f9">vs offer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.8c5a9b">vs prior</T></th></tr>
           </thead>
           <tbody>
             {rows.map(r => (
@@ -104,7 +104,7 @@ export default function RenewalPremiumAudit({ agencyId }) {
                     <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, padding: '1px 6px',
                       borderRadius: 6, background: 'var(--qs-elevated)', color: 'var(--qs-muted)',
                       border: '1px solid var(--qs-border)', verticalAlign: 'middle' }} title="Customer paid the offer in full before we reached them — no rep save credit">
-                      auto-paid
+                      <T k="pages.components.retention.renewalpremiumaudit.0b7cf2">auto-paid</T>
                     </span>
                   )}
                 </td>
@@ -127,10 +127,7 @@ export default function RenewalPremiumAudit({ agencyId }) {
           </tbody>
         </table>
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
-          Offer is the renewal report premium; paid is what the rep recorded. <strong>vs offer</strong> = paid − offer
-          (green = renewed below offer, amber = above). <strong>vs prior</strong> = paid − last year's premium —
-          the rate change the customer actually pays (green = premium grew, red = below prior). Blank when the
-          report didn't carry a prior premium.
+          <T k="pages.components.retention.renewalpremiumaudit.7f1855">Offer is the renewal report premium; paid is what the rep recorded.</T> <strong><T k="pages.components.retention.renewalpremiumaudit.83f3f9">vs offer</T></strong> <T k="pages.components.retention.renewalpremiumaudit.8d47ba">= paid − offer (green = renewed below offer, amber = above).</T> <strong><T k="pages.components.retention.renewalpremiumaudit.8c5a9b">vs prior</T></strong> <T k="pages.components.retention.renewalpremiumaudit.ab14aa">= paid − last year's premium — the rate change the customer actually pays (green = premium grew, red = below prior). Blank when the report didn't carry a prior premium.</T>
         </p>
       </div>
     </div>

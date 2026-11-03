@@ -1,6 +1,7 @@
 // src/pages/components/dashboard/PartialRecovery.jsx
 // Section 6: Partial Lead Recovery — summary, table, recovery rate
 
+import { T } from '../../../components/SiteCopy';
 import { Link } from 'react-router-dom';
 import { AlertCircle, ChevronRight, RefreshCw } from 'lucide-react';
 
@@ -27,41 +28,41 @@ export default function PartialRecovery({ partials }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <RefreshCw className="w-5 h-5 text-primary-600" />
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Partial Lead Recovery</h2>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.partialrecovery.c96a62">Partial Lead Recovery</T></h2>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Partials */}
         <div className="dark-card">
-          <div className="text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}>Total Partials</div>
+          <div className="text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.43fd01">Total Partials</T></div>
           <div className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>{total.toLocaleString()}</div>
-          <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}>In selected period</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.partialrecovery.ae139e">In selected period</T></div>
         </div>
 
         {/* Recoverable */}
         <div className="dark-card">
-          <div className="text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}>Recoverable</div>
+          <div className="text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.52f3b9">Recoverable</T></div>
           <div className="text-3xl font-bold text-amber-600">{recoverableCount}</div>
-          <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}>Have ZIP + less than 7 days old</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.partialrecovery.c8e5e3">Have ZIP + less than 7 days old</T></div>
         </div>
 
         {/* Recovery Rate */}
         <div className="dark-card">
-          <div className="text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}>Recovery Rate</div>
+          <div className="text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.c8c2c2">Recovery Rate</T></div>
           <div className={`text-3xl font-bold ${recoveryRate > 10 ? 'text-green-600' : recoveryRate > 5 ? 'text-yellow-600' : ''}`}
             style={recoveryRate <= 5 ? { color: 'var(--qs-dim)' } : undefined}
           >
             {recoveryRate}%
           </div>
-          <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}>Partials that later completed</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.partialrecovery.c1c233">Partials that later completed</T></div>
         </div>
       </div>
 
       {/* Drop-off Breakdown */}
       {dropOffByStep.length > 0 && (
         <div className="dark-card">
-          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Where Partials Dropped Off</h3>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.partialrecovery.965eef">Where Partials Dropped Off</T></h3>
           <div className="space-y-2">
             {dropOffByStep.slice(0, 6).map(({ step, count }) => {
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
@@ -89,21 +90,21 @@ export default function PartialRecovery({ partials }) {
         <div className="dark-card" style={{ padding: 0 }}>
           <div style={{ padding: '20px 20px 0' }}>
             <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>
-              Recent Recoverable Partials
-              <span className="ml-2 text-xs font-normal" style={{ color: 'var(--qs-muted)' }}>Top {recentRecoverable.length} by data completeness</span>
+              <T k="pages.components.dashboard.partialrecovery.5a5225">Recent Recoverable Partials</T>
+              <span className="ml-2 text-xs font-normal" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.partialrecovery.a4ffdc">Top</T> {recentRecoverable.length} <T k="pages.components.dashboard.partialrecovery.48a19c">by data completeness</T></span>
             </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-                  <th className="text-left py-2 pr-4 pl-5 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Created</th>
-                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>ZIP</th>
-                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Own/Rent</th>
-                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Intent</th>
-                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Carrier</th>
-                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Last Step</th>
-                  <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Score</th>
+                  <th className="text-left py-2 pr-4 pl-5 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.0eceeb">Created</T></th>
+                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.4348f9">ZIP</T></th>
+                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.4f3365">Own/Rent</T></th>
+                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.3f76f7">Intent</T></th>
+                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.914419">Carrier</T></th>
+                  <th className="text-left py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.22eccd">Last Step</T></th>
+                  <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.5dd135">Score</T></th>
                   <th className="py-2 pl-4 pr-5"></th>
                 </tr>
               </thead>
@@ -141,7 +142,7 @@ export default function PartialRecovery({ partials }) {
                         to={`/agency/leads/${p.id}`}
                         className="text-primary-600 hover:text-primary-800 inline-flex items-center gap-1 text-xs"
                       >
-                        View <ChevronRight className="w-3 h-3" />
+                        <T k="pages.components.dashboard.partialrecovery.4351cf">View</T> <ChevronRight className="w-3 h-3" />
                       </Link>
                     </td>
                   </tr>
@@ -155,7 +156,7 @@ export default function PartialRecovery({ partials }) {
       {recentRecoverable.length === 0 && total > 0 && (
         <div className="dark-card text-center">
           <AlertCircle className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--qs-muted)' }} />
-          <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No recoverable partials found (all partials are older than 7 days or lack ZIP data)</p>
+          <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.partialrecovery.8ba861">No recoverable partials found (all partials are older than 7 days or lack ZIP data)</T></p>
         </div>
       )}
     </div>

@@ -8,6 +8,7 @@
 //   3. Competitor intel: who the book is being shopped against and by how much
 //      they undercut us.
 
+import { T } from '../../../components/SiteCopy';
 import { useOfferOutcomes } from '../../../hooks/useOfferOutcomes';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
 
@@ -29,18 +30,16 @@ export default function OfferOutcomesPanel({ agencyId }) {
   const tacticLabel = (code) => itypes.find((t) => t.code === code)?.display_name || code;
 
   if (isLoading) {
-    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: 16 }}>Loading offers…</div>;
+    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: 16 }}><T k="pages.components.retention.offeroutcomespanel.4df681">Loading offers…</T></div>;
   }
 
   const s = data?.summary;
   if (!s || (s.quoted === 0 && s.competitors.length === 0)) {
     return (
       <div className="card" style={{ marginBottom: 16, padding: 16, fontSize: 13, color: 'var(--qs-subtle)' }}>
-        <strong style={{ color: 'var(--qs-bright)' }}>Offers — quotes made on save calls</strong>
+        <strong style={{ color: 'var(--qs-bright)' }}><T k="pages.components.retention.offeroutcomespanel.0d8c03">Offers — quotes made on save calls</T></strong>
         <div style={{ marginTop: 6 }}>
-          Nothing captured yet. When a rep tags a re-quote / bundle / competitor-match tactic on a
-          reached call and enters the premium they quoted, it lands here — including the quotes on
-          calls that end <em>lost</em>, which is the price data no save ever records.
+          <T k="pages.components.retention.offeroutcomespanel.cc23ec">Nothing captured yet. When a rep tags a re-quote / bundle / competitor-match tactic on a reached call and enters the premium they quoted, it lands here — including the quotes on calls that end</T> <em><T k="pages.components.retention.offeroutcomespanel.1c9a44">lost</T></em><T k="pages.components.retention.offeroutcomespanel.fef14c">, which is the price data no save ever records.</T>
         </div>
       </div>
     );
@@ -63,11 +62,10 @@ export default function OfferOutcomesPanel({ agencyId }) {
   return (
     <div className="card" style={{ marginBottom: 16, padding: 16 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
-        Offers — what we quote to save customers, and what it wins
+        <T k="pages.components.retention.offeroutcomespanel.73f288">Offers — what we quote to save customers, and what it wins</T>
       </div>
       <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 12 }}>
-        Quotes captured on reached calls (re-quote, bundle, competitor match), joined to how the case
-        ended. The lost rows are prices that failed to save — data no carrier report contains.
+        <T k="pages.components.retention.offeroutcomespanel.8df054">Quotes captured on reached calls (re-quote, bundle, competitor match), joined to how the case ended. The lost rows are prices that failed to save — data no carrier report contains.</T>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
@@ -83,7 +81,7 @@ export default function OfferOutcomesPanel({ agencyId }) {
       {s.tactics.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 6 }}>
-            By tactic
+            <T k="pages.components.retention.offeroutcomespanel.41a8c6">By tactic</T>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {s.tactics.map((t) => (
@@ -93,10 +91,10 @@ export default function OfferOutcomesPanel({ agencyId }) {
               }}>
                 <div style={{ color: 'var(--qs-subtle)' }}>{tacticLabel(t.code)}</div>
                 <div style={{ color: 'var(--qs-bright)', fontWeight: 600 }}>
-                  {t.quoted} quoted · {fmtPct(t.acceptRate)} accepted
+                  {t.quoted} <T k="pages.components.retention.offeroutcomespanel.4bc966">quoted ·</T> {fmtPct(t.acceptRate)} <T k="pages.components.retention.offeroutcomespanel.3e4d89">accepted</T>
                 </div>
                 {t.avgConcessionPct != null && (
-                  <div style={{ color: 'var(--qs-dim)' }}>avg {t.avgConcessionPct.toFixed(0)}% off the table price</div>
+                  <div style={{ color: 'var(--qs-dim)' }}><T k="pages.components.retention.offeroutcomespanel.e322d4">avg</T> {t.avgConcessionPct.toFixed(0)}<T k="pages.components.retention.offeroutcomespanel.b5dc12">% off the table price</T></div>
                 )}
               </div>
             ))}
@@ -108,7 +106,7 @@ export default function OfferOutcomesPanel({ agencyId }) {
       {s.competitors.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 6 }}>
-            Who we're being shopped against
+            <T k="pages.components.retention.offeroutcomespanel.e6c1a6">Who we're being shopped against</T>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {s.competitors.map((c) => (
@@ -118,12 +116,12 @@ export default function OfferOutcomesPanel({ agencyId }) {
               }}>
                 <div style={{ color: 'var(--qs-bright)', fontWeight: 600 }}>{c.name}</div>
                 <div style={{ color: 'var(--qs-dim)' }}>
-                  {c.quotes} quote{c.quotes === 1 ? '' : 's'}
+                  {c.quotes} <T k="pages.components.retention.offeroutcomespanel.7a674c">quote</T>{c.quotes === 1 ? '' : 's'}
                   {c.avgGap != null && (
-                    <> · {c.avgGap < 0 ? 'undercuts us ' : 'above us '}{fmt$(Math.abs(c.avgGap))} avg</>
+                    <> · {c.avgGap < 0 ? 'undercuts us ' : 'above us '}{fmt$(Math.abs(c.avgGap))} <T k="pages.components.retention.offeroutcomespanel.e322d4">avg</T></>
                   )}
                 </div>
-                <div style={{ color: 'var(--qs-dim)' }}>{c.saved} held · {c.lost} lost</div>
+                <div style={{ color: 'var(--qs-dim)' }}>{c.saved} <T k="pages.components.retention.offeroutcomespanel.11e6fa">held ·</T> {c.lost} <T k="pages.components.retention.offeroutcomespanel.1c9a44">lost</T></div>
               </div>
             ))}
           </div>
@@ -133,25 +131,25 @@ export default function OfferOutcomesPanel({ agencyId }) {
       {/* The crown rows: quotes that didn't save them */}
       <div>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 6 }}>
-          Quotes that didn't save them
+          <T k="pages.components.retention.offeroutcomespanel.722e62">Quotes that didn't save them</T>
         </div>
         {s.lostRows.length === 0 ? (
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
-            None yet — every captured quote so far ended saved or is still open.
+            <T k="pages.components.retention.offeroutcomespanel.082d5a">None yet — every captured quote so far ended saved or is still open.</T>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ borderCollapse: 'collapse', width: '100%' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--qs-border)' }}>
-                  <th style={th}>Customer</th>
-                  <th style={th}>Policy</th>
-                  <th style={th}>On the table</th>
-                  <th style={th}>We quoted</th>
-                  <th style={th}>Competitor</th>
-                  <th style={th}>Tactic</th>
-                  <th style={th}>Rep</th>
-                  <th style={th}>Call</th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.ce2660">Customer</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.51359e">Policy</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.98f171">On the table</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.45b201">We quoted</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.0365d2">Competitor</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.a5a3f4">Tactic</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.608033">Rep</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.c3755e">Call</T></th>
                 </tr>
               </thead>
               <tbody>

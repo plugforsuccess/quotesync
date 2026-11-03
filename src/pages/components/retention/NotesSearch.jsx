@@ -1,6 +1,7 @@
 // src/pages/components/retention/NotesSearch.jsx
 // Cross-case note search: full-text over body/policy/customer, filterable by
 // note type and tag. Read-only results with case context.
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useNotesSearch, NOTE_TYPES, NOTE_TYPE_COLOR } from '../../../hooks/useCaseNotes';
 
@@ -19,9 +20,9 @@ export default function NotesSearch({ agencyId }) {
 
   return (
     <div style={{ maxWidth: 860 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 4 }}>Search notes</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 4 }}><T k="pages.components.retention.notessearch.501212">Search notes</T></h2>
       <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-        Full-text search across every case note — by text, policy #, or customer name. Filter by type or tag.
+        <T k="pages.components.retention.notessearch.c9b9fe">Full-text search across every case note — by text, policy #, or customer name. Filter by type or tag.</T>
       </p>
 
       <form onSubmit={e => { e.preventDefault(); setSubmitted({ text, noteType, tag }); }}
@@ -34,17 +35,17 @@ export default function NotesSearch({ agencyId }) {
         </select>
         <input className="dark-input" value={tag} onChange={e => setTag(e.target.value)} placeholder="tag" style={{ maxWidth: 120 }} />
         <button type="submit" style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#3B82F6', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-          Search
+          <T k="pages.components.retention.notessearch.133484">Search</T>
         </button>
       </form>
 
       {isLoading ? (
-        <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>Searching…</div>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}><T k="pages.components.retention.notessearch.1f682b">Searching…</T></div>
       ) : results.length === 0 ? (
-        <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>No notes match.</div>
+        <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.components.retention.notessearch.df534c">No notes match.</T></div>
       ) : (
         <>
-          <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 8 }}>{results.length} note{results.length === 1 ? '' : 's'}</div>
+          <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 8 }}>{results.length} <T k="pages.components.retention.notessearch.aad653">note</T>{results.length === 1 ? '' : 's'}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {results.map(n => (
               <div key={n.id} className="card" style={{ padding: '10px 14px' }}>

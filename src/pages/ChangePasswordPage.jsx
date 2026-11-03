@@ -3,6 +3,7 @@
 // the current employee row has must_reset_password = true. After a successful
 // password update the flag is cleared and the user is sent to /my/queue.
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -76,27 +77,27 @@ export default function ChangePasswordPage() {
               </svg>
             </div>
             <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--qs-bright)' }}>
-              insuredbycam
+              <T k="pages.changepasswordpage.2c33e8">insuredbycam</T>
             </span>
           </div>
           <p style={{ fontSize: 13, color: 'var(--qs-subtle)', margin: 0 }}>
-            Wiley-Wilson Agency
+            <T k="pages.changepasswordpage.41a08c">Wiley-Wilson Agency</T>
           </p>
         </div>
 
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)',
           margin: '0 0 8px', textAlign: 'center' }}>
-          Set Your Password
+          <T k="pages.changepasswordpage.5c59b7">Set Your Password</T>
         </h2>
         <p style={{ fontSize: 13, color: 'var(--qs-dim)', textAlign: 'center',
           margin: '0 0 24px' }}>
-          You're using a temporary password. Please set a new one before continuing.
+          <T k="pages.changepasswordpage.785390">You're using a temporary password. Please set a new one before continuing.</T>
         </p>
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)',
             display: 'block', marginBottom: 6 }}>
-            New password
+            <T k="pages.changepasswordpage.354484">New password</T>
           </label>
           <input
             type="password"
@@ -114,7 +115,7 @@ export default function ChangePasswordPage() {
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)',
             display: 'block', marginBottom: 6 }}>
-            Confirm password
+            <T k="pages.changepasswordpage.4c231e">Confirm password</T>
           </label>
           <input
             type="password"

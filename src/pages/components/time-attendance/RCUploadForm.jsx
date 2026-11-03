@@ -2,6 +2,7 @@
 // XLSX upload form for RingCentral User Performance report
 // Uses SheetJS to parse the "Users" sheet from RC Analytics exports.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -398,8 +399,8 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
         <div className="flex items-center gap-3">
           <FileSpreadsheet className="w-6 h-6 text-qs-subtle" />
           <div>
-            <h3 className="text-lg font-semibold text-qs-bright">Weekly Summary (Optional)</h3>
-            <p className="text-sm text-qs-subtle">Upload the User Performance summary for Speed of Answer and Hold Time metrics. All other metrics are derived from the daily call log.</p>
+            <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.rcuploadform.5351b7">Weekly Summary (Optional)</T></h3>
+            <p className="text-sm text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.969300">Upload the User Performance summary for Speed of Answer and Hold Time metrics. All other metrics are derived from the daily call log.</T></p>
           </div>
         </div>
         <button
@@ -412,28 +413,28 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
 
       {showHelp && (
         <div className="mb-4 p-4 bg-primary-900/20 rounded-lg text-sm text-primary-300">
-          <p className="font-medium mb-2">How to export from RingCentral:</p>
+          <p className="font-medium mb-2"><T k="pages.components.timeattendance.rcuploadform.693892">How to export from RingCentral:</T></p>
           <ol className="list-decimal list-inside space-y-1 text-primary-300 mb-3">
-            <li>Go to RingCentral Analytics &rarr; User Performance</li>
-            <li>Set date range to the target week (Mon&ndash;Fri)</li>
-            <li>Export as XLSX</li>
+            <li><T k="pages.components.timeattendance.rcuploadform.ae737c">Go to RingCentral Analytics → User Performance</T></li>
+            <li><T k="pages.components.timeattendance.rcuploadform.4e5d33">Set date range to the target week (Mon–Fri)</T></li>
+            <li><T k="pages.components.timeattendance.rcuploadform.512979">Export as XLSX</T></li>
           </ol>
-          <p className="font-medium mb-2">Expected columns from the "Users" sheet:</p>
+          <p className="font-medium mb-2"><T k="pages.components.timeattendance.rcuploadform.0c326f">Expected columns from the "Users" sheet:</T></p>
           <ul className="list-disc list-inside space-y-1 text-primary-300">
-            <li><strong>Name</strong> &mdash; employee matching</li>
-            <li><strong>Total Calls</strong>, <strong># Inbound</strong>, <strong># Outbound</strong>, <strong># Answered</strong></li>
-            <li><strong># Missed (w/VM)</strong>, <strong># Transfers</strong>, <strong># Holds</strong></li>
-            <li><strong>Avg. Handle Time</strong>, <strong>Total Handle Time</strong> (HH:MM:SS)</li>
-            <li><strong>Avg. Hold Time</strong>, <strong>Avg. Speed of Answer</strong> (HH:MM:SS)</li>
+            <li><strong><T k="pages.components.timeattendance.rcuploadform.49ee30">Name</T></strong> <T k="pages.components.timeattendance.rcuploadform.7b9c1f">— employee matching</T></li>
+            <li><strong><T k="pages.components.timeattendance.rcuploadform.a49675">Total Calls</T></strong>, <strong><T k="pages.components.timeattendance.rcuploadform.1ed208"># Inbound</T></strong>, <strong><T k="pages.components.timeattendance.rcuploadform.7a8107"># Outbound</T></strong>, <strong><T k="pages.components.timeattendance.rcuploadform.ab28a9"># Answered</T></strong></li>
+            <li><strong><T k="pages.components.timeattendance.rcuploadform.7e312d"># Missed (w/VM)</T></strong>, <strong><T k="pages.components.timeattendance.rcuploadform.585783"># Transfers</T></strong>, <strong><T k="pages.components.timeattendance.rcuploadform.fbcd64"># Holds</T></strong></li>
+            <li><strong><T k="pages.components.timeattendance.rcuploadform.844835">Avg. Handle Time</T></strong>, <strong><T k="pages.components.timeattendance.rcuploadform.0f2f4e">Total Handle Time</T></strong> <T k="pages.components.timeattendance.rcuploadform.226b77">(HH:MM:SS)</T></li>
+            <li><strong><T k="pages.components.timeattendance.rcuploadform.f21838">Avg. Hold Time</T></strong>, <strong><T k="pages.components.timeattendance.rcuploadform.df9cc2">Avg. Speed of Answer</T></strong> <T k="pages.components.timeattendance.rcuploadform.226b77">(HH:MM:SS)</T></li>
           </ul>
-          <p className="mt-2 text-xs">Time columns are parsed from HH:MM:SS format automatically.</p>
+          <p className="mt-2 text-xs"><T k="pages.components.timeattendance.rcuploadform.39bc96">Time columns are parsed from HH:MM:SS format automatically.</T></p>
         </div>
       )}
 
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
-          Choose XLSX
+          <T k="pages.components.timeattendance.rcuploadform.b6ccd7">Choose XLSX</T>
           <input
             ref={fileRef}
             type="file"
@@ -442,7 +443,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
             className="hidden"
           />
         </label>
-        <span className="text-sm text-qs-subtle">Week: {weekStart}</span>
+        <span className="text-sm text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.1e4861">Week:</T> {weekStart}</span>
       </div>
 
       {/* Warnings */}
@@ -450,12 +451,12 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
         <div className="mt-4 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
           <p className="text-sm font-semibold text-amber-300 mb-1">
             <AlertCircle className="w-4 h-4 inline mr-1" />
-            {warnings.length} unmatched employee{warnings.length > 1 ? 's' : ''}
+            {warnings.length} <T k="pages.components.timeattendance.rcuploadform.e11296">unmatched employee</T>{warnings.length > 1 ? 's' : ''}
           </p>
           <ul className="text-xs text-amber-300 space-y-0.5 max-h-32 overflow-y-auto">
             {warnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
-          <p className="text-xs text-amber-400 mt-1">Unmatched rows will be skipped during upload.</p>
+          <p className="text-xs text-amber-400 mt-1"><T k="pages.components.timeattendance.rcuploadform.8133a0">Unmatched rows will be skipped during upload.</T></p>
         </div>
       )}
 
@@ -467,14 +468,12 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           borderRadius: 8,
         }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: '#F59E0B', marginBottom: 6 }}>
-            ⚠ Date range mismatch
+            <T k="pages.components.timeattendance.rcuploadform.ca23e1">⚠ Date range mismatch</T>
           </p>
           <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 10 }}>
-            The file covers the week of{' '}
-            <strong style={{ color: 'var(--qs-text)' }}>{weekMismatch.fileWeek}</strong>,
-            but the week picker is set to{' '}
-            <strong style={{ color: 'var(--qs-text)' }}>{weekMismatch.selectedWeek}</strong>.
-            Which week should this data be recorded under?
+            <T k="pages.components.timeattendance.rcuploadform.de1ea8">The file covers the week of</T>{' '}
+            <strong style={{ color: 'var(--qs-text)' }}>{weekMismatch.fileWeek}</strong><T k="pages.components.timeattendance.rcuploadform.95ae70">, but the week picker is set to</T>{' '}
+            <strong style={{ color: 'var(--qs-text)' }}>{weekMismatch.selectedWeek}</strong><T k="pages.components.timeattendance.rcuploadform.04fa5e">. Which week should this data be recorded under?</T>
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
@@ -490,7 +489,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                 color: '#F59E0B',
               }}
             >
-              Use file's week ({weekMismatch.fileWeek})
+              <T k="pages.components.timeattendance.rcuploadform.4545ec">Use file's week (</T>{weekMismatch.fileWeek})
             </button>
             <button
               onClick={() => setWeekMismatch(null)}
@@ -501,7 +500,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                 color: 'var(--qs-dim)',
               }}
             >
-              Keep selected week ({weekMismatch.selectedWeek})
+              <T k="pages.components.timeattendance.rcuploadform.b35c6f">Keep selected week (</T>{weekMismatch.selectedWeek})
             </button>
           </div>
         </div>
@@ -510,21 +509,21 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       {/* Preview */}
       {preview && preview.length > 0 && (
         <div className="mt-4">
-          <p className="text-sm font-medium text-qs-text mb-2">Preview ({preview.length} rows):</p>
+          <p className="text-sm font-medium text-qs-text mb-2"><T k="pages.components.timeattendance.rcuploadform.cedfee">Preview (</T>{preview.length} <T k="pages.components.timeattendance.rcuploadform.e490f8">rows):</T></p>
           <div className="overflow-x-auto border border-qs-border rounded-lg">
             <table className="w-full text-sm">
               <thead className="bg-qs-elevated">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-subtle">Name</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Total</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">In</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Out</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Answered</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Missed</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">AHT</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">ASA</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Hold</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Xfer %</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.49ee30">Name</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.96b014">Total</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.efeb36">In</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.7c147c">Out</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.d96e9c">Answered</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.ca9e83">Missed</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.4f6884">AHT</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.b7b46c">ASA</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.bcd8db">Hold</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.rcuploadform.2e2fdb">Xfer %</T></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-qs-border">
@@ -562,7 +561,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
               onClick={() => { setPreview(null); if (fileRef.current) fileRef.current.value = ''; }}
               className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
-              Cancel
+              <T k="pages.components.timeattendance.rcuploadform.ea4788">Cancel</T>
             </button>
           </div>
         </div>
@@ -588,7 +587,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <UserX className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-lg font-semibold text-qs-bright">Unmatched Employees</h3>
+                    <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.rcuploadform.1a9e1a">Unmatched Employees</T></h3>
                   </div>
                   <button
                     onClick={() => setConfirmModal(null)}
@@ -601,7 +600,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
               </div>
               <div className="px-6 py-4">
                 <p className="text-sm text-qs-dim mb-3">
-                  {confirmModal.skippedCount} row{confirmModal.skippedCount > 1 ? 's' : ''} will be skipped because {confirmModal.skippedCount > 1 ? 'these employees don\u2019t' : 'this employee doesn\u2019t'} match any known employee:
+                  {confirmModal.skippedCount} <T k="pages.components.timeattendance.rcuploadform.f1965a">row</T>{confirmModal.skippedCount > 1 ? 's' : ''} <T k="pages.components.timeattendance.rcuploadform.c8655a">will be skipped because</T> {confirmModal.skippedCount > 1 ? 'these employees don\u2019t' : 'this employee doesn\u2019t'} <T k="pages.components.timeattendance.rcuploadform.801857">match any known employee:</T>
                 </p>
                 <ul className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
                   {confirmModal.unmatchedNames.map((name, i) => (
@@ -612,7 +611,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                   ))}
                 </ul>
                 <p className="text-sm text-qs-text">
-                  <span className="font-medium text-qs-bright">{confirmModal.matchedRows.length}</span> matched row{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
+                  <span className="font-medium text-qs-bright">{confirmModal.matchedRows.length}</span> <T k="pages.components.timeattendance.rcuploadform.ab264d">matched row</T>{confirmModal.matchedRows.length !== 1 ? 's' : ''} <T k="pages.components.timeattendance.rcuploadform.0f7136">will be uploaded.</T>
                 </p>
               </div>
               <div className="border-t border-qs-border px-6 py-4 flex justify-end gap-3">
@@ -620,13 +619,13 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                   onClick={() => setConfirmModal(null)}
                   className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
                 >
-                  Cancel
+                  <T k="pages.components.timeattendance.rcuploadform.ea4788">Cancel</T>
                 </button>
                 <button
                   onClick={() => doUpload(confirmModal.matchedRows, confirmModal.skippedCount)}
                   className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 transition-colors"
                 >
-                  Upload Matched Only
+                  <T k="pages.components.timeattendance.rcuploadform.eccd7a">Upload Matched Only</T>
                 </button>
               </div>
             </div>

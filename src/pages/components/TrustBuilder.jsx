@@ -1,4 +1,5 @@
 // src/pages/components/TrustBuilder.jsx
+import { T } from '../../components/SiteCopy';
 import React from 'react';
 import { Shield, Users, Award, CheckCircle, Lock, Star } from 'lucide-react';
 
@@ -10,13 +11,13 @@ const TrustBuilder = () => {
         <div className="mb-20">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
-              Why This Is{' '}
+              <T k="pages.components.trustbuilder.482a15">Why This Is</T>{' '}
               <span className="bg-gradient-to-r from-success-300 via-success-400 to-success-500 bg-clip-text text-transparent">
-                Different
+                <T k="pages.components.trustbuilder.109897">Different</T>
               </span>
             </h2>
             <p className="text-xl text-white/80 max-w-2xl mx-auto">
-              Not another quote site. A real agent who actually compares coverage.
+              <T k="pages.components.trustbuilder.91564f">Not another quote site. A real agent who actually compares coverage.</T>
             </p>
           </div>
 
@@ -29,7 +30,7 @@ const TrustBuilder = () => {
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
                     <span className="text-2xl">😓</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-300">Other Quote Sites</h3>
+                  <h3 className="text-2xl font-bold text-gray-300"><T k="pages.components.trustbuilder.7977a9">Other Quote Sites</T></h3>
                 </div>
 
                 <ul className="space-y-4">
@@ -57,7 +58,7 @@ const TrustBuilder = () => {
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-lg">
                     <span className="text-2xl">✨</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-white">insuredbycam.com</h3>
+                  <h3 className="text-2xl font-bold text-white"><T k="pages.components.trustbuilder.7e0e6e">insuredbycam.com</T></h3>
                 </div>
 
                 <ul className="space-y-4">
@@ -85,9 +86,9 @@ const TrustBuilder = () => {
             <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Award className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Licensed Allstate Agent</h3>
+            <h3 className="text-lg font-bold text-white mb-2"><T k="pages.components.trustbuilder.4a328f">Licensed Allstate Agent</T></h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Licensed Allstate agent in Georgia. A real person, not a call center.
+              <T k="pages.components.trustbuilder.ff6a0d">Licensed Allstate agent in Georgia. A real person, not a call center.</T>
             </p>
           </div>
 
@@ -95,9 +96,9 @@ const TrustBuilder = () => {
             <div className="w-14 h-14 bg-gradient-to-br from-success-500 to-success-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Lock className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Info Never Sold</h3>
+            <h3 className="text-lg font-bold text-white mb-2"><T k="pages.components.trustbuilder.90f31f">Info Never Sold</T></h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Your info is never sold to third parties. One agent, zero spam.
+              <T k="pages.components.trustbuilder.f1d9b1">Your info is never sold to third parties. One agent, zero spam.</T>
             </p>
           </div>
 
@@ -105,9 +106,9 @@ const TrustBuilder = () => {
             <div className="w-14 h-14 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Users className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">500+ Quotes Delivered</h3>
+            <h3 className="text-lg font-bold text-white mb-2"><T k="pages.components.trustbuilder.873cf9">500+ Quotes Delivered</T></h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Hundreds of Georgia families already trust Cam with their insurance.
+              <T k="pages.components.trustbuilder.0296a5">Hundreds of Georgia families already trust Cam with their insurance.</T>
             </p>
           </div>
 
@@ -115,9 +116,9 @@ const TrustBuilder = () => {
             <div className="w-14 h-14 bg-gradient-to-br from-accent-500 to-accent-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Star className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Rated 5.0 on Google</h3>
+            <h3 className="text-lg font-bold text-white mb-2"><T k="pages.components.trustbuilder.08ec35">Rated 5.0 on Google</T></h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Top-rated by real customers on Google Reviews.
+              <T k="pages.components.trustbuilder.815fd2">Top-rated by real customers on Google Reviews.</T>
             </p>
           </div>
 
@@ -125,9 +126,9 @@ const TrustBuilder = () => {
             <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Shield className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">256-bit Encryption</h3>
+            <h3 className="text-lg font-bold text-white mb-2"><T k="pages.components.trustbuilder.600b1c">256-bit Encryption</T></h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Bank-level security standard used by Plaid, Venmo, and major banks.
+              <T k="pages.components.trustbuilder.aa5f1c">Bank-level security standard used by Plaid, Venmo, and major banks.</T>
             </p>
           </div>
         </div>

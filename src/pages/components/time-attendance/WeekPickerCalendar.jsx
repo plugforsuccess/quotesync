@@ -1,6 +1,7 @@
 // src/pages/components/time-attendance/WeekPickerCalendar.jsx
 // Calendar popup for picking a week. Clicking any date selects that week (Mon–Fri).
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
@@ -256,14 +257,14 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
       </div>
 
       <p className="mt-2 text-[10px] text-qs-muted text-center">
-        Click any day to jump to that week &middot; Arrow keys change month &middot; Esc to close
+        <T k="pages.components.timeattendance.weekpickercalendar.673141">Click any day to jump to that week · Arrow keys change month · Esc to close</T>
       </p>
       <div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-qs-muted">
         <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary-500 inline-block" /> Today
+          <span className="w-1.5 h-1.5 rounded-full bg-primary-500 inline-block" /> <T k="pages.components.timeattendance.weekpickercalendar.1dd1c5">Today</T>
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" /> Holiday
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" /> <T k="pages.components.timeattendance.weekpickercalendar.84b834">Holiday</T>
         </span>
       </div>
 
@@ -272,10 +273,10 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
           onClick={() => { onChange(toMonday(new Date())); setOpen(false); }}
           className="text-xs text-primary-400 hover:text-primary-300 font-medium"
         >
-          This Week
+          <T k="pages.components.timeattendance.weekpickercalendar.983268">This Week</T>
         </button>
         <button onClick={() => setOpen(false)} className="text-xs text-qs-subtle hover:text-qs-text font-medium">
-          Close
+          <T k="pages.components.timeattendance.weekpickercalendar.d3d2e6">Close</T>
         </button>
       </div>
     </div>

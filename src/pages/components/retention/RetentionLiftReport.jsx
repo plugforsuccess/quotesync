@@ -5,6 +5,7 @@
 // cohort sizes, and flags selection bias when the worked cohort had an easier
 // rate environment. Screenshot-ready.
 
+import { T } from '../../../components/SiteCopy';
 import { useRetentionLift } from '../../../hooks/useRetentionLift';
 import { useTacticCaptureRate } from '../../../hooks/useTacticCaptureRate';
 import { useProofReadiness } from '../../../hooks/useProofReadiness';
@@ -25,14 +26,14 @@ function CohortCard({ title, c, accent, highlight }) {
         {fmtPct(c.retainRate)}
       </div>
       <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 3 }}>
-        renewed · {c.confirmed}/{c.resolved} resolved
+        <T k="pages.components.retention.retentionliftreport.3d8f8e">renewed ·</T> {c.confirmed}/{c.resolved} <T k="pages.components.retention.retentionliftreport.fafdd4">resolved</T>
       </div>
       <div style={{ height: 1, background: 'var(--qs-border)', margin: '10px 0' }} />
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', display: 'flex', justifyContent: 'space-between' }}>
-        <span>Premium retained</span><strong style={{ color: 'var(--qs-text)' }}>{fmt$(c.premiumRetained)}</strong>
+        <span><T k="pages.components.retention.retentionliftreport.993124">Premium retained</T></span><strong style={{ color: 'var(--qs-text)' }}>{fmt$(c.premiumRetained)}</strong>
       </div>
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-        <span>Avg rate increase</span><strong style={{ color: 'var(--qs-text)' }}>{fmtRate(c.avgRateChange)}</strong>
+        <span><T k="pages.components.retention.retentionliftreport.b63367">Avg rate increase</T></span><strong style={{ color: 'var(--qs-text)' }}>{fmtRate(c.avgRateChange)}</strong>
       </div>
     </div>
   );
@@ -66,7 +67,7 @@ function ProofReadiness({ agencyId, capture }) {
   return (
     <div className="card" style={{ borderLeft: `3px solid ${ready ? '#10B981' : '#6B7280'}` }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
-        letterSpacing: '0.06em', marginBottom: 4 }}>Build readiness · per-rep tactic save-rate view</div>
+        letterSpacing: '0.06em', marginBottom: 4 }}><T k="pages.components.retention.retentionliftreport.cb2dce">Build readiness · per-rep tactic save-rate view</T></div>
       <div style={{ fontSize: 13, fontWeight: 800, color: ready ? '#10B981' : 'var(--qs-text)', marginBottom: 10 }}>
         {ready ? 'Ready to build — the data can support it' : 'Not yet — keep capturing'}
       </div>
@@ -105,7 +106,7 @@ export default function RetentionLiftReport({ agencyId }) {
   const { data: capture } = useTacticCaptureRate(agencyId);
 
   if (isLoading || !data) {
-    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading retention-lift proof…</div>;
+    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.retentionliftreport.bd2ecc">Loading retention-lift proof…</T></div>;
   }
 
   const { worked, untouched, liftPoints, quarantined, inboundOnly } = data;
@@ -117,12 +118,9 @@ export default function RetentionLiftReport({ agencyId }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--qs-text)' }}>Retention lift — worked vs. untouched</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--qs-text)' }}><T k="pages.components.retention.retentionliftreport.094a6b">Retention lift — worked vs. untouched</T></div>
         <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 4, maxWidth: 760 }}>
-          The honest cohort comparison: of the renewals that reached an outcome, how the ones the desk
-          proactively called compare to the ones it never got to. Easy-pay auto-resolved renewals and
-          inbound-only renewals (the customer called us) are excluded — neither was driven by the desk's
-          outreach, so they can't count as proactive saves.
+          <T k="pages.components.retention.retentionliftreport.0745be">The honest cohort comparison: of the renewals that reached an outcome, how the ones the desk proactively called compare to the ones it never got to. Easy-pay auto-resolved renewals and inbound-only renewals (the customer called us) are excluded — neither was driven by the desk's outreach, so they can't count as proactive saves.</T>
         </div>
       </div>
 
@@ -130,17 +128,17 @@ export default function RetentionLiftReport({ agencyId }) {
       <div style={{ borderRadius: 12, padding: 18, border: '1px solid #10B98155', background: '#10B98111',
         display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 240 }}>
-          <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 600 }}>Retention lift on worked renewals</div>
+          <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 600 }}><T k="pages.components.retention.retentionliftreport.8987d9">Retention lift on worked renewals</T></div>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 4 }}>
-            Worked renewals retained <strong style={{ color: '#10B981' }}>{fmtPct(worked.retainRate)}</strong> vs.{' '}
-            <strong style={{ color: 'var(--qs-text)' }}>{fmtPct(untouched.retainRate)}</strong> for the ones never called.
+            <T k="pages.components.retention.retentionliftreport.b1d252">Worked renewals retained</T> <strong style={{ color: '#10B981' }}>{fmtPct(worked.retainRate)}</strong> <T k="pages.components.retention.retentionliftreport.84f507">vs.</T>{' '}
+            <strong style={{ color: 'var(--qs-text)' }}>{fmtPct(untouched.retainRate)}</strong> <T k="pages.components.retention.retentionliftreport.24e5f6">for the ones never called.</T>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 34, fontWeight: 800, color: '#10B981', lineHeight: 1 }}>
             {liftPoints == null ? '—' : `${liftPoints >= 0 ? '+' : ''}${Math.round(liftPoints)} pts`}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}>worked − untouched retain rate</div>
+          <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}><T k="pages.components.retention.retentionliftreport.74df0e">worked − untouched retain rate</T></div>
         </div>
       </div>
 
@@ -153,12 +151,10 @@ export default function RetentionLiftReport({ agencyId }) {
       {/* Quarantine note */}
       <div className="card" style={{ borderLeft: '3px solid #F59E0B' }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', marginBottom: 4 }}>
-          {quarantined.cases.toLocaleString()} auto-resolved renewals ({fmt$(quarantined.premium)}) excluded
+          {quarantined.cases.toLocaleString()} <T k="pages.components.retention.retentionliftreport.c20aa3">auto-resolved renewals (</T>{fmt$(quarantined.premium)}<T k="pages.components.retention.retentionliftreport.a2cb6e">) excluded</T>
         </div>
         <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>
-          These cleared on the easy-pay heuristic without a logged call — renewals we <em>inferred</em>, not
-          worked. Counting them as saves is exactly the overstatement a carrier would catch, so they sit
-          outside the comparison above.
+          <T k="pages.components.retention.retentionliftreport.c50db3">These cleared on the easy-pay heuristic without a logged call — renewals we</T> <em><T k="pages.components.retention.retentionliftreport.723f85">inferred</T></em><T k="pages.components.retention.retentionliftreport.abe271">, not worked. Counting them as saves is exactly the overstatement a carrier would catch, so they sit outside the comparison above.</T>
         </div>
       </div>
 
@@ -166,12 +162,10 @@ export default function RetentionLiftReport({ agencyId }) {
       {inboundOnly && inboundOnly.cases > 0 && (
         <div className="card" style={{ borderLeft: '3px solid #60A5FA' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#60A5FA', marginBottom: 4 }}>
-            {inboundOnly.cases.toLocaleString()} inbound-only renewals ({fmt$(inboundOnly.premiumRetained)} retained) excluded
+            {inboundOnly.cases.toLocaleString()} <T k="pages.components.retention.retentionliftreport.5b44b6">inbound-only renewals (</T>{fmt$(inboundOnly.premiumRetained)} <T k="pages.components.retention.retentionliftreport.6ea57a">retained) excluded</T>
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>
-            The only logged calls on these were inbound — the <em>customer</em> reached out. The desk handled
-            them, but it didn't drive the retention, so they're kept out of the proactive worked cohort to
-            avoid crediting outreach we didn't initiate.
+            <T k="pages.components.retention.retentionliftreport.63462e">The only logged calls on these were inbound — the</T> <em><T k="pages.components.retention.retentionliftreport.91ec1f">customer</T></em> <T k="pages.components.retention.retentionliftreport.09ed84">reached out. The desk handled them, but it didn't drive the retention, so they're kept out of the proactive worked cohort to avoid crediting outreach we didn't initiate.</T>
           </div>
         </div>
       )}
@@ -179,24 +173,19 @@ export default function RetentionLiftReport({ agencyId }) {
       {/* Honesty caveats — what keeps this defensible */}
       <div className="card">
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
-          letterSpacing: '0.06em', marginBottom: 10 }}>Read this before you quote the number</div>
+          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionliftreport.5a9d44">Read this before you quote the number</T></div>
         <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--qs-dim)', lineHeight: 1.7 }}>
           {smallSample && (
-            <li><strong style={{ color: '#F59E0B' }}>Small sample.</strong> Only {worked.resolved} worked
-              renewals have resolved — directional, not yet statistically settled. The gap firms up as volume grows.</li>
+            <li><strong style={{ color: '#F59E0B' }}><T k="pages.components.retention.retentionliftreport.ca0c88">Small sample.</T></strong> <T k="pages.components.retention.retentionliftreport.839246">Only</T> {worked.resolved} <T k="pages.components.retention.retentionliftreport.955791">worked renewals have resolved — directional, not yet statistically settled. The gap firms up as volume grows.</T></li>
           )}
           {selectionBias && (
-            <li><strong style={{ color: '#F59E0B' }}>Selection bias.</strong> The worked cohort faced a smaller
-              average increase ({fmtRate(worked.avgRateChange)} vs {fmtRate(untouched.avgRateChange)}) — easier saves,
-              so some of the lift is which cases got called, not the call itself.</li>
+            <li><strong style={{ color: '#F59E0B' }}><T k="pages.components.retention.retentionliftreport.b55b22">Selection bias.</T></strong> <T k="pages.components.retention.retentionliftreport.f5d913">The worked cohort faced a smaller average increase (</T>{fmtRate(worked.avgRateChange)} <T k="pages.components.retention.retentionliftreport.f4842d">vs</T> {fmtRate(untouched.avgRateChange)}<T k="pages.components.retention.retentionliftreport.83c815">) — easier saves, so some of the lift is which cases got called, not the call itself.</T></li>
           )}
-          <li><strong>No control group.</strong> One agency, no randomized hold-out — this is a within-book
-            comparison, not a controlled trial. It shows correlation strongly; it doesn't prove causation alone.</li>
-          <li><strong>Tactic capture is {capture?.captureRate == null ? 'still ramping' : `${fmtPct(capture.captureRate)}`}.</strong>{' '}
+          <li><strong><T k="pages.components.retention.retentionliftreport.69109a">No control group.</T></strong> <T k="pages.components.retention.retentionliftreport.a69789">One agency, no randomized hold-out — this is a within-book comparison, not a controlled trial. It shows correlation strongly; it doesn't prove causation alone.</T></li>
+          <li><strong><T k="pages.components.retention.retentionliftreport.7b4952">Tactic capture is</T> {capture?.captureRate == null ? 'still ramping' : `${fmtPct(capture.captureRate)}`}.</strong>{' '}
             {capture && capture.total > 0
-              ? <>Only {capture.withTactic} of {capture.total} reached calls recorded what was offered, so we can say worked
-                cases retain better — but not yet <em>which</em> tactic did it. That answer fills in as capture climbs.</>
-              : <>Until reached calls record the save tactic, we can show the lift but not which tactic drove it.</>}
+              ? <><T k="pages.components.retention.retentionliftreport.839246">Only</T> {capture.withTactic} <T k="pages.components.retention.retentionliftreport.8bf885">of</T> {capture.total} <T k="pages.components.retention.retentionliftreport.627c85">reached calls recorded what was offered, so we can say worked cases retain better — but not yet</T> <em><T k="pages.components.retention.retentionliftreport.8b7af5">which</T></em> <T k="pages.components.retention.retentionliftreport.e6fdc7">tactic did it. That answer fills in as capture climbs.</T></>
+              : <><T k="pages.components.retention.retentionliftreport.505429">Until reached calls record the save tactic, we can show the lift but not which tactic drove it.</T></>}
           </li>
         </ul>
       </div>
@@ -205,8 +194,7 @@ export default function RetentionLiftReport({ agencyId }) {
       <ProofReadiness agencyId={agencyId} capture={capture} />
 
       <p style={{ fontSize: 11, color: 'var(--qs-muted)' }}>
-        "Worked" = at least one genuine (non-auto-logged) outbound attempt on the renewal. Premium retained
-        sums the continuing premium on confirmed renewals. Numbers update live from the book.
+        <T k="pages.components.retention.retentionliftreport.e482b6">"Worked" = at least one genuine (non-auto-logged) outbound attempt on the renewal. Premium retained sums the continuing premium on confirmed renewals. Numbers update live from the book.</T>
       </p>
     </div>
   );

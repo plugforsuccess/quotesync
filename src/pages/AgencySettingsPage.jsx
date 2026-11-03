@@ -1,6 +1,7 @@
 // src/pages/AgencySettingsPage.jsx
 // MT-06: Agency settings with Profile / Notifications / Commission / Territory tabs
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map, PhoneCall, Target, ChevronDown, ChevronUp, Check, Activity, Download } from 'lucide-react';
@@ -49,8 +50,8 @@ const AgencySettingsPage = () => {
       <div className="dark-page flex items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--qs-subtle)' }} />
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--qs-bright)' }}>No Agency Found</h2>
-          <p style={{ color: 'var(--qs-dim)' }}>You are not currently associated with an agency.</p>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.60ec94">No Agency Found</T></h2>
+          <p style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.d523dd">You are not currently associated with an agency.</T></p>
         </div>
       </div>
     );
@@ -62,7 +63,7 @@ const AgencySettingsPage = () => {
       <div className="dark-page flex items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--qs-bright)' }}>Error Loading Agency</h2>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.c41898">Error Loading Agency</T></h2>
           <p style={{ color: 'var(--qs-dim)' }}>{error?.message || 'Agency not found.'}</p>
         </div>
       </div>
@@ -75,8 +76,8 @@ const AgencySettingsPage = () => {
         <div className="dark-header rounded-xl mb-6 flex items-center gap-3">
           <Building2 className="w-8 h-8 text-primary-600" />
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Agency Settings</h1>
-            <p style={{ color: 'var(--qs-subtle)' }}>Manage your agency profile and configuration</p>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.c1d7f0">Agency Settings</T></h1>
+            <p style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.544dd9">Manage your agency profile and configuration</T></p>
           </div>
         </div>
 
@@ -115,7 +116,7 @@ const AgencySettingsPage = () => {
         {activeTab === 'data_export' && (
           isAgent
             ? <DataExportPanel agencyId={currentAgencyId} />
-            : <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Data export is available to the agency principal.</div>
+            : <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.agencysettingspage.10ab9a">Data export is available to the agency principal.</T></div>
         )}
       </div>
     </div>
@@ -172,7 +173,7 @@ function EmployeeCallTarget({ employee, agencyId }) {
         }}
       />
       {saving && (
-        <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>Saving…</span>
+        <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}><T k="pages.agencysettingspage.eedf6b">Saving…</T></span>
       )}
     </div>
   );
@@ -232,7 +233,7 @@ function TeamTab({ agencyId, isAgent }) {
   if (isLoading) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: 'var(--qs-muted)' }}>
-        Loading team...
+        <T k="pages.agencysettingspage.e83075">Loading team...</T>
       </div>
     );
   }
@@ -243,11 +244,10 @@ function TeamTab({ agencyId, isAgent }) {
     <div>
       <div style={{ marginBottom: 24 }}>
         <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          Team Access
+          <T k="pages.agencysettingspage.2bdb0d">Team Access</T>
         </h2>
         <p style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 4 }}>
-          All accounts connected to this agency. Employees with no login account
-          can be invited from this page.
+          <T k="pages.agencysettingspage.c35fca">All accounts connected to this agency. Employees with no login account can be invited from this page.</T>
         </p>
       </div>
 
@@ -317,7 +317,7 @@ function TeamTab({ agencyId, isAgent }) {
                       </span>
                     ) : (
                       <span style={{ color: 'var(--qs-muted)', fontSize: 12 }}>
-                        No employee record
+                        <T k="pages.agencysettingspage.015654">No employee record</T>
                       </span>
                     )}
                   </td>
@@ -338,14 +338,14 @@ function TeamTab({ agencyId, isAgent }) {
                         fontSize: 11, fontWeight: 600, padding: '3px 8px',
                         borderRadius: 4, color: '#F59E0B', background: '#F59E0B11',
                       }}>
-                        ⏳ Pending password reset
+                        <T k="pages.agencysettingspage.bc44bb">⏳ Pending password reset</T>
                       </span>
                     ) : hasLogin ? (
                       <span style={{
                         fontSize: 11, fontWeight: 600, padding: '3px 8px',
                         borderRadius: 4, color: '#10B981', background: '#10B98111',
                       }}>
-                        ● Active
+                        <T k="pages.agencysettingspage.798702">● Active</T>
                       </span>
                     ) : (
                       <span style={{
@@ -353,7 +353,7 @@ function TeamTab({ agencyId, isAgent }) {
                         borderRadius: 4, color: 'var(--qs-muted)',
                         background: 'var(--qs-elevated)',
                       }}>
-                        No login
+                        <T k="pages.agencysettingspage.414eb6">No login</T>
                       </span>
                     )}
                   </td>
@@ -374,7 +374,7 @@ function TeamTab({ agencyId, isAgent }) {
         <div>
           <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)',
             marginBottom: 12 }}>
-            Employees without a login account
+            <T k="pages.agencysettingspage.5a49ba">Employees without a login account</T>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {unlinkedEmployees.map(emp => (
@@ -393,7 +393,7 @@ function TeamTab({ agencyId, isAgent }) {
                   <p style={{ fontSize: 11, color: 'var(--qs-muted)',
                     margin: '2px 0 0' }}>
                     {emp.roles?.length > 0 ? emp.roles.join(', ') : 'No roles assigned'}
-                    {' · '}No QuoteSync login
+                    {' · '}<T k="pages.agencysettingspage.f68951">No QuoteSync login</T>
                   </p>
                 </div>
                 {isAgent && (
@@ -405,7 +405,7 @@ function TeamTab({ agencyId, isAgent }) {
                       border: '1px solid #3B82F633', color: '#3B82F6',
                       cursor: 'pointer',
                     }}>
-                    Invite
+                    <T k="pages.agencysettingspage.c6a00f">Invite</T>
                   </button>
                 )}
               </div>
@@ -509,19 +509,18 @@ function MyRepWorkspace({ agencyId }) {
       background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
     }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
-        Work cases as a rep
+        <T k="pages.agencysettingspage.900036">Work cases as a rep</T>
       </div>
       <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 14 }}>
-        Wearing more than one hat? Opt into rep roles to receive cases from the round-robin
-        and unlock the My Queue view for those cases.
+        <T k="pages.agencysettingspage.8e3d95">Wearing more than one hat? Opt into rep roles to receive cases from the round-robin and unlock the My Queue view for those cases.</T>
       </div>
 
       {isLoading ? (
-        <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>Loading…</div>
+        <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}><T k="pages.agencysettingspage.5f02f0">Loading…</T></div>
       ) : !emp ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>
-            You don't have a rep workspace yet. Set one up to start receiving assigned cases.
+            <T k="pages.agencysettingspage.40209c">You don't have a rep workspace yet. Set one up to start receiving assigned cases.</T>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
@@ -560,8 +559,8 @@ function MyRepWorkspace({ agencyId }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 2 }}>
-            Linked to <strong style={{ color: 'var(--qs-text)' }}>{emp.first_name} {emp.last_name}</strong>
-            {' · '}daily call target {emp.daily_call_target}
+            <T k="pages.agencysettingspage.fd248c">Linked to</T> <strong style={{ color: 'var(--qs-text)' }}>{emp.first_name} {emp.last_name}</strong>
+            {' · '}<T k="pages.agencysettingspage.622a89">daily call target</T> {emp.daily_call_target}
           </div>
           {REP_ROLE_OPTIONS.map(opt => {
             const on = (emp.roles || []).includes(opt.key);
@@ -726,10 +725,10 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
   return (
     <div className="dark-card">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Agency Profile</h2>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.169093">Agency Profile</T></h2>
         {isAgent && !editing && (
           <button onClick={startEditing} className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
-            Edit
+            <T k="pages.agencysettingspage.7dce12">Edit</T>
           </button>
         )}
       </div>
@@ -739,7 +738,7 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
       {/* Agency Logo — available to principals; shown in the employee sidebar. */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 8 }}>
-          Agency Logo
+          <T k="pages.agencysettingspage.2912fb">Agency Logo</T>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Preview */}
@@ -757,7 +756,7 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             ) : (
-              <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>No logo</span>
+              <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}><T k="pages.agencysettingspage.f16535">No logo</T></span>
             )}
           </div>
 
@@ -789,18 +788,18 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
                       background: 'none', border: 'none', cursor: 'pointer',
                     }}
                   >
-                    Remove
+                    <T k="pages.agencysettingspage.1063e3">Remove</T>
                   </button>
                 )}
               </>
             ) : (
               <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-                Only the principal can change the agency logo.
+                <T k="pages.agencysettingspage.be7585">Only the principal can change the agency logo.</T>
               </div>
             )}
 
             <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-              PNG, JPG, SVG or WebP · max 500KB · appears in employee sidebar
+              <T k="pages.agencysettingspage.3ae7db">PNG, JPG, SVG or WebP · max 500KB · appears in employee sidebar</T>
             </div>
 
             {logoError && (
@@ -827,7 +826,7 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
             <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
               <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save Changes'}
             </button>
-            <button onClick={() => setEditing(false)} className="btn-ghost">Cancel</button>
+            <button onClick={() => setEditing(false)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
           </div>
         </div>
       ) : (
@@ -884,10 +883,10 @@ function NotificationsTab({ agency, agencyId, isAgent, queryClient }) {
     <div className="space-y-6">
       <div className="dark-card">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Notification Settings</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.76d8f3">Notification Settings</T></h2>
           {isAgent && !editing && (
             <button onClick={startEditing} className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
-              Edit
+              <T k="pages.agencysettingspage.7dce12">Edit</T>
             </button>
           )}
         </div>
@@ -895,29 +894,29 @@ function NotificationsTab({ agency, agencyId, isAgent, queryClient }) {
         {editing ? (
           <div className="space-y-4">
             <Field label="Your Cell Number" type="tel" value={form.agent_cell_number} onChange={(v) => setForm(f => ({ ...f, agent_cell_number: v }))} placeholder="(404) 555-1234" />
-            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>This is where speed-to-call will ring and where forwarded SMS messages will go.</p>
+            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.178542">This is where speed-to-call will ring and where forwarded SMS messages will go.</T></p>
             <div className="flex gap-2 pt-2">
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
                 <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save'}
               </button>
-              <button onClick={() => setEditing(false)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setEditing(false)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             <ReadOnly label="Your Cell Number" value={agency.agent_cell_number || 'Not set'} />
             <ReadOnly label="Twilio SMS Number" value={agency.twilio_from_number || 'Using platform default'} />
-            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Contact platform support to configure a dedicated Twilio number.</p>
+            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.720735">Contact platform support to configure a dedicated Twilio number.</T></p>
           </div>
         )}
       </div>
 
       {/* SMS Preview */}
       <div className="dark-card">
-        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-dim)' }}>SMS Preview</h3>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.e32bb2">SMS Preview</T></h3>
         <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: '8px', padding: '16px' }}>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--qs-dim)' }}>
-            Hey [Name]! This is <span className="font-semibold">{agentName}</span> from <span className="font-semibold">{brandName}</span>. I'm pulling up your personalized quotes right now. I'll call you in about 30 seconds to walk you through your options. Talk soon!
+            <T k="pages.agencysettingspage.264035">Hey [Name]! This is</T> <span className="font-semibold">{agentName}</span> <T k="pages.agencysettingspage.d98a07">from</T> <span className="font-semibold">{brandName}</span><T k="pages.agencysettingspage.ffb9c8">. I'm pulling up your personalized quotes right now. I'll call you in about 30 seconds to walk you through your options. Talk soon!</T>
           </p>
         </div>
       </div>
@@ -998,7 +997,7 @@ function CommissionTab({ agencyId, isAgent }) {
     }
   };
 
-  if (isLoading) return <div className="py-8 text-center" style={{ color: 'var(--qs-subtle)' }}>Loading commission data...</div>;
+  if (isLoading) return <div className="py-8 text-center" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.b25211">Loading commission data...</T></div>;
 
   const tiers = ['preferred', 'bundled', 'monoline'];
   const tierLabels = { preferred: 'Preferred', bundled: 'Bundled', monoline: 'Monoline' };
@@ -1009,7 +1008,7 @@ function CommissionTab({ agencyId, isAgent }) {
       {carrierConfig && (
         <div className="dark-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Carrier Configuration</h2>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.5f0014">Carrier Configuration</T></h2>
             {isAgent && !editGoals && (
               <button
                 onClick={() => setEditGoals({
@@ -1018,7 +1017,7 @@ function CommissionTab({ agencyId, isAgent }) {
                 })}
                 className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
-                Edit Goals
+                <T k="pages.agencysettingspage.7dbe97">Edit Goals</T>
               </button>
             )}
           </div>
@@ -1026,7 +1025,7 @@ function CommissionTab({ agencyId, isAgent }) {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Commission Goal ($/mo)</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.04f969">Commission Goal ($/mo)</T></label>
                   <input
                     type="number"
                     min="0"
@@ -1038,7 +1037,7 @@ function CommissionTab({ agencyId, isAgent }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Premium Goal ($/mo)</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.0eed36">Premium Goal ($/mo)</T></label>
                   <input
                     type="number"
                     min="0"
@@ -1087,7 +1086,7 @@ function CommissionTab({ agencyId, isAgent }) {
                 >
                   <Save className="w-4 h-4" />{savingGoals ? 'Saving...' : 'Save Goals'}
                 </button>
-                <button onClick={() => setEditGoals(null)} className="btn-ghost">Cancel</button>
+                <button onClick={() => setEditGoals(null)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
               </div>
             </div>
           ) : (
@@ -1103,10 +1102,10 @@ function CommissionTab({ agencyId, isAgent }) {
       {/* Commission Rates Grid */}
       <div className="dark-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Commission Rates</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.50fceb">Commission Rates</T></h2>
           {isAgent && hasRates && !editRates && (
             <button onClick={startEditing} className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
-              Edit
+              <T k="pages.agencysettingspage.7dce12">Edit</T>
             </button>
           )}
         </div>
@@ -1114,7 +1113,7 @@ function CommissionTab({ agencyId, isAgent }) {
         {!hasRates ? (
           <div className="text-center py-8">
             <DollarSign className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
-            <p className="mb-4" style={{ color: 'var(--qs-dim)' }}>No commission rates configured yet.</p>
+            <p className="mb-4" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.c73a70">No commission rates configured yet.</T></p>
             {isAgent && (
               <button
                 onClick={handleSeedDefaults}
@@ -1130,7 +1129,7 @@ function CommissionTab({ agencyId, isAgent }) {
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="text-left py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>Product</th>
+                  <th className="text-left py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.deb105">Product</T></th>
                   {tiers.map(t => <th key={t} className="text-center py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>{tierLabels[t]}</th>)}
                 </tr>
               </thead>
@@ -1160,19 +1159,19 @@ function CommissionTab({ agencyId, isAgent }) {
                 ))}
               </tbody>
             </table>
-            <p className="text-xs mt-2" style={{ color: 'var(--qs-subtle)' }}>Enter rates as decimals (e.g. 0.25 = 25%)</p>
+            <p className="text-xs mt-2" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.a9cc42">Enter rates as decimals (e.g. 0.25 = 25%)</T></p>
             <div className="flex gap-2 mt-4">
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
                 <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save Rates'}
               </button>
-              <button onClick={() => setEditRates(null)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setEditRates(null)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
             </div>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="text-left py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>Product</th>
+                <th className="text-left py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.deb105">Product</T></th>
                 {tiers.map(t => <th key={t} className="text-center py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>{tierLabels[t]}</th>)}
               </tr>
             </thead>
@@ -1253,8 +1252,8 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
     <div className="space-y-6">
       {/* Licensed States */}
       <div className="dark-card">
-        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}>Licensed States</h2>
-        <p className="text-sm mb-4" style={{ color: 'var(--qs-subtle)' }}>Select all states where your agency is licensed to sell insurance.</p>
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.feec21">Licensed States</T></h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.0d7995">Select all states where your agency is licensed to sell insurance.</T></p>
         <div className="flex flex-wrap gap-2 mb-4">
           {US_STATES.map(state => (
             <button
@@ -1286,37 +1285,37 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
       {/* Routing Rules */}
       <div className="dark-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Routing Rules</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.4b4c21">Routing Rules</T></h2>
           {isAgent && (
             <button
               onClick={() => setShowAddRule(!showAddRule)}
               className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
             >
-              + Add Rule
+              <T k="pages.agencysettingspage.adc4b8">+ Add Rule</T>
             </button>
           )}
         </div>
 
         <div className="text-sm mb-4" style={{ background: 'var(--qs-info-subtle)', border: '1px solid var(--qs-info-border)', borderRadius: '8px', padding: '12px', color: 'var(--qs-info)' }}>
-          Territory rules require platform approval before going live. Existing approved rules remain active.
+          <T k="pages.agencysettingspage.9fea39">Territory rules require platform approval before going live. Existing approved rules remain active.</T>
         </div>
 
         {showAddRule && (
           <form onSubmit={handleAddRule} className="mb-4 space-y-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: '8px', padding: '16px' }}>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>State</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.46a2a4">State</T></label>
                 <select value={newRule.state} onChange={(e) => setNewRule(r => ({ ...r, state: e.target.value }))} className="dark-select" required>
                   <option value="">Select...</option>
                   {licensedStates.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>ZIP Prefix (optional)</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.8a43ad">ZIP Prefix (optional)</T></label>
                 <input type="text" value={newRule.zip_prefix} onChange={(e) => setNewRule(r => ({ ...r, zip_prefix: e.target.value }))} className="dark-input" placeholder="e.g. 303" maxLength={3} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Priority</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.502996">Priority</T></label>
                 <input type="number" value={newRule.priority_tier} onChange={(e) => setNewRule(r => ({ ...r, priority_tier: e.target.value }))} className="dark-input" min={1} max={10} />
               </div>
             </div>
@@ -1324,21 +1323,21 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
               <button type="submit" disabled={createRule.isPending} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50 text-sm">
                 {createRule.isPending ? 'Creating...' : 'Create Rule'}
               </button>
-              <button type="button" onClick={() => setShowAddRule(false)} className="btn-ghost text-sm">Cancel</button>
+              <button type="button" onClick={() => setShowAddRule(false)} className="btn-ghost text-sm"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
             </div>
           </form>
         )}
 
         {rulesLoading ? (
-          <p className="text-sm py-4" style={{ color: 'var(--qs-subtle)' }}>Loading rules...</p>
+          <p className="text-sm py-4" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.53ac34">Loading rules...</T></p>
         ) : rules && rules.length > 0 ? (
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--qs-elevated)' }}>
-                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>State</th>
-                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>ZIP Prefix</th>
-                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Priority</th>
-                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Status</th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.46a2a4">State</T></th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.be8f5b">ZIP Prefix</T></th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.502996">Priority</T></th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.ec53a8">Status</T></th>
               </tr>
             </thead>
             <tbody>
@@ -1365,7 +1364,7 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
             </tbody>
           </table>
         ) : (
-          <p className="text-sm py-4" style={{ color: 'var(--qs-subtle)' }}>No routing rules configured.</p>
+          <p className="text-sm py-4" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.337414">No routing rules configured.</T></p>
         )}
       </div>
     </div>
@@ -1417,23 +1416,23 @@ function TransferPhoneTab({ agencyId, isAgent }) {
   }
 
   if (isLoading) {
-    return <div className="py-8 text-center" style={{ color: 'var(--qs-subtle)' }}>Loading transfer settings...</div>;
+    return <div className="py-8 text-center" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.2011f2">Loading transfer settings...</T></div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="dark-card">
-        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}>Transfer Phone Numbers</h2>
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.d69e57">Transfer Phone Numbers</T></h2>
         <p className="text-sm mb-4" style={{ color: 'var(--qs-subtle)' }}>
-          Set direct phone numbers for each producer. These numbers are used by Bland AI for live call transfers when agents are available.
+          <T k="pages.agencysettingspage.7c32da">Set direct phone numbers for each producer. These numbers are used by Bland AI for live call transfers when agents are available.</T>
         </p>
 
         {team.length === 0 ? (
           <div className="text-center py-8">
             <PhoneCall className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
-            <p style={{ color: 'var(--qs-dim)' }}>No team members have set up availability yet.</p>
+            <p style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.bd63ba">No team members have set up availability yet.</T></p>
             <p className="text-sm mt-1" style={{ color: 'var(--qs-subtle)' }}>
-              Producers can toggle their availability from their My Queue page to create their record.
+              <T k="pages.agencysettingspage.998fc5">Producers can toggle their availability from their My Queue page to create their record.</T>
             </p>
           </div>
         ) : (
@@ -1477,7 +1476,7 @@ function TransferPhoneTab({ agencyId, isAgent }) {
                           onClick={() => startEditing(member)}
                           className="text-sm font-medium text-primary-600 hover:text-primary-700"
                         >
-                          Edit
+                          <T k="pages.agencysettingspage.7dce12">Edit</T>
                         </button>
                       )}
                     </div>
@@ -1509,13 +1508,13 @@ function TransferPhoneTab({ agencyId, isAgent }) {
                         className="flex items-center gap-1 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50 text-sm"
                       >
                         <Save className="w-3 h-3" />
-                        Save
+                        <T k="pages.agencysettingspage.c9cc8c">Save</T>
                       </button>
                       <button
                         onClick={() => { setEditingUserId(null); setPhoneError(''); }}
                         className="btn-ghost text-sm"
                       >
-                        Cancel
+                        <T k="pages.agencysettingspage.ea4788">Cancel</T>
                       </button>
                     </div>
                   </div>
@@ -1527,13 +1526,13 @@ function TransferPhoneTab({ agencyId, isAgent }) {
       </div>
 
       <div className="dark-card">
-        <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--qs-dim)' }}>How Transfers Work</h3>
+        <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.7b62f8">How Transfers Work</T></h3>
         <ul className="text-sm space-y-1" style={{ color: 'var(--qs-subtle)' }}>
-          <li>When a lead submits the quote funnel, Bland AI calls them within seconds.</li>
-          <li>If an agent is available and it's business hours, Bland offers a live transfer.</li>
-          <li>The principal (priority 0) always routes first when available.</li>
-          <li>Other producers route in round-robin order behind the principal.</li>
-          <li>Each producer manages their own availability toggle from their My Queue page.</li>
+          <li><T k="pages.agencysettingspage.da2d71">When a lead submits the quote funnel, Bland AI calls them within seconds.</T></li>
+          <li><T k="pages.agencysettingspage.4724e3">If an agent is available and it's business hours, Bland offers a live transfer.</T></li>
+          <li><T k="pages.agencysettingspage.785303">The principal (priority 0) always routes first when available.</T></li>
+          <li><T k="pages.agencysettingspage.74e6f3">Other producers route in round-robin order behind the principal.</T></li>
+          <li><T k="pages.agencysettingspage.67f087">Each producer manages their own availability toggle from their My Queue page.</T></li>
         </ul>
       </div>
     </div>
@@ -1582,9 +1581,9 @@ function ProducerGoalsTab({ agencyId }) {
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-primary-600" />
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Producer Performance Goals</h2>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.66bc56">Producer Performance Goals</T></h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-                Goals are set in Planning → Production Goals, with trailing production, suggestions, and agency-goal reconciliation. This view is read-only.
+                <T k="pages.agencysettingspage.f7ec95">Goals are set in Planning → Production Goals, with trailing production, suggestions, and agency-goal reconciliation. This view is read-only.</T>
               </p>
             </div>
           </div>
@@ -1592,7 +1591,7 @@ function ProducerGoalsTab({ agencyId }) {
             to="/agency/planning?tab=goals"
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg text-sm whitespace-nowrap"
           >
-            Edit in Planning →
+            <T k="pages.agencysettingspage.e64cdb">Edit in Planning →</T>
           </Link>
         </div>
       </div>
@@ -1600,8 +1599,8 @@ function ProducerGoalsTab({ agencyId }) {
       {!producers.length ? (
         <div className="dark-card text-center py-8">
           <Target className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
-          <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--qs-bright)' }}>No Producers Found</h2>
-          <p style={{ color: 'var(--qs-dim)' }}>Add employees with the "sales" role to configure their performance goals.</p>
+          <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.889636">No Producers Found</T></h2>
+          <p style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.c8aa5d">Add employees with the "sales" role to configure their performance goals.</T></p>
         </div>
       ) : (
         producers.map(producer => {
@@ -1766,7 +1765,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 10, color: 'var(--qs-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
-            Implied Blended Rate
+            <T k="pages.agencysettingspage.947fcc">Implied Blended Rate</T>
           </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', fontFamily: "'DM Mono', monospace" }}>
             {impliedRate != null ? fmtPct(impliedRate) : '—'}
@@ -1779,7 +1778,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
         </div>
         <div>
           <div style={{ fontSize: 10, color: 'var(--qs-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
-            Trailing 12mo Realized
+            <T k="pages.agencysettingspage.a2d8e9">Trailing 12mo Realized</T>
           </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', fontFamily: "'DM Mono', monospace" }}>
             {trailing != null ? fmtPct(trailing) : '—'}
@@ -1792,7 +1791,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
         </div>
         <div>
           <div style={{ fontSize: 10, color: 'var(--qs-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
-            Gap
+            <T k="pages.agencysettingspage.466b98">Gap</T>
           </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: gapColor, fontFamily: "'DM Mono', monospace" }}>
             {gapPts != null ? `${gapPts >= 0 ? '+' : ''}${gapPts.toFixed(1)}pt` : '—'}
@@ -1815,10 +1814,10 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
             className="btn-ghost"
             style={{ fontSize: 12, padding: '6px 12px' }}
           >
-            Suggest premium goal from trailing rate
+            <T k="pages.agencysettingspage.efb3a0">Suggest premium goal from trailing rate</T>
           </button>
           <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>
-            At {fmtPct(trailing)} → premium goal ≈ {fmt$(commissionGoal / trailing)}
+            <T k="pages.agencysettingspage.dc5f49">At</T> {fmtPct(trailing)} <T k="pages.agencysettingspage.7f0a63">→ premium goal ≈</T> {fmt$(commissionGoal / trailing)}
           </span>
         </div>
       )}
@@ -1827,17 +1826,17 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
       {mixRows.length > 0 && (
         <div>
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            Trailing 12mo Product Mix
+            <T k="pages.agencysettingspage.732052">Trailing 12mo Product Mix</T>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', fontSize: 12, minWidth: 480 }}>
               <thead>
                 <tr style={{ color: 'var(--qs-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '4px 8px', fontWeight: 500 }}>Product</th>
-                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}>Premium</th>
-                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}>Mix %</th>
-                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}>Eff. Rate</th>
-                  <th style={{ padding: '4px 8px', fontWeight: 500 }}>vs Blended</th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500 }}><T k="pages.agencysettingspage.deb105">Product</T></th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}><T k="pages.agencysettingspage.8d5e7e">Premium</T></th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}><T k="pages.agencysettingspage.d2156e">Mix %</T></th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}><T k="pages.agencysettingspage.055615">Eff. Rate</T></th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500 }}><T k="pages.agencysettingspage.b989bd">vs Blended</T></th>
                 </tr>
               </thead>
               <tbody>
@@ -1874,9 +1873,9 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
             if (!topLever || topLever.effectiveRate <= trailing) return null;
             return (
               <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 8, lineHeight: 1.5 }}>
-                To close the {gapPts.toFixed(1)}pt gap, shift mix toward{' '}
+                <T k="pages.agencysettingspage.cbb99d">To close the</T> {gapPts.toFixed(1)}<T k="pages.agencysettingspage.90ec85">pt gap, shift mix toward</T>{' '}
                 <span style={{ color: 'var(--qs-bright)', fontWeight: 600 }}>{topLever.label}</span>
-                {' '}({fmtPct(topLever.effectiveRate)} effective rate, currently {fmtPct(topLever.share)} of premium).
+                {' '}({fmtPct(topLever.effectiveRate)} <T k="pages.agencysettingspage.fc5563">effective rate, currently</T> {fmtPct(topLever.share)} <T k="pages.agencysettingspage.d2c335">of premium).</T>
               </p>
             );
           })()}

@@ -1,6 +1,7 @@
 // src/pages/components/comp-model/AnnualCompTable.jsx
 // Annual compensation view mirroring the spreadsheet's annual tab.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { PRESET_SCENARIOS, computeScenario } from '../../../utils/compModelCalculations';
 
@@ -27,20 +28,20 @@ export default function AnnualCompTable({ config, productMix }) {
   return (
     <div>
       <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">
-        Annual Compensation
+        <T k="pages.components.compmodel.annualcomptable.c4318c">Annual Compensation</T>
       </h4>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left py-2 pr-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Scenario</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Items/Mo</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Base Salary</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Annual VC Base</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Annual TP Bonus</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Annual Non-VC</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Total Annual Comp</th>
-              <th className="text-right py-2 pl-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Agency Profit/Yr</th>
+              <th className="text-left py-2 pr-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.54861e">Scenario</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.667841">Items/Mo</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.792e1b">Base Salary</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.479480">Annual VC Base</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.d094e2">Annual TP Bonus</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.a511f7">Annual Non-VC</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.8c23e1">Total Annual Comp</T></th>
+              <th className="text-right py-2 pl-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.annualcomptable.91314e">Agency Profit/Yr</T></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

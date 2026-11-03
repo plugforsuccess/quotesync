@@ -3,6 +3,7 @@
 // No employee self-service, no approval workflow. Admin-only data entry.
 // Route: /admin/time-attendance
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Clock, Users, RefreshCw, ShieldOff, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -546,8 +547,8 @@ const TimeAttendancePage = () => {
       <div className="dark-page flex items-center justify-center">
         <div className="text-center">
           <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-qs-bright mb-2">Access Denied</h2>
-          <p className="text-qs-dim">You do not have permission to view this page.</p>
+          <h2 className="text-2xl font-bold text-qs-bright mb-2"><T k="pages.timeattendancepage.095afb">Access Denied</T></h2>
+          <p className="text-qs-dim"><T k="pages.timeattendancepage.d22f74">You do not have permission to view this page.</T></p>
         </div>
       </div>
     );
@@ -560,14 +561,14 @@ const TimeAttendancePage = () => {
       <div className="dark-page flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-qs-card rounded-lg p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-qs-bright mb-4">Failed to Load</h2>
+          <h2 className="text-2xl font-bold text-qs-bright mb-4"><T k="pages.timeattendancepage.078f4f">Failed to Load</T></h2>
           <p className="text-qs-dim mb-6">{error.message}</p>
           <button
             onClick={refetchAll}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
-            Retry
+            <T k="pages.timeattendancepage.6327b4">Retry</T>
           </button>
         </div>
       </div>
@@ -583,8 +584,8 @@ const TimeAttendancePage = () => {
             <div className="flex items-center gap-3">
               <Clock className="w-8 h-8 text-primary-600" />
               <div>
-                <h1 className="text-2xl font-bold dark-heading">Time &amp; Attendance</h1>
-                <p className="dark-subheading">Weekly time entry for all employees</p>
+                <h1 className="text-2xl font-bold dark-heading"><T k="pages.timeattendancepage.f7fd28">Time & Attendance</T></h1>
+                <p className="dark-subheading"><T k="pages.timeattendancepage.783cc1">Weekly time entry for all employees</T></p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -675,7 +676,7 @@ const TimeAttendancePage = () => {
             return (
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Today's Status
+                  <T k="pages.timeattendancepage.fa8d3e">Today's Status</T>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {rosterEmployees.map((emp) => {
@@ -708,7 +709,7 @@ const TimeAttendancePage = () => {
                         </div>
                         {punch?.start_time && (
                           <div style={{ fontSize: 10, color: 'var(--qs-dim)', marginTop: 2, fontFamily: 'monospace' }}>
-                            in {punch.start_time}
+                            <T k="pages.timeattendancepage.13b5bf">in</T> {punch.start_time}
                             {punch.end_time ? ` · out ${punch.end_time}` : ''}
                           </div>
                         )}
@@ -721,7 +722,7 @@ const TimeAttendancePage = () => {
                     );
                   })}
                   {rosterEmployees.length === 0 && (
-                    <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>No active employees found.</div>
+                    <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}><T k="pages.timeattendancepage.b65c75">No active employees found.</T></div>
                   )}
                 </div>
               </div>
@@ -732,26 +733,26 @@ const TimeAttendancePage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="dark-card-elevated">
               <div className="text-2xl font-bold text-qs-bright">{totalEntries}</div>
-              <div className="text-sm text-qs-dim">Total Entries</div>
+              <div className="text-sm text-qs-dim"><T k="pages.timeattendancepage.def711">Total Entries</T></div>
             </div>
             <div className="dark-card-elevated">
               <div className="text-2xl font-bold text-primary-400">
                 {totalHours.toFixed(1)}h
               </div>
-              <div className="text-sm text-primary-400">Total Hours</div>
+              <div className="text-sm text-primary-400"><T k="pages.timeattendancepage.43237d">Total Hours</T></div>
             </div>
             <div className="dark-card-elevated">
               <div className="text-2xl font-bold text-emerald-400">
                 {employeesWithEntries} / {rosterEmployees.length}
               </div>
-              <div className="text-sm text-emerald-400">Employees Entered</div>
+              <div className="text-sm text-emerald-400"><T k="pages.timeattendancepage.3bf94e">Employees Entered</T></div>
             </div>
             <div className="dark-card-elevated">
               <div className={`text-2xl font-bold ${wfhThisWeek > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
                 {wfhThisWeek}
               </div>
               <div className={`text-sm ${wfhThisWeek > 0 ? 'text-amber-400' : 'text-qs-dim'}`}>
-                WFH Days
+                <T k="pages.timeattendancepage.ef96b6">WFH Days</T>
               </div>
             </div>
           </div>
@@ -760,8 +761,8 @@ const TimeAttendancePage = () => {
           {!selectedEmployee ? (
             <div className="dark-card p-12 text-center">
               <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-qs-bright mb-2">Select an employee</h2>
-              <p className="text-qs-dim">Choose an employee from the dropdown above to enter their weekly time.</p>
+              <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.timeattendancepage.61b214">Select an employee</T></h2>
+              <p className="text-qs-dim"><T k="pages.timeattendancepage.dcc2aa">Choose an employee from the dropdown above to enter their weekly time.</T></p>
             </div>
           ) : (
             <>
@@ -770,7 +771,7 @@ const TimeAttendancePage = () => {
                   <Users className="w-5 h-5 text-qs-muted" />
                   {getEmployeeName(selectedEmployee)}
                   <span className="text-sm font-normal text-qs-subtle">
-                    &middot; Week of {formatWeekLabel(weekStart)}
+                    <T k="pages.timeattendancepage.add4c5">· Week of</T> {formatWeekLabel(weekStart)}
                   </span>
                 </h3>
 
@@ -788,7 +789,7 @@ const TimeAttendancePage = () => {
                 {isLoading ? (
                   <div className="dark-card p-8 text-center">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-3" />
-                    <p className="text-qs-dim text-sm">Loading entries...</p>
+                    <p className="text-qs-dim text-sm"><T k="pages.timeattendancepage.97579b">Loading entries...</T></p>
                   </div>
                 ) : (
                   <WeeklyTimeTable

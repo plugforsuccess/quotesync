@@ -4,6 +4,7 @@
 // one), then one card per link. "Opened, not uploaded" is the warmest lead in
 // the list, so it gets a Nudge text; expired links sit at the bottom, hidden.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo, useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { useRateCheckInvites, useRateCheckInviteStats } from '../../../hooks/useRateChecks';
@@ -85,7 +86,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
           </div>
           {total('bound') > 0 && (
             <p className="mt-3 text-center text-sm" style={{ color: 'var(--qs-text)' }}>
-              {total('won')} won · {total('bound')} bound · <b className="text-green-600">{money(total('bound_premium'))}/yr</b>
+              {total('won')} <T k="pages.components.ratechecks.invitestab.296e48">won ·</T> {total('bound')} <T k="pages.components.ratechecks.invitestab.e0e0b8">bound ·</T> <b className="text-green-600">{money(total('bound_premium'))}<T k="pages.components.ratechecks.invitestab.6d8fef">/yr</T></b>
             </p>
           )}
           {/* Who and where it's working — only worth showing with more than one row. */}
@@ -95,8 +96,8 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
                 <li key={`${t.event}|${t.producer}`} className="rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)' }}>
                   <p className="truncate text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{t.producer} <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>· {t.event}</span></p>
                   <p className="text-xs tabular-nums" style={{ color: 'var(--qs-subtle)' }}>
-                    {t.invites} links · {t.opened} opened · {t.uploaded} uploaded · {t.quoted} quoted · {t.won} won · {t.bound} bound
-                    {Number(t.bound_premium) > 0 && <span className="font-semibold text-green-600"> · {money(t.bound_premium)}/yr</span>}
+                    {t.invites} <T k="pages.components.ratechecks.invitestab.14a41a">links ·</T> {t.opened} <T k="pages.components.ratechecks.invitestab.570ead">opened ·</T> {t.uploaded} <T k="pages.components.ratechecks.invitestab.307f8c">uploaded ·</T> {t.quoted} <T k="pages.components.ratechecks.invitestab.4bc966">quoted ·</T> {t.won} <T k="pages.components.ratechecks.invitestab.296e48">won ·</T> {t.bound} <T k="pages.components.ratechecks.invitestab.b9f2b5">bound</T>
+                    {Number(t.bound_premium) > 0 && <span className="font-semibold text-green-600"> · {money(t.bound_premium)}<T k="pages.components.ratechecks.invitestab.6d8fef">/yr</T></span>}
                   </p>
                 </li>
               ))}
@@ -124,9 +125,9 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</div>
+          <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.invitestab.5f02f0">Loading…</T></div>
         ) : error ? (
-          <div className="p-8 text-center text-red-600">Error loading links.</div>
+          <div className="p-8 text-center text-red-600"><T k="pages.components.ratechecks.invitestab.3c6c93">Error loading links.</T></div>
         ) : matching.length === 0 ? (
           <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
             {invites.length === 0 ? 'No links sent yet. Use “Send a link” for someone who doesn’t have their policy with them.' : 'Nothing matches.'}
@@ -152,7 +153,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Resend link">
           <div className="absolute inset-0 bg-black/50" onClick={() => setResend(null)} />
           <div className="relative w-full max-w-md rounded-xl p-5 shadow-xl" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
-            <h2 className="mb-3 text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>Resend to {resend.first_name || 'customer'}</h2>
+            <h2 className="mb-3 text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.invitestab.4a863f">Resend to</T> {resend.first_name || 'customer'}</h2>
             <InviteShare invite={resend} producerName={resend.producer_name || producerName} onDone={() => setResend(null)} />
           </div>
         </div>
@@ -180,15 +181,15 @@ function InviteRow({ i, onOpen, onResend }) {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           {state === 'uploaded' && i.last_rate_check_id && onOpen && (
-            <button onClick={() => onOpen(i.last_rate_check_id)} className="min-h-[40px] rounded-lg px-3 font-semibold" style={inputStyle}>Open</button>
+            <button onClick={() => onOpen(i.last_rate_check_id)} className="min-h-[40px] rounded-lg px-3 font-semibold" style={inputStyle}><T k="pages.components.ratechecks.invitestab.c3bf44">Open</T></button>
           )}
           {state === 'opened' && i.phone && (
             <a href={smsUrl(i, nudgeText(i))} className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-primary-600 px-3 font-semibold text-white">
-              <MessageSquare className="h-4 w-4" aria-hidden="true" /> Nudge
+              <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.invitestab.bcd792">Nudge</T>
             </a>
           )}
           {(state === 'opened' || state === 'sent') && onResend && (
-            <button onClick={onResend} className={`min-h-[40px] rounded-lg px-3 font-semibold ${state === 'opened' ? 'text-primary-600' : ''}`} style={state === 'opened' ? undefined : inputStyle}>Resend</button>
+            <button onClick={onResend} className={`min-h-[40px] rounded-lg px-3 font-semibold ${state === 'opened' ? 'text-primary-600' : ''}`} style={state === 'opened' ? undefined : inputStyle}><T k="pages.components.ratechecks.invitestab.1c0b8f">Resend</T></button>
           )}
         </div>
       </div>

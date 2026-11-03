@@ -1,6 +1,7 @@
 // src/pages/components/time-attendance/OutboundBreakdownForm.jsx
 // Manual outbound call categorization form + stacked bar chart.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useMemo } from 'react';
 import { PhoneOutgoing, Save } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -101,14 +102,14 @@ export default function OutboundBreakdownForm({
       <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
         <PhoneOutgoing className="w-5 h-5 text-primary-400" />
         <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">
-          Outbound Call Breakdown
+          <T k="pages.components.timeattendance.outboundbreakdownform.89ec38">Outbound Call Breakdown</T>
         </h4>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
             className="ml-auto text-xs text-primary-400 hover:text-primary-300 font-medium"
           >
-            Edit
+            <T k="pages.components.timeattendance.outboundbreakdownform.7dce12">Edit</T>
           </button>
         )}
       </div>
@@ -136,7 +137,7 @@ export default function OutboundBreakdownForm({
 
             <div className="flex items-center justify-between pt-2 border-t border-qs-border">
               <p className={`text-sm ${formTotal !== totalOutbound ? 'text-amber-400' : 'text-qs-dim'}`}>
-                Sum: {formTotal} / {totalOutbound || '?'} total outbound
+                <T k="pages.components.timeattendance.outboundbreakdownform.822295">Sum:</T> {formTotal} / {totalOutbound || '?'} <T k="pages.components.timeattendance.outboundbreakdownform.aaaf6e">total outbound</T>
                 {formTotal !== totalOutbound && totalOutbound > 0 && ' (mismatch)'}
               </p>
               <div className="flex gap-2">
@@ -144,7 +145,7 @@ export default function OutboundBreakdownForm({
                   onClick={() => setEditing(false)}
                   className="px-3 py-1.5 text-xs font-medium text-qs-dim hover:bg-qs-card rounded transition-colors"
                 >
-                  Cancel
+                  <T k="pages.components.timeattendance.outboundbreakdownform.ea4788">Cancel</T>
                 </button>
                 <button
                   onClick={handleSave}
@@ -190,13 +191,13 @@ export default function OutboundBreakdownForm({
 
             {topCategory && (
               <p className="text-sm text-qs-dim">
-                Top category: <span className="font-medium text-qs-bright">{topCategory.label}</span> ({topCategory.pct}%)
+                <T k="pages.components.timeattendance.outboundbreakdownform.0ea920">Top category:</T> <span className="font-medium text-qs-bright">{topCategory.label}</span> ({topCategory.pct}%)
               </p>
             )}
           </div>
         ) : (
           <p className="text-sm text-qs-subtle text-center py-4">
-            No outbound breakdown recorded. Click "Edit" to categorize outbound calls.
+            <T k="pages.components.timeattendance.outboundbreakdownform.1b27cf">No outbound breakdown recorded. Click "Edit" to categorize outbound calls.</T>
           </p>
         )}
       </div>

@@ -3,6 +3,7 @@
 // their current declarations page(s) — PDF preferred — and Claude extracts the
 // policy details onto the lead. Supports multiple (e.g. auto + home). The lead
 // already exists here, so a slow or failed parse can never cost the lead.
+import { T } from '../../../components/SiteCopy';
 import { useRef } from 'react';
 import { FileText, UploadCloud, CheckCircle, Loader2, Plus } from 'lucide-react';
 import { useDeclarationUploads } from '../../../hooks/useDeclarationUploads';
@@ -58,7 +59,7 @@ export default function DeclarationUpload({ leadId, agentName }) {
         <div key={i} className="flex items-center gap-2 mb-2 text-sm">
           <CheckCircle className="w-4 h-4 text-success-600 flex-shrink-0" />
           <span className="font-medium text-gray-900">{declarationLabel(d)}</span>
-          <span className="text-gray-400">captured</span>
+          <span className="text-gray-400"><T k="pages.components.wizard.declarationupload.2f7765">captured</T></span>
         </div>
       ))}
 
@@ -79,12 +80,12 @@ export default function DeclarationUpload({ leadId, agentName }) {
         {status === 'working' ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span>Reading {pendingName ? `"${pendingName}"` : 'your document'}…</span>
+            <span><T k="pages.components.wizard.declarationupload.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'your document'}…</span>
           </>
         ) : hasItems ? (
           <>
             <Plus className="w-5 h-5" />
-            <span>Add another dec page</span>
+            <span><T k="pages.components.wizard.declarationupload.e4e33d">Add another dec page</T></span>
           </>
         ) : (
           <>
@@ -97,7 +98,7 @@ export default function DeclarationUpload({ leadId, agentName }) {
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       <p className="mt-3 text-center text-xs text-gray-400">
-        Optional. Your documents are stored securely and only seen by your agent.
+        <T k="pages.components.wizard.declarationupload.dc29f6">Optional. Your documents are stored securely and only seen by your agent.</T>
       </p>
     </div>
   );

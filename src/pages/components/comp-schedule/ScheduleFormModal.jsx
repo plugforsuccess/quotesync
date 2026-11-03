@@ -1,4 +1,5 @@
 // src/pages/components/comp-schedule/ScheduleFormModal.jsx
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -199,7 +200,7 @@ export default function ScheduleFormModal({ mode, schedule, existingSchedules, o
             checked={form.is_announced_only}
             onChange={(e) => setForm({ ...form, is_announced_only: e.target.checked })}
           />
-          Announced only — carrier has published but rates are not yet in force
+          <T k="pages.components.compschedule.scheduleformmodal.6bb3fe">Announced only — carrier has published but rates are not yet in force</T>
         </label>
 
         <FormField label="Notes">
@@ -237,7 +238,7 @@ export default function ScheduleFormModal({ mode, schedule, existingSchedules, o
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 8 }}>
-          <button type="button" onClick={onClose} style={btnSecondary}>Cancel</button>
+          <button type="button" onClick={onClose} style={btnSecondary}><T k="pages.components.compschedule.scheduleformmodal.ea4788">Cancel</T></button>
           <button
             type="submit"
             disabled={isPending}

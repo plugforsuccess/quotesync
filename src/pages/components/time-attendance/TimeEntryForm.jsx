@@ -1,6 +1,7 @@
 // src/pages/components/time-attendance/TimeEntryForm.jsx
 // Employee time entry form with upsert on (employee_user_id, work_date)
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Clock, Save, AlertCircle, CheckCircle } from 'lucide-react';
@@ -211,8 +212,8 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
       <div className="flex items-center gap-3 mb-6">
         <Clock className="w-6 h-6 text-primary-600" />
         <div>
-          <h3 className="text-lg font-semibold text-qs-bright">Time Entry</h3>
-          <p className="text-sm text-qs-subtle">{employeeName} &middot; Week of {weekStart}</p>
+          <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.timeentryform.6a21e3">Time Entry</T></h3>
+          <p className="text-sm text-qs-subtle">{employeeName} <T k="pages.components.timeattendance.timeentryform.add4c5">· Week of</T> {weekStart}</p>
         </div>
       </div>
 
@@ -223,21 +224,21 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           fontSize: 12, color: 'var(--qs-dim)',
         }}>
           <span>
-            PTO:{' '}
+            <T k="pages.components.timeattendance.timeentryform.134f23">PTO:</T>{' '}
             <strong style={{ color: ptoExhausted ? '#EF4444' : '#10B981' }}>
-              {ptoRemaining} of {ptoDaysPerYear} days remaining
+              {ptoRemaining} <T k="pages.components.timeattendance.timeentryform.8bf885">of</T> {ptoDaysPerYear} <T k="pages.components.timeattendance.timeentryform.24c7f4">days remaining</T>
             </strong>
           </span>
           <span>
-            Sick:{' '}
+            <T k="pages.components.timeattendance.timeentryform.81d3ab">Sick:</T>{' '}
             <strong style={{ color: sickOverThreshold ? '#F59E0B' : 'var(--qs-text)' }}>
-              {sickUsed} of {sickDaysPerYear} days used
+              {sickUsed} <T k="pages.components.timeattendance.timeentryform.8bf885">of</T> {sickDaysPerYear} <T k="pages.components.timeattendance.timeentryform.d3c472">days used</T>
             </strong>
           </span>
         </div>
       ) : (
         <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 12 }}>
-          PTO eligible from {ptoEligibleDate}
+          <T k="pages.components.timeattendance.timeentryform.128b63">PTO eligible from</T> {ptoEligibleDate}
         </div>
       )}
 
@@ -248,16 +249,15 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           borderRadius: 8, padding: '10px 14px', marginBottom: 12,
           fontSize: 12, color: '#F59E0B',
         }}>
-          ⚠ {sickUsed} sick days used in {currentYear}
-          {' '}— exceeds the {sickDaysPerYear}-day advisory threshold.
-          Entry will still be saved.
+          ⚠ {sickUsed} <T k="pages.components.timeattendance.timeentryform.3c99e3">sick days used in</T> {currentYear}
+          {' '}<T k="pages.components.timeattendance.timeentryform.a7048c">— exceeds the</T> {sickDaysPerYear}<T k="pages.components.timeattendance.timeentryform.b0db37">-day advisory threshold. Entry will still be saved.</T>
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Work Date */}
         <div>
-          <label className="dark-label">Work Date</label>
+          <label className="dark-label"><T k="pages.components.timeattendance.timeentryform.0125c7">Work Date</T></label>
           <input
             type="date"
             value={workDate}
@@ -272,7 +272,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             borderRadius: 6, padding: '8px 12px',
             fontSize: 12, color: 'var(--qs-dim)',
           }}>
-            ⚠ Weekends are not working days — no entry required.
+            <T k="pages.components.timeattendance.timeentryform.d898cd">⚠ Weekends are not working days — no entry required.</T>
           </div>
         )}
 
@@ -282,13 +282,13 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             borderRadius: 6, padding: '8px 12px',
             fontSize: 12, color: '#3B82F6', fontWeight: 500,
           }}>
-            🏛 {holidayLabel} — Agency closed. No entry required.
+            🏛 {holidayLabel} <T k="pages.components.timeattendance.timeentryform.71f2b4">— Agency closed. No entry required.</T>
           </div>
         )}
 
         {/* Location */}
         <div>
-          <label className="dark-label">Location</label>
+          <label className="dark-label"><T k="pages.components.timeattendance.timeentryform.ce5bf5">Location</T></label>
           <select
             value={location}
             onChange={(e) => setLocation(e.target.value)}
@@ -302,7 +302,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
 
         {/* Code */}
         <div>
-          <label className="dark-label">Entry Code</label>
+          <label className="dark-label"><T k="pages.components.timeattendance.timeentryform.6b39b3">Entry Code</T></label>
           <select
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -331,7 +331,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
 
         {/* Unpaid Break */}
         <div>
-          <label className="dark-label">Unpaid Break (min)</label>
+          <label className="dark-label"><T k="pages.components.timeattendance.timeentryform.caa732">Unpaid Break (min)</T></label>
           <input
             type="number"
             min={0}
@@ -344,7 +344,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
         {/* Start Time */}
         <div>
           <label className="dark-label">
-            Start Time {timesRequired && <span className="text-red-400">*</span>}
+            <T k="pages.components.timeattendance.timeentryform.2bbc84">Start Time</T> {timesRequired && <span className="text-red-400">*</span>}
           </label>
           <input
             type="time"
@@ -357,7 +357,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
         {/* End Time */}
         <div>
           <label className="dark-label">
-            End Time {timesRequired && <span className="text-red-400">*</span>}
+            <T k="pages.components.timeattendance.timeentryform.c91a57">End Time</T> {timesRequired && <span className="text-red-400">*</span>}
           </label>
           <input
             type="time"
@@ -369,7 +369,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
 
         {/* Lunch Out */}
         <div>
-          <label className="dark-label">Lunch Out</label>
+          <label className="dark-label"><T k="pages.components.timeattendance.timeentryform.a2cc36">Lunch Out</T></label>
           <input
             type="time"
             value={lunchOut}
@@ -380,7 +380,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
 
         {/* Lunch In */}
         <div>
-          <label className="dark-label">Lunch In</label>
+          <label className="dark-label"><T k="pages.components.timeattendance.timeentryform.f3f736">Lunch In</T></label>
           <input
             type="time"
             value={lunchIn}
@@ -392,7 +392,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
         {/* Notes */}
         <div className="sm:col-span-2">
           <label className="dark-label">
-            Notes {notesRequired ? <span className="text-red-400">(required)</span> : '(optional)'}
+            <T k="pages.components.timeattendance.timeentryform.f4c6f8">Notes</T> {notesRequired ? <span className="text-red-400"><T k="pages.components.timeattendance.timeentryform.9bfb6e">(required)</T></span> : '(optional)'}
           </label>
           <textarea
             value={notes}

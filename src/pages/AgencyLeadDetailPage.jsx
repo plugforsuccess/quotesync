@@ -1,6 +1,7 @@
 // src/pages/AgencyLeadDetailPage.jsx
 // Agency Lead Detail View with Quote Summary and Workflow Actions
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -63,7 +64,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
   return (
     <div className="pt-3 border-t border-gray-100">
       <div className="flex justify-between items-start">
-        <dt className="text-gray-500">Referred by</dt>
+        <dt className="text-gray-500"><T k="pages.agencyleaddetailpage.36e9b1">Referred by</T></dt>
         <dd className="text-gray-900 text-right">
           {linked ? (
             <span>
@@ -83,7 +84,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
               )}
             </span>
           ) : (
-            <span className="text-gray-400">Not linked</span>
+            <span className="text-gray-400"><T k="pages.agencyleaddetailpage.887992">Not linked</T></span>
           )}
           <button
             type="button"
@@ -132,8 +133,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
             {setReferrer.isPending ? 'Saving…' : 'Save referrer'}
           </button>
           <p className="text-[11px] text-gray-400">
-            Only Georgia-resident referrers are eligible to win; anyone may
-            refer.
+            <T k="pages.agencyleaddetailpage.1224e2">Only Georgia-resident referrers are eligible to win; anyone may refer.</T>
           </p>
         </div>
       )}
@@ -342,8 +342,8 @@ const AgencyLeadDetailPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Agency Access</h2>
-          <p className="text-gray-600">You are not associated with an agency.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2"><T k="pages.agencyleaddetailpage.e952ec">No Agency Access</T></h2>
+          <p className="text-gray-600"><T k="pages.agencyleaddetailpage.106032">You are not associated with an agency.</T></p>
         </div>
       </div>
     );
@@ -354,10 +354,10 @@ const AgencyLeadDetailPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Lead Not Found</h2>
-          <p className="text-gray-600 mb-4">This lead does not exist or you do not have access to it.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2"><T k="pages.agencyleaddetailpage.17895d">Lead Not Found</T></h2>
+          <p className="text-gray-600 mb-4"><T k="pages.agencyleaddetailpage.d63935">This lead does not exist or you do not have access to it.</T></p>
           <Link to="/agency/leads" className="text-primary-600 hover:underline">
-            Back to Leads
+            <T k="pages.agencyleaddetailpage.22027f">Back to Leads</T>
           </Link>
         </div>
       </div>
@@ -376,7 +376,7 @@ const AgencyLeadDetailPage = () => {
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Leads
+          <T k="pages.agencyleaddetailpage.22027f">Back to Leads</T>
         </Link>
 
         {/* Header */}
@@ -405,7 +405,7 @@ const AgencyLeadDetailPage = () => {
                   return cfg ? (
                     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${cfg.bg} ${cfg.text}`}>
                       <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                      {cfg.label} risk
+                      {cfg.label} <T k="pages.agencyleaddetailpage.c6142b">risk</T>
                     </div>
                   ) : null;
                 })()}
@@ -414,19 +414,19 @@ const AgencyLeadDetailPage = () => {
               {(lead.auto_driving_record || lead.home_claims_history) && (
                 <div className="text-xs text-gray-500 mt-1 space-y-0.5">
                   {lead.auto_driving_record && (
-                    <div>Driving record: <span className="font-medium text-gray-700">
+                    <div><T k="pages.agencyleaddetailpage.5fee7a">Driving record:</T> <span className="font-medium text-gray-700">
                       {{ clean: 'Clean', '1-2': '1\u20132 incidents', '3+': '3+ incidents' }[lead.auto_driving_record] ?? lead.auto_driving_record}
                     </span></div>
                   )}
                   {lead.home_claims_history && (
-                    <div>Home claims: <span className="font-medium text-gray-700">
+                    <div><T k="pages.agencyleaddetailpage.80639e">Home claims:</T> <span className="font-medium text-gray-700">
                       {{ '0-1': '0\u20131 claims', '2+': '2+ claims' }[lead.home_claims_history] ?? lead.home_claims_history}
                     </span></div>
                   )}
                 </div>
               )}
               <p className="text-sm text-gray-500">
-                Created {formatDate(lead.created_at)}
+                <T k="pages.agencyleaddetailpage.0eceeb">Created</T> {formatDate(lead.created_at)}
               </p>
             </div>
             <div className="text-right">
@@ -443,7 +443,7 @@ const AgencyLeadDetailPage = () => {
                   <RefreshCw className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`} />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Lead Score</p>
+              <p className="text-xs text-gray-500 mt-1"><T k="pages.agencyleaddetailpage.426d29">Lead Score</T></p>
             </div>
           </div>
 
@@ -464,17 +464,17 @@ const AgencyLeadDetailPage = () => {
           {/* Drip status */}
           {lead.sms_sent && lead.status === 'new' && (
             <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
-              <span>Drip stage:</span>
+              <span><T k="pages.agencyleaddetailpage.40632a">Drip stage:</T></span>
               <span className="font-medium text-gray-700">{lead.drip_stage} / 3</span>
               {lead.sms_opted_out && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Opted out</span>
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"><T k="pages.agencyleaddetailpage.fe493d">Opted out</T></span>
               )}
             </div>
           )}
 
           {/* Score updated timestamp */}
           {lead.score_updated_at && (
-            <p className="text-xs text-gray-400 mt-1">Score updated {formatTimeAgo(lead.score_updated_at)}</p>
+            <p className="text-xs text-gray-400 mt-1"><T k="pages.agencyleaddetailpage.b620c8">Score updated</T> {formatTimeAgo(lead.score_updated_at)}</p>
           )}
         </div>
 
@@ -483,23 +483,23 @@ const AgencyLeadDetailPage = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Lead Identity */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Lead Details</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyleaddetailpage.a9ea07">Lead Details</T></h2>
               <dl className="grid grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm text-gray-500 flex items-center gap-1">
-                    <MapPin className="w-4 h-4" /> Location
+                    <MapPin className="w-4 h-4" /> <T k="pages.agencyleaddetailpage.ce5bf5">Location</T>
                   </dt>
                   <dd className="text-gray-900 font-medium">{lead.zip || '-'}, {lead.state || '-'}</dd>
                 </div>
                 <div>
                   <dt className="text-sm text-gray-500 flex items-center gap-1">
-                    <Tag className="w-4 h-4" /> Product Intent
+                    <Tag className="w-4 h-4" /> <T k="pages.agencyleaddetailpage.e37178">Product Intent</T>
                   </dt>
                   <dd className="text-gray-900 font-medium">{lead.product_intent || 'Not specified'}</dd>
                 </div>
                 {lead.current_auto_carrier && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Current Auto Carrier</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.17aee8">Current Auto Carrier</T></dt>
                     <dd className={`font-medium ${
                       lead.current_auto_carrier === 'allstate' ? 'text-purple-600' : 'text-gray-900'
                     }`}>
@@ -509,16 +509,16 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {lead.current_auto_premium != null && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Current Auto Premium</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.c150d7">Current Auto Premium</T></dt>
                     <dd className="font-semibold text-gray-900">
                       ${lead.current_auto_premium.toLocaleString()}
-                      <span className="text-xs text-gray-400 font-normal ml-1">/yr</span>
+                      <span className="text-xs text-gray-400 font-normal ml-1"><T k="pages.agencyleaddetailpage.6d8fef">/yr</T></span>
                     </dd>
                   </div>
                 )}
                 {lead.current_home_carrier && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Current Home Carrier</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.f4b42c">Current Home Carrier</T></dt>
                     <dd className={`font-medium ${
                       lead.current_home_carrier === 'allstate' ? 'text-purple-600' : 'text-gray-900'
                     }`}>
@@ -528,24 +528,24 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {lead.current_home_premium != null && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Current Home Premium</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.5025ee">Current Home Premium</T></dt>
                     <dd className="font-semibold text-gray-900">
                       ${lead.current_home_premium.toLocaleString()}
-                      <span className="text-xs text-gray-400 font-normal ml-1">/yr</span>
+                      <span className="text-xs text-gray-400 font-normal ml-1"><T k="pages.agencyleaddetailpage.6d8fef">/yr</T></span>
                     </dd>
                   </div>
                 )}
                 {lead.allstate_conflict && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Carrier Conflict</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.771e80">Carrier Conflict</T></dt>
                     <dd className="font-bold text-purple-600">
-                      🟣 Allstate — cannot write
+                      <T k="pages.agencyleaddetailpage.4c0994">🟣 Allstate — cannot write</T>
                     </dd>
                   </div>
                 )}
                 {lead.auto_driving_record && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Driving Record (3yr)</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.68d9f7">Driving Record (3yr)</T></dt>
                     <dd className={`font-medium ${
                       lead.auto_driving_record === '3+' ? 'text-red-600' :
                       lead.auto_driving_record === '1-2' ? 'text-amber-600' : 'text-green-600'
@@ -557,7 +557,7 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {lead.home_claims_history && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Home Claims (5yr)</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.c7dc3d">Home Claims (5yr)</T></dt>
                     <dd className={`font-medium ${
                       lead.home_claims_history === '2+' ? 'text-red-600' : 'text-green-600'
                     }`}>
@@ -567,7 +567,7 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {lead.coverage_lapse && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Coverage Lapse</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.0e9784">Coverage Lapse</T></dt>
                     <dd className={`font-medium ${
                       lead.coverage_lapse === 'no_lapse'      ? 'text-green-600' :
                       lead.coverage_lapse === 'under_30'      ? 'text-amber-500' :
@@ -586,7 +586,7 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {lead.multiple_drivers != null && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Multiple Drivers</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.e73344">Multiple Drivers</T></dt>
                     <dd className="font-medium text-gray-900">
                       {lead.multiple_drivers ? 'Yes' : 'No'}
                     </dd>
@@ -594,7 +594,7 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {lead.veteran_status && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Military / Veteran</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.0252f6">Military / Veteran</T></dt>
                     <dd className={`font-medium ${
                       lead.veteran_status === 'yes' ? 'text-blue-600' : 'text-gray-900'
                     }`}>
@@ -604,7 +604,7 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {(lead.vehicle_year || lead.vehicle_make || lead.vehicle_model) && (
                   <div className="col-span-2">
-                    <dt className="text-gray-500 text-sm mb-1">Vehicle</dt>
+                    <dt className="text-gray-500 text-sm mb-1"><T k="pages.agencyleaddetailpage.d6af9c">Vehicle</T></dt>
                     <dd className="font-medium text-gray-900 text-base">
                       {[lead.vehicle_year, lead.vehicle_make, lead.vehicle_model]
                         .filter(Boolean).join(' ')}
@@ -622,7 +622,7 @@ const AgencyLeadDetailPage = () => {
                 )}
                 {lead.risk_flag && lead.risk_flag !== 'green' && (
                   <div>
-                    <dt className="text-gray-500 text-sm">Risk Flag</dt>
+                    <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.957dae">Risk Flag</T></dt>
                     <dd className={`font-bold ${
                       lead.risk_flag === 'red' ? 'text-red-600' : 'text-amber-600'
                     }`}>
@@ -631,10 +631,10 @@ const AgencyLeadDetailPage = () => {
                   </div>
                 )}
                 <div>
-                  <dt className="text-sm text-gray-500">Source</dt>
+                  <dt className="text-sm text-gray-500"><T k="pages.agencyleaddetailpage.f31bbd">Source</T></dt>
                   <dd className="text-gray-900 font-medium">
                     {lead.referral_code ? (
-                      <span className="text-green-600">Referral: {lead.referral_code}</span>
+                      <span className="text-green-600"><T k="pages.agencyleaddetailpage.36efd0">Referral:</T> {lead.referral_code}</span>
                     ) : lead.utm_source ? (
                       lead.utm_source
                     ) : (
@@ -643,7 +643,7 @@ const AgencyLeadDetailPage = () => {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-gray-500">Campaign</dt>
+                  <dt className="text-sm text-gray-500"><T k="pages.agencyleaddetailpage.f00a1d">Campaign</T></dt>
                   <dd className="text-gray-900">{lead.utm_campaign || '-'}</dd>
                 </div>
               </dl>
@@ -653,14 +653,13 @@ const AgencyLeadDetailPage = () => {
                 <div className="mt-4 p-3 bg-primary-50 rounded-lg">
                   <p className="text-sm text-primary-800">
                     <Phone className="w-4 h-4 inline mr-1" />
-                    Contact details captured via Canopy. View full profile in your Canopy dashboard.
+                    <T k="pages.agencyleaddetailpage.633b33">Contact details captured via Canopy. View full profile in your Canopy dashboard.</T>
                   </p>
                 </div>
               ) : lead.source === 'winback' ? (
                 <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
                   <p className="text-sm text-emerald-800">
-                    ♻ <span className="font-semibold">Former customer</span> — generated from termination
-                    history. Contact comes from their Allstate record:
+                    ♻ <span className="font-semibold"><T k="pages.agencyleaddetailpage.c2c4b5">Former customer</T></span> <T k="pages.agencyleaddetailpage.3002e2">— generated from termination history. Contact comes from their Allstate record:</T>
                     {lead.phone ? <span className="font-medium"> {lead.phone}</span> : ' no phone on file'}
                     {lead.email ? <> · <span className="font-medium">{lead.email}</span></> : null}
                   </p>
@@ -671,8 +670,7 @@ const AgencyLeadDetailPage = () => {
               ) : lead.source === 'cross_sell_audit' ? (
                 <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
                   <p className="text-sm text-emerald-800">
-                    💡 <span className="font-semibold">Active-book customer</span> — from the cross-sell
-                    audit. They already hold a policy with the agency; pitch adds the bundle discount.
+                    💡 <span className="font-semibold"><T k="pages.agencyleaddetailpage.56dd1a">Active-book customer</T></span> <T k="pages.agencyleaddetailpage.cb9f84">— from the cross-sell audit. They already hold a policy with the agency; pitch adds the bundle discount.</T>
                     {lead.phone ? <span className="font-medium"> {lead.phone}</span> : null}
                   </p>
                 </div>
@@ -680,7 +678,7 @@ const AgencyLeadDetailPage = () => {
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-700">
                     <Phone className="w-4 h-4 inline mr-1" />
-                    Contact details submitted via form.
+                    <T k="pages.agencyleaddetailpage.406996">Contact details submitted via form.</T>
                     {lead.phone ? <span className="font-medium"> {lead.phone}</span> : null}
                   </p>
                 </div>
@@ -692,14 +690,14 @@ const AgencyLeadDetailPage = () => {
 
             {/* Quote Summary */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quote Summary</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyleaddetailpage.d8533c">Quote Summary</T></h2>
 
               {quoteData ? (
                 <div className="space-y-4">
                   {/* Policy Types */}
                   {quoteSummary.policy_types && quoteSummary.policy_types.length > 0 && (
                     <div>
-                      <dt className="text-sm text-gray-500 mb-1">Policy Types</dt>
+                      <dt className="text-sm text-gray-500 mb-1"><T k="pages.agencyleaddetailpage.d87fe1">Policy Types</T></dt>
                       <dd className="flex flex-wrap gap-2">
                         {quoteSummary.policy_types.map((type, idx) => (
                           <span key={idx} className="px-2 py-1 bg-primary-100 text-primary-700 rounded text-sm">
@@ -715,19 +713,19 @@ const AgencyLeadDetailPage = () => {
                     {quoteSummary.vehicle_count !== undefined && (
                       <div className="text-center p-3 bg-gray-50 rounded">
                         <div className="text-2xl font-bold text-gray-900">{quoteSummary.vehicle_count}</div>
-                        <div className="text-xs text-gray-500">Vehicles</div>
+                        <div className="text-xs text-gray-500"><T k="pages.agencyleaddetailpage.834671">Vehicles</T></div>
                       </div>
                     )}
                     {quoteSummary.driver_count !== undefined && (
                       <div className="text-center p-3 bg-gray-50 rounded">
                         <div className="text-2xl font-bold text-gray-900">{quoteSummary.driver_count}</div>
-                        <div className="text-xs text-gray-500">Drivers</div>
+                        <div className="text-xs text-gray-500"><T k="pages.agencyleaddetailpage.8e64a6">Drivers</T></div>
                       </div>
                     )}
                     {quoteSummary.property_count !== undefined && (
                       <div className="text-center p-3 bg-gray-50 rounded">
                         <div className="text-2xl font-bold text-gray-900">{quoteSummary.property_count}</div>
-                        <div className="text-xs text-gray-500">Properties</div>
+                        <div className="text-xs text-gray-500"><T k="pages.agencyleaddetailpage.9fc2d2">Properties</T></div>
                       </div>
                     )}
                   </div>
@@ -736,7 +734,7 @@ const AgencyLeadDetailPage = () => {
                   {quoteSummary.renewal_days !== undefined && (
                     <div className="p-3 bg-yellow-50 rounded-lg">
                       <span className="text-yellow-800 font-medium">
-                        Renewal in {quoteSummary.renewal_days} days
+                        <T k="pages.agencyleaddetailpage.ab4518">Renewal in</T> {quoteSummary.renewal_days} <T k="pages.agencyleaddetailpage.44fdec">days</T>
                       </span>
                     </div>
                   )}
@@ -746,7 +744,7 @@ const AgencyLeadDetailPage = () => {
                     <FileText className={`w-5 h-5 ${quoteData.has_documents ? 'text-green-600' : 'text-gray-400'}`} />
                     <span className={quoteData.has_documents ? 'text-green-700' : 'text-gray-500'}>
                       {quoteData.has_documents ? (
-                        <>Documents available ({quoteSummary.document_count || 'multiple'})</>
+                        <><T k="pages.agencyleaddetailpage.97417b">Documents available (</T>{quoteSummary.document_count || 'multiple'})</>
                       ) : (
                         'No documents'
                       )}
@@ -756,20 +754,20 @@ const AgencyLeadDetailPage = () => {
                   {/* Premium (if present, labeled as reported) */}
                   {quoteSummary.reported_premium && (
                     <div className="p-3 bg-gray-50 rounded-lg text-sm">
-                      <span className="text-gray-500">Reported in documents: </span>
+                      <span className="text-gray-500"><T k="pages.agencyleaddetailpage.7c446c">Reported in documents:</T> </span>
                       <span className="text-gray-900 font-medium">
                         ${quoteSummary.reported_premium.toLocaleString()}
                       </span>
-                      <span className="text-gray-400 ml-1">(unverified)</span>
+                      <span className="text-gray-400 ml-1"><T k="pages.agencyleaddetailpage.bcc14c">(unverified)</T></span>
                     </div>
                   )}
 
                   <div className="text-xs text-gray-400 mt-2">
-                    Enriched: {quoteData.enriched_at ? formatTimeAgo(quoteData.enriched_at) : 'Pending'}
+                    <T k="pages.agencyleaddetailpage.0f6024">Enriched:</T> {quoteData.enriched_at ? formatTimeAgo(quoteData.enriched_at) : 'Pending'}
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-500">No enrichment data available yet.</p>
+                <p className="text-gray-500"><T k="pages.agencyleaddetailpage.748501">No enrichment data available yet.</T></p>
               )}
             </div>
 
@@ -778,7 +776,7 @@ const AgencyLeadDetailPage = () => {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Bot className="w-5 h-5 text-purple-500" />
-                  AI Verification
+                  <T k="pages.agencyleaddetailpage.28db5c">AI Verification</T>
                 </h2>
 
                 <div className="space-y-4">
@@ -788,28 +786,28 @@ const AgencyLeadDetailPage = () => {
                     {lead.bland_verified ? (
                       lead.bland_qualified === true ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                          <CheckCircle className="w-3.5 h-3.5" /> Verified & Qualified
+                          <CheckCircle className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.d0c7fd">Verified & Qualified</T>
                         </span>
                       ) : lead.bland_qualified === false ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                          <XCircle className="w-3.5 h-3.5" /> Disqualified
+                          <XCircle className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.4d8e6f">Disqualified</T>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                          <CheckCircle className="w-3.5 h-3.5" /> Verified
+                          <CheckCircle className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.3f68e6">Verified</T>
                         </span>
                       )
                     ) : lead.bland_outbound_status === 'pending' ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-                        <Clock className="w-3.5 h-3.5" /> Call In Progress
+                        <Clock className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.ec1383">Call In Progress</T>
                       </span>
                     ) : lead.bland_outbound_call_id || lead.bland_inbound_call_id ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-                        Attempted
+                        <T k="pages.agencyleaddetailpage.c52c6e">Attempted</T>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
-                        Not Called
+                        <T k="pages.agencyleaddetailpage.44f0ab">Not Called</T>
                       </span>
                     )}
 
@@ -821,8 +819,8 @@ const AgencyLeadDetailPage = () => {
                           : 'bg-indigo-100 text-indigo-700'
                       }`}>
                         {blandCallLog.direction === 'outbound'
-                          ? <><PhoneOutgoing className="w-3.5 h-3.5" /> Outbound Verification</>
-                          : <><PhoneIncoming className="w-3.5 h-3.5" /> Inbound Call</>
+                          ? <><PhoneOutgoing className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.3ed57e">Outbound Verification</T></>
+                          : <><PhoneIncoming className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.c31854">Inbound Call</T></>
                         }
                       </span>
                     )}
@@ -830,19 +828,19 @@ const AgencyLeadDetailPage = () => {
                     {/* Transfer Outcome */}
                     {blandCallLog?.transferred === true && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                        <CheckCircle className="w-3.5 h-3.5" /> Transferred
+                        <CheckCircle className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.3f89c4">Transferred</T>
                       </span>
                     )}
                     {blandCallLog?.transferred === false && blandCallLog?.variables?.transfer_attempted === 'true' && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-                        Transfer — No Answer
+                        <T k="pages.agencyleaddetailpage.91bc48">Transfer — No Answer</T>
                       </span>
                     )}
 
                     {/* Canopy Link */}
                     {lead.canopy_link_sent && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
-                        <ExternalLink className="w-3.5 h-3.5" /> Canopy Link Sent
+                        <ExternalLink className="w-3.5 h-3.5" /> <T k="pages.agencyleaddetailpage.5498d0">Canopy Link Sent</T>
                       </span>
                     )}
                   </div>
@@ -851,19 +849,19 @@ const AgencyLeadDetailPage = () => {
                   <dl className="grid grid-cols-2 gap-3 text-sm">
                     {lead.bland_disqualify_reason && (
                       <div className="col-span-2">
-                        <dt className="text-gray-500 text-xs">Disqualify Reason</dt>
+                        <dt className="text-gray-500 text-xs"><T k="pages.agencyleaddetailpage.0daa28">Disqualify Reason</T></dt>
                         <dd className="text-red-600 font-medium">{lead.bland_disqualify_reason}</dd>
                       </div>
                     )}
                     {blandCallLog?.transferred_to_name && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Transferred To</dt>
+                        <dt className="text-gray-500 text-xs"><T k="pages.agencyleaddetailpage.225242">Transferred To</T></dt>
                         <dd className="text-gray-900 font-medium">{blandCallLog.transferred_to_name}</dd>
                       </div>
                     )}
                     {blandCallLog?.duration_seconds != null && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Call Duration</dt>
+                        <dt className="text-gray-500 text-xs"><T k="pages.agencyleaddetailpage.afb061">Call Duration</T></dt>
                         <dd className="text-gray-900 font-medium">
                           {Math.floor(blandCallLog.duration_seconds / 60)}m {blandCallLog.duration_seconds % 60}s
                         </dd>
@@ -871,13 +869,13 @@ const AgencyLeadDetailPage = () => {
                     )}
                     {blandCallLog?.variables?.coverage_interest && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Coverage Interest</dt>
+                        <dt className="text-gray-500 text-xs"><T k="pages.agencyleaddetailpage.456bcd">Coverage Interest</T></dt>
                         <dd className="text-gray-900 font-medium capitalize">{blandCallLog.variables.coverage_interest}</dd>
                       </div>
                     )}
                     {blandCallLog?.variables?.callback_requested === 'true' && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Callback Requested</dt>
+                        <dt className="text-gray-500 text-xs"><T k="pages.agencyleaddetailpage.adf678">Callback Requested</T></dt>
                         <dd className="text-gray-900 font-medium">
                           {blandCallLog.variables.callback_time_preference || 'Yes — no time specified'}
                         </dd>
@@ -893,7 +891,7 @@ const AgencyLeadDetailPage = () => {
                         className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                       >
                         {transcriptOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        {transcriptOpen ? 'Hide' : 'Show'} Transcript
+                        {transcriptOpen ? 'Hide' : 'Show'} <T k="pages.agencyleaddetailpage.f24f9b">Transcript</T>
                       </button>
                       {transcriptOpen && (
                         <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
@@ -908,7 +906,7 @@ const AgencyLeadDetailPage = () => {
                   {/* Timestamp */}
                   {lead.bland_verified_at && (
                     <p className="text-xs text-gray-400">
-                      Verified {formatTimeAgo(lead.bland_verified_at)}
+                      <T k="pages.agencyleaddetailpage.3f68e6">Verified</T> {formatTimeAgo(lead.bland_verified_at)}
                     </p>
                   )}
                 </div>
@@ -919,7 +917,7 @@ const AgencyLeadDetailPage = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-gray-400" />
-                Messages
+                <T k="pages.agencyleaddetailpage.41de6d">Messages</T>
               </h3>
               <LeadMessageThread
                 messages={messages}
@@ -931,7 +929,7 @@ const AgencyLeadDetailPage = () => {
 
             {/* Activity / Audit Log */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyleaddetailpage.ecfc2d">Activity</T></h2>
               {auditLog && auditLog.length > 0 ? (
                 <div className="space-y-3">
                   {auditLog.map((entry) => (
@@ -950,7 +948,7 @@ const AgencyLeadDetailPage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm">No activity recorded yet.</p>
+                <p className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.cc5f05">No activity recorded yet.</T></p>
               )}
             </div>
           </div>
@@ -959,17 +957,17 @@ const AgencyLeadDetailPage = () => {
           <div className="space-y-6">
             {/* SLA Metrics */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">SLA Metrics</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyleaddetailpage.5d1983">SLA Metrics</T></h2>
               <dl className="space-y-4">
                 <div>
                   <dt className="text-sm text-gray-500 flex items-center gap-1">
-                    <Clock className="w-4 h-4" /> Time Since Created
+                    <Clock className="w-4 h-4" /> <T k="pages.agencyleaddetailpage.626057">Time Since Created</T>
                   </dt>
                   <dd className="text-xl font-bold text-gray-900">{formatDuration(lead.created_at)}</dd>
                 </div>
                 <div>
                   <dt className="text-sm text-gray-500 flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" /> Time to First Contact
+                    <CheckCircle className="w-4 h-4" /> <T k="pages.agencyleaddetailpage.368022">Time to First Contact</T>
                   </dt>
                   <dd className="text-xl font-bold text-gray-900">
                     {lead.first_contact_at ? (
@@ -977,15 +975,15 @@ const AgencyLeadDetailPage = () => {
                     ) : lead.source === 'winback' ? (
                       // Winbacks are batch work, not interrupt work — a 2024
                       // termination doesn't decay by the hour. No SLA pressure.
-                      <span className="text-gray-500">Batch lead — no SLA</span>
+                      <span className="text-gray-500"><T k="pages.agencyleaddetailpage.1704e3">Batch lead — no SLA</T></span>
                     ) : (
-                      <span className="text-orange-600">Not contacted</span>
+                      <span className="text-orange-600"><T k="pages.agencyleaddetailpage.9deb4b">Not contacted</T></span>
                     )}
                   </dd>
                 </div>
                 {lead.first_contact_at && (
                   <div className="text-xs text-gray-500">
-                    First contact: {formatDate(lead.first_contact_at)}
+                    <T k="pages.agencyleaddetailpage.489794">First contact:</T> {formatDate(lead.first_contact_at)}
                   </div>
                 )}
               </dl>
@@ -993,7 +991,7 @@ const AgencyLeadDetailPage = () => {
 
             {/* Workflow Actions */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyleaddetailpage.06df33">Actions</T></h2>
 
               {/* First Contact Button */}
               {!lead.first_contact_at && (
@@ -1003,12 +1001,12 @@ const AgencyLeadDetailPage = () => {
                   className="w-full mb-4 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                 >
                   <Phone className="w-4 h-4" />
-                  Mark First Contacted
+                  <T k="pages.agencyleaddetailpage.999317">Mark First Contacted</T>
                 </button>
               )}
 
               {/* Status Buttons */}
-              <p className="text-sm text-gray-500 mb-3">Update Status:</p>
+              <p className="text-sm text-gray-500 mb-3"><T k="pages.agencyleaddetailpage.4c31df">Update Status:</T></p>
               <div className="grid grid-cols-2 gap-2">
                 {STATUS_ACTIONS.map((action) => (
                   <button
@@ -1036,7 +1034,7 @@ const AgencyLeadDetailPage = () => {
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors"
                   >
                     <XCircle className="w-4 h-4" />
-                    Close or Convert Lead
+                    <T k="pages.agencyleaddetailpage.7dd847">Close or Convert Lead</T>
                   </button>
                 </div>
               )}
@@ -1076,22 +1074,22 @@ const AgencyLeadDetailPage = () => {
 
             {/* Attribution */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Attribution</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyleaddetailpage.2855b8">Attribution</T></h2>
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">UTM Source</dt>
+                  <dt className="text-gray-500"><T k="pages.agencyleaddetailpage.93cb0f">UTM Source</T></dt>
                   <dd className="text-gray-900">{lead.utm_source || '-'}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">UTM Medium</dt>
+                  <dt className="text-gray-500"><T k="pages.agencyleaddetailpage.34f171">UTM Medium</T></dt>
                   <dd className="text-gray-900">{lead.utm_medium || '-'}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">UTM Campaign</dt>
+                  <dt className="text-gray-500"><T k="pages.agencyleaddetailpage.2eeaad">UTM Campaign</T></dt>
                   <dd className="text-gray-900">{lead.utm_campaign || '-'}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Referral Code</dt>
+                  <dt className="text-gray-500"><T k="pages.agencyleaddetailpage.23edfe">Referral Code</T></dt>
                   <dd className="text-gray-900 font-medium">
                     {lead.referral_code || '-'}
                   </dd>

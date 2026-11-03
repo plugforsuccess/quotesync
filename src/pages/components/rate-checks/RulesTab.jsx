@@ -5,6 +5,7 @@
 // toggle; edit or delete from the ⋯ menu. Principals edit; everyone can read.
 // Saving re-runs the rules on open rate checks.
 
+import { T } from '../../../components/SiteCopy';
 import { useRef, useState } from 'react';
 import { GripVertical, MoreHorizontal, Plus } from 'lucide-react';
 import {
@@ -103,7 +104,7 @@ export default function RulesTab({ agencyId, canEdit }) {
     <div className="space-y-4">
       {/* Outcome ladder: the strongest result any rule gives wins. */}
       <div className="dark-card" style={{ padding: 14 }}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>Strongest result wins</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.02a239">Strongest result wins</T></p>
         <ol className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1.5 text-xs">
           {LADDER.map(([label, cls], i) => (
             <li key={label} className="flex items-center gap-1">
@@ -113,17 +114,17 @@ export default function RulesTab({ agencyId, canEdit }) {
           ))}
         </ol>
         <details className="mt-3 text-sm">
-          <summary className="cursor-pointer font-semibold text-primary-600">How rules work</summary>
+          <summary className="cursor-pointer font-semibold text-primary-600"><T k="pages.components.ratechecks.rulestab.15fd3c">How rules work</T></summary>
           <ul className="mt-2 list-disc space-y-1 pl-5" style={{ color: 'var(--qs-text)' }}>
-            <li>Every rule runs on every scan, top to bottom. The strongest result any rule gives is where the scan goes.</li>
-            <li>Scans that can&apos;t be read always go to Manual review.</li>
-            <li>It&apos;s a pre-screen from what the dec page shows, not underwriting.</li>
+            <li><T k="pages.components.ratechecks.rulestab.110139">Every rule runs on every scan, top to bottom. The strongest result any rule gives is where the scan goes.</T></li>
+            <li><T k="pages.components.ratechecks.rulestab.9da0a8">Scans that can't be read always go to Manual review.</T></li>
+            <li><T k="pages.components.ratechecks.rulestab.d49603">It's a pre-screen from what the dec page shows, not underwriting.</T></li>
           </ul>
         </details>
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{rules.length} rule{rules.length === 1 ? '' : 's'}{rules.length > 1 && canEdit ? <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}> · drag to reorder</span> : null}</span>
+        <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{rules.length} <T k="pages.components.ratechecks.rulestab.981c1e">rule</T>{rules.length === 1 ? '' : 's'}{rules.length > 1 && canEdit ? <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}> <T k="pages.components.ratechecks.rulestab.2f2caf">· drag to reorder</T></span> : null}</span>
         {canEdit && (
           <div className="flex gap-2">
             {rules.length === 0 && (
@@ -132,7 +133,7 @@ export default function RulesTab({ agencyId, canEdit }) {
               </button>
             )}
             <button onClick={() => { setEditing('new'); setMenu(null); }} className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
-              <Plus className="h-4 w-4" /> New rule
+              <Plus className="h-4 w-4" /> <T k="pages.components.ratechecks.rulestab.39567c">New rule</T>
             </button>
           </div>
         )}
@@ -141,11 +142,11 @@ export default function RulesTab({ agencyId, canEdit }) {
       {editing === 'new' && <RuleEditor initial={BLANK} onCancel={() => setEditing(null)} onSave={submit} save={save} />}
 
       {isLoading ? (
-        <div className="dark-card p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</div>
+        <div className="dark-card p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.5f02f0">Loading…</T></div>
       ) : error ? (
-        <div className="dark-card p-8 text-center text-red-600">Error loading rules.</div>
+        <div className="dark-card p-8 text-center text-red-600"><T k="pages.components.ratechecks.rulestab.ccd1c2">Error loading rules.</T></div>
       ) : rules.length === 0 ? (
-        <div className="dark-card p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>No rules yet — every scan will say Quote Allstate P&amp;C.</div>
+        <div className="dark-card p-8 text-center" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.c1ed7b">No rules yet — every scan will say Quote Allstate P&C.</T></div>
       ) : (
         <ol className="space-y-2">
           {list.map((r, i) => {
@@ -179,9 +180,9 @@ export default function RulesTab({ agencyId, canEdit }) {
                     {r.note && <p className="mt-0.5 text-sm italic" style={{ color: 'var(--qs-subtle)' }}>“{r.note}”</p>}
                     {confirmDelete === r.id && (
                       <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg p-2.5 text-sm" style={{ background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)', color: 'var(--qs-bright)' }}>
-                        <span className="flex-1">Delete this rule?</span>
-                        <button type="button" onClick={() => setConfirmDelete(null)} className="min-h-[36px] rounded-lg px-3" style={inputStyle}>Cancel</button>
-                        <button type="button" onClick={() => { remove.mutate({ id: r.id, agencyId }); setConfirmDelete(null); }} className="min-h-[36px] rounded-lg bg-red-600 px-3 font-semibold text-white">Delete</button>
+                        <span className="flex-1"><T k="pages.components.ratechecks.rulestab.d83490">Delete this rule?</T></span>
+                        <button type="button" onClick={() => setConfirmDelete(null)} className="min-h-[36px] rounded-lg px-3" style={inputStyle}><T k="pages.components.ratechecks.rulestab.ea4788">Cancel</T></button>
+                        <button type="button" onClick={() => { remove.mutate({ id: r.id, agencyId }); setConfirmDelete(null); }} className="min-h-[36px] rounded-lg bg-red-600 px-3 font-semibold text-white"><T k="pages.components.ratechecks.rulestab.f2a6c4">Delete</T></button>
                       </div>
                     )}
                   </div>
@@ -260,7 +261,7 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
       <div className="flex items-center justify-between gap-3">
         <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{initial.id ? 'Edit rule' : 'New rule'}</span>
         <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--qs-text)' }}>
-          Rule active <Switch on={form.enabled} label="Rule active" onChange={(on) => set('enabled', on)} />
+          <T k="pages.components.ratechecks.rulestab.222ae5">Rule active</T> <Switch on={form.enabled} label="Rule active" onChange={(on) => set('enabled', on)} />
         </label>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -316,19 +317,19 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
 
       {/* How it will read on the rate check. */}
       <div className="rounded-lg p-3" style={{ background: 'var(--qs-elevated)', border: '1px dashed var(--qs-border)' }}>
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>Preview</p>
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.31fde7">Preview</T></p>
         <p className="text-sm" style={{ color: 'var(--qs-bright)' }}>
           <span className={`mr-1.5 rounded px-1.5 py-0.5 text-xs font-medium ${o.cls}`}>{o.label}</span>
-          {form.note.trim() || <span style={{ color: 'var(--qs-subtle)' }}>Add the message staff will see</span>}
+          {form.note.trim() || <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.6f08ba">Add the message staff will see</T></span>}
         </p>
-        <p className="mt-1 font-mono text-xs" style={{ color: 'var(--qs-subtle)' }}>When {ruleFormula(preview, kind)}</p>
+        <p className="mt-1 font-mono text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.4e97ae">When</T> {ruleFormula(preview, kind)}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" disabled={save.isPending || !form.name.trim()} className="min-h-[44px] rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white disabled:opacity-50">
           {save.isPending ? 'Saving…' : 'Save rule'}
         </button>
-        <button type="button" onClick={onCancel} className="min-h-[44px] rounded-lg px-4 text-sm" style={inputStyle}>Cancel</button>
+        <button type="button" onClick={onCancel} className="min-h-[44px] rounded-lg px-4 text-sm" style={inputStyle}><T k="pages.components.ratechecks.rulestab.ea4788">Cancel</T></button>
         {save.isError && <span className="text-sm text-red-600">{save.error.message}</span>}
       </div>
     </form>

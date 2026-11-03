@@ -1,4 +1,5 @@
 // src/components/WhyQuotesDifferent.jsx
+import { T } from '../../components/SiteCopy';
 import React from 'react';
 
 const WhyQuotesDifferent = () => {
@@ -8,7 +9,7 @@ const WhyQuotesDifferent = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-secondary-600 rounded-2xl -m-[3px] -z-10 animate-pulse" style={{ animationDuration: '3s' }}></div>
 
         <h2 className="text-white text-3xl md:text-4xl font-bold text-center mb-10">
-          Why My Quotes Are Different
+          <T k="pages.components.whyquotesdifferent.a8c7b1">Why My Quotes Are Different</T>
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

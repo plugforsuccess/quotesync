@@ -1,6 +1,7 @@
 // src/pages/components/time-attendance/TrendsView.jsx
 // 8-week performance trend charts using Recharts LineChart.
 
+import { T } from '../../../components/SiteCopy';
 import { TrendingUp } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -55,8 +56,8 @@ export default function TrendsView({ trendData, targets }) {
     return (
       <div className="bg-qs-card rounded-lg border border-qs-border p-8 text-center">
         <TrendingUp className="w-12 h-12 text-qs-muted mx-auto mb-3" />
-        <p className="text-qs-subtle font-medium">Trend data requires at least 2 weeks of uploaded RingCentral reports.</p>
-        <p className="text-sm text-qs-muted mt-1">Keep uploading weekly and trends will appear here.</p>
+        <p className="text-qs-subtle font-medium"><T k="pages.components.timeattendance.trendsview.5584de">Trend data requires at least 2 weeks of uploaded RingCentral reports.</T></p>
+        <p className="text-sm text-qs-muted mt-1"><T k="pages.components.timeattendance.trendsview.c0600b">Keep uploading weekly and trends will appear here.</T></p>
       </div>
     );
   }
@@ -83,7 +84,7 @@ export default function TrendsView({ trendData, targets }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-primary-400" />
-        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">8-Week Trends</h4>
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.trendsview.a634e3">8-Week Trends</T></h4>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

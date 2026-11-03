@@ -1,6 +1,7 @@
 // src/pages/components/dashboard/CapacityPlanner.jsx
 // Section 4: Capacity Planning Model — current performance + scenario planner
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo, useState } from 'react';
 import { Calculator, ChevronDown, ChevronUp, Plus, X, CheckCircle, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import { getCommissionRate, getFirstYearMultiplier } from '../../../lib/commissionUtils';
@@ -57,7 +58,7 @@ function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
         className="flex items-center gap-1 text-sm font-medium"
         style={{ color: 'var(--qs-info)' }}
       >
-        New Business Commission Schedule
+        <T k="pages.components.dashboard.capacityplanner.b9c318">New Business Commission Schedule</T>
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </button>
       {open && (
@@ -101,9 +102,9 @@ function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
             </tbody>
           </table>
           <p className="text-xs mt-1" style={{ color: 'var(--qs-dim)' }}>
-            Base: {baseCommission}% new business
+            <T k="pages.components.dashboard.capacityplanner.f89174">Base:</T> {baseCommission}<T k="pages.components.dashboard.capacityplanner.6c49b2">% new business</T>
             {renewalInfo && (
-              <> | Auto 1st renewal: {renewalInfo['Standard Auto']?.renewalBase ?? baseCommission}% | Home/OPL 1st renewal: {renewalInfo['Homeowners / Condo']?.renewalBase ?? baseCommission}%</>
+              <> <T k="pages.components.dashboard.capacityplanner.cc795c">| Auto 1st renewal:</T> {renewalInfo['Standard Auto']?.renewalBase ?? baseCommission}<T k="pages.components.dashboard.capacityplanner.e44d56">% | Home/OPL 1st renewal:</T> {renewalInfo['Homeowners / Condo']?.renewalBase ?? baseCommission}%</>
             )}
           </p>
         </div>
@@ -124,16 +125,16 @@ function PolicyMixTable({
 
   return (
     <div className="mt-3">
-      <p className="text-sm font-medium mb-2" style={{ color: 'var(--qs-text)' }}>Your Policy Mix</p>
+      <p className="text-sm font-medium mb-2" style={{ color: 'var(--qs-text)' }}><T k="pages.components.dashboard.capacityplanner.16f4c3">Your Policy Mix</T></p>
 
       {/* Desktop header */}
       <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_2.5rem_1.5rem] gap-1 text-xs font-medium mb-1 px-1" style={{ color: 'var(--qs-subtle)' }}>
-        <span>Product Line</span>
-        <span>Tier</span>
-        <span className="text-right">Premium</span>
-        <span className="text-right">Comm %</span>
-        <span className="text-right">Mix %</span>
-        <span className="text-center">1st Yr</span>
+        <span><T k="pages.components.dashboard.capacityplanner.c6aa9a">Product Line</T></span>
+        <span><T k="pages.components.dashboard.capacityplanner.9483f1">Tier</T></span>
+        <span className="text-right"><T k="pages.components.dashboard.capacityplanner.8d5e7e">Premium</T></span>
+        <span className="text-right"><T k="pages.components.dashboard.capacityplanner.df21db">Comm %</T></span>
+        <span className="text-right"><T k="pages.components.dashboard.capacityplanner.d2156e">Mix %</T></span>
+        <span className="text-center"><T k="pages.components.dashboard.capacityplanner.0ee3b3">1st Yr</T></span>
         <span />
       </div>
 
@@ -290,12 +291,12 @@ function PolicyMixTable({
           className="flex items-center gap-1 text-sm font-medium"
           style={{ color: 'var(--qs-info)' }}
         >
-          <Plus className="w-4 h-4" /> Add Row
+          <Plus className="w-4 h-4" /> <T k="pages.components.dashboard.capacityplanner.03e0c5">Add Row</T>
         </button>
 
         <div className="flex items-center gap-2">
           <span className="text-sm" style={{ color: 'var(--qs-dim)' }}>
-            Total: <span className={`font-semibold ${mixValid ? 'text-green-600' : 'text-red-600'}`}>
+            <T k="pages.components.dashboard.capacityplanner.66c4c5">Total:</T> <span className={`font-semibold ${mixValid ? 'text-green-600' : 'text-red-600'}`}>
               {Math.round(totalMix)}%
             </span>
           </span>
@@ -414,13 +415,13 @@ export default function CapacityPlanner({
     <div className="dark-card">
       <div className="flex items-center gap-2 mb-4">
         <Calculator className="w-5 h-5" style={{ color: 'var(--qs-info)' }} />
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>Capacity Planning Model</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.capacityplanner.3ee139">Capacity Planning Model</T></h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Current Performance */}
         <div>
-          <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Current Performance</h3>
+          <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3"><T k="pages.components.dashboard.capacityplanner.2c0450">Current Performance</T></h3>
           <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
             <StatRow label="Submissions (30d)" value={submissions.toLocaleString()} />
             <StatRow label="Conversion Rate" value={`${conversionRate}%`} />
@@ -437,7 +438,7 @@ export default function CapacityPlanner({
 
         {/* Right: Scenario Planner */}
         <div>
-          <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Scenario Planner</h3>
+          <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3"><T k="pages.components.dashboard.capacityplanner.bce2be">Scenario Planner</T></h3>
           <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }} className="mb-4">
             <InputRow
               label="Target Submissions/mo"
@@ -491,17 +492,17 @@ export default function CapacityPlanner({
 
             {/* Blended summary */}
             <div className="flex items-center justify-between mt-3 pt-2 text-sm" style={{ borderTop: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
-              <span>Blended Premium: <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>${outputs.blendedPremium.toLocaleString()}</span></span>
-              <span title="Premium-weighted average across your product mix">Blended Commission: <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{outputs.blendedCommission}%</span></span>
+              <span><T k="pages.components.dashboard.capacityplanner.eb2502">Blended Premium:</T> <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>${outputs.blendedPremium.toLocaleString()}</span></span>
+              <span title="Premium-weighted average across your product mix"><T k="pages.components.dashboard.capacityplanner.f8a350">Blended Commission:</T> <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{outputs.blendedCommission}%</span></span>
             </div>
           </div>
 
           {/* Projections */}
           <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
-            <h4 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Projections</h4>
+            <h4 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3"><T k="pages.components.dashboard.capacityplanner.e9dcdb">Projections</T></h4>
 
             {/* Monthly Snapshot */}
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-2">Monthly Snapshot</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-2"><T k="pages.components.dashboard.capacityplanner.6148eb">Monthly Snapshot</T></p>
             <StatRow label="Policies Closed/mo" value={outputs.estPoliciesClosed.toLocaleString()} />
             <StatRow
               label="New Business Commission"
@@ -512,7 +513,7 @@ export default function CapacityPlanner({
               value={`$${outputs.estMonthlyAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             />
             <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}>Net</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}><T k="pages.components.dashboard.capacityplanner.5012af">Net</T></span>
               <span className={`text-sm font-bold ${monthlyNetColor}`}>
                 {outputs.monthlyNet < 0 ? '(' : ''}${Math.abs(outputs.monthlyNet).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.monthlyNet < 0 ? ')' : ''}
                 {outputs.monthlyNet >= 0
@@ -526,8 +527,8 @@ export default function CapacityPlanner({
 
             {/* First-Year Projection */}
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-2">
-              First-Year Projection
-              <span className="text-xs font-normal normal-case ml-1" style={{ color: 'var(--qs-subtle)' }}>(12 months of new business)</span>
+              <T k="pages.components.dashboard.capacityplanner.0ee337">First-Year Projection</T>
+              <span className="text-xs font-normal normal-case ml-1" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.capacityplanner.2c5508">(12 months of new business)</T></span>
             </p>
             <StatRow label="Total Policies Written" value={outputs.firstYearPolicies.toLocaleString()} />
             <StatRow
@@ -540,7 +541,7 @@ export default function CapacityPlanner({
               value={`$${outputs.firstYearAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             />
             <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}>Net</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}><T k="pages.components.dashboard.capacityplanner.5012af">Net</T></span>
               <span className={`text-sm font-bold ${firstYearNetColor}`}>
                 {outputs.firstYearNet < 0 ? '(' : ''}${Math.abs(outputs.firstYearNet).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.firstYearNet < 0 ? ')' : ''}
                 {outputs.firstYearNet >= 0
@@ -550,7 +551,7 @@ export default function CapacityPlanner({
               </span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}>ROI</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}><T k="pages.components.dashboard.capacityplanner.9c244b">ROI</T></span>
               <span className={`text-sm font-bold ${firstYearRoiColor}`}>
                 {outputs.firstYearROI.toFixed(1)}%
               </span>
@@ -562,7 +563,7 @@ export default function CapacityPlanner({
 
             {!mixValid && (
               <p className="text-xs text-red-500 mt-2">
-                Mix total is {Math.round(totalMix)}%. Adjust to 100% for accurate projections.
+                <T k="pages.components.dashboard.capacityplanner.1ae0c0">Mix total is</T> {Math.round(totalMix)}<T k="pages.components.dashboard.capacityplanner.b4bd93">%. Adjust to 100% for accurate projections.</T>
               </p>
             )}
 
@@ -574,7 +575,7 @@ export default function CapacityPlanner({
                 className="flex items-center gap-1 text-xs font-medium"
                 style={{ color: 'var(--qs-info)' }}
               >
-                Breakeven Analysis
+                <T k="pages.components.dashboard.capacityplanner.b4a130">Breakeven Analysis</T>
                 {showBreakeven ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
               {showBreakeven && (

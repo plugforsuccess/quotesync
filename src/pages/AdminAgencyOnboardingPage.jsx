@@ -1,6 +1,7 @@
 // src/pages/AdminAgencyOnboardingPage.jsx
 // Multi-step agency onboarding wizard for platform_master_admin
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -87,8 +88,8 @@ const AdminAgencyOnboardingPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Only platform master admins can create agencies.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.adminagencyonboardingpage.095afb">Access Denied</T></h2>
+          <p className="text-gray-600"><T k="pages.adminagencyonboardingpage.a03f89">Only platform master admins can create agencies.</T></p>
         </div>
       </div>
     );
@@ -214,18 +215,18 @@ const AdminAgencyOnboardingPage = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
               <Check className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Agency Created Successfully</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.adminagencyonboardingpage.f35b37">Agency Created Successfully</T></h2>
             <div className="mt-6 bg-gray-50 rounded-lg p-5 text-left space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Agency</span>
+                <span className="text-sm text-gray-500"><T k="pages.adminagencyonboardingpage.75ec3e">Agency</T></span>
                 <span className="text-sm font-medium text-gray-900">{name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Principal</span>
+                <span className="text-sm text-gray-500"><T k="pages.adminagencyonboardingpage.8804b0">Principal</T></span>
                 <span className="text-sm font-medium text-gray-900">{successData.agentName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Login</span>
+                <span className="text-sm text-gray-500"><T k="pages.adminagencyonboardingpage.99dea7">Login</T></span>
                 <span className="text-sm font-medium text-gray-900">{successData.principalEmail}</span>
               </div>
             </div>
@@ -235,13 +236,13 @@ const AdminAgencyOnboardingPage = () => {
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
               >
                 <ExternalLink className="w-4 h-4" />
-                View Agency
+                <T k="pages.adminagencyonboardingpage.383ad2">View Agency</T>
               </button>
               <button
                 onClick={() => navigate('/admin/agencies')}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
               >
-                Go to Agencies List
+                <T k="pages.adminagencyonboardingpage.0037ca">Go to Agencies List</T>
               </button>
             </div>
           </div>
@@ -264,8 +265,8 @@ const AdminAgencyOnboardingPage = () => {
             </button>
             <Building2 className="w-7 h-7 text-primary-600" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">New Agency Onboarding</h1>
-              <p className="text-sm text-gray-500">Create a new agency with all required configuration</p>
+              <h1 className="text-xl font-bold text-gray-900"><T k="pages.adminagencyonboardingpage.e13808">New Agency Onboarding</T></h1>
+              <p className="text-sm text-gray-500"><T k="pages.adminagencyonboardingpage.75d4b6">Create a new agency with all required configuration</T></p>
             </div>
           </div>
 
@@ -337,7 +338,7 @@ const AdminAgencyOnboardingPage = () => {
             <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-medium text-red-800">Creation failed</p>
+                <p className="text-sm font-medium text-red-800"><T k="pages.adminagencyonboardingpage.750c30">Creation failed</T></p>
                 <p className="text-sm text-red-600 mt-1">{createAgency.error.message}</p>
               </div>
             </div>
@@ -351,7 +352,7 @@ const AdminAgencyOnboardingPage = () => {
               className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-40 disabled:pointer-events-none"
             >
               <ChevronLeft className="w-4 h-4" />
-              Back
+              <T k="pages.adminagencyonboardingpage.0557fa">Back</T>
             </button>
 
             {step < 3 ? (
@@ -359,7 +360,7 @@ const AdminAgencyOnboardingPage = () => {
                 onClick={handleNext}
                 className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
               >
-                Continue
+                <T k="pages.adminagencyonboardingpage.a0bfb8">Continue</T>
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
@@ -371,12 +372,12 @@ const AdminAgencyOnboardingPage = () => {
                 {createAgency.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating Agency...
+                    <T k="pages.adminagencyonboardingpage.22bb77">Creating Agency...</T>
                   </>
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    Create Agency
+                    <T k="pages.adminagencyonboardingpage.5241da">Create Agency</T>
                   </>
                 )}
               </button>
@@ -397,8 +398,8 @@ function StepBasics({
 }) {
   return (
     <div>
-      <h2 className="text-lg font-bold text-gray-900 mb-1">Agency Basics</h2>
-      <p className="text-sm text-gray-500 mb-6">Enter the core agency and agent contact information.</p>
+      <h2 className="text-lg font-bold text-gray-900 mb-1"><T k="pages.adminagencyonboardingpage.039643">Agency Basics</T></h2>
+      <p className="text-sm text-gray-500 mb-6"><T k="pages.adminagencyonboardingpage.c5cde0">Enter the core agency and agent contact information.</T></p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Agency Name" error={errors.name} required>
@@ -501,11 +502,10 @@ function StepProducts({ products, setProducts, catFactors, policyState, errors }
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-gray-900 mb-1">Products & VC Eligibility</h2>
+      <h2 className="text-lg font-bold text-gray-900 mb-1"><T k="pages.adminagencyonboardingpage.0014da">Products & VC Eligibility</T></h2>
       <div className="mb-5 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-800">
-          Pre-filled based on 2026 Allstate VC exclusions for <strong>{policyState}</strong>.
-          Review and adjust if needed. CAT reinsurance factors are loaded automatically from the Allstate 2026 schedule.
+          <T k="pages.adminagencyonboardingpage.0b2377">Pre-filled based on 2026 Allstate VC exclusions for</T> <strong>{policyState}</strong><T k="pages.adminagencyonboardingpage.03369e">. Review and adjust if needed. CAT reinsurance factors are loaded automatically from the Allstate 2026 schedule.</T>
         </p>
       </div>
 
@@ -513,12 +513,12 @@ function StepProducts({ products, setProducts, catFactors, policyState, errors }
         <table className="w-full text-sm min-w-[800px]">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left py-2 pr-3 font-semibold text-gray-600 text-xs uppercase">Product</th>
-              <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs uppercase w-20">VC Eligible</th>
-              <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs uppercase w-20">Points</th>
-              <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs uppercase w-16">CAT</th>
+              <th className="text-left py-2 pr-3 font-semibold text-gray-600 text-xs uppercase"><T k="pages.adminagencyonboardingpage.deb105">Product</T></th>
+              <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs uppercase w-20"><T k="pages.adminagencyonboardingpage.820f8b">VC Eligible</T></th>
+              <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs uppercase w-20"><T k="pages.adminagencyonboardingpage.75dd5f">Points</T></th>
+              <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs uppercase w-16"><T k="pages.adminagencyonboardingpage.c01ae1">CAT</T></th>
               <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs uppercase" colSpan={3}>
-                NB Rates (Pref / Bundled / Mono)
+                <T k="pages.adminagencyonboardingpage.5549e5">NB Rates (Pref / Bundled / Mono)</T>
               </th>
             </tr>
           </thead>
@@ -612,8 +612,8 @@ function StepCompensation({
 }) {
   return (
     <div>
-      <h2 className="text-lg font-bold text-gray-900 mb-1">Compensation Config</h2>
-      <p className="text-sm text-gray-500 mb-6">Set Allstate VC targets and monthly revenue goals.</p>
+      <h2 className="text-lg font-bold text-gray-900 mb-1"><T k="pages.adminagencyonboardingpage.e3c206">Compensation Config</T></h2>
+      <p className="text-sm text-gray-500 mb-6"><T k="pages.adminagencyonboardingpage.9ac9e4">Set Allstate VC targets and monthly revenue goals.</T></p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="VC Baseline Target" error={errors.vcBaselineTarget} required>
@@ -674,9 +674,9 @@ function StepPrincipal({
 }) {
   return (
     <div>
-      <h2 className="text-lg font-bold text-gray-900 mb-1">Principal Access</h2>
+      <h2 className="text-lg font-bold text-gray-900 mb-1"><T k="pages.adminagencyonboardingpage.51d288">Principal Access</T></h2>
       <p className="text-sm text-gray-500 mb-6">
-        Create the agent's QuoteSync login credentials.
+        <T k="pages.adminagencyonboardingpage.06211b">Create the agent's QuoteSync login credentials.</T>
       </p>
 
       <div className="grid grid-cols-1 gap-5 max-w-md">
@@ -721,7 +721,7 @@ function StepPrincipal({
 
       <div className="mt-5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
         <p className="text-sm text-amber-800">
-          The agent will be prompted to change their password on first login.
+          <T k="pages.adminagencyonboardingpage.66d77b">The agent will be prompted to change their password on first login.</T>
         </p>
       </div>
     </div>

@@ -1,4 +1,5 @@
 // src/components/SmarterFasterSection.jsx
+import { T } from '../../components/SiteCopy';
 import React from 'react';
 import { Clock, PhoneCallIcon, BriefcaseBusiness, CheckCircle } from 'lucide-react';
 
@@ -37,7 +38,7 @@ const SmarterFasterSection = ({ isVisible }) => {
       }`}
     >
       <h2 className="text-center text-white font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-tight mb-16">
-        A Smarter, Faster Way to Shop Insurance
+        <T k="pages.components.smarterfastersection.88a9f1">A Smarter, Faster Way to Shop Insurance</T>
       </h2>
 
       {/* Clean Card Grid - No Tilting */}
@@ -64,7 +65,7 @@ const SmarterFasterSection = ({ isVisible }) => {
       {/* Logo Carousel */}
       <div className="mt-24 text-center">
         <p className="text-primary-100 font-semibold mb-6 text-lg">
-          Helping Customers Save More By Switching from These Carriers
+          <T k="pages.components.smarterfastersection.59f603">Helping Customers Save More By Switching from These Carriers</T>
         </p>
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 overflow-hidden relative shadow-xl">
           <div className="flex overflow-hidden">

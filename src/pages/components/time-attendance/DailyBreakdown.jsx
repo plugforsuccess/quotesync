@@ -2,6 +2,7 @@
 // Per-day granularity table within the weekly scorecard.
 // Supports both legacy rcData.daily_breakdown and call-log-derived daily data.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { CalendarDays, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
 
@@ -56,9 +57,9 @@ export default function DailyBreakdown({ rcData, callLogDaily }) {
         className="w-full px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2 hover:bg-qs-card transition-colors"
       >
         <CalendarDays className="w-5 h-5 text-primary-400" />
-        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Daily Detail</h4>
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.dailybreakdown.ba8618">Daily Detail</T></h4>
         {useCallLog && (
-          <span className="text-xs text-primary-500 font-normal ml-1">(from call log)</span>
+          <span className="text-xs text-primary-500 font-normal ml-1"><T k="pages.components.timeattendance.dailybreakdown.7dc9fb">(from call log)</T></span>
         )}
         {expanded ? (
           <ChevronDown className="w-4 h-4 text-qs-muted ml-auto" />
@@ -72,19 +73,19 @@ export default function DailyBreakdown({ rcData, callLogDaily }) {
           <table className="w-full min-w-[640px]">
             <thead className="bg-qs-elevated/50">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Day</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Out Attempts</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">In Answered</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">In Missed</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Total</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Avg Handle</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.03727a">Day</T></th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.9396f2">Out Attempts</T></th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.cad148">In Answered</T></th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.7f18f7">In Missed</T></th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.96b014">Total</T></th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.3a1294">Avg Handle</T></th>
                 {useCallLog && (
                   <>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">First Call</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Last Call</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.9ecb37">First Call</T></th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.ac9054">Last Call</T></th>
                   </>
                 )}
-                <th className="px-4 py-2 text-center text-xs font-semibold text-qs-subtle uppercase">Status</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.dailybreakdown.ec53a8">Status</T></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-qs-border">
@@ -138,15 +139,15 @@ export default function DailyBreakdown({ rcData, callLogDaily }) {
                     <td className="px-4 py-2.5 text-center">
                       {isZero ? (
                         <span className="inline-flex items-center gap-1 text-xs text-red-400 font-medium">
-                          <AlertTriangle className="w-3.5 h-3.5" /> Zero
+                          <AlertTriangle className="w-3.5 h-3.5" /> <T k="pages.components.timeattendance.dailybreakdown.d7ed4e">Zero</T>
                         </span>
                       ) : isZeroOutbound ? (
                         <span className="inline-flex items-center gap-1 text-xs text-red-400 font-medium">
-                          <AlertTriangle className="w-3.5 h-3.5" /> No Out
+                          <AlertTriangle className="w-3.5 h-3.5" /> <T k="pages.components.timeattendance.dailybreakdown.3cba33">No Out</T>
                         </span>
                       ) : isLow ? (
                         <span className="inline-flex items-center gap-1 text-xs text-amber-400 font-medium">
-                          <AlertTriangle className="w-3.5 h-3.5" /> Low
+                          <AlertTriangle className="w-3.5 h-3.5" /> <T k="pages.components.timeattendance.dailybreakdown.28d0ed">Low</T>
                         </span>
                       ) : (
                         <CheckCircle className="w-4 h-4 text-emerald-400 mx-auto" />

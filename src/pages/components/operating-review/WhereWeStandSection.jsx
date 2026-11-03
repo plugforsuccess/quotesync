@@ -1,4 +1,5 @@
 // src/pages/components/operating-review/WhereWeStandSection.jsx
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
@@ -72,15 +73,15 @@ export default function WhereWeStandSection({ agencyId, reviewWeekStart, priorWe
     <section style={sectionStyle}>
       <header style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-          Where we stand
+          <T k="pages.components.operatingreview.wherewestandsection.cdc3a1">Where we stand</T>
         </h2>
         <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 0 }}>
-          Snapshot of the agency right now, with deltas vs. the prior week.
+          <T k="pages.components.operatingreview.wherewestandsection.3667e7">Snapshot of the agency right now, with deltas vs. the prior week.</T>
         </p>
       </header>
 
       {isLoading || !cards ? (
-        <div style={{ color: 'var(--qs-subtle)', padding: 16 }}>Loading snapshot…</div>
+        <div style={{ color: 'var(--qs-subtle)', padding: 16 }}><T k="pages.components.operatingreview.wherewestandsection.cfbf49">Loading snapshot…</T></div>
       ) : (
         <div style={{
           display: 'grid',

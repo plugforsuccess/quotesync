@@ -2,6 +2,7 @@
 // Admin dashboard for managing stories, approvals, and viewing analytics
 // REFACTORED: Now uses React Query hooks for proper caching and error handling
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Edit, Eye, CheckCircle, XCircle, Star, Archive, AlertCircle, RefreshCw } from 'lucide-react';
@@ -241,12 +242,12 @@ const NewsroomDashboardPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4"><T k="pages.newsroomdashboardpage.0a24f8">Failed to Load Dashboard</T></h2>
           <p className="text-gray-600 mb-2">
             {errorMessage || 'An unexpected error occurred while loading the dashboard.'}
           </p>
           <p className="text-sm text-gray-500 mb-6">
-            This could be due to network issues, expired session, or server problems.
+            <T k="pages.newsroomdashboardpage.727281">This could be due to network issues, expired session, or server problems.</T>
           </p>
           <div className="flex flex-col gap-3">
             <button
@@ -254,13 +255,13 @@ const NewsroomDashboardPage = () => {
               className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
-              Retry
+              <T k="pages.newsroomdashboardpage.6327b4">Retry</T>
             </button>
             <button
               onClick={() => navigate('/news')}
               className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors"
             >
-              Back to Newsroom
+              <T k="pages.newsroomdashboardpage.97b6ac">Back to Newsroom</T>
             </button>
           </div>
           <p className="text-xs text-gray-400 mt-6">{getBuildString()}</p>
@@ -284,9 +285,9 @@ const NewsroomDashboardPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Newsroom Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900"><T k="pages.newsroomdashboardpage.7cdf81">Newsroom Dashboard</T></h1>
               <p className="text-gray-600 text-sm mt-1">
-                Role: <span className="font-semibold capitalize">{isAdmin ? 'admin' : userRole}</span>
+                <T k="pages.newsroomdashboardpage.6340db">Role:</T> <span className="font-semibold capitalize">{isAdmin ? 'admin' : userRole}</span>
                 {' • '}
                 <span className="text-xs text-gray-400">{getBuildString()}</span>
               </p>
@@ -306,8 +307,8 @@ const NewsroomDashboardPage = () => {
                 className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm whitespace-nowrap"
               >
                 <Eye className="w-4 h-4" />
-                <span className="hidden sm:inline">View Newsroom</span>
-                <span className="sm:hidden">View</span>
+                <span className="hidden sm:inline"><T k="pages.newsroomdashboardpage.d45385">View Newsroom</T></span>
+                <span className="sm:hidden"><T k="pages.newsroomdashboardpage.4351cf">View</T></span>
               </Link>
 
               {isAdmin && (
@@ -316,8 +317,8 @@ const NewsroomDashboardPage = () => {
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm whitespace-nowrap"
                 >
                   <Archive className="w-4 h-4" />
-                  <span className="hidden sm:inline">Archived</span>
-                  <span className="sm:hidden">Archive</span>
+                  <span className="hidden sm:inline"><T k="pages.newsroomdashboardpage.7d69b3">Archived</T></span>
+                  <span className="sm:hidden"><T k="pages.newsroomdashboardpage.e727b0">Archive</T></span>
                 </Link>
               )}
 
@@ -326,8 +327,8 @@ const NewsroomDashboardPage = () => {
                 className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">New Story</span>
-                <span className="sm:hidden">New</span>
+                <span className="hidden sm:inline"><T k="pages.newsroomdashboardpage.f40ef7">New Story</T></span>
+                <span className="sm:hidden"><T k="pages.newsroomdashboardpage.03c2e7">New</T></span>
               </Link>
             </div>
           </div>
@@ -336,22 +337,22 @@ const NewsroomDashboardPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-gray-900">{displayStats.total}</div>
-              <div className="text-sm text-gray-600">Total Stories</div>
+              <div className="text-sm text-gray-600"><T k="pages.newsroomdashboardpage.04209f">Total Stories</T></div>
             </div>
 
             <div className="bg-green-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-green-700">{displayStats.published}</div>
-              <div className="text-sm text-green-600">Published</div>
+              <div className="text-sm text-green-600"><T k="pages.newsroomdashboardpage.9b9d8a">Published</T></div>
             </div>
 
             <div className="bg-yellow-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-yellow-700">{displayStats.in_review}</div>
-              <div className="text-sm text-yellow-600">In Review</div>
+              <div className="text-sm text-yellow-600"><T k="pages.newsroomdashboardpage.516d27">In Review</T></div>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-gray-700">{displayStats.draft}</div>
-              <div className="text-sm text-gray-600">Drafts</div>
+              <div className="text-sm text-gray-600"><T k="pages.newsroomdashboardpage.db3af4">Drafts</T></div>
             </div>
           </div>
         </div>
@@ -369,7 +370,7 @@ const NewsroomDashboardPage = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              All Stories
+              <T k="pages.newsroomdashboardpage.316e18">All Stories</T>
             </button>
             <button
               onClick={() => setFilter('draft')}
@@ -379,7 +380,7 @@ const NewsroomDashboardPage = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Drafts
+              <T k="pages.newsroomdashboardpage.db3af4">Drafts</T>
             </button>
             <button
               onClick={() => setFilter('in_review')}
@@ -389,7 +390,7 @@ const NewsroomDashboardPage = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              In Review
+              <T k="pages.newsroomdashboardpage.516d27">In Review</T>
             </button>
             <button
               onClick={() => setFilter('published')}
@@ -399,7 +400,7 @@ const NewsroomDashboardPage = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Published
+              <T k="pages.newsroomdashboardpage.9b9d8a">Published</T>
             </button>
             {isAdmin && (
               <button
@@ -410,7 +411,7 @@ const NewsroomDashboardPage = () => {
                     : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                 }`}
               >
-                Archived ({displayStats.archived})
+                <T k="pages.newsroomdashboardpage.d2ed86">Archived (</T>{displayStats.archived})
               </button>
             )}
           </div>
@@ -422,7 +423,7 @@ const NewsroomDashboardPage = () => {
         {stories.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <div className="text-6xl mb-4">📝</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No stories found</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.newsroomdashboardpage.43f3e8">No stories found</T></h2>
             <p className="text-gray-600 mb-6">
               {filter === 'all'
                 ? "Get started by creating your first story"
@@ -433,7 +434,7 @@ const NewsroomDashboardPage = () => {
               className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Create Story
+              <T k="pages.newsroomdashboardpage.a14fc1">Create Story</T>
             </Link>
           </div>
         ) : (
@@ -444,22 +445,22 @@ const NewsroomDashboardPage = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Story
+                    <T k="pages.newsroomdashboardpage.dfba89">Story</T>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Editor
+                    <T k="pages.newsroomdashboardpage.344a7f">Editor</T>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Category
+                    <T k="pages.newsroomdashboardpage.3adbdb">Category</T>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
+                    <T k="pages.newsroomdashboardpage.ec53a8">Status</T>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Updated
+                    <T k="pages.newsroomdashboardpage.ff0a3b">Updated</T>
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
+                    <T k="pages.newsroomdashboardpage.06df33">Actions</T>
                   </th>
                 </tr>
               </thead>

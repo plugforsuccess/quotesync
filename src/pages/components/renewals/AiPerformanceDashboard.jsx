@@ -2,6 +2,7 @@
 // AI Performance metrics tab — agent only.
 // Shows volume, conversion, cost, and webhook health metrics from ai_call_log.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { BarChart3, DollarSign, PhoneCall, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
 import { useAiCallLog, useWebhookHealth } from '../../../hooks/useAiCallLog';
@@ -60,11 +61,11 @@ export default function AiPerformanceDashboard({ agencyId }) {
   const { data: healthData } = useWebhookHealth(agencyId);
 
   if (isLoading) {
-    return <div style={{ fontSize: 13, color: 'var(--qs-dim)', padding: '32px 0', textAlign: 'center' }}>Loading AI metrics...</div>;
+    return <div style={{ fontSize: 13, color: 'var(--qs-dim)', padding: '32px 0', textAlign: 'center' }}><T k="pages.components.renewals.aiperformancedashboard.ad3507">Loading AI metrics...</T></div>;
   }
 
   if (error) {
-    return <div style={{ fontSize: 13, color: '#F87171', padding: '16px 0' }}>Failed to load AI metrics: {error.message}</div>;
+    return <div style={{ fontSize: 13, color: '#F87171', padding: '16px 0' }}><T k="pages.components.renewals.aiperformancedashboard.ad1a9f">Failed to load AI metrics:</T> {error.message}</div>;
   }
 
   const orphanedCount = healthData?.orphaned?.length || 0;
@@ -75,7 +76,7 @@ export default function AiPerformanceDashboard({ agencyId }) {
       <div className="flex items-center justify-between">
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
           <BarChart3 className="w-5 h-5" />
-          AI Performance
+          <T k="pages.components.renewals.aiperformancedashboard.ca164e">AI Performance</T>
         </h2>
         <div className="flex gap-1">
           {[7, 30].map((d) => (
@@ -101,7 +102,7 @@ export default function AiPerformanceDashboard({ agencyId }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, fontSize: 13, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
           <AlertTriangle size={14} style={{ color: '#FBBF24', flexShrink: 0 }} />
           <span style={{ color: '#FBBF24' }}>
-            <strong>{orphanedCount}</strong> AI call{orphanedCount !== 1 ? 's' : ''} with no webhook response — check Bland.ai dashboard
+            <strong>{orphanedCount}</strong> <T k="pages.components.renewals.aiperformancedashboard.2f08c9">AI call</T>{orphanedCount !== 1 ? 's' : ''} <T k="pages.components.renewals.aiperformancedashboard.be15f0">with no webhook response — check Bland.ai dashboard</T>
           </span>
         </div>
       )}
@@ -140,7 +141,7 @@ export default function AiPerformanceDashboard({ agencyId }) {
 
       {/* Consent capture */}
       <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
-        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 8 }}>Consent Capture Rate</h3>
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.components.renewals.aiperformancedashboard.699af2">Consent Capture Rate</T></h3>
         <div className="flex items-center gap-2">
           <div style={{ flex: 1, background: 'var(--qs-elevated)', borderRadius: 99, height: 10 }}>
             <div
@@ -150,14 +151,14 @@ export default function AiPerformanceDashboard({ agencyId }) {
           </div>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{metrics.consentCaptureRate}%</span>
         </div>
-        <p style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 4 }}>% of completed calls where consent was captured</p>
+        <p style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 4 }}><T k="pages.components.renewals.aiperformancedashboard.3d5612">% of completed calls where consent was captured</T></p>
       </div>
 
       {/* Outcome distribution */}
       <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
-        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 12 }}>Outcome Distribution</h3>
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 12 }}><T k="pages.components.renewals.aiperformancedashboard.346e9c">Outcome Distribution</T></h3>
         {Object.keys(metrics.outcomeDistribution).length === 0 ? (
-          <p style={{ fontSize: 13, color: 'var(--qs-muted)' }}>No call data yet.</p>
+          <p style={{ fontSize: 13, color: 'var(--qs-muted)' }}><T k="pages.components.renewals.aiperformancedashboard.22b9bd">No call data yet.</T></p>
         ) : (
           <div className="space-y-2">
             {Object.entries(metrics.outcomeDistribution)

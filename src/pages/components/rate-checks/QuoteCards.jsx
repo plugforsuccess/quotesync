@@ -6,6 +6,7 @@
 // Card colours: every quote card has the same neutral border. Colour only carries
 // a result: green = they save, amber = Allstate costs more.
 
+import { T } from '../../../components/SiteCopy';
 import { carrierLabel, policyTypeLabel } from './format';
 import { CARD_STYLE, money } from './ui';
 import { householdGoal, savings } from './quoteMath';
@@ -19,9 +20,9 @@ export function GoalHeader({ household }) {
   if (g.target == null) return null;
   return (
     <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }} aria-label="Quote goal">
-      <span>Beat <b style={{ color: 'var(--qs-bright)' }}>{money(g.target)}/yr</b></span>
+      <span><T k="pages.components.ratechecks.quotecards.2bb46c">Beat</T> <b style={{ color: 'var(--qs-bright)' }}>{money(g.target)}<T k="pages.components.ratechecks.quotecards.6d8fef">/yr</T></b></span>
       <span aria-hidden="true">·</span>
-      <span>{g.quoted} of {g.total} quoted</span>
+      <span>{g.quoted} <T k="pages.components.ratechecks.quotecards.8bf885">of</T> {g.total} <T k="pages.components.ratechecks.quotecards.c77184">quoted</T></span>
       {g.saved != null && (
         <>
           <span aria-hidden="true">·</span>
@@ -52,7 +53,7 @@ export function HouseholdCard({ rc, household, onSelect }) {
   return (
     <div className="flex grow flex-col rounded-xl p-4" style={CARD_STYLE}>
       <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--qs-bright)' }}>
-        Household <span className="font-medium" style={{ color: 'var(--qs-subtle)' }}>· {household.length} policies</span>
+        <T k="pages.components.ratechecks.quotecards.ea4be6">Household</T> <span className="font-medium" style={{ color: 'var(--qs-subtle)' }}>· {household.length} <T k="pages.components.ratechecks.quotecards.94422f">policies</T></span>
       </h3>
       {/* The rows share whatever height the card has, so it never ends in a blank strip. */}
       <div className="mt-3 flex flex-1 flex-col gap-2" role="tablist" aria-label="Policies in this household">
@@ -62,10 +63,10 @@ export function HouseholdCard({ rc, household, onSelect }) {
             <button key={p.id} type="button" role="tab" aria-selected={active} onClick={() => onSelect?.(p)}
               className={`flex min-h-[64px] w-full flex-1 flex-col justify-center gap-1 rounded-xl px-4 py-3 text-left ${active ? 'bg-primary-600 text-white' : ''}`}
               style={active ? undefined : { background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
-              {active && <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Working on</span>}
+              {active && <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80"><T k="pages.components.ratechecks.quotecards.4c47d7">Working on</T></span>}
               <span className="flex items-baseline justify-between gap-3">
                 <span className="text-lg font-bold leading-tight">{policyName(p)}</span>
-                {p.annual_premium != null && <span className="shrink-0 text-lg font-bold tabular-nums leading-tight">{money(p.annual_premium)}<span className={`text-sm font-medium ${active ? 'opacity-80' : ''}`} style={active ? undefined : { color: 'var(--qs-subtle)' }}>/yr</span></span>}
+                {p.annual_premium != null && <span className="shrink-0 text-lg font-bold tabular-nums leading-tight">{money(p.annual_premium)}<span className={`text-sm font-medium ${active ? 'opacity-80' : ''}`} style={active ? undefined : { color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.quotecards.6d8fef">/yr</T></span></span>}
               </span>
             </button>
           );

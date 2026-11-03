@@ -1,4 +1,5 @@
 // src/pages/TerminationAliasesPage.jsx
+import { T } from '../components/SiteCopy';
 import { Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -32,22 +33,21 @@ export default function TerminationAliasesPage() {
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <header style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>
-          Termination Reason Aliases
+          <T k="pages.terminationaliasespage.12c622">Termination Reason Aliases</T>
         </h1>
         <p style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 4 }}>
-          Map raw Allstate report values to canonical categories. After mapping, existing
-          terminations with that reason are recategorized immediately.
+          <T k="pages.terminationaliasespage.a43308">Map raw Allstate report values to canonical categories. After mapping, existing terminations with that reason are recategorized immediately.</T>
         </p>
       </header>
 
       {/* Uncategorized panel */}
       <section style={{ ...cardStyle, marginBottom: 16 }}>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', margin: 0, marginBottom: 12 }}>
-          Needs review: {uncategorized.length} raw reason{uncategorized.length === 1 ? '' : 's'}
+          <T k="pages.terminationaliasespage.eb035c">Needs review:</T> {uncategorized.length} <T k="pages.terminationaliasespage.420135">raw reason</T>{uncategorized.length === 1 ? '' : 's'}
         </h2>
         {uncategorized.length === 0 ? (
           <p style={{ color: 'var(--qs-subtle)', margin: 0 }}>
-            All termination reasons are categorized. New raw values will appear here after the next report import.
+            <T k="pages.terminationaliasespage.0a6b61">All termination reasons are categorized. New raw values will appear here after the next report import.</T>
           </p>
         ) : (
           <UncategorizedTable
@@ -61,11 +61,11 @@ export default function TerminationAliasesPage() {
       {/* Existing aliases panel */}
       <section style={cardStyle}>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', margin: 0, marginBottom: 12 }}>
-          Active aliases: {aliases.length}
+          <T k="pages.terminationaliasespage.d27fe1">Active aliases:</T> {aliases.length}
         </h2>
         {aliases.length === 0 ? (
           <p style={{ color: 'var(--qs-subtle)', margin: 0 }}>
-            No aliases yet. Categorize reasons above to start building your mapping.
+            <T k="pages.terminationaliasespage.9c5b85">No aliases yet. Categorize reasons above to start building your mapping.</T>
           </p>
         ) : (
           <AliasTable
@@ -101,10 +101,10 @@ function UncategorizedTable({ uncategorized, categories, agencyId }) {
     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
       <thead>
         <tr style={{ background: 'var(--qs-elevated)' }}>
-          <th style={thStyle}>Raw reason</th>
-          <th style={{ ...thStyle, textAlign: 'right' }}>Count</th>
-          <th style={{ ...thStyle, textAlign: 'right' }}>Latest</th>
-          <th style={thStyle}>Assign category</th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.dc6ac0">Raw reason</T></th>
+          <th style={{ ...thStyle, textAlign: 'right' }}><T k="pages.terminationaliasespage.e93f99">Count</T></th>
+          <th style={{ ...thStyle, textAlign: 'right' }}><T k="pages.terminationaliasespage.cd118d">Latest</T></th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.86eed1">Assign category</T></th>
         </tr>
       </thead>
       <tbody>
@@ -166,10 +166,10 @@ function AliasTable({ aliases, categories, agencyId }) {
     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
       <thead>
         <tr style={{ background: 'var(--qs-elevated)' }}>
-          <th style={thStyle}>Raw reason</th>
-          <th style={thStyle}>Maps to</th>
-          <th style={thStyle}>Source</th>
-          <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.dc6ac0">Raw reason</T></th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.8a9e44">Maps to</T></th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.f31bbd">Source</T></th>
+          <th style={{ ...thStyle, textAlign: 'right' }}><T k="pages.terminationaliasespage.06df33">Actions</T></th>
         </tr>
       </thead>
       <tbody>

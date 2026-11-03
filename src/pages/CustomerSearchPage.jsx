@@ -1,6 +1,7 @@
 // src/pages/CustomerSearchPage.jsx
 // Producer customer lookup — type a name, see the household's full picture:
 // active lines, lost lines (winback openings), open cancel/renewal work, contact.
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -101,10 +102,10 @@ export default function CustomerSearchPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)', marginBottom: 4 }}>
-            Customer Search
+            <T k="pages.customersearchpage.571d87">Customer Search</T>
           </div>
           <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-            Look up any customer across active, pending, and lapsed policies.
+            <T k="pages.customersearchpage.3e7f6a">Look up any customer across active, pending, and lapsed policies.</T>
           </div>
         </div>
         {canManage && (
@@ -128,7 +129,7 @@ export default function CustomerSearchPage() {
           background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
           borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'var(--qs-dim)',
         }}>
-          {selected.length} selected — merge into one customer?
+          {selected.length} <T k="pages.customersearchpage.2280f5">selected — merge into one customer?</T>
           <button onClick={mergeSelected} disabled={merge.isPending} style={{
             padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
             background: '#3B82F6', color: '#fff', fontSize: 12, fontWeight: 600,
@@ -136,7 +137,7 @@ export default function CustomerSearchPage() {
           <button onClick={() => setSelected([])} style={{
             padding: '5px 12px', borderRadius: 6, cursor: 'pointer',
             border: '1px solid var(--qs-border)', background: 'transparent', color: 'var(--qs-subtle)', fontSize: 12,
-          }}>Cancel</button>
+          }}><T k="pages.customersearchpage.ea4788">Cancel</T></button>
         </div>
       )}
 
@@ -160,7 +161,7 @@ export default function CustomerSearchPage() {
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
                   textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-                  Recently viewed
+                  <T k="pages.customersearchpage.3bf4ed">Recently viewed</T>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {viewed.map(v => (
@@ -177,7 +178,7 @@ export default function CustomerSearchPage() {
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
                   textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-                  Recent searches
+                  <T k="pages.customersearchpage.8173db">Recent searches</T>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {recent.map(t => (
@@ -193,19 +194,19 @@ export default function CustomerSearchPage() {
           </div>
         ) : (
           <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
-            Type at least 2 characters to search.
+            <T k="pages.customersearchpage.a38832">Type at least 2 characters to search.</T>
           </div>
         )
       )}
       {ready && isLoading && (
-        <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Searching…</div>
+        <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}><T k="pages.customersearchpage.1f682b">Searching…</T></div>
       )}
       {ready && isError && (
-        <div style={{ color: 'var(--qs-danger)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Search failed — try again.</div>
+        <div style={{ color: 'var(--qs-danger)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}><T k="pages.customersearchpage.03b510">Search failed — try again.</T></div>
       )}
       {ready && !isLoading && results.length === 0 && (
         <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
-          No customers match “{term}”.
+          <T k="pages.customersearchpage.92c9a2">No customers match “</T>{term}”.
         </div>
       )}
 
@@ -234,7 +235,7 @@ export default function CustomerSearchPage() {
                       onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                       {c.display_name}
                     </Link>
-                    {winback && <span style={{ marginLeft: 8 }}><Chip color="#34D399">♻ Win-back opening</Chip></span>}
+                    {winback && <span style={{ marginLeft: 8 }}><Chip color="#34D399"><T k="pages.customersearchpage.4430e0">♻ Win-back opening</T></Chip></span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 3 }}>
                     {[c.phone, c.email, c.zip].filter(Boolean).join(' · ') || 'No contact on file'}
@@ -242,21 +243,21 @@ export default function CustomerSearchPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
-                  {c.cancel_open > 0 && <Chip color="#EF4444">⚠ {c.cancel_open} cancel</Chip>}
-                  {c.renewal_open > 0 && <Chip color="#FBBF24">🔄 {c.renewal_open} renewal</Chip>}
+                  {c.cancel_open > 0 && <Chip color="#EF4444">⚠ {c.cancel_open} <T k="pages.customersearchpage.10aec3">cancel</T></Chip>}
+                  {c.renewal_open > 0 && <Chip color="#FBBF24">🔄 {c.renewal_open} <T k="pages.customersearchpage.4b537a">renewal</T></Chip>}
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: 18, marginTop: 10, flexWrap: 'wrap', fontSize: 12 }}>
                 <div>
-                  <span style={{ color: 'var(--qs-muted)' }}>Active: </span>
+                  <span style={{ color: 'var(--qs-muted)' }}><T k="pages.customersearchpage.3d091e">Active:</T> </span>
                   {c.active_products?.length
                     ? <span style={{ color: '#34D399', fontWeight: 600 }}>{c.active_products.map(label).join(', ')}</span>
-                    : <span style={{ color: 'var(--qs-muted)' }}>none</span>}
+                    : <span style={{ color: 'var(--qs-muted)' }}><T k="pages.customersearchpage.334c4a">none</T></span>}
                 </div>
                 {c.lost_products?.length > 0 && (
                   <div>
-                    <span style={{ color: 'var(--qs-muted)' }}>Lost: </span>
+                    <span style={{ color: 'var(--qs-muted)' }}><T k="pages.customersearchpage.73cac0">Lost:</T> </span>
                     <span style={{ color: '#F87171' }}>{c.lost_products.map(label).join(', ')}</span>
                   </div>
                 )}

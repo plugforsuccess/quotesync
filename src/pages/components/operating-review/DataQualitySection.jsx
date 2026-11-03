@@ -4,6 +4,7 @@
 // so the target is 0%. Shows the pre-SOP baseline vs. the clean SOP era
 // (measured from the agency's go-live date) so the improvement is provable.
 
+import { T } from '../../../components/SiteCopy';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useSopGoLiveDate } from '../../../hooks/useSopGoLiveDate';
@@ -85,9 +86,9 @@ export default function DataQualitySection({ agencyId }) {
   return (
     <section style={sectionStyle}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Data Quality</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.components.operatingreview.dataqualitysection.74c365">Data Quality</T></h2>
         <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
-          Terminations with no reason recorded · target 0%
+          <T k="pages.components.operatingreview.dataqualitysection.86581f">Terminations with no reason recorded · target 0%</T>
         </span>
       </div>
 
@@ -111,16 +112,14 @@ export default function DataQualitySection({ agencyId }) {
         {improvement != null && improvement !== 0 && (
           <div style={{ alignSelf: 'center' }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: improvement > 0 ? 'var(--qs-success)' : 'var(--qs-danger)' }}>
-              {improvement > 0 ? '▼' : '▲'} {Math.abs(improvement).toFixed(0)} pts {improvement > 0 ? 'improved' : 'worse'}
+              {improvement > 0 ? '▼' : '▲'} {Math.abs(improvement).toFixed(0)} <T k="pages.components.operatingreview.dataqualitysection.8c9a70">pts</T> {improvement > 0 ? 'improved' : 'worse'}
             </span>
           </div>
         )}
       </div>
 
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 14, lineHeight: 1.5 }}>
-        These cancellations were coded <strong>"Insured Request — All Other"</strong> with no real reason captured.
-        SOP: never use that default — reps record the true reason on every cancellation. The baseline stays as your
-        before; this number should fall to zero in the SOP era.
+        <T k="pages.components.operatingreview.dataqualitysection.9c8dae">These cancellations were coded</T> <strong><T k="pages.components.operatingreview.dataqualitysection.23a095">"Insured Request — All Other"</T></strong> <T k="pages.components.operatingreview.dataqualitysection.b6eb5a">with no real reason captured. SOP: never use that default — reps record the true reason on every cancellation. The baseline stays as your before; this number should fall to zero in the SOP era.</T>
       </div>
     </section>
   );

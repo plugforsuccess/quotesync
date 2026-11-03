@@ -1,3 +1,4 @@
+import { T } from '../components/SiteCopy';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import EmailCapture from '../components/EmailCapture';
@@ -44,14 +45,14 @@ const ThankYouPage = () => {
           </svg>
         </div>
         
-        <h1>You're All Set!</h1>
+        <h1><T k="pages.thankyoupage.50d1f8">You're All Set!</T></h1>
         <p className="subtitle">
-          I received your current policy details, and I'm already working on your quote.
+          <T k="pages.thankyoupage.e0f14a">I received your current policy details, and I'm already working on your quote.</T>
         </p>
 
         {/* Personal Video Section */}
         <div className="video-section">
-          <h2 className="video-title">A Quick Message from Cameron</h2>
+          <h2 className="video-title"><T k="pages.thankyoupage.c9c9b7">A Quick Message from Cameron</T></h2>
           <div className="video-wrapper">
             <iframe
               src="https://www.youtube.com/embed/CBmtFPMUcr0"
@@ -64,7 +65,7 @@ const ThankYouPage = () => {
         </div>
         
         <div className="info-box">
-          <h2>Here's What I'm Doing Right Now:</h2>
+          <h2><T k="pages.thankyoupage.77bbc8">Here's What I'm Doing Right Now:</T></h2>
           
           <div className="info-item">
             <div className="info-icon">
@@ -74,7 +75,7 @@ const ThankYouPage = () => {
               </svg>
             </div>
             <div className="info-text">
-              <strong>Analyzing your current policy</strong> to understand your coverage, deductibles, and household drivers
+              <strong><T k="pages.thankyoupage.a798f1">Analyzing your current policy</T></strong> <T k="pages.thankyoupage.f0c6b9">to understand your coverage, deductibles, and household drivers</T>
             </div>
           </div>
           
@@ -86,7 +87,7 @@ const ThankYouPage = () => {
               </svg>
             </div>
             <div className="info-text">
-              <strong>Building your custom Allstate quote</strong> to see if I can beat what you are currently paying
+              <strong><T k="pages.thankyoupage.af3b2a">Building your custom Allstate quote</T></strong> <T k="pages.thankyoupage.e4e5c8">to see if I can beat what you are currently paying</T>
             </div>
           </div>
           
@@ -97,7 +98,7 @@ const ThankYouPage = () => {
               </svg>
             </div>
             <div className="info-text">
-              <strong>I'll call you within 24 hours</strong> to show you the comparison. Can't talk? No problem. I'll email everything instead.
+              <strong><T k="pages.thankyoupage.90c95f">I'll call you within 24 hours</T></strong> <T k="pages.thankyoupage.e59965">to show you the comparison. Can't talk? No problem. I'll email everything instead.</T>
             </div>
           </div>
         </div>
@@ -105,7 +106,7 @@ const ThankYouPage = () => {
         {/* SMS Opt-In */}
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl text-sm" style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.75rem', fontSize: '0.875rem' }}>
           <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-            Get a text when your quote is ready?
+            <T k="pages.thankyoupage.a78fc7">Get a text when your quote is ready?</T>
           </p>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
             <input
@@ -113,23 +114,22 @@ const ThankYouPage = () => {
               checked={smsOptIn}
               onChange={e => handleSmsOptIn(e.target.checked)}
             />
-            Yes &mdash; text me at the number I provided
+            <T k="pages.thankyoupage.318bcb">Yes — text me at the number I provided</T>
           </label>
           {smsOptIn && (
             <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-              By checking this box, you agree to receive SMS updates from Insured by Cam.
-              Message &amp; data rates may apply. Reply STOP to unsubscribe.
+              <T k="pages.thankyoupage.b41410">By checking this box, you agree to receive SMS updates from Insured by Cam. Message & data rates may apply. Reply STOP to unsubscribe.</T>
             </p>
           )}
         </div>
 
         {/* Value-Add Section */}
         <div className="value-section">
-          <h3>💡 While You Wait, Here's What to Expect</h3>
+          <h3><T k="pages.thankyoupage.c35199">💡 While You Wait, Here's What to Expect</T></h3>
           <div className="value-content">
-            <p><strong>Honest Comparison:</strong> I'll show you exactly how Allstate stacks up against what you're paying now - apples to apples.</p>
-            <p><strong>Your Questions Answered:</strong> Whether it's about coverage limits, deductibles, or eligible discounts - I've got you covered.</p>
-            <p><strong>Zero Pressure:</strong> If Allstate saves you money, that's great! If not, I'll tell you honestly. You're in complete control. </p>
+            <p><strong><T k="pages.thankyoupage.7f48c4">Honest Comparison:</T></strong> <T k="pages.thankyoupage.aa24c8">I'll show you exactly how Allstate stacks up against what you're paying now - apples to apples.</T></p>
+            <p><strong><T k="pages.thankyoupage.bcaa1a">Your Questions Answered:</T></strong> <T k="pages.thankyoupage.614988">Whether it's about coverage limits, deductibles, or eligible discounts - I've got you covered.</T></p>
+            <p><strong><T k="pages.thankyoupage.1ed5ad">Zero Pressure:</T></strong> <T k="pages.thankyoupage.ebc7cb">If Allstate saves you money, that's great! If not, I'll tell you honestly. You're in complete control.</T> </p>
           </div>
         </div>
 
@@ -147,10 +147,10 @@ const ThankYouPage = () => {
       {/* Driver Education CTA */}
       <div className="driver-ed-cta">
         <div className="driver-ed-content">
-          <h3>💰 Want to Save Even More on Insurance?</h3>
-          <p>While you wait for your quote, check out how Georgia drivers can earn recurring insurance discounts by taking a simple online course.</p>
+          <h3><T k="pages.thankyoupage.264f6c">💰 Want to Save Even More on Insurance?</T></h3>
+          <p><T k="pages.thankyoupage.251987">While you wait for your quote, check out how Georgia drivers can earn recurring insurance discounts by taking a simple online course.</T></p>
           <Link to="/courses" className="driver-ed-button">
-            Explore Driver Education Courses →
+            <T k="pages.thankyoupage.b61ac7">Explore Driver Education Courses →</T>
           </Link>
         </div>
       </div>
@@ -158,34 +158,34 @@ const ThankYouPage = () => {
       {/* Social Proof */}
       <div className="social-proof">
         <p className="social-proof-text">
-          Join hundreds of drivers who've simplified their insurance shopping on insuredbycam.com
+          <T k="pages.thankyoupage.f0bcd2">Join hundreds of drivers who've simplified their insurance shopping on insuredbycam.com</T>
         </p>
         <div className="trust-badges">
           <div className="trust-badge">
             <svg viewBox="0 0 24 24">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            Accurate Quotes
+            <T k="pages.thankyoupage.4b2f0e">Accurate Quotes</T>
           </div>
           <div className="trust-badge">
             <svg viewBox="0 0 24 24">
               <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"></path>
             </svg>
-            No Spam Calls
+            <T k="pages.thankyoupage.87c00d">No Spam Calls</T>
           </div>
           <div className="trust-badge">
             <svg viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            24-Hour Response
+            <T k="pages.thankyoupage.180d14">24-Hour Response</T>
           </div>
         </div>
       </div>
 
       {/* Back to Homepage */}
       <div className="back-link">
-        <Link to="/quotes">← Back to Home</Link>
+        <Link to="/quotes"><T k="pages.thankyoupage.0fa120">← Back to Home</T></Link>
         {/* or `to="/"` if you prefer the root as your primary quote page */}
       </div>
     </div>

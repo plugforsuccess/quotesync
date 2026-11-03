@@ -1,6 +1,7 @@
 // Employee's personal scorecard and bonus verification.
 // Reuses useRetentionMetrics, RetentionScorecard, and BonusVerificationAlert.
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -26,7 +27,7 @@ function OpenCommitmentsStrip({ commitments }) {
     }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-        Open Commitments
+        <T k="pages.myscorecardpage.2e7db2">Open Commitments</T>
       </div>
       {commitments.map(c => {
         const isOverdue = new Date(c.due_date) < new Date();
@@ -39,7 +40,7 @@ function OpenCommitmentsStrip({ commitments }) {
             <span style={{ color: 'var(--qs-text)' }}>{c.description}</span>
             <span style={{ color: isOverdue ? '#EF4444' : 'var(--qs-muted)',
               flexShrink: 0, marginLeft: 12 }}>
-              {isOverdue ? '⚠️ ' : ''}Due {c.due_date}
+              {isOverdue ? '⚠️ ' : ''}<T k="pages.myscorecardpage.d03639">Due</T> {c.due_date}
             </span>
           </div>
         );
@@ -131,7 +132,7 @@ export default function MyScorecardPage() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 6 }}>
-          My Scorecard
+          <T k="pages.myscorecardpage.51c8d1">My Scorecard</T>
         </div>
         <div style={{ fontSize: 15, color: 'var(--qs-subtle)' }}>
           {employee?.preferred_name || employee?.first_name} &middot;{' '}
@@ -163,7 +164,7 @@ export default function MyScorecardPage() {
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              Monthly Bonus
+              <T k="pages.myscorecardpage.ec49e3">Monthly Bonus</T>
               <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
                 padding: '2px 8px', borderRadius: 999,
                 color: isFrozen ? 'var(--qs-success)' : 'var(--qs-subtle)',

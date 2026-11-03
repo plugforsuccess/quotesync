@@ -1,4 +1,5 @@
 // src/pages/CompScheduleAdminPage.jsx
+import { T } from '../components/SiteCopy';
 import { useState, Fragment } from 'react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,10 +54,10 @@ export default function CompScheduleAdminPage() {
       }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>
-            Compensation Schedules
+            <T k="pages.compscheduleadminpage.49bdf9">Compensation Schedules</T>
           </h1>
           <p style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 4 }}>
-            Manage carrier commission schedules by state and effective period.
+            <T k="pages.compscheduleadminpage.93df23">Manage carrier commission schedules by state and effective period.</T>
           </p>
         </div>
         <button
@@ -65,7 +66,7 @@ export default function CompScheduleAdminPage() {
           style={btnPrimary}
         >
           <Plus size={16} />
-          Add Schedule
+          <T k="pages.compscheduleadminpage.d1b9a8">Add Schedule</T>
         </button>
       </div>
 
@@ -103,7 +104,7 @@ function ScheduleListTable({ schedules, expandedId, onToggleExpanded, onEdit, on
     return (
       <div className="rounded border border-[var(--qs-border)] bg-[var(--qs-card)] p-8 text-center">
         <p className="text-[var(--qs-subtle)]">
-          No schedules yet. Add your first schedule to begin modeling commission changes.
+          <T k="pages.compscheduleadminpage.422fc2">No schedules yet. Add your first schedule to begin modeling commission changes.</T>
         </p>
       </div>
     );
@@ -114,13 +115,13 @@ function ScheduleListTable({ schedules, expandedId, onToggleExpanded, onEdit, on
       <table className="w-full text-sm">
         <thead className="bg-[var(--qs-elevated)] text-[var(--qs-subtle)] text-xs uppercase tracking-wide">
           <tr>
-            <th className="px-4 py-3 text-left">Schedule</th>
-            <th className="px-4 py-3 text-left">Carrier</th>
-            <th className="px-4 py-3 text-left">State</th>
-            <th className="px-4 py-3 text-left">Effective From</th>
-            <th className="px-4 py-3 text-left">Effective To</th>
-            <th className="px-4 py-3 text-left">Status</th>
-            <th className="px-4 py-3 text-right">Actions</th>
+            <th className="px-4 py-3 text-left"><T k="pages.compscheduleadminpage.25f734">Schedule</T></th>
+            <th className="px-4 py-3 text-left"><T k="pages.compscheduleadminpage.914419">Carrier</T></th>
+            <th className="px-4 py-3 text-left"><T k="pages.compscheduleadminpage.46a2a4">State</T></th>
+            <th className="px-4 py-3 text-left"><T k="pages.compscheduleadminpage.619622">Effective From</T></th>
+            <th className="px-4 py-3 text-left"><T k="pages.compscheduleadminpage.c45fda">Effective To</T></th>
+            <th className="px-4 py-3 text-left"><T k="pages.compscheduleadminpage.ec53a8">Status</T></th>
+            <th className="px-4 py-3 text-right"><T k="pages.compscheduleadminpage.06df33">Actions</T></th>
           </tr>
         </thead>
         <tbody>

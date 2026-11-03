@@ -11,6 +11,7 @@
 // - Ingestion batch record created per upload (who/when/hash/stats)
 // - Upload result shows inserted/ignored/invalid counts
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Upload, Phone, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
@@ -716,10 +717,9 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         <div className="flex items-center gap-3">
           <Phone className="w-6 h-6 text-primary-400" />
           <div>
-            <h3 className="text-lg font-semibold text-qs-bright">Daily Call Log Upload</h3>
+            <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.callloguploadform.ff5d09">Daily Call Log Upload</T></h3>
             <p className="text-sm text-qs-subtle">
-              Upload the RingCentral Call Log export (XLSX or CSV). Export all employees unfiltered —
-              one upload covers your entire team. Upload daily at end of business.
+              <T k="pages.components.timeattendance.callloguploadform.08b6a8">Upload the RingCentral Call Log export (XLSX or CSV). Export all employees unfiltered — one upload covers your entire team. Upload daily at end of business.</T>
             </p>
           </div>
         </div>
@@ -733,34 +733,31 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
 
       {showHelp && (
         <div className="mb-4 p-4 bg-primary-900/20 rounded-lg text-sm text-primary-300">
-          <p className="font-medium mb-2">How to export the Call Log from RingCentral:</p>
+          <p className="font-medium mb-2"><T k="pages.components.timeattendance.callloguploadform.3c8d1b">How to export the Call Log from RingCentral:</T></p>
           <ol className="list-decimal list-inside space-y-1 text-primary-300 mb-3">
-            <li>Go to RingCentral Analytics &rarr; Performance Reports &rarr; Calls</li>
-            <li>Set the date range to <strong>yesterday</strong> (single day)</li>
+            <li><T k="pages.components.timeattendance.callloguploadform.192bfe">Go to RingCentral Analytics → Performance Reports → Calls</T></li>
+            <li><T k="pages.components.timeattendance.callloguploadform.28e5b1">Set the date range to</T> <strong><T k="pages.components.timeattendance.callloguploadform.eac9e8">yesterday</T></strong> <T k="pages.components.timeattendance.callloguploadform.091cfb">(single day)</T></li>
             <li>
-              <strong>Remove any user/agent filter</strong> &mdash; export all employees at once.
-              One file covers your entire team regardless of size.
+              <strong><T k="pages.components.timeattendance.callloguploadform.d0c8fc">Remove any user/agent filter</T></strong> <T k="pages.components.timeattendance.callloguploadform.64929b">— export all employees at once. One file covers your entire team regardless of size.</T>
             </li>
-            <li>Export as XLSX or CSV</li>
+            <li><T k="pages.components.timeattendance.callloguploadform.c70fbb">Export as XLSX or CSV</T></li>
           </ol>
           <div style={{
             background: '#3B82F611', border: '1px solid #3B82F633',
             borderRadius: 6, padding: '8px 12px', marginBottom: 12, fontSize: 12,
           }}>
-            <strong style={{ color: '#3B82F6' }}>💡 One upload = all agents</strong>
+            <strong style={{ color: '#3B82F6' }}><T k="pages.components.timeattendance.callloguploadform.0103cb">💡 One upload = all agents</T></strong>
             <p style={{ color: 'var(--qs-dim)', marginTop: 4 }}>
-              Don't filter by employee in RingCentral before exporting. The system
-              automatically matches each call row to the correct agent by name.
-              With 10 employees, you still upload exactly one file per day.
+              <T k="pages.components.timeattendance.callloguploadform.1e0c8e">Don't filter by employee in RingCentral before exporting. The system automatically matches each call row to the correct agent by name. With 10 employees, you still upload exactly one file per day.</T>
             </p>
           </div>
-          <p className="font-medium mb-2">Expected columns (from the &ldquo;Calls&rdquo; sheet):</p>
+          <p className="font-medium mb-2"><T k="pages.components.timeattendance.callloguploadform.13e363">Expected columns (from the “Calls” sheet):</T></p>
           <ul className="list-disc list-inside space-y-1 text-primary-300">
-            <li><strong>From Name</strong>, <strong>To Name</strong> &mdash; agent identification</li>
-            <li><strong>Call Direction</strong> &mdash; Inbound or Outbound</li>
-            <li><strong>Result</strong> &mdash; Connected, Not Connected, Answered, or VM/Missed</li>
-            <li><strong>Call Length</strong>, <strong>Handle Time</strong> &mdash; HH:MM:SS</li>
-            <li><strong>Queue</strong> &mdash; Sales or Service queue name</li>
+            <li><strong><T k="pages.components.timeattendance.callloguploadform.4a4a8f">From Name</T></strong>, <strong><T k="pages.components.timeattendance.callloguploadform.c37a36">To Name</T></strong> <T k="pages.components.timeattendance.callloguploadform.7cc038">— agent identification</T></li>
+            <li><strong><T k="pages.components.timeattendance.callloguploadform.6373b3">Call Direction</T></strong> <T k="pages.components.timeattendance.callloguploadform.d31a33">— Inbound or Outbound</T></li>
+            <li><strong><T k="pages.components.timeattendance.callloguploadform.8eea62">Result</T></strong> <T k="pages.components.timeattendance.callloguploadform.9bd1a0">— Connected, Not Connected, Answered, or VM/Missed</T></li>
+            <li><strong><T k="pages.components.timeattendance.callloguploadform.c6e3ea">Call Length</T></strong>, <strong><T k="pages.components.timeattendance.callloguploadform.3fb2d8">Handle Time</T></strong> <T k="pages.components.timeattendance.callloguploadform.1752fb">— HH:MM:SS</T></li>
+            <li><strong><T k="pages.components.timeattendance.callloguploadform.722ad2">Queue</T></strong> <T k="pages.components.timeattendance.callloguploadform.63cbc7">— Sales or Service queue name</T></li>
           </ul>
         </div>
       )}
@@ -812,12 +809,12 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                   </div>
                   {uploaded && (
                     <div style={{ fontSize: 9, color: 'var(--qs-muted)', marginTop: 2 }}>
-                      {day.data.records} calls
+                      {day.data.records} <T k="pages.components.timeattendance.callloguploadform.f2bb91">calls</T>
                     </div>
                   )}
                   {missing && (
                     <div style={{ fontSize: 9, color: '#EF4444', marginTop: 2 }}>
-                      missing
+                      <T k="pages.components.timeattendance.callloguploadform.ea2184">missing</T>
                     </div>
                   )}
                 </div>
@@ -828,8 +825,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           {/* Missing days callout */}
           {weekCoverage.some(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))) && (
             <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>
-              ⚠ {weekCoverage.filter(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))).length} day(s)
-              missing uploads {isPastWeek ? 'that week' : 'this week'}
+              ⚠ {weekCoverage.filter(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))).length} <T k="pages.components.timeattendance.callloguploadform.fa77ae">day(s) missing uploads</T> {isPastWeek ? 'that week' : 'this week'}
             </p>
           )}
         </div>
@@ -840,7 +836,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         <details style={{ marginBottom: 12 }}>
           <summary style={{ fontSize: 11, color: 'var(--qs-subtle)', cursor: 'pointer',
             userSelect: 'none', marginBottom: 4 }}>
-            Recent uploads ({recentBatches.length})
+            <T k="pages.components.timeattendance.callloguploadform.fd604c">Recent uploads (</T>{recentBatches.length})
           </summary>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
             {recentBatches.map(b => (
@@ -861,7 +857,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                   +{b.rows_inserted}
                   {b.rows_duplicate > 0 &&
                     <span style={{ color: 'var(--qs-muted)', fontWeight: 400 }}>
-                      {' '}({b.rows_duplicate} dupes)
+                      {' '}({b.rows_duplicate} <T k="pages.components.timeattendance.callloguploadform.c980a4">dupes)</T>
                     </span>
                   }
                 </span>
@@ -873,8 +869,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
 
       {isPastWeek && (
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 8 }}>
-          Viewing {formatWeekLabel(weekStart)} — uploads apply to each file&rsquo;s
-          own date range regardless of selected week.
+          <T k="pages.components.timeattendance.callloguploadform.994a2d">Viewing</T> {formatWeekLabel(weekStart)} <T k="pages.components.timeattendance.callloguploadform.db5ebf">— uploads apply to each file’s own date range regardless of selected week.</T>
         </p>
       )}
 
@@ -895,7 +890,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         </label>
         {summary?.dateRange?.min && (
           <span className="text-sm text-qs-subtle">
-            Date range: {summary.dateRange.min} &mdash; {summary.dateRange.max}
+            <T k="pages.components.timeattendance.callloguploadform.02a326">Date range:</T> {summary.dateRange.min} &mdash; {summary.dateRange.max}
           </span>
         )}
       </div>
@@ -904,12 +899,12 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       {validationErrors.length > 0 && (
         <div className="mt-3 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
           <p className="text-sm font-medium text-amber-300 mb-1">
-            {validationErrors.length} row{validationErrors.length > 1 ? 's' : ''} rejected
+            {validationErrors.length} <T k="pages.components.timeattendance.callloguploadform.f1965a">row</T>{validationErrors.length > 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.c7537d">rejected</T>
             {skippedInternal > 0 && ` · ${skippedInternal} internal call${skippedInternal !== 1 ? 's' : ''} skipped`}:
           </p>
           <ul className="text-xs text-amber-300 space-y-0.5 max-h-32 overflow-y-auto">
             {validationErrors.map((ve, i) => (
-              <li key={i}>Row {ve.row}: {ve.error}</li>
+              <li key={i}><T k="pages.components.timeattendance.callloguploadform.a70367">Row</T> {ve.row}: {ve.error}</li>
             ))}
           </ul>
         </div>
@@ -923,7 +918,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           border: '1px solid var(--qs-border)',
         }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-text)', marginBottom: 8 }}>
-            {fileResults.length} files selected — {preview?.length || 0} total valid calls
+            {fileResults.length} <T k="pages.components.timeattendance.callloguploadform.406a24">files selected —</T> {preview?.length || 0} <T k="pages.components.timeattendance.callloguploadform.afc7b1">total valid calls</T>
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {fileResults.map((f, i) => (
@@ -939,16 +934,16 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                 </span>
                 <span>
                   <span style={{ color: f.validCount > 0 ? '#10B981' : 'var(--qs-muted)' }}>
-                    {f.validCount} valid
+                    {f.validCount} <T k="pages.components.timeattendance.callloguploadform.9f7d0e">valid</T>
                   </span>
                   {f.errorCount > 0 && (
                     <span style={{ color: '#F59E0B', marginLeft: 8 }}>
-                      {f.errorCount} errors
+                      {f.errorCount} <T k="pages.components.timeattendance.callloguploadform.07213a">errors</T>
                     </span>
                   )}
                   {f.skippedCount > 0 && (
                     <span style={{ color: 'var(--qs-subtle)', marginLeft: 8 }}>
-                      {f.skippedCount} skipped
+                      {f.skippedCount} <T k="pages.components.timeattendance.callloguploadform.e52e27">skipped</T>
                     </span>
                   )}
                 </span>
@@ -963,14 +958,13 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         <div className="mt-4">
           <div className="mb-3 p-3 bg-qs-elevated rounded-lg">
             <p className="text-sm font-medium text-qs-text">
-              {preview.length} valid calls: {summary.outbound} outbound, {summary.inbound} inbound
-              ({summary.answered} answered, {summary.missed} missed).
-              {' '}{summary.matched} agent{summary.matched !== 1 ? 's' : ''} matched
+              {preview.length} <T k="pages.components.timeattendance.callloguploadform.4deca7">valid calls:</T> {summary.outbound} <T k="pages.components.timeattendance.callloguploadform.a57117">outbound,</T> {summary.inbound} <T k="pages.components.timeattendance.callloguploadform.0462f2">inbound (</T>{summary.answered} <T k="pages.components.timeattendance.callloguploadform.5f8fed">answered,</T> {summary.missed} <T k="pages.components.timeattendance.callloguploadform.5a8f0d">missed).</T>
+              {' '}{summary.matched} <T k="pages.components.timeattendance.callloguploadform.b33aed">agent</T>{summary.matched !== 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.73d808">matched</T>
               {summary.unmatched > 0 && (
-                <span className="text-amber-400">, {summary.unmatched} unmatched</span>
+                <span className="text-amber-400">, {summary.unmatched} <T k="pages.components.timeattendance.callloguploadform.67dd31">unmatched</T></span>
               )}
               {skippedInternal > 0 && (
-                <span className="text-qs-subtle"> · {skippedInternal} internal call{skippedInternal !== 1 ? 's' : ''} skipped</span>
+                <span className="text-qs-subtle"> · {skippedInternal} <T k="pages.components.timeattendance.callloguploadform.a97225">internal call</T>{skippedInternal !== 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.e52e27">skipped</T></span>
               )}
               .
             </p>
@@ -980,12 +974,12 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             <table className="w-full text-sm">
               <thead className="bg-qs-elevated sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Agent</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Direction</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Result</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Duration</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Queue</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Time</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.callloguploadform.744605">Agent</T></th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.callloguploadform.02674a">Direction</T></th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.callloguploadform.8eea62">Result</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.callloguploadform.e02d2a">Duration</T></th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.callloguploadform.722ad2">Queue</T></th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.callloguploadform.a76d4e">Time</T></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-qs-border">
@@ -1020,7 +1014,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             </table>
           </div>
           {preview.length > 100 && (
-            <p className="text-xs text-qs-subtle mt-1">Showing first 100 of {preview.length} rows.</p>
+            <p className="text-xs text-qs-subtle mt-1"><T k="pages.components.timeattendance.callloguploadform.9c41c8">Showing first 100 of</T> {preview.length} <T k="pages.components.timeattendance.callloguploadform.4194f8">rows.</T></p>
           )}
 
           <div className="mt-3 flex items-center gap-3">
@@ -1036,7 +1030,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               onClick={() => { setPreview(null); setValidationErrors([]); setFileResults([]); fileBuffersRef.current = new Map(); if (fileRef.current) fileRef.current.value = ''; }}
               className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
-              Cancel
+              <T k="pages.components.timeattendance.callloguploadform.ea4788">Cancel</T>
             </button>
           </div>
         </div>
@@ -1046,19 +1040,19 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       {uploadStats && (
         <div className="mt-3 p-3 bg-qs-elevated rounded-lg text-xs text-qs-dim">
           <div className="flex items-center gap-4 flex-wrap">
-            <span>Sent: <strong>{uploadStats.sent}</strong></span>
-            <span>Inserted: <strong className="text-emerald-300">{uploadStats.inserted}</strong></span>
+            <span><T k="pages.components.timeattendance.callloguploadform.8d3733">Sent:</T> <strong>{uploadStats.sent}</strong></span>
+            <span><T k="pages.components.timeattendance.callloguploadform.ca99ea">Inserted:</T> <strong className="text-emerald-300">{uploadStats.inserted}</strong></span>
             {uploadStats.ignored > 0 && (
-              <span>Duplicates ignored: <strong className="text-qs-subtle">{uploadStats.ignored}</strong></span>
+              <span><T k="pages.components.timeattendance.callloguploadform.b70d8c">Duplicates ignored:</T> <strong className="text-qs-subtle">{uploadStats.ignored}</strong></span>
             )}
             {uploadStats.skipped > 0 && (
-              <span>Unmatched skipped: <strong className="text-amber-400">{uploadStats.skipped}</strong></span>
+              <span><T k="pages.components.timeattendance.callloguploadform.6487ee">Unmatched skipped:</T> <strong className="text-amber-400">{uploadStats.skipped}</strong></span>
             )}
             {uploadStats.invalid > 0 && (
-              <span>Invalid rejected: <strong className="text-red-400">{uploadStats.invalid}</strong></span>
+              <span><T k="pages.components.timeattendance.callloguploadform.7b4bb8">Invalid rejected:</T> <strong className="text-red-400">{uploadStats.invalid}</strong></span>
             )}
           </div>
-          <p className="mt-1 text-qs-muted">Batch: {uploadStats.batchId?.substring(0, 8)}</p>
+          <p className="mt-1 text-qs-muted"><T k="pages.components.timeattendance.callloguploadform.cd7fa5">Batch:</T> {uploadStats.batchId?.substring(0, 8)}</p>
         </div>
       )}
 
@@ -1087,7 +1081,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <UserX className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-lg font-semibold text-qs-bright">Unmatched Employees</h3>
+                    <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.callloguploadform.1a9e1a">Unmatched Employees</T></h3>
                   </div>
                   <button
                     onClick={() => setConfirmModal(null)}
@@ -1100,8 +1094,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               </div>
               <div className="px-6 py-4">
                 <p className="text-sm text-qs-dim mb-3">
-                  {confirmModal.skippedCount} call{confirmModal.skippedCount > 1 ? 's' : ''} will be skipped
-                  because {confirmModal.unmatchedNames.length > 1 ? 'these agents don\u2019t' : 'this agent doesn\u2019t'} match any known employee:
+                  {confirmModal.skippedCount} <T k="pages.components.timeattendance.callloguploadform.53b9e9">call</T>{confirmModal.skippedCount > 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.c8655a">will be skipped because</T> {confirmModal.unmatchedNames.length > 1 ? 'these agents don\u2019t' : 'this agent doesn\u2019t'} <T k="pages.components.timeattendance.callloguploadform.801857">match any known employee:</T>
                 </p>
                 <ul className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
                   {confirmModal.unmatchedNames.map((name, i) => (
@@ -1112,7 +1105,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                   ))}
                 </ul>
                 <p className="text-sm text-qs-text">
-                  <span className="font-medium text-qs-bright">{confirmModal.matchedRows.length}</span> matched call{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
+                  <span className="font-medium text-qs-bright">{confirmModal.matchedRows.length}</span> <T k="pages.components.timeattendance.callloguploadform.2c3658">matched call</T>{confirmModal.matchedRows.length !== 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.0f7136">will be uploaded.</T>
                 </p>
               </div>
               <div className="border-t border-qs-border px-6 py-4 flex justify-end gap-3">
@@ -1120,13 +1113,13 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                   onClick={() => setConfirmModal(null)}
                   className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
                 >
-                  Cancel
+                  <T k="pages.components.timeattendance.callloguploadform.ea4788">Cancel</T>
                 </button>
                 <button
                   onClick={() => doUpload(confirmModal.matchedRows, confirmModal.skippedCount)}
                   className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 transition-colors"
                 >
-                  Upload Matched Only
+                  <T k="pages.components.timeattendance.callloguploadform.eccd7a">Upload Matched Only</T>
                 </button>
               </div>
             </div>

@@ -3,6 +3,7 @@
 // Actuals: from revenue_entries (production) + RC call log (activity).
 // Targets: from producer_performance_targets, editable by principal.
 
+import { T } from '../../../components/SiteCopy';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Award, Phone, Target } from 'lucide-react';
 import { PRODUCER_DEFAULT_TARGETS } from '../../../hooks/useProducerTargets';
@@ -104,11 +105,11 @@ export default function ProducerScorecard({
       {/* Grade Banner */}
       <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${gradeConfig.bg} ${gradeConfig.border}`}>
         <div>
-          <h3 className="text-lg font-semibold text-qs-bright">Producer Performance Grade</h3>
+          <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.producerscorecard.6ca23e">Producer Performance Grade</T></h3>
           <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
           {employeeName && <p className="text-xs text-qs-subtle mt-1">{employeeName}</p>}
           <p className="text-xs text-qs-muted mt-0.5">
-            Composite: 60% monthly production · 40% weekly call activity
+            <T k="pages.components.timeattendance.producerscorecard.4094ea">Composite: 60% monthly production · 40% weekly call activity</T>
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -122,7 +123,7 @@ export default function ProducerScorecard({
         <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
           <Target className="w-5 h-5 text-primary-400" />
           <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">
-            Section A — Production
+            <T k="pages.components.timeattendance.producerscorecard.b739d3">Section A — Production</T>
           </h4>
           <div className="ml-auto flex items-center gap-3">
             {monthLabel && (
@@ -130,7 +131,7 @@ export default function ProducerScorecard({
             )}
             {goalHref && (
               <Link to={goalHref} className="text-xs font-medium text-primary-400 hover:text-primary-300">
-                Set goal →
+                <T k="pages.components.timeattendance.producerscorecard.a08152">Set goal →</T>
               </Link>
             )}
           </div>
@@ -138,9 +139,9 @@ export default function ProducerScorecard({
         <table className="w-full">
           <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Metric</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Target</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Actual</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerscorecard.216ab4">Metric</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerscorecard.c41a31">Target</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerscorecard.d57ceb">Actual</T></th>
               <th className="px-4 py-2 w-24" />
               <th className="px-4 py-2 w-8" />
             </tr>
@@ -161,8 +162,8 @@ export default function ProducerScorecard({
               />
             )}
             <tr className="hover:bg-qs-elevated transition-colors">
-              <td className="px-4 py-3 text-sm text-qs-bright font-medium">Policies Bound (Month)</td>
-              <td className="px-4 py-3 text-sm text-qs-subtle">Track only</td>
+              <td className="px-4 py-3 text-sm text-qs-bright font-medium"><T k="pages.components.timeattendance.producerscorecard.82dc0e">Policies Bound (Month)</T></td>
+              <td className="px-4 py-3 text-sm text-qs-subtle"><T k="pages.components.timeattendance.producerscorecard.0fdec0">Track only</T></td>
               <td className="px-4 py-3 text-sm font-semibold text-qs-text">{monthlyPolicies ?? 0}</td>
               <td colSpan={2} />
             </tr>
@@ -175,7 +176,7 @@ export default function ProducerScorecard({
         <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
           <Phone className="w-5 h-5 text-primary-400" />
           <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">
-            Section B — Call Activity
+            <T k="pages.components.timeattendance.producerscorecard.025bcf">Section B — Call Activity</T>
           </h4>
           {weekLabel && (
             <span className="text-xs text-qs-muted ml-auto">{weekLabel}</span>
@@ -184,9 +185,9 @@ export default function ProducerScorecard({
         <table className="w-full">
           <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Metric</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Target</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Actual</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerscorecard.216ab4">Metric</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerscorecard.c41a31">Target</T></th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerscorecard.d57ceb">Actual</T></th>
               <th className="px-4 py-2 w-24" />
               <th className="px-4 py-2 w-8" />
             </tr>
@@ -205,8 +206,8 @@ export default function ProducerScorecard({
               unit="/day"
             />
             <tr className="hover:bg-qs-elevated transition-colors">
-              <td className="px-4 py-3 text-sm text-qs-bright font-medium">Total Calls (Week)</td>
-              <td className="px-4 py-3 text-sm text-qs-subtle">Track only</td>
+              <td className="px-4 py-3 text-sm text-qs-bright font-medium"><T k="pages.components.timeattendance.producerscorecard.05f703">Total Calls (Week)</T></td>
+              <td className="px-4 py-3 text-sm text-qs-subtle"><T k="pages.components.timeattendance.producerscorecard.0fdec0">Track only</T></td>
               <td className="px-4 py-3 text-sm font-semibold text-qs-text">{weeklyTotalCalls ?? 0}</td>
               <td colSpan={2} />
             </tr>
@@ -216,10 +217,10 @@ export default function ProducerScorecard({
 
       {/* Grade thresholds reference */}
       <div className="bg-qs-card rounded-lg border border-qs-border p-4">
-        <h4 className="text-sm font-semibold text-qs-bright mb-3">Grade Thresholds</h4>
+        <h4 className="text-sm font-semibold text-qs-bright mb-3"><T k="pages.components.timeattendance.producerscorecard.bc235f">Grade Thresholds</T></h4>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-qs-subtle uppercase font-medium mb-2">VC Items / Month</p>
+            <p className="text-xs text-qs-subtle uppercase font-medium mb-2"><T k="pages.components.timeattendance.producerscorecard.e1b13a">VC Items / Month</T></p>
             <div className="space-y-1">
               {[
                 { grade: 'A', value: t.grade_a_vc_items, color: 'text-emerald-400' },
@@ -228,13 +229,13 @@ export default function ProducerScorecard({
               ].map(({ grade: g, value, color }) => (
                 <div key={g} className="flex items-center justify-between">
                   <span className={`text-xs font-bold ${color}`}>{g}</span>
-                  <span className="text-xs text-qs-dim">&ge; {value} items</span>
+                  <span className="text-xs text-qs-dim">&ge; {value} <T k="pages.components.timeattendance.producerscorecard.691d50">items</T></span>
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <p className="text-xs text-qs-subtle uppercase font-medium mb-2">Outbound / Week</p>
+            <p className="text-xs text-qs-subtle uppercase font-medium mb-2"><T k="pages.components.timeattendance.producerscorecard.9b9c7a">Outbound / Week</T></p>
             <div className="space-y-1">
               {[
                 { grade: 'A', value: t.grade_a_outbound, color: 'text-emerald-400' },
@@ -243,7 +244,7 @@ export default function ProducerScorecard({
               ].map(({ grade: g, value, color }) => (
                 <div key={g} className="flex items-center justify-between">
                   <span className={`text-xs font-bold ${color}`}>{g}</span>
-                  <span className="text-xs text-qs-dim">&ge; {value} calls</span>
+                  <span className="text-xs text-qs-dim">&ge; {value} <T k="pages.components.timeattendance.producerscorecard.f2bb91">calls</T></span>
                 </div>
               ))}
             </div>

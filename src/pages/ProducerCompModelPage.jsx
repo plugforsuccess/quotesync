@@ -3,6 +3,7 @@
 // Route: /admin/producers/:employeeId/comp-model
 // Access: agent role only (agency principal)
 
+import { T } from '../components/SiteCopy';
 import { useState, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Settings, BarChart3, Check, Loader2, TrendingUp, FileSpreadsheet, GitCompare } from 'lucide-react';
@@ -172,10 +173,10 @@ export default function ProducerCompModelPage() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-qs-bright mb-2">Producer not found</h2>
-          <p className="text-qs-dim mb-4">The producer you're looking for doesn't exist or you don't have access.</p>
+          <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.producercompmodelpage.e3062d">Producer not found</T></h2>
+          <p className="text-qs-dim mb-4"><T k="pages.producercompmodelpage.152644">The producer you're looking for doesn't exist or you don't have access.</T></p>
           <Link to="/admin/staff-performance" className="text-primary-400 hover:text-primary-300 font-medium">
-            Back to Performance
+            <T k="pages.producercompmodelpage.88b41a">Back to Performance</T>
           </Link>
         </div>
       </div>
@@ -196,16 +197,16 @@ export default function ProducerCompModelPage() {
           className="inline-flex items-center gap-1.5 text-sm text-qs-subtle hover:text-qs-text mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back
+          <T k="pages.producercompmodelpage.0557fa">Back</T>
         </Link>
 
         <div className="dark-card text-center">
           <Settings className="w-16 h-16 text-qs-muted mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-qs-bright mb-2">
-            Set up compensation model for {producerName}
+            <T k="pages.producercompmodelpage.a201b0">Set up compensation model for</T> {producerName}
           </h2>
           <p className="text-qs-dim mb-6 max-w-md mx-auto">
-            Configure compensation assumptions to see real-time scenario projections — monthly and annual — for this producer.
+            <T k="pages.producercompmodelpage.9d6d1e">Configure compensation assumptions to see real-time scenario projections — monthly and annual — for this producer.</T>
           </p>
           <button
             onClick={handleCreateConfig}
@@ -215,7 +216,7 @@ export default function ProducerCompModelPage() {
             {createConfig.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Creating...
+                <T k="pages.producercompmodelpage.d930f4">Creating...</T>
               </>
             ) : (
               'Set Up Compensation Model'
@@ -239,18 +240,18 @@ export default function ProducerCompModelPage() {
         className="inline-flex items-center gap-1.5 text-sm text-qs-subtle hover:text-qs-text mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back
+        <T k="pages.producercompmodelpage.0557fa">Back</T>
       </Link>
 
       {/* Page header */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-qs-bright">
-            {producerName} — Compensation Model
+            {producerName} <T k="pages.producercompmodelpage.8138bb">— Compensation Model</T>
           </h1>
           {carrier && (
             <p className="text-sm text-qs-subtle mt-0.5">
-              Carrier: {carrier.carrier_name}
+              <T k="pages.producercompmodelpage.f8617a">Carrier:</T> {carrier.carrier_name}
             </p>
           )}
         </div>
@@ -267,12 +268,12 @@ export default function ProducerCompModelPage() {
             {saveStatus === 'saving' ? (
               <>
                 <Loader2 className="w-3 h-3 animate-spin" />
-                Saving...
+                <T k="pages.producercompmodelpage.575f5f">Saving...</T>
               </>
             ) : (
               <>
                 <Check className="w-3 h-3" />
-                Saved
+                <T k="pages.producercompmodelpage.248336">Saved</T>
               </>
             )}
           </span>
@@ -290,7 +291,7 @@ export default function ProducerCompModelPage() {
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          Projection
+          <T k="pages.producercompmodelpage.2121e8">Projection</T>
         </button>
         <button
           onClick={() => setMode('actuals')}
@@ -301,7 +302,7 @@ export default function ProducerCompModelPage() {
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" />
-          Actuals
+          <T k="pages.producercompmodelpage.b45db8">Actuals</T>
         </button>
       </div>
 
@@ -362,7 +363,7 @@ export default function ProducerCompModelPage() {
         <div className="space-y-6">
           {/* Month picker */}
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-qs-text">Month:</label>
+            <label className="text-sm font-medium text-qs-text"><T k="pages.producercompmodelpage.01411a">Month:</T></label>
             <input
               type="month"
               value={selectedMonth}
@@ -375,7 +376,7 @@ export default function ProducerCompModelPage() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-2"></div>
-                <p className="text-sm text-qs-subtle">Loading actuals for {monthLabel}...</p>
+                <p className="text-sm text-qs-subtle"><T k="pages.producercompmodelpage.a2a94b">Loading actuals for</T> {monthLabel}...</p>
               </div>
             </div>
           ) : (

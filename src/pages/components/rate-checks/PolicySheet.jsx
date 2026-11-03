@@ -6,6 +6,7 @@
 // endorsements → discounts. A short summary closes the sheet.
 // All formatting lives in policyView.js.
 
+import { T } from '../../../components/SiteCopy';
 import { AlertTriangle, CircleHelp } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
@@ -54,7 +55,7 @@ const TILE_LABEL = { Comprehensive: 'Comp', Collision: 'Collision' };
 function DeductibleTile({ label, value }) {
   return (
     <div className="rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_LABEL[label] || label} deductible</p>
+      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_LABEL[label] || label} <T k="pages.components.ratechecks.policysheet.53439a">deductible</T></p>
       <p className="text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{value}</p>
     </div>
   );
@@ -148,7 +149,7 @@ function CoverageTile({ c, setup, total, wide }) {
           {total > 1 && (
             <div className="mt-1 flex min-h-[24px] flex-wrap items-center gap-1">
               {everyCar
-                ? <span className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {total} vehicles</span>
+                ? <span className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.policysheet.b1c94c">All</T> {total} <T k="pages.components.ratechecks.policysheet.56bb55">vehicles</T></span>
                 : withIt.map(x => <VehicleChip key={x.index} x={x} />)}
             </div>
           )}
@@ -160,7 +161,7 @@ function CoverageTile({ c, setup, total, wide }) {
               {/* The car never wraps; a long value breaks at its "·" instead. */}
               <span className="shrink-0"><VehicleChip x={x} /></span>
               {x.values[c.key] == null
-                ? <span className="text-base font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
+                ? <span className="text-base font-bold" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.ratechecks.policysheet.6adf97">None</T></span>
                 : (
                   <span className="min-w-0 text-right text-base font-bold tabular-nums" style={ADD_ON_STYLE}>
                     {String(x.values[c.key]).split(' · ').map((part, k, all) => (
@@ -216,10 +217,10 @@ function VehicleCard({ rc, v, index, level, n }) {
   const gapRow = (mt) => hasGapRow && (
     <div className={`${mt} flex flex-wrap items-center gap-1.5 pl-[34px]`}>
       {gap.pills.map(p => <span key={p.key} className={PILL} style={GAP_PILL}>{p.label}</span>)}
-      {gap.flag === 'no_gap' && <span className={PILL} style={FLAG_PILL}>No Gap</span>}
+      {gap.flag === 'no_gap' && <span className={PILL} style={FLAG_PILL}><T k="pages.components.ratechecks.policysheet.845366">No Gap</T></span>}
       {gap.flag === 'no_lien' && (
         <span className={`${PILL} gap-1`} style={FLAG_PILL}>
-          <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" /> No lienholder listed — paid off?
+          <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" /> <T k="pages.components.ratechecks.policysheet.12768f">No lienholder listed — paid off?</T>
         </span>
       )}
     </div>
@@ -231,7 +232,7 @@ function VehicleCard({ rc, v, index, level, n }) {
         <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums"
           style={VEHICLE_TONE} aria-hidden="true">{n}</span>
         <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
-          <span className="sr-only">Vehicle {n}: </span>{vehicleTitle(v)}
+          <span className="sr-only"><T k="pages.components.ratechecks.policysheet.d6af9c">Vehicle</T> {n}: </span>{vehicleTitle(v)}
         </p>
         {level && (
           <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold uppercase leading-4 tracking-[0.08em]"
@@ -250,11 +251,11 @@ function VehicleCard({ rc, v, index, level, n }) {
       {lien && (
         <>
           <p className="mt-3 flex items-center gap-1 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
-            <span style={{ color: 'var(--qs-subtle)' }}>Lienholder</span> {lien}
+            <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.policysheet.704313">Lienholder</T></span> {lien}
             <CopyButton text={lien} label={`Copy lienholder for ${vehicleTitle(v)}`} />
           </p>
           <p className="mt-0.5 flex items-center gap-1.5 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
-            <span style={{ color: 'var(--qs-subtle)' }}>Loan Payoff</span>
+            <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.policysheet.442084">Loan Payoff</T></span>
             <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
           {gapRow('mt-2')}
@@ -365,7 +366,7 @@ export default function PolicySheet({ rc, warning }) {
 
       {x.notes && (
         <details className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-          <summary className="cursor-pointer font-medium">Everything the scan noted</summary>
+          <summary className="cursor-pointer font-medium"><T k="pages.components.ratechecks.policysheet.831b9d">Everything the scan noted</T></summary>
           <p className="mt-2 select-text" style={{ color: 'var(--qs-text)' }}>{replaceVehicleRefs(x.notes, rc.vehicles || x.vehicles)}</p>
         </details>
       )}

@@ -1,6 +1,7 @@
 // src/pages/components/comp-model/PresetScenariosTable.jsx
 // Displays preset scenario rows with all computed output columns.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { PRESET_SCENARIOS, computeScenario } from '../../../utils/compModelCalculations';
 
@@ -29,16 +30,16 @@ export default function PresetScenariosTable({ config, productMix }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200">
-            <th className="text-left py-2 pr-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Scenario</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Items/Mo</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Est. VC Premium</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Agency Commission</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">VC Base Comp</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">TP Bonus</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Non-VC Bonus</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Total Cost</th>
-            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Profit/Mo</th>
-            <th className="text-right py-2 pl-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Profit/Yr</th>
+            <th className="text-left py-2 pr-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.54861e">Scenario</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.667841">Items/Mo</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.d07f1e">Est. VC Premium</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.19e15f">Agency Commission</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.426a5e">VC Base Comp</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.fee220">TP Bonus</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.6833bf">Non-VC Bonus</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.50e91d">Total Cost</T></th>
+            <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.25bafe">Profit/Mo</T></th>
+            <th className="text-right py-2 pl-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.presetscenariostable.014d51">Profit/Yr</T></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">

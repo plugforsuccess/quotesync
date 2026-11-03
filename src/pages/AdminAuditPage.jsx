@@ -1,6 +1,7 @@
 // src/pages/AdminAuditPage.jsx
 // Admin panel for viewing audit logs
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { FileSearch, RefreshCw, ShieldOff, Filter, Calendar, User, Building2, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -78,8 +79,8 @@ const AdminAuditPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
         <div className="text-center">
           <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to view audit logs.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.adminauditpage.095afb">Access Denied</T></h2>
+          <p className="text-gray-600"><T k="pages.adminauditpage.cc5992">You do not have permission to view audit logs.</T></p>
         </div>
       </div>
     );
@@ -94,14 +95,14 @@ const AdminAuditPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4"><T k="pages.adminauditpage.078f4f">Failed to Load</T></h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
             onClick={fetchLogs}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
-            Retry
+            <T k="pages.adminauditpage.6327b4">Retry</T>
           </button>
         </div>
       </div>
@@ -120,8 +121,8 @@ const AdminAuditPage = () => {
             <div className="flex items-center gap-3">
               <FileSearch className="w-8 h-8 text-primary-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
-                <p className="text-gray-600 text-sm">View system activity and compliance records</p>
+                <h1 className="text-2xl font-bold text-gray-900"><T k="pages.adminauditpage.5b2421">Audit Log</T></h1>
+                <p className="text-gray-600 text-sm"><T k="pages.adminauditpage.e8722e">View system activity and compliance records</T></p>
               </div>
             </div>
             <button
@@ -138,25 +139,25 @@ const AdminAuditPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-gray-900">{totalCount}</div>
-              <div className="text-sm text-gray-600">Total Events</div>
+              <div className="text-sm text-gray-600"><T k="pages.adminauditpage.9d1266">Total Events</T></div>
             </div>
             <div className="bg-primary-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-primary-700">
                 {logs.filter(l => l.event_type?.startsWith('LEAD_')).length}
               </div>
-              <div className="text-sm text-primary-600">Lead Events (page)</div>
+              <div className="text-sm text-primary-600"><T k="pages.adminauditpage.f71cdb">Lead Events (page)</T></div>
             </div>
             <div className="bg-purple-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-purple-700">
                 {logs.filter(l => l.event_type?.startsWith('ADMIN_')).length}
               </div>
-              <div className="text-sm text-purple-600">Admin Events (page)</div>
+              <div className="text-sm text-purple-600"><T k="pages.adminauditpage.5eac51">Admin Events (page)</T></div>
             </div>
             <div className="bg-green-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-green-700">
                 {logs.filter(l => l.event_type === 'ROUTED' || l.event_type === 'ASSIGNED').length}
               </div>
-              <div className="text-sm text-green-600">Routing Events (page)</div>
+              <div className="text-sm text-green-600"><T k="pages.adminauditpage.9021ec">Routing Events (page)</T></div>
             </div>
           </div>
         </div>
@@ -189,7 +190,7 @@ const AdminAuditPage = () => {
         {logs.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <FileSearch className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No audit logs found</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2"><T k="pages.adminauditpage.bf0bc8">No audit logs found</T></h2>
             <p className="text-gray-600">
               {eventTypeFilter === 'all'
                 ? 'No audit events have been recorded yet.'
@@ -204,22 +205,22 @@ const AdminAuditPage = () => {
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Timestamp
+                        <T k="pages.adminauditpage.a3d5de">Timestamp</T>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Event Type
+                        <T k="pages.adminauditpage.fdacd0">Event Type</T>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Agency
+                        <T k="pages.adminauditpage.75ec3e">Agency</T>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Lead
+                        <T k="pages.adminauditpage.a745d9">Lead</T>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Actor
+                        <T k="pages.adminauditpage.1cc846">Actor</T>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Details
+                        <T k="pages.adminauditpage.3ec365">Details</T>
                       </th>
                     </tr>
                   </thead>
@@ -292,14 +293,14 @@ const AdminAuditPage = () => {
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-gray-400 text-sm">System</span>
+                              <span className="text-gray-400 text-sm"><T k="pages.adminauditpage.a45da9">System</T></span>
                             )}
                           </td>
                           <td className="px-6 py-4">
                             {log.metadata && Object.keys(log.metadata).length > 0 ? (
                               <details className="text-sm">
                                 <summary className="cursor-pointer text-primary-600 hover:text-primary-700">
-                                  View details
+                                  <T k="pages.adminauditpage.6e9783">View details</T>
                                 </summary>
                                 <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto max-w-xs">
                                   {JSON.stringify(log.metadata, null, 2)}
@@ -321,7 +322,7 @@ const AdminAuditPage = () => {
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-gray-600">
-                  Showing {page * PAGE_SIZE + 1} to {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount} events
+                  <T k="pages.adminauditpage.b4e610">Showing</T> {page * PAGE_SIZE + 1} <T k="pages.adminauditpage.01b6e2">to</T> {Math.min((page + 1) * PAGE_SIZE, totalCount)} <T k="pages.adminauditpage.8bf885">of</T> {totalCount} <T k="pages.adminauditpage.16908b">events</T>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -330,17 +331,17 @@ const AdminAuditPage = () => {
                     className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    Previous
+                    <T k="pages.adminauditpage.dd1f77">Previous</T>
                   </button>
                   <span className="px-3 py-2 text-sm text-gray-600">
-                    Page {page + 1} of {totalPages}
+                    <T k="pages.adminauditpage.193cfc">Page</T> {page + 1} <T k="pages.adminauditpage.8bf885">of</T> {totalPages}
                   </span>
                   <button
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
                     className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    <T k="pages.adminauditpage.10ac3d">Next</T>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
