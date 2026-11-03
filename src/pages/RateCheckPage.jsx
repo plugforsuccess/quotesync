@@ -65,7 +65,7 @@ const ABOUT = [
   { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
     'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
-  ], cta: true },
+  ] },
 ];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -1097,28 +1097,32 @@ function MeetCam({ onUpload }) {
     key: a.key, label: a.caption, untitled: true, bare: true,
     content: (
       <figure className="flex h-full min-h-[300px] flex-col text-left">
-        <div className={`relative ${a.cta ? 'h-44 shrink-0' : a.paragraphs ? 'h-56 shrink-0' : 'flex-1'}`}>
+        <div className={`relative ${a.paragraphs ? 'h-56 shrink-0' : 'flex-1'}`}>
           <img src={a.photo} alt={a.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.position }} />
           <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-sm font-semibold text-white"><T k={`rc.about.${a.key}.caption`}>{a.caption}</T></figcaption>
         </div>
         {a.paragraphs && (
-          <div className={`space-y-2.5 px-4 text-[15px] leading-relaxed text-slate-700 ${a.cta ? 'pb-3 pt-3.5' : 'py-4'}`}>
+          <div className="space-y-2.5 px-4 py-4 text-[15px] leading-relaxed text-slate-700">
             {a.paragraphs.map((t, i) => <p key={i}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
-          </div>
-        )}
-        {a.cta && (
-          <div className="mt-auto px-4 pb-4">
-            <p className="text-[17px] font-extrabold leading-snug text-[#0F2D6B] [&_b]:text-blue-700"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
-            <p className="mt-1 text-[15px] leading-relaxed text-slate-700"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
-            <button type="button" onClick={onUpload}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-[15px] font-bold text-white active:bg-blue-800">
-              <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
-            </button>
           </div>
         )}
       </figure>
     ),
   }));
+  // The last card: the ask.
+  slides.push({
+    key: 'cta', label: 'Let’s make sure your insurance fits your life', untitled: true, bare: true,
+    content: (
+      <div className="flex h-full min-h-[300px] flex-col justify-center p-6 text-left" style={{ background: HERO_BG }}>
+        <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#39FF88]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
+        <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
+        <button type="button" onClick={onUpload}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#39FF88] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#2ee87a]">
+          <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
+        </button>
+      </div>
+    ),
+  });
   return <Carousel slides={slides} label="Meet the Owner" />;
 }
 
