@@ -233,7 +233,8 @@ export default function GeorgiaDriverEducationPage() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">
                 <T k="pages.driversedpage.e432d4">Already enrolled? Continue your course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a href="#partners" className="inline-flex items-center gap-1.5 py-1 text-sm font-semibold hover:underline" style={{ color: ACCENT }}>
+              {/* Same side padding as the pill above, so its text lines up with the pill's text. */}
+              <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: ACCENT }}>
                 <T k="de.partner.herolink">Become a referral partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
