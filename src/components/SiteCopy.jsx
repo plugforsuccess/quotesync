@@ -172,7 +172,7 @@ export function SiteCopyProvider({ children }) {
                 ? <span className="inline-flex items-center gap-1 font-semibold text-emerald-300"><Check className="h-3.5 w-3.5" aria-hidden="true" /> Saved. It’s live.</span>
                 : <>Tap outlined text to edit. It saves when you tap away.<span className="hidden sm:inline"> Clear a line to bring back the original. **Two asterisks** make text bold.</span></>}
             </p>
-            <button type="button" onClick={() => setEditing(false)}
+            <button type="button" onClick={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setEditing(false); }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-sm font-bold text-slate-900">
               <Check className="h-4 w-4" aria-hidden="true" /> Done editing
             </button>
@@ -221,18 +221,41 @@ function EditableText({ k, text, fallback, edited, save, fail }) {
   // The browser owns this text (no React children), so it can be edited; it's reset whenever the saved value changes.
   useEffect(() => { if (ref.current && document.activeElement !== ref.current) ref.current.textContent = text; }, [text]);
   const limit = maxLength(fallback);
+  // The latest saved text, for saves that run after this render (timer, unmount).
+  const current = useRef(text);
+  current.current = text;
+  const timer = useRef(null);
   const finish = () => {
-    const next = (ref.current?.textContent || '').replace(/\s+/g, ' ').trim();
-    if (next === text) return;
+    clearTimeout(timer.current);
+    timer.current = null;
+    if (!ref.current) return;
+    const next = (ref.current.textContent || '').replace(/\s+/g, ' ').trim();
+    if (next === current.current) return;
     if (next.length > limit) {
       // Keep what they typed so nothing is lost; it isn't saved until it fits (Esc undoes).
       fail(`That’s ${next.length} characters; this line fits ${limit}. Shorten it, or press Esc to undo.`);
       return;
     }
     fail('');
+    current.current = next === '' ? fallback : next;
     save(k, next === '' || next === fallback ? null : next);
     if (next === '' && ref.current) ref.current.textContent = fallback;
   };
+  // Saving only on blur lost edits: on iPhone, tapping blank space or the Done editing
+  // button doesn't move focus, so the line never blurred. Now it also saves a moment
+  // after typing stops, and before the line goes away (Done editing, leaving the page).
+  const finishRef = useRef(finish);
+  finishRef.current = finish;
+  useEffect(() => {
+    const flush = () => { if (timer.current) finishRef.current(); };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', flush);
+      flush();
+    };
+  }, []);
   return (
     <span ref={ref} role="textbox" aria-label={`Edit text: ${fallback.slice(0, 40)}`} tabIndex={0}
       contentEditable suppressContentEditableWarning
@@ -245,13 +268,14 @@ function EditableText({ k, text, fallback, edited, save, fail }) {
         document.execCommand('insertText', false, plain);
       }}
       onDrop={e => e.preventDefault()}
+      onInput={() => { clearTimeout(timer.current); timer.current = setTimeout(() => finishRef.current(), 1200); }}
       onKeyDown={e => {
         e.stopPropagation();
         // Space inside a button's label would press the button (open the camera, etc.):
         // type the space ourselves and keep the key from reaching the button.
         if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); document.execCommand('insertText', false, ' '); return; }
         if (e.key === 'Enter') { e.preventDefault(); ref.current?.blur(); }
-        if (e.key === 'Escape') { if (ref.current) ref.current.textContent = text; fail(''); ref.current?.blur(); }
+        if (e.key === 'Escape') { clearTimeout(timer.current); timer.current = null; if (ref.current) ref.current.textContent = current.current; fail(''); ref.current?.blur(); }
       }}
       // Buttons act on the space key's release: block that too.
       onKeyUp={e => { e.stopPropagation(); if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter') e.preventDefault(); }}
