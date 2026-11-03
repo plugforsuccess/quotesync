@@ -1107,11 +1107,11 @@ function MeetCam({ onUpload }) {
           </div>
         )}
         {a.cta && (
-          <div className="mx-3 mb-3 mt-auto rounded-xl p-3.5" style={{ background: HERO_BG }}>
-            <p className="text-base font-extrabold leading-snug text-white [&_b]:text-[#39FF88]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
-            <p className="mt-1 text-sm leading-snug text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
+          <div className="mt-auto px-4 pb-4">
+            <p className="text-[17px] font-extrabold leading-snug text-[#0F2D6B] [&_b]:text-blue-700"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
+            <p className="mt-1 text-[15px] leading-relaxed text-slate-700"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
             <button type="button" onClick={onUpload}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#39FF88] px-4 py-2.5 text-[15px] font-bold text-[#0F2D6B] active:bg-[#2ee87a]">
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-[15px] font-bold text-white active:bg-blue-800">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
             </button>
           </div>
