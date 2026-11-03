@@ -1,6 +1,7 @@
 // src/pages/StoryDetailPage.jsx
 // Individual story page with full SEO optimization for /news/{slug}
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
@@ -166,16 +167,16 @@ const StoryDetailPage = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="text-6xl mb-4">📰</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Story Not Found</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2"><T k="pages.storydetailpage.d60bd7">Story Not Found</T></h1>
           <p className="text-gray-600 mb-6">
-            The story you're looking for doesn't exist or has been removed.
+            <T k="pages.storydetailpage.9f9e0c">The story you're looking for doesn't exist or has been removed.</T>
           </p>
           <Link
             to="/news"
             className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Newsroom
+            <T k="pages.storydetailpage.97b6ac">Back to Newsroom</T>
           </Link>
         </div>
       </div>
@@ -195,7 +196,7 @@ const StoryDetailPage = () => {
               className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Newsroom
+              <T k="pages.storydetailpage.97b6ac">Back to Newsroom</T>
             </Link>
           </div>
         </div>
@@ -206,7 +207,7 @@ const StoryDetailPage = () => {
           {story.is_featured && (
             <div className="mb-3">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">
-                ⭐ Featured
+                <T k="pages.storydetailpage.52254f">⭐ Featured</T>
               </span>
             </div>
           )}
@@ -219,7 +220,7 @@ const StoryDetailPage = () => {
           {/* Author Byline */}
           {story.author_name && (
             <div className="text-lg text-gray-600 mb-6">
-              By <span className="font-medium text-gray-900">{story.author_name}</span>
+              <T k="pages.storydetailpage.53e5aa">By</T> <span className="font-medium text-gray-900">{story.author_name}</span>
             </div>
           )}
 
@@ -242,7 +243,7 @@ const StoryDetailPage = () => {
               className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
             >
               <Share2 className="w-4 h-4" />
-              Share
+              <T k="pages.storydetailpage.5a95a4">Share</T>
             </button>
           </div>
 
@@ -260,7 +261,7 @@ const StoryDetailPage = () => {
               {story.source_name && (
                 <div className="mt-3 flex items-center text-sm text-gray-500">
                   <ExternalLink className="w-4 h-4 mr-1" />
-                  <span>Source: {story.source_name}</span>
+                  <span><T k="pages.storydetailpage.77c8b9">Source:</T> {story.source_name}</span>
                   {story.source_url && (
                     <a
                       href={story.source_url}
@@ -268,7 +269,7 @@ const StoryDetailPage = () => {
                       rel="noopener noreferrer"
                       className="ml-1 underline hover:text-gray-700"
                     >
-                      View original
+                      <T k="pages.storydetailpage.773c80">View original</T>
                     </a>
                   )}
                 </div>
@@ -284,7 +285,7 @@ const StoryDetailPage = () => {
           {/* Why This Matters */}
           <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              Why this matters
+              <T k="pages.storydetailpage.aa8aa0">Why this matters</T>
             </h2>
             <p className="text-gray-700 leading-relaxed text-lg">
               {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
@@ -295,7 +296,7 @@ const StoryDetailPage = () => {
           {story.source_name && (
             <div className="border-t border-gray-200 pt-6 mb-8">
               <p className="text-sm text-gray-500">
-                Information sourced from {story.source_name}
+                <T k="pages.storydetailpage.c7ce9b">Information sourced from</T> {story.source_name}
                 {story.source_url && (
                   <>
                     {' • '}
@@ -305,7 +306,7 @@ const StoryDetailPage = () => {
                       rel="noopener noreferrer"
                       className="underline hover:text-gray-700"
                     >
-                      Read original article
+                      <T k="pages.storydetailpage.7fc9aa">Read original article</T>
                     </a>
                   </>
                 )}
@@ -316,22 +317,22 @@ const StoryDetailPage = () => {
           {/* The ask */}
           <div className="bg-gray-50 rounded-lg p-8 border border-gray-200 mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Does this touch your policy?
+              <T k="pages.storydetailpage.964a04">Does this touch your policy?</T>
             </h3>
-            <p className="text-gray-600 mb-5">Send your declarations page and a licensed agent will check it, usually within 30 minutes during business hours. Or just text Cam the question.</p>
+            <p className="text-gray-600 mb-5"><T k="pages.storydetailpage.f12ac4">Send your declarations page and a licensed agent will check it, usually within 30 minutes during business hours. Or just text Cam the question.</T></p>
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => handleCTAClick('compare_policy')}
                 className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
               >
-                Upload my policy
+                <T k="pages.storydetailpage.f8feed">Upload my policy</T>
               </button>
               <a
                 href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}
                 onClick={() => trackNewsroomCTAClick(story, 'text_cam')}
                 className="flex-1 text-center bg-white hover:bg-gray-100 text-gray-800 font-semibold py-4 px-6 rounded-lg border border-gray-300 transition-colors"
               >
-                Text Cam
+                <T k="pages.storydetailpage.25c0d2">Text Cam</T>
               </a>
             </div>
           </div>
@@ -339,7 +340,7 @@ const StoryDetailPage = () => {
           {/* Related Stories */}
           {relatedStories.length > 0 && (
             <div className="border-t border-gray-200 pt-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Related Stories</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6"><T k="pages.storydetailpage.9e2a42">Related Stories</T></h3>
               <div className="grid md:grid-cols-3 gap-6">
                 {relatedStories.map((related) => (
                   <Link

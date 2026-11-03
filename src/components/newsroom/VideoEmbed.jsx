@@ -1,6 +1,7 @@
 // src/components/newsroom/VideoEmbed.jsx
 // Unified video embed component with lazy loading and autoplay control
 
+import { T } from '../SiteCopy';
 import { useState, useEffect, useRef } from 'react';
 
 /**
@@ -36,7 +37,7 @@ const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, onThumbnailClick,
   const videoId = getYouTubeId(videoUrl);
 
   if (!videoId) {
-    return <div className="text-red-500">Invalid YouTube URL</div>;
+    return <div className="text-red-500"><T k="components.newsroom.videoembed.2b6c97">Invalid YouTube URL</T></div>;
   }
 
   const handleThumbnailClick = (e) => {
@@ -73,7 +74,7 @@ const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, onThumbnailClick,
 
         {/* Tooltip hint */}
         <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-          Click to read story
+          <T k="components.newsroom.videoembed.ba4ad2">Click to read story</T>
         </div>
       </div>
     );
@@ -130,7 +131,7 @@ const XEmbed = ({ videoUrl, thumbnail, isActive, onPlay }) => {
   }, [isActive, tweetId, isLoaded, onPlay]);
 
   if (!tweetId) {
-    return <div className="text-red-500">Invalid X/Twitter URL</div>;
+    return <div className="text-red-500"><T k="components.newsroom.videoembed.eef7cc">Invalid X/Twitter URL</T></div>;
   }
 
   // Show thumbnail until active
@@ -145,7 +146,7 @@ const XEmbed = ({ videoUrl, thumbnail, isActive, onPlay }) => {
           />
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
-          <span className="text-white text-sm font-medium">Click to load tweet</span>
+          <span className="text-white text-sm font-medium"><T k="components.newsroom.videoembed.ed3145">Click to load tweet</T></span>
         </div>
       </div>
     );
@@ -153,7 +154,7 @@ const XEmbed = ({ videoUrl, thumbnail, isActive, onPlay }) => {
 
   return (
     <div ref={containerRef} className="w-full min-h-[200px] flex items-center justify-center bg-gray-50">
-      {!isLoaded && <div className="text-gray-500">Loading tweet...</div>}
+      {!isLoaded && <div className="text-gray-500"><T k="components.newsroom.videoembed.c0e8e6">Loading tweet...</T></div>}
     </div>
   );
 };
@@ -188,7 +189,7 @@ const HostedVideoEmbed = ({ videoUrl, thumbnail, isActive, onPlay, muted = true 
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-800">
-            <span className="text-white text-sm">Video</span>
+            <span className="text-white text-sm"><T k="components.newsroom.videoembed.34e2d1">Video</T></span>
           </div>
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all">
@@ -276,7 +277,7 @@ const VideoEmbed = ({ videoType, videoUrl, thumbnail, isActive = false, onPlay, 
       );
 
     default:
-      return <div className="text-red-500">Unsupported video type</div>;
+      return <div className="text-red-500"><T k="components.newsroom.videoembed.f2d124">Unsupported video type</T></div>;
   }
 };
 

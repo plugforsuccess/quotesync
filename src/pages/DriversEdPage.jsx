@@ -26,7 +26,7 @@ function Ticks({ items }) {
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-50">
             <Check className="h-3.5 w-3.5 text-blue-700" aria-hidden="true" strokeWidth={3} />
           </span>
-          {t}
+          <span><T>{t}</T></span>
         </li>
       ))}
     </ul>
@@ -36,17 +36,17 @@ function Ticks({ items }) {
 function About({ title, steps, listTitle, list, q, a }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 lg:p-8">
-      <h3 className="text-xl font-extrabold text-[#0F2D6B]">{title}</h3>
-      <p className="mt-5 text-sm font-bold uppercase tracking-[0.12em] text-blue-700">How it works</p>
+      <h3 className="text-xl font-extrabold text-[#0F2D6B]"><T>{title}</T></h3>
+      <p className="mt-5 text-sm font-bold uppercase tracking-[0.12em] text-blue-700"><T k="pages.driversedpage.9ffdb9">How it works</T></p>
       <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[15px] text-slate-700 marker:font-semibold marker:text-blue-700">
-        {steps.map(s => <li key={s}>{s}</li>)}
+        {steps.map(s => <li key={s}><T>{s}</T></li>)}
       </ol>
-      <p className="mt-5 text-sm font-bold uppercase tracking-[0.12em] text-blue-700">{listTitle}</p>
+      <p className="mt-5 text-sm font-bold uppercase tracking-[0.12em] text-blue-700"><T>{listTitle}</T></p>
       <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[15px] text-slate-700 marker:text-blue-300">
-        {list.map(s => <li key={s}>{s}</li>)}
+        {list.map(s => <li key={s}><T>{s}</T></li>)}
       </ul>
       <div className="mt-6 rounded-2xl bg-blue-50 p-4 text-[15px] text-slate-700">
-        <span className="font-semibold text-[#0F2D6B]">{q}</span> {a}
+        <span className="font-semibold text-[#0F2D6B]"><T>{q}</T></span> <T>{a}</T>
       </div>
     </div>
   );
@@ -152,24 +152,24 @@ function PartnerProgram() {
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'rgba(57,255,136,0.2)' }}>
                 <Check className="h-7 w-7 text-emerald-600" aria-hidden="true" strokeWidth={3} />
               </span>
-              <p className="mt-4 text-xl font-extrabold text-[#0F2D6B]">Thanks, {f.first.trim()}!</p>
+              <p className="mt-4 text-xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.86c345">Thanks,</T> {f.first.trim()}!</p>
               <p className="mt-2 text-slate-600"><T k="de.partner.thanks">Cam’s team will text you within one business day with your partner agreement and your personal link.</T></p>
             </div>
           ) : (
             <form onSubmit={apply} noValidate>
               <p className="text-lg font-extrabold text-[#0F2D6B]"><T k="de.partner.formtitle">Apply to be a partner</T></p>
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <label className="block text-sm font-semibold text-slate-700">First name
+                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.20db0b">First name</T>
                   <input className={input} autoComplete="given-name" value={f.first} onChange={set('first')} maxLength={60} required />
                 </label>
-                <label className="block text-sm font-semibold text-slate-700">Last name
+                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.8d3f5e">Last name</T>
                   <input className={input} autoComplete="family-name" value={f.last} onChange={set('last')} maxLength={60} />
                 </label>
               </div>
-              <label className="mt-3 block text-sm font-semibold text-slate-700">Mobile number
+              <label className="mt-3 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.d14571">Mobile number</T>
                 <input className={input} type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" value={f.phone} onChange={set('phone')} required />
               </label>
-              <label className="mt-3 block text-sm font-semibold text-slate-700">Email <span className="font-normal text-slate-400">(optional)</span>
+              <label className="mt-3 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.ce8ae9">Email</T> <span className="font-normal text-slate-400"><T k="pages.driversedpage.f53d1c">(optional)</T></span>
                 <input className={input} type="email" inputMode="email" autoComplete="email" value={f.email} onChange={set('email')} maxLength={160} />
               </label>
               <Choice legend="Are you an Allstate customer?" name="allstate" value={f.allstate}
@@ -178,7 +178,7 @@ function PartnerProgram() {
                 <Choice legend="Is Cam Wiley your agent?" name="agent" value={f.agent}
                   options={[['agency', 'Yes'], ['allstate_other', 'No'], ['allstate_unsure', 'Not sure']]} onChange={v => setF(x => ({ ...x, agent: v }))} />
               )}
-              <label className="mt-4 block text-sm font-semibold text-slate-700">Who would you share it with? <span className="font-normal text-slate-400">(optional)</span>
+              <label className="mt-4 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.4d20d1">Who would you share it with?</T> <span className="font-normal text-slate-400"><T k="pages.driversedpage.f53d1c">(optional)</T></span>
                 <select className={input} value={f.audience} onChange={set('audience')}>
                   <option value="">Choose one</option>
                   {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
@@ -190,7 +190,7 @@ function PartnerProgram() {
                 {state.status === 'sending' && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
                 <T k="de.partner.button">Apply to be a partner</T>
               </button>
-              <p className="mt-3 text-center text-xs text-slate-500">By applying, you agree Cam’s team may call or text you about the partner program.</p>
+              <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree Cam’s team may call or text you about the partner program.</p>
             </form>
           )}
         </div>
@@ -211,7 +211,7 @@ export default function GeorgiaDriverEducationPage() {
         <div className={`relative ${wrap}`}>
           <ConsumerNav current="drivers" />
           <div className="pb-14 pt-8 lg:pb-20 lg:pt-14">
-            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}>Driver Education · Georgia</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="pages.driversedpage.1bac96">Driver Education · Georgia</T></p>
             <h1 className="mt-3 max-w-3xl text-[36px] font-extrabold leading-[1.08] tracking-tight lg:text-[52px]">
               <T k="de.headline">Georgia Driver Education & Insurance Discounts</T>
             </h1>
@@ -221,7 +221,7 @@ export default function GeorgiaDriverEducationPage() {
             <div className="mt-6 flex flex-wrap gap-2">
               <a href={RETURNING_CUSTOMER_LINK} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">
-                Already enrolled? Continue your course <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <T k="pages.driversedpage.e432d4">Already enrolled? Continue your course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
               <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold hover:bg-white/10" style={{ color: ACCENT }}>
                 <T k="de.partner.herolink">Become a referral partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -235,27 +235,27 @@ export default function GeorgiaDriverEducationPage() {
       <section className="bg-slate-50 py-14 lg:py-20">
         <div className={`${wrap} grid gap-6 lg:grid-cols-2`}>
           <div className="relative flex flex-col rounded-3xl border-2 bg-white p-6 shadow-[0_0_0_4px_rgba(57,255,136,0.18)] lg:p-8" style={{ borderColor: ACCENT }}>
-            <span className="absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider" style={{ background: ACCENT, color: DEEP }}>Most popular</span>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Insurance discount</p>
-            <h2 className="mt-2 pr-28 text-2xl font-extrabold text-[#0F2D6B]">Defensive Driving Course</h2>
-            <p className="mt-2 text-[15px] text-slate-600">Save on your insurance premium by completing this 6-hour online defensive driving course. Many Georgia insurers offer recurring discounts.</p>
+            <span className="absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider" style={{ background: ACCENT, color: DEEP }}><T k="pages.driversedpage.df430c">Most popular</T></span>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="pages.driversedpage.e1e44e">Insurance discount</T></p>
+            <h2 className="mt-2 pr-28 text-2xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.356a1f">Defensive Driving Course</T></h2>
+            <p className="mt-2 text-[15px] text-slate-600"><T k="pages.driversedpage.14e6e6">Save on your insurance premium by completing this 6-hour online defensive driving course. Many Georgia insurers offer recurring discounts.</T></p>
             <div className="mt-5"><Ticks items={['6-hour online course, complete at your own pace', 'Eligible for insurance discounts with most carriers', 'Downloadable completion certificate', 'Available for all ages 18+']} /></div>
             <p className="mt-6 text-3xl font-extrabold text-[#0F2D6B]">$24.95</p>
             <Link to="/courses/defensive-driving"
               className="mt-4 block rounded-2xl bg-blue-700 py-4 text-center text-base font-bold text-white shadow-lg shadow-blue-700/25 hover:bg-blue-800">
-              Start Defensive Driving Course
+              <T k="pages.driversedpage.a55c51">Start Defensive Driving Course</T>
             </Link>
           </div>
 
           <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 lg:p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Teen drivers (15–17)</p>
-            <h2 className="mt-2 text-2xl font-extrabold text-[#0F2D6B]">Joshua’s Law Course</h2>
-            <p className="mt-2 text-[15px] text-slate-600">Required for Georgia teens to get their Class D license. Complete the 30-hour course online to fulfill your driver’s ed requirement.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="pages.driversedpage.e9eff1">Teen drivers (15–17)</T></p>
+            <h2 className="mt-2 text-2xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.a9deaa">Joshua’s Law Course</T></h2>
+            <p className="mt-2 text-[15px] text-slate-600"><T k="pages.driversedpage.299bdc">Required for Georgia teens to get their Class D license. Complete the 30-hour course online to fulfill your driver’s ed requirement.</T></p>
             <div className="mt-5"><Ticks items={['30-hour state-approved curriculum', 'Required for Class D license (ages 15–17)', 'Certificate sent directly to DDS', 'Complete 100% online at your own pace']} /></div>
             <p className="mt-6 text-3xl font-extrabold text-[#0F2D6B]">$29.00</p>
             <a href={JOSHUAS_LAW_LINK} target="_blank" rel="noreferrer"
               className="mt-4 block rounded-2xl border-2 border-blue-700 py-3.5 text-center text-base font-bold text-blue-700 hover:bg-blue-50">
-              Start Joshua’s Law Course
+              <T k="pages.driversedpage.6f8ac7">Start Joshua’s Law Course</T>
             </a>
           </div>
         </div>
@@ -282,12 +282,12 @@ export default function GeorgiaDriverEducationPage() {
       {/* FAQ */}
       <section className="bg-slate-50 py-14 lg:py-20" aria-labelledby="de-faq">
         <div className={wrap}>
-          <h2 id="de-faq" className={sectionTitle}>Frequently asked questions</h2>
+          <h2 id="de-faq" className={sectionTitle}><T k="pages.driversedpage.af2a4d">Frequently asked questions</T></h2>
           <dl className="mt-8 grid gap-4 md:grid-cols-2">
             {FAQ.map(([q, a]) => (
               <div key={q} className="rounded-3xl border border-slate-200 bg-white p-6">
-                <dt className="font-bold text-[#0F2D6B]">{q}</dt>
-                <dd className="mt-2 text-[15px] text-slate-600">{a}</dd>
+                <dt className="font-bold text-[#0F2D6B]"><T>{q}</T></dt>
+                <dd className="mt-2 text-[15px] text-slate-600"><T>{a}</T></dd>
               </div>
             ))}
           </dl>
@@ -297,11 +297,11 @@ export default function GeorgiaDriverEducationPage() {
       {/* The rate check ask */}
       <section className="relative overflow-hidden py-16 text-center text-white lg:py-20" style={{ background: HERO_BG }}>
         <div className={`relative ${wrap}`}>
-          <h2 className="text-[30px] font-extrabold leading-tight tracking-tight lg:text-[40px]">Need an insurance quote?</h2>
-          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100">Snap your declarations page. Cam checks if Allstate can beat it.</p>
+          <h2 className="text-[30px] font-extrabold leading-tight tracking-tight lg:text-[40px]"><T k="pages.driversedpage.35a223">Need an insurance quote?</T></h2>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="pages.driversedpage.021418">Snap your declarations page. Cam checks if Allstate can beat it.</T></p>
           <Link to="/" className="mx-auto mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-lg font-bold shadow-lg shadow-emerald-500/30"
             style={{ background: ACCENT, color: DEEP }}>
-            Check my rate <ArrowRight className="h-5 w-5" aria-hidden="true" />
+            <T k="pages.driversedpage.725f04">Check my rate</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         </div>
       </section>
@@ -309,7 +309,7 @@ export default function GeorgiaDriverEducationPage() {
       {/* Disclosure + footer */}
       <div className="border-t border-slate-200 bg-slate-50 pt-8">
         <p className={`${wrap} mb-6 text-[11px] leading-relaxed text-slate-500`}>
-          Some programs on this page are partner or affiliate offers. If you enroll through these links, insuredbycam.com may earn a commission at no extra cost to you. Only programs that provide real safety or savings benefits are recommended here. *Pricing shown is approximate and may vary based on active promotions—see partner site for current rates.
+          <T k="pages.driversedpage.ca207b">Some programs on this page are partner or affiliate offers. If you enroll through these links, insuredbycam.com may earn a commission at no extra cost to you. Only programs that provide real safety or savings benefits are recommended here. *Pricing shown is approximate and may vary based on active promotions—see partner site for current rates.</T>
         </p>
         <RateCheckFooter wide />
       </div>

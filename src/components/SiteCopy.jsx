@@ -25,8 +25,10 @@ const KEY = ['site_copy'];
 // Agency pages too: their copy (tab names, headings, empty states, buttons) is marked the
 // same way; what comes from the data isn't.
 const INTERNAL = /^\/(agency|my|admin|news\/(dashboard|editor|archived|standards|preview))(\/|$)/;
-const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, /^\/ratecheck-privacy$/, /^\/courses$/, INTERNAL];
-const CORNER_BUTTON = [/^\/ratecheck-privacy$/, INTERNAL];
+const NEWS = /^\/news(\/[^/]+)?$/;
+const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
+// Pages without the consumer nav (and its pencil) get a corner button.
+const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, INTERNAL];
 // The last copy seen on this device, so edited text shows at once instead of flashing the default.
 const CACHE = 'qs_site_copy_v1';
 const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE) || 'null') || undefined; } catch { return undefined; } };
@@ -185,7 +187,7 @@ export function SiteCopyProvider({ children }) {
         // (bottom-right on agency pages, clear of their header).
         !CORNER_BUTTON.some(re => re.test(pathname)) ? null : (
           <button type="button" onClick={() => setEditing(true)} aria-label="Edit this page" title="Edit this page"
-            className={`fixed right-4 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0F2D6B] text-white shadow-lg ring-2 ring-white ${INTERNAL.test(pathname) ? 'bottom-4' : 'top-4'}`}>
+            className={`fixed right-4 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0F2D6B] text-white shadow-lg ring-2 ring-white ${INTERNAL.test(pathname) || NEWS.test(pathname) ? 'bottom-4' : 'top-4'}`}>
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </button>
         )
@@ -207,10 +209,19 @@ export function EditPagePencil({ className = '' }) {
   );
 }
 
-/** Editable text. `children` is the default (a plain string). */
-export function T({ k, children }) {
+// A short, stable key from a line's own text (FNV-1a), for lines rendered from lists.
+const textKey = (s) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return `txt.${(h >>> 0).toString(16)}`;
+};
+
+/** Editable text. `children` is the default (a plain string). Without `k`, the key is the
+ * text itself, so the same wording edited once changes everywhere it appears. */
+export function T({ k: key, children }) {
   const { values, editing, save, fail } = useContext(Ctx);
   const fallback = typeof children === 'string' ? children : String(children ?? '');
+  const k = key || textKey(fallback);
   const text = values[k] ?? fallback;
   if (!editing) return <>{rich(text)}</>;
   return <EditableText k={k} text={text} fallback={fallback} edited={k in values} save={save} fail={fail} />;

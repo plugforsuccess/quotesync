@@ -1,6 +1,7 @@
 // src/components/newsroom/StoryModal.jsx
 // Full story modal for "Read more" functionality
 
+import { T } from '../SiteCopy';
 import { useEffect } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
@@ -83,7 +84,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               {story.is_featured && (
                 <div className="mb-3">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">
-                    ⭐ Featured
+                    <T k="components.newsroom.storymodal.52254f">⭐ Featured</T>
                   </span>
                 </div>
               )}
@@ -132,7 +133,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                   {story.source_name && (
                     <div className="mt-2 flex items-center text-sm text-gray-500">
                       <ExternalLink className="w-4 h-4 mr-1" />
-                      <span>Source: {story.source_name}</span>
+                      <span><T k="components.newsroom.storymodal.77c8b9">Source:</T> {story.source_name}</span>
                       {story.source_url && (
                         <a
                           href={story.source_url}
@@ -140,7 +141,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                           rel="noopener noreferrer"
                           className="ml-1 underline hover:text-gray-700"
                         >
-                          View original
+                          <T k="components.newsroom.storymodal.773c80">View original</T>
                         </a>
                       )}
                     </div>
@@ -156,7 +157,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               {/* "Why this matters" section */}
               <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">
-                  Why this matters
+                  <T k="components.newsroom.storymodal.aa8aa0">Why this matters</T>
                 </h2>
                 <p className="text-gray-700 leading-relaxed">
                   {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
@@ -167,7 +168,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               {story.source_name && (
                 <div className="border-t border-gray-200 pt-4 mb-6">
                   <p className="text-sm text-gray-500">
-                    Information sourced from {story.source_name}
+                    <T k="components.newsroom.storymodal.c7ce9b">Information sourced from</T> {story.source_name}
                     {story.source_url && (
                       <>
                         {' • '}
@@ -177,7 +178,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                           rel="noopener noreferrer"
                           className="underline hover:text-gray-700"
                         >
-                          Read original article
+                          <T k="components.newsroom.storymodal.7fc9aa">Read original article</T>
                         </a>
                       </>
                     )}
@@ -188,22 +189,22 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               {/* CTA Block */}
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                 <h3 className="text-lg font-bold text-gray-900 mb-1">
-                  Does this touch your policy?
+                  <T k="components.newsroom.storymodal.964a04">Does this touch your policy?</T>
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">Send your declarations page and a licensed agent will check it, or text Cam the question.</p>
+                <p className="text-sm text-gray-600 mb-4"><T k="components.newsroom.storymodal.f26060">Send your declarations page and a licensed agent will check it, or text Cam the question.</T></p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={() => handleCTAClick('compare_policy')}
                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                   >
-                    Upload my policy
+                    <T k="components.newsroom.storymodal.f8feed">Upload my policy</T>
                   </button>
                   <a
                     href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}
                     onClick={() => trackNewsroomCTAClick(story, 'text_cam')}
                     className="flex-1 text-center bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-6 rounded-lg border border-gray-300 transition-colors"
                   >
-                    Text Cam
+                    <T k="components.newsroom.storymodal.25c0d2">Text Cam</T>
                   </a>
                 </div>
               </div>
