@@ -358,15 +358,17 @@ function EnrollForm({ course, defaultName }) {
   const [studentName, setStudentName] = useState(defaultName);
   const [dln, setDln] = useState('');
   const [dob, setDob] = useState('');
+  const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    if (!accepted) { setError('Please accept the terms and refund policy.'); return; }
     setSubmitting(true);
     try {
-      const { url } = await createCheckout({ studentName, dln, dob, courseSlug: course.slug });
+      const { url } = await createCheckout({ studentName, dln, dob, acceptTerms: true, courseSlug: course.slug });
       if (url) window.location.assign(url);
       else throw new Error('No checkout URL returned.');
     } catch (err) {
@@ -381,6 +383,10 @@ function EnrollForm({ course, defaultName }) {
       <Field label="Legal name" value={studentName} onChange={setStudentName} placeholder="First Middle Last" autoComplete="name" />
       <Field label="Driver license number" value={dln} onChange={(v) => setDln(v.toUpperCase())} placeholder="GA DLN" />
       <Field label="Date of birth" type="date" value={dob} onChange={setDob} />
+      <label className="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
+        <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-blue-700" />
+        <span>I agree to the <Link to="/terms#course-refunds" target="_blank" className="font-semibold text-blue-700 underline">terms and refund policy</Link>. I understand this course is not DDS-certified and any insurance discount is up to my insurer.</span>
+      </label>
       {error && <p className="flex items-start gap-2 text-xs font-medium text-red-700"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
       <button type="submit" disabled={submitting}
         className="w-full rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white transition flex items-center justify-center gap-2">

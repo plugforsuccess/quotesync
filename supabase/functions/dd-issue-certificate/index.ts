@@ -28,7 +28,8 @@ function cors(req: Request): Record<string, string> {
   }
 }
 
-const AGENCY_NAME = Deno.env.get('DD_AGENCY_NAME') || 'Insured by Cam — Wiley-Wilson Agency'
+// The provider's legal name, printed on every certificate.
+const AGENCY_NAME = Deno.env.get('DD_AGENCY_NAME') || 'Cam Wiley Agency, Inc.'
 const BUCKET = 'dd-certificates'
 
 // Best-effort email via Resend (scaffolded behind env vars; no-op if unset).
@@ -83,8 +84,24 @@ async function fetchAsset(url: string): Promise<Uint8Array | null> {
   return assetCache[url]
 }
 
+// '1990-04-07' -> '04/07/1990' (no time zone shift).
+function usDate(iso: string | null): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '')
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : null
+}
+
+// What an insurer needs to match the certificate to a driver and check it.
+function detailRows(o: { certUid: string; dln: string | null; dob: string | null }): [string, string][] {
+  return [
+    ['Certificate No.', o.certUid],
+    ['Driver’s license', o.dln || 'Not provided'],
+    ['Date of birth', o.dob || 'Not provided'],
+    ['Course provider', AGENCY_NAME],
+  ]
+}
+
 async function buildPdf(opts: {
-  studentName: string; dln: string | null; courseTitle: string;
+  studentName: string; dln: string | null; dob: string | null; courseTitle: string;
   completionDate: string; scorePct: number | null; certUid: string;
   complianceLabel: string; ddsProviderNo: string | null; isDdsApproved: boolean;
 }): Promise<Uint8Array> {
@@ -116,6 +133,19 @@ async function buildPdf(opts: {
     const dsz = 13
     const dw = serif.widthOfTextAtSize(opts.completionDate, dsz)
     page.drawText(opts.completionDate, { x: X(502) - dw / 2, y: Y(882), size: dsz, font: serif, color: rgb(0.12, 0.15, 0.25) })
+
+    // Certificate number, license, birth date and provider, left of the logo.
+    const ink = rgb(0.12, 0.15, 0.25), muted = rgb(0.33, 0.36, 0.45)
+    detailRows(opts).forEach(([label, value], i) => {
+      const y = Y(762 + i * 27)
+      page.drawText(`${label}:`, { x: X(208), y, size: 10.5, font: serif, color: muted })
+      page.drawText(value, { x: X(208) + 92, y, size: 10.5, font: serifB, color: ink })
+    })
+
+    // The compliance label, small, under the completion date (left of the logo).
+    wrap(opts.complianceLabel || '', serif, 7.5, X(960) - X(208)).slice(0, 3).forEach((t, i) => {
+      page.drawText(t, { x: X(208), y: Y(912 + i * 14), size: 7.5, font: serif, color: muted })
+    })
     return await pdf.save()
   }
 
@@ -133,8 +163,9 @@ async function buildPdf(opts: {
   center(opts.studentName, 366, serifB, 24, rgb(0.20, 0.31, 0.60))
   center('has successfully completed the', 322, serif, 14, sub)
   center('Georgia Defensive Driving Course (6 hours)', 286, serifB, 18)
+  detailRows(opts).forEach(([label, value], i) => center(`${label}: ${value}`, 240 - i * 18, serif, 11, sub))
   center(`Completion Date: ${opts.completionDate}`, 150, serif, 12, sub)
-  center('QuoteSync — Course Provider', 120, serifB, 12)
+  wrap(opts.complianceLabel || '', serif, 8, W - 120).slice(0, 3).forEach((t, i) => center(t, 90 - i * 11, serif, 8, sub))
   return await pdf.save()
 }
 
@@ -168,15 +199,21 @@ Deno.serve(async (req) => {
 
     const { data: enr } = await supabase
       .from('dd_enrollments')
-      .select('id, status, completed_at, student_name_snapshot, dln_snapshot')
+      .select('id, status, completed_at, student_name_snapshot, dln_snapshot, dob_snapshot')
       .eq('user_id', user.id).eq('course_id', course.id)
       .neq('status', 'expired').maybeSingle()
     if (!enr) return json({ error: 'No enrollment found' }, 404)
+    if (enr.status === 'refunded' || enr.status === 'disputed') {
+      return json({ error: 'This course was refunded, so its certificate is no longer valid.' }, 410)
+    }
     if (enr.status !== 'completed') return json({ error: 'Course is not yet completed' }, 409)
 
     // Already issued? Return a fresh signed URL.
     const { data: existing } = await supabase
-      .from('dd_certificates').select('certificate_uid, pdf_path').eq('enrollment_id', enr.id).maybeSingle()
+      .from('dd_certificates').select('certificate_uid, pdf_path, revoked_at').eq('enrollment_id', enr.id).maybeSingle()
+    if (existing?.revoked_at) {
+      return json({ error: 'This certificate was voided after a refund. Email cameron@insuredbycam.com for help.' }, 410)
+    }
 
     let certUid = existing?.certificate_uid as string | undefined
     let pdfPath = existing?.pdf_path as string | undefined
@@ -196,6 +233,7 @@ Deno.serve(async (req) => {
       const bytes = await buildPdf({
         studentName,
         dln: enr.dln_snapshot,
+        dob: usDate(enr.dob_snapshot),
         courseTitle: course.title,
         completionDate: new Date(enr.completed_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         scorePct: best?.score_pct ?? null,

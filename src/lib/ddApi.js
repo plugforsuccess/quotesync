@@ -30,9 +30,9 @@ export async function getMyEnrollment(courseId) {
  * Create a Stripe Checkout session for the course.
  * @returns {{url: string, enrollment_id: string}}
  */
-export async function createCheckout({ studentName, dln, dob, courseSlug = DD_COURSE_SLUG }) {
+export async function createCheckout({ studentName, dln, dob, acceptTerms = false, courseSlug = DD_COURSE_SLUG }) {
   const { data, error } = await supabase.functions.invoke('dd-create-checkout', {
-    body: { course_slug: courseSlug, student_name: studentName, dln, dob },
+    body: { course_slug: courseSlug, student_name: studentName, dln, dob, accept_terms: acceptTerms },
   });
   if (error) {
     // Surface the function's JSON error message when available.

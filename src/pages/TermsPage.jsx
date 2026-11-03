@@ -122,6 +122,17 @@ export default function TermsPage() {
             </p>
           </section>
 
+          {/* Defensive Driving course: refunds */}
+          <section id="course-refunds" className="mb-8 scroll-mt-24">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Defensive Driving Course: Refunds</h2>
+            <ul className="list-disc pl-6 text-gray-700 leading-relaxed space-y-2">
+              <li><strong>30-day money-back guarantee.</strong> Email cameron@insuredbycam.com within 30 days of purchase for a full refund. No questions asked.</li>
+              <li>A refund ends your access to the course, and any certificate already issued is void. If we’ve sent it to your insurer, we’ll let them know.</li>
+              <li>If you dispute the charge with your bank instead, your access and certificate are paused until the dispute is resolved.</li>
+              <li>The course is provided by Cam Wiley Agency, Inc. It is not DDS-certified and does not reduce points on your license. Whether you get an insurance discount, and how much, is up to your insurer.</li>
+            </ul>
+          </section>
+
           {/* Intellectual Property */}
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Intellectual Property Rights</h2>
