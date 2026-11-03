@@ -4,12 +4,13 @@
 // (scoped via the `.ddc` token layer in index.css). Module overview, a
 // paginated lesson reader with per-section checks, the graded module quiz,
 // the final exam, and the certificate. No seat-time gating.
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock, CheckCircle2, Circle, Loader2, AlertCircle, ArrowLeft, ArrowRight, Award, Download,
-  Scale, KeyRound, AlertTriangle, Lightbulb, ListChecks, X, BookOpen, Sun, Moon,
+  Scale, KeyRound, AlertTriangle, Lightbulb, ListChecks, X, BookOpen, Sun, Moon, Volume2, Square,
 } from 'lucide-react';
+import DDFigure, { DDVideo } from './components/dd/DDFigures';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getDefensiveDrivingCourse, getMyEnrollment, getModules, getProgress,
@@ -140,8 +141,8 @@ export default function DefensiveDrivingPortalPage() {
     <>
       <div className="sticky top-0 z-20 ddc-bar backdrop-blur border-b">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <span className="flex items-center gap-2 ddc-sm font-semibold ddc-accent">
-            <BookOpen className="w-4 h-4" /> Defensive Driving · Georgia
+          <span className="flex min-w-0 items-center gap-2 whitespace-nowrap ddc-sm font-semibold ddc-accent">
+            <BookOpen className="w-4 h-4 shrink-0" /> <span className="sm:hidden">Course</span><span className="hidden sm:inline">Defensive Driving</span>
           </span>
           <div className="flex items-center gap-3">
             <AccessibilityControls />
@@ -199,7 +200,7 @@ function ModuleRow({ vm, onOpen }) {
           : <Lock className="w-6 h-6 ddc-faint" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold ddc-heading ddc-base truncate">Module {vm.ordinal}: {vm.title}</p>
+        <p className="font-semibold ddc-heading ddc-base leading-snug break-words">Module {vm.ordinal}: {vm.title}</p>
         <p className="ddc-xs ddc-muted mt-0.5">
           {vm.completed ? 'Completed' : vm.unlocked ? 'Ready' : 'Complete the previous module to unlock'}
         </p>
@@ -230,6 +231,14 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   const kind = steps[step];
   const sectionIdx = kind === 'section' ? step - 1 : -1;
   const section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+  // What the read-along says on this page, one entry per highlighted block.
+  const readItems = useMemo(() => {
+    if (kind === 'intro') return [mod.title, content?.summary, sections.length ? `In this module: ${sections.map(x => x.heading).join('. ')}.` : null].filter(Boolean);
+    if (kind === 'section' && section) return [section.heading, ...section.blocks.map(blockText)];
+    if (kind === 'quiz' && content?.takeaways?.length) return [`Key takeaways. ${content.takeaways.join('. ')}`];
+    return [];
+  }, [kind, section, content, sections, mod.title]);
+  const read = useReadAlong(readItems);
   const sectionGateOk = kind !== 'section'
     ? true
     : completed || !section?.quiz?.length || passedSections.has(sectionIdx);
@@ -263,15 +272,16 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
           {kind === 'quiz' && ' · Module quiz'}
           {kind === 'intro' && ' · Introduction'}
         </p>
-        <h1 className="ddc-h1 font-black ddc-heading mb-6">{mod.title}</h1>
+        <h1 className={`ddc-h1 font-black ddc-heading mb-4 ${kind === 'intro' && read.at === 0 ? 'ddc-reading' : ''}`}>{mod.title}</h1>
+        <ReadAlongButton read={read} />
 
         {kind === 'intro' && (
           <div>
             {content?.summary && (
-              <p className="ddc-lg ddc-text leading-relaxed border-l-2 pl-4" style={{ borderColor: 'var(--ddc-accent-solid)' }}>{content.summary}</p>
+              <p className={`ddc-lg ddc-text leading-relaxed border-l-2 pl-4 ${read.at === 1 ? 'ddc-reading' : ''}`} style={{ borderColor: 'var(--ddc-accent-solid)' }}>{content.summary}</p>
             )}
             {sections.length > 0 && (
-              <div className="mt-6 rounded-xl border ddc-bd ddc-soft p-5">
+              <div className={`mt-6 rounded-xl border ddc-bd ddc-soft p-5 ${read.at === 2 ? 'ddc-reading' : ''}`}>
                 <p className="ddc-base font-semibold ddc-heading mb-3">In this module</p>
                 <ol className="space-y-2.5">
                   {sections.map((s, i) => (
@@ -290,8 +300,8 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
         {kind === 'section' && section && (
           <div>
             <article className="space-y-5">
-              {section.heading && <h2 className="ddc-h2 font-bold ddc-heading">{section.heading}</h2>}
-              {section.blocks.map((b, i) => <Block key={i} b={b} />)}
+              {section.heading && <h2 className={`ddc-h2 font-bold ddc-heading ${read.at === 0 ? 'ddc-reading' : ''}`}>{section.heading}</h2>}
+              {section.blocks.map((b, i) => <div key={i} className={read.at === i + 1 ? 'ddc-reading' : undefined}><Block b={b} /></div>)}
             </article>
             {section.quiz?.length > 0 && (
               <div className="mt-8">
@@ -305,7 +315,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
         {kind === 'quiz' && (
           <div>
             {content?.takeaways?.length > 0 && (
-              <div className="mb-8 rounded-xl border ddc-cal ddc-cal-key p-5">
+              <div className={`mb-8 rounded-xl border ddc-cal ddc-cal-key p-5 ${read.at === 0 ? 'ddc-reading' : ''}`}>
                 <p className="flex items-center gap-2 ddc-base font-bold ddc-cal-title mb-3"><ListChecks className="w-5 h-5" /> Key takeaways</p>
                 <ul className="space-y-2">
                   {content.takeaways.map((t, i) => (
@@ -345,6 +355,73 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   );
 }
 
+// ---- Read-along ------------------------------------------------------------
+// Reads the page aloud with the device's own voice (no account, nothing sent anywhere),
+// one block at a time, and highlights the block being read. Stops when the page changes.
+
+/** The words a block says when read aloud. */
+function blockText(b) {
+  if (!b) return '';
+  if (b.type === 'p') return b.text;
+  if (b.type === 'ul' || b.type === 'ol') return b.items.join('. ');
+  if (b.type === 'callout') return [b.title || (CALLOUT[b.variant] || CALLOUT.key).label, b.text, ...(b.items || [])].filter(Boolean).join('. ');
+  if (b.type === 'figure' || b.type === 'video') return b.caption || '';
+  return '';
+}
+
+const RATES = [[0.85, 'Slower'], [1, 'Normal'], [1.2, 'Faster']];
+
+function useReadAlong(items) {
+  const supported = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  const [at, setAt] = useState(-1);
+  const [rate, setRate] = useState(() => Number(localStorage.getItem('dd-rate')) || 1);
+  const run = useRef(0); // each start gets a number; a stopped run's callbacks are ignored
+  const stop = useCallback(() => {
+    run.current += 1;
+    if (supported) window.speechSynthesis.cancel();
+    setAt(-1);
+  }, [supported]);
+  const start = useCallback(() => {
+    if (!supported || !items.length) return;
+    window.speechSynthesis.cancel();
+    const mine = ++run.current;
+    const speak = (i) => {
+      if (run.current !== mine) return;
+      if (i >= items.length) { setAt(-1); return; }
+      if (!items[i]) { speak(i + 1); return; }
+      const u = new window.SpeechSynthesisUtterance(items[i]);
+      u.lang = 'en-US'; u.rate = rate;
+      u.onend = () => speak(i + 1);
+      u.onerror = () => { if (run.current === mine) setAt(-1); };
+      setAt(i);
+      window.speechSynthesis.speak(u);
+    };
+    speak(0);
+  }, [supported, items, rate]);
+  useEffect(() => stop, [items, stop]);
+  useEffect(() => { try { localStorage.setItem('dd-rate', String(rate)); } catch { /* private mode */ } }, [rate]);
+  return { supported, at, playing: at >= 0, start, stop, rate, setRate };
+}
+
+function ReadAlongButton({ read }) {
+  if (!read.supported) return null;
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-2">
+      <button type="button" onClick={read.playing ? read.stop : read.start}
+        className="inline-flex items-center gap-2 rounded-full border ddc-bd ddc-card px-4 py-2 ddc-sm font-semibold ddc-heading">
+        {read.playing ? <><Square className="h-4 w-4" aria-hidden="true" /> Stop reading</> : <><Volume2 className="h-4 w-4 ddc-accent" aria-hidden="true" /> Read along</>}
+      </button>
+      <div className="inline-flex rounded-full border ddc-bd p-0.5" role="group" aria-label="Reading speed">
+        {RATES.map(([v, label]) => (
+          <button key={v} type="button" aria-pressed={read.rate === v}
+            onClick={() => { read.setRate(v); if (read.playing) read.stop(); }}
+            className={`rounded-full px-3 py-1 ddc-xs font-semibold ${read.rate === v ? 'ddc-btn' : 'ddc-muted'}`}>{label}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ---- Lesson block renderer -------------------------------------------------
 function Block({ b }) {
   switch (b.type) {
@@ -372,6 +449,10 @@ function Block({ b }) {
       );
     case 'callout':
       return <Callout {...b} />;
+    case 'figure':
+      return <DDFigure name={b.name} caption={b.caption} />;
+    case 'video':
+      return <DDVideo youtube={b.youtube} src={b.src} caption={b.caption} title={b.title} />;
     default:
       return null;
   }
