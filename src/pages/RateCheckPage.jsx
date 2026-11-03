@@ -51,20 +51,20 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', license: '209488' };
 // "Meet the Owner" carousel: three photos, each with its story underneath.
-// Family first (it backs up "Family comes first" just above), then the agency, then the court.
+// Family first (it backs up "Family comes first" just above), then the court, then the agency.
 // { key, photo, alt, caption, position, paragraphs? }
 const ABOUT = [
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his mom, dad and sister at his cousin’s wedding', caption: 'My family: Mom, Dad and my sister at my cousin’s wedding', position: '50% 35%' },
-  // From Cam's Allstate agent bio, condensed; statewide, not one town.
-  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
-    'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
-    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
-  ] },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
   { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%', paragraphs: [
     'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
+  ] },
+  // From Cam's Allstate agent bio, condensed; statewide, not one town.
+  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
+    'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
+    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
 ];
 
@@ -1091,7 +1091,7 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
-function MeetCam() {
+function MeetCam({ onUpload }) {
   // Each slide: the photo with its caption, then its story (if it has one) underneath.
   const slides = ABOUT.map(a => ({
     key: a.key, label: a.caption, untitled: true, bare: true,
@@ -1109,6 +1109,20 @@ function MeetCam() {
       </figure>
     ),
   }));
+  // The last card: the ask.
+  slides.push({
+    key: 'cta', label: 'Let’s make sure your insurance fits your life', untitled: true, bare: true,
+    content: (
+      <div className="flex h-full min-h-[300px] flex-col justify-center p-6 text-left" style={{ background: HERO_BG }}>
+        <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#39FF88]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
+        <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
+        <button type="button" onClick={onUpload}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#39FF88] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#2ee87a]">
+          <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
+        </button>
+      </div>
+    ),
+  });
   return <Carousel slides={slides} label="Meet the Owner" />;
 }
 
@@ -1273,11 +1287,11 @@ function OwnerDetails({ className }) {
     <dl className={className}>
       <div>
         <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Owner</dt>
-        <dd className="whitespace-nowrap text-sm font-semibold text-white">{AGENT.name}</dd>
+        <dd className="whitespace-nowrap text-sm font-semibold text-blue-200/80">{AGENT.name}</dd>
       </div>
       <div>
         <dt className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Agency license</dt>
-        <dd className="text-sm font-semibold tabular-nums text-white">#{AGENCY.license}</dd>
+        <dd className="text-sm font-semibold tabular-nums text-blue-200/80">#{AGENCY.license}</dd>
       </div>
     </dl>
   );
@@ -1426,7 +1440,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
               <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Agency, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
             </p>
           </div>
-          <div className="min-w-0"><MeetCam /></div>
+          <div className="min-w-0"><MeetCam onUpload={onUpload} /></div>
         </div>
       </section>
 

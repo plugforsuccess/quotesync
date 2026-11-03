@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
     if (!studentName) return json({ error: 'A valid legal name is required.' }, 400)
     if (!dln) return json({ error: 'A valid driver license number is required.' }, 400)
     if (!dob) return json({ error: 'A valid date of birth is required (must be 15 or older).' }, 400)
+    if (payload.accept_terms !== true) return json({ error: 'Please accept the terms and refund policy.' }, 400)
 
     // Course must exist and be active.
     const { data: course, error: courseErr } = await supabase
@@ -115,6 +116,9 @@ Deno.serve(async (req) => {
     if (existing && (existing.status === 'active' || existing.status === 'completed')) {
       return json({ error: 'You already have access to this course.', already_enrolled: true }, 409)
     }
+    if (existing?.status === 'disputed') {
+      return json({ error: 'There’s an open dispute on your payment. Email cameron@insuredbycam.com and we’ll sort it out.' }, 409)
+    }
 
     let enrollmentId: string
     if (existing) {
@@ -122,9 +126,12 @@ Deno.serve(async (req) => {
       const { error: updErr } = await supabase
         .from('dd_enrollments')
         .update({
+          // A refunded enrollment starts over: it must be paid for again.
+          status: 'pending_payment',
           student_name_snapshot: studentName,
           dln_snapshot: dln,
           dob_snapshot: dob,
+          terms_accepted_at: new Date().toISOString(),
         })
         .eq('id', enrollmentId)
       if (updErr) throw updErr
@@ -138,6 +145,7 @@ Deno.serve(async (req) => {
           student_name_snapshot: studentName,
           dln_snapshot: dln,
           dob_snapshot: dob,
+          terms_accepted_at: new Date().toISOString(),
         })
         .select('id')
         .single()
@@ -147,8 +155,9 @@ Deno.serve(async (req) => {
 
     const base = (Deno.env.get('SITE_URL') || req.headers.get('origin') || 'https://insuredbycam.com').replace(/\/$/, '')
 
-    // TEST BYPASS: activate without payment when enabled on the course.
-    if (course.allow_test_bypass) {
+    // TEST BYPASS: activate without payment when enabled on the course. Never with a
+    // live Stripe key: real payments configured means real students.
+    if (course.allow_test_bypass && !String(STRIPE_SECRET_KEY || '').startsWith('sk_live')) {
       await supabase
         .from('dd_enrollments')
         .update({ status: 'active', purchased_at: new Date().toISOString() })

@@ -172,11 +172,17 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id).eq('course_id', course.id)
       .neq('status', 'expired').maybeSingle()
     if (!enr) return json({ error: 'No enrollment found' }, 404)
+    if (enr.status === 'refunded' || enr.status === 'disputed') {
+      return json({ error: 'This course was refunded, so its certificate is no longer valid.' }, 410)
+    }
     if (enr.status !== 'completed') return json({ error: 'Course is not yet completed' }, 409)
 
     // Already issued? Return a fresh signed URL.
     const { data: existing } = await supabase
-      .from('dd_certificates').select('certificate_uid, pdf_path').eq('enrollment_id', enr.id).maybeSingle()
+      .from('dd_certificates').select('certificate_uid, pdf_path, revoked_at').eq('enrollment_id', enr.id).maybeSingle()
+    if (existing?.revoked_at) {
+      return json({ error: 'This certificate was voided after a refund. Email cameron@insuredbycam.com for help.' }, 410)
+    }
 
     let certUid = existing?.certificate_uid as string | undefined
     let pdfPath = existing?.pdf_path as string | undefined
