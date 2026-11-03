@@ -218,7 +218,7 @@ export default function GeorgiaDriverEducationPage() {
           style={{ background: 'radial-gradient(55% 50% at 5% 0%, rgba(96,165,250,0.35), transparent 70%), radial-gradient(45% 45% at 100% 100%, rgba(57,255,136,0.18), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
           <ConsumerNav current="drivers" />
-          <div className="pb-14 pt-8 lg:pb-20 lg:pt-14">
+          <div className="pb-10 pt-8 lg:pb-20 lg:pt-14">
             <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="pages.driversedpage.1bac96">Driver Education · Georgia</T></p>
             <h1 className="mt-3 max-w-3xl text-[36px] font-extrabold leading-[1.08] tracking-tight lg:text-[52px]">
               <T k="de.headline">Georgia Driver Education & Insurance Discounts</T>
@@ -228,12 +228,12 @@ export default function GeorgiaDriverEducationPage() {
                 ? <T k="de.subhead">Complete your driver education online—whether you’re earning your license or looking to save on insurance. Both courses are 100% online and state-approved.</T>
                 : <T k="de.subhead.dd">Complete Georgia’s 6-hour defensive driving course 100% online, at your own pace, and save on your insurance.</T>}
             </p>
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <a href={RETURNING_CUSTOMER_LINK} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">
                 <T k="pages.driversedpage.e432d4">Already enrolled? Continue your course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold hover:bg-white/10" style={{ color: ACCENT }}>
+              <a href="#partners" className="inline-flex items-center gap-1.5 py-1 text-sm font-semibold hover:underline" style={{ color: ACCENT }}>
                 <T k="de.partner.herolink">Become a referral partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
