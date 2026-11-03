@@ -164,3 +164,20 @@ test('Send pitch shares the message and the four screenshots', async ({ page }) 
   expect(shared.files.map(f => f[0])).toEqual(['1-what-your-friends-see.jpg', '2-they-send-their-policy.jpg', '3-your-partner-page.jpg', '4-track-your-earnings.jpg']);
   for (const [, type, size] of shared.files) { expect(type).toBe('image/jpeg'); expect(size).toBeGreaterThan(20000); }
 });
+
+test('Scripts: what to say and text, one tap to copy or text', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  await page.goto('/agency/leads/rate-checks');
+  await page.getByRole('tablist').getByRole('button', { name: /^More/ }).click();
+  await page.getByRole('button', { name: /^Scripts/ }).click();
+  await expect(page.getByRole('article', { name: 'Say it in the room' })).toBeVisible();
+  const text = page.getByRole('article', { name: 'Text right after' });
+  const href = await text.getByRole('link', { name: 'Text: Text right after' }).getAttribute('href');
+  expect(decodeURIComponent(href)).toContain('insuredbycam.com');
+  await text.getByRole('button', { name: 'Copy' }).click();
+  await expect(text.getByRole('button', { name: 'Copied' })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Upload my policy');
+  await expect(page.getByRole('article', { name: 'Reconnect after a quote that came in high' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Ask them to share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+});
