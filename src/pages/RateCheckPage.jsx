@@ -64,7 +64,7 @@ const ABOUT = [
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
   { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
     'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
-    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
+    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way.',
   ] },
 ];
 
@@ -1417,6 +1417,11 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       {/* Proof: carriers */}
       <CarrierLogos />
 
+      {/* What we insure */}
+      <section className="bg-slate-50 py-14 lg:py-20">
+        <div className={wrap}><ProductsWeInsure /></div>
+      </section>
+
       {/* Proof: the owner */}
       <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-owner">
         <div className={`${wrap} grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-16`}>
@@ -1430,18 +1435,13 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
         </div>
       </section>
 
-      {/* What we insure */}
-      <section className="bg-slate-50 py-14 lg:py-20">
-        <div className={wrap}><ProductsWeInsure /></div>
-      </section>
-
       {/* The ask, again */}
       <section className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: HERO_BG }} aria-labelledby="rc-closing">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
           style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(96,165,250,0.35), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
-          <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#39FF88]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
-          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
+          <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#39FF88]"><T k="rc.closing.heading">Let’s make sure your insurance **fits your life**.</T></h2>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#39FF88] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-emerald-500/30 active:bg-[#2ee87a]">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
