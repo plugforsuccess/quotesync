@@ -1,7 +1,6 @@
 // src/pages/components/rate-checks/DecisionCard.jsx
 // Where this rate check goes, per the agency's rules (rate_checks.decision).
-// Leads with what to do next, then why, what the page already tells us, and the
-// questions still to ask — answered right on the card (rate_checks.intake_answers).
+// Leads with what to do next, then why, and the questions still to ask — answered right on the card (rate_checks.intake_answers).
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
@@ -37,7 +36,6 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
   const all = Array.isArray(rc.decision_reasons) ? rc.decision_reasons : [];
   const reasons = all.filter(r => r.decision !== 'info' && r.decision !== 'fact');
   const hints = all.filter(r => r.decision === 'info');
-  const facts = all.filter(r => r.decision === 'fact');
   // The rules' questions, plus what only the producer can find out (loan payoff year per financed car).
   const questions = [...(Array.isArray(rc.decision_questions) ? rc.decision_questions : []), ...vehicleQuestions(rc)];
   // Lead with an action when a hint calls for one; the rest stay as notes.
@@ -73,15 +71,6 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
       {notes.map((r, i) => (
         <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>
       ))}
-
-      {!compact && facts.length > 0 && (
-        <div className="mt-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>On the page</p>
-          <ul className="mt-1.5 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
-            {facts.flatMap(f => String(f.detail || '').split('; ')).filter(Boolean).map((t, i) => <li key={i}>{t}</li>)}
-          </ul>
-        </div>
-      )}
 
       {!compact && questions.length > 0 && <StillToAsk rc={rc} questions={questions} />}
     </section>
