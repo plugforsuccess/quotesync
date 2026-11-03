@@ -198,7 +198,7 @@ function PartnerProgram() {
                 {state.status === 'sending' && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
                 <T k="de.partner.button">Apply to be a partner</T>
               </button>
-              <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree Cam’s team may call or text you about the partner program.</p>
+              <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree we may call or text you about the partner program.</p>
             </form>
           )}
         </div>
