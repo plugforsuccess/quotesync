@@ -85,8 +85,8 @@ export default function DefensiveDrivingPage() {
                 {course.title}
               </h1>
               <p className="text-lg text-blue-100 max-w-xl mb-6">
-                A self-paced online defensive driving course. Many auto insurers offer a
-                discount for completing one; check with yours. Complete the modules, pass the final exam,
+                A self-paced online defensive driving course built to help you earn an
+                auto-insurance premium discount. Complete the modules, pass the final exam,
                 and your certificate is forwarded to the agency automatically.
               </p>
               <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-blue-50 mb-8">
@@ -116,7 +116,7 @@ export default function DefensiveDrivingPage() {
 
       {/* ── Why take it ────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 py-16">
-        <SectionHeading eyebrow="Why drivers choose it" title="Why take it" />
+        <SectionHeading eyebrow="Why drivers choose it" title="A discount that pays for itself" />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Benefit icon={ShieldCheck} title="Lower your premium"
             body="May qualify you for a defensive-driver discount with your auto insurer." />
@@ -124,8 +124,8 @@ export default function DefensiveDrivingPage() {
             body="Start, stop, and resume anytime — your progress is always saved." />
           <Benefit icon={Award} title="Certificate done for you"
             body="Pass the exam and your certificate is generated and sent to the agency automatically." />
-          <Benefit icon={RefreshCw} title="Ask your insurer"
-            body="Your insurer decides whether you get a discount, how much, and for how long." />
+          <Benefit icon={RefreshCw} title="Good for three years"
+            body="Complete once every three years; your discount stays on your policy the whole time." />
         </div>
       </section>
 
@@ -166,6 +166,7 @@ export default function DefensiveDrivingPage() {
                 'All 8 modules and the final exam',
                 'Instant, downloadable certificate of completion',
                 'Certificate automatically forwarded to the agency',
+                'Valid for three years',
               ].map((t) => (
                 <li key={t} className="flex items-start gap-2.5 text-sm text-slate-700">
                   <Check className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" strokeWidth={3} /> {t}
@@ -263,12 +264,12 @@ function ModuleCard({ m, index }) {
 }
 
 const FAQ_ITEMS = [
-  { q: 'Who is this course for?', a: 'Georgia drivers who want to brush up on safe-driving skills and may qualify for an auto-insurance discount. Check with your insurer before enrolling.' },
+  { q: 'Who is this course for?', a: 'Georgia drivers who want to earn an auto-insurance premium discount and brush up on safe-driving skills. Check with your insurer about discount eligibility.' },
   { q: 'How long does it take?', a: 'It’s fully self-paced. Work through the eight modules and the final exam at your own speed — your progress is saved, so you can stop and resume anytime.' },
-  { q: 'How do I get my certificate?', a: 'As soon as you pass the final exam, your certificate of completion is generated. You can download it immediately, and it’s automatically forwarded to the agency.' },
-  { q: 'How often do I need to take it?', a: 'That’s up to your insurer. Ask them whether they give a discount for this course and how long it lasts.' },
-  { q: 'Do I have to finish it all at once?', a: 'No. Sign back in anytime with your email and password and pick up exactly where you left off.' },
-  { q: 'Is this course DDS-certified?', a: 'No. This course is not DDS-certified and does not reduce points on your license. Any insurance discount is up to your insurer.' },
+  { q: 'How do I get my certificate?', a: 'As soon as you pass the final exam, your certificate of completion is generated. You can download it immediately, and it’s automatically forwarded to the agency for your discount review.' },
+  { q: 'How often do I need to take it?', a: 'Once every three years. Your discount stays on your auto policy for the full three-year period.' },
+  { q: 'Do I have to finish it all at once?', a: 'No. Sign back in anytime with a secure email link and pick up exactly where you left off.' },
+  { q: 'Is this course DDS-certified?', a: 'Insurance premium discounts are determined by your insurer. This course is not represented as DDS-certified for license points reduction.' },
 ];
 
 // ---- Presentational helpers ------------------------------------------------
