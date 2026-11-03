@@ -9,6 +9,7 @@ import { DECISION, decisionLabel } from './format';
 import { vehicleQuestions } from './policyView';
 import { CARD_STYLE } from './ui';
 import { useUpdateRateCheck } from '../../../hooks/useRateChecks';
+import { T } from '../../../components/SiteCopy';
 
 const PILL = {
   success: { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' },
@@ -17,16 +18,17 @@ const PILL = {
   neutral: { color: 'var(--qs-subtle)', background: 'var(--qs-card)', border: '1px solid var(--qs-border)' },
 };
 
-// The rules' PUP hints, turned into the action they call for.
+// The rules' PUP hints, turned into the action they call for. Each line is editable
+// on the page (Edit copy); the key is the hint it answers.
 const ACTIONS = [
-  [/home liability is under \$300k/i, 'Quote home at $300k+ liability → unlocks PUP', 'Their auto liability already qualifies.'],
-  [/get their home dec page/i, 'Get their home dec page → unlocks PUP', 'Auto liability qualifies; the PUP also needs $300k+ home liability.'],
-  [/auto liability is under 250\/500/i, 'Quote auto at 250/500+ → unlocks PUP', 'Their home liability already qualifies.'],
-  [/get their auto dec page/i, 'Get their auto dec page → unlocks PUP', 'Home liability qualifies; the PUP also needs auto liability at 250/500+.'],
+  [/home liability is under \$300k/i, 'home_limit', 'Quote the home at $300k liability, then add a PUP', 'Auto liability already qualifies. A $300k home limit makes the household PUP-eligible, so quote the umbrella with it.'],
+  [/get their home dec page/i, 'home_page', 'Get the home dec page, then add a PUP', 'Auto liability already qualifies. The PUP also needs the home at $300k liability, so get that page and quote it.'],
+  [/auto liability is under 250\/500/i, 'auto_limit', 'Quote the auto at 250/500 liability, then add a PUP', 'Home liability already qualifies. Auto at 250/500 makes the household PUP-eligible, so quote the umbrella with it.'],
+  [/get their auto dec page/i, 'auto_page', 'Get the auto dec page, then add a PUP', 'Home liability already qualifies. The PUP also needs auto liability at 250/500, so get that page and quote it.'],
 ];
 function actionFor(hint) {
   const hit = ACTIONS.find(([re]) => re.test(hint?.detail || ''));
-  return hit ? { headline: hit[1], why: hit[2] } : null;
+  return hit ? { key: hit[1], headline: hit[2], why: hit[3] } : null;
 }
 
 export default function DecisionCard({ rc, household = null, compact = false }) {
@@ -47,9 +49,10 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
     <section className="flex h-full flex-col rounded-xl p-4" style={{ ...CARD_STYLE, color: 'var(--qs-bright)' }} aria-label="Routing decision">
       {action ? (
         <>
-          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}</span>
-          <h3 className="mt-2 text-lg font-bold leading-snug">{action.headline}</h3>
-          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{action.why}</p>
+          {/* "(+PUP)": the umbrella isn't unlocked yet; the action below gets it there. */}
+          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}{/PUP/.test(decisionLabel(rc, household) || '') ? '' : ' (+PUP)'}</span>
+          <h3 className="mt-2 text-lg font-bold leading-snug"><T k={`rc.decision.${action.key}.headline`}>{action.headline}</T></h3>
+          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k={`rc.decision.${action.key}.why`}>{action.why}</T></p>
         </>
       ) : (
         <h3 className="text-xl font-bold leading-tight" style={{ color: PILL[d.tone].color === 'var(--qs-subtle)' ? undefined : PILL[d.tone].color }}>{decisionLabel(rc, household)}</h3>
@@ -81,8 +84,6 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
       )}
 
       {!compact && questions.length > 0 && <StillToAsk rc={rc} questions={questions} />}
-
-      <p className="mt-auto pt-4 text-[11px]" style={{ color: 'var(--qs-subtle)' }}>Per the rules, not an underwriting approval.</p>
     </section>
   );
 }
