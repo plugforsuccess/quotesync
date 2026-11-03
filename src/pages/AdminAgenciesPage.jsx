@@ -1,6 +1,7 @@
 // src/pages/AdminAgenciesPage.jsx
 // Admin panel for managing agency applications and statuses — dark theme
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Clock, CheckCircle, XCircle, Ban, Eye, RefreshCw, ShieldOff, Plus } from 'lucide-react';
@@ -43,8 +44,8 @@ const AdminAgenciesPage = () => {
       <div className="dark-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
           <ShieldOff style={{ width: 64, height: 64, color: '#F87171', margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>Access Denied</h2>
-          <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>You do not have permission to view this page.</p>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.adminagenciespage.095afb">Access Denied</T></h2>
+          <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminagenciespage.d22f74">You do not have permission to view this page.</T></p>
         </div>
       </div>
     );
@@ -67,7 +68,7 @@ const AdminAgenciesPage = () => {
     return (
       <div className="dark-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 16 }}>
         <div className="dark-card" style={{ maxWidth: 400, textAlign: 'center', padding: 32 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 16 }}>Failed to Load</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 16 }}><T k="pages.adminagenciespage.078f4f">Failed to Load</T></h2>
           <p style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 24 }}>{error.message}</p>
           <button
             onClick={() => refetch()}
@@ -79,7 +80,7 @@ const AdminAgenciesPage = () => {
             }}
           >
             <RefreshCw size={14} />
-            Retry
+            <T k="pages.adminagenciespage.6327b4">Retry</T>
           </button>
         </div>
       </div>
@@ -95,8 +96,8 @@ const AdminAgenciesPage = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <Building2 size={28} style={{ color: 'var(--qs-primary, #3B82F6)' }} />
               <div>
-                <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)' }}>Agency Management</h1>
-                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>Review applications and manage agency partners</p>
+                <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.adminagenciespage.ae0d3c">Agency Management</T></h1>
+                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminagenciespage.375dbf">Review applications and manage agency partners</T></p>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -110,7 +111,7 @@ const AdminAgenciesPage = () => {
                 }}
               >
                 <Plus size={14} />
-                New Agency
+                <T k="pages.adminagenciespage.d8cb44">New Agency</T>
               </button>
               <button
                 onClick={() => refetch()}
@@ -164,7 +165,7 @@ const AdminAgenciesPage = () => {
         {agencies.length === 0 ? (
           <div className="dark-card" style={{ padding: 48, textAlign: 'center' }}>
             <Building2 size={64} style={{ color: 'var(--qs-subtle)', margin: '0 auto 16px' }} />
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 8 }}>No agencies found</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.adminagenciespage.1b42d9">No agencies found</T></h2>
             <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
               {filter === 'all' ? 'No agencies have applied yet.' : `No agencies with status "${filter}"`}
             </p>
@@ -175,12 +176,12 @@ const AdminAgenciesPage = () => {
               <table style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Agency</th>
-                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Contact</th>
-                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>States</th>
-                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Status</th>
-                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Applied</th>
-                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'right' }}>Actions</th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}><T k="pages.adminagenciespage.75ec3e">Agency</T></th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}><T k="pages.adminagenciespage.bbaff1">Contact</T></th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}><T k="pages.adminagenciespage.b8464c">States</T></th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}><T k="pages.adminagenciespage.ec53a8">Status</T></th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}><T k="pages.adminagenciespage.733d43">Applied</T></th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'right' }}><T k="pages.adminagenciespage.06df33">Actions</T></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -241,7 +242,7 @@ const AdminAgenciesPage = () => {
                             onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
                           >
                             <Eye size={14} />
-                            View
+                            <T k="pages.adminagenciespage.4351cf">View</T>
                           </Link>
                         </td>
                       </tr>

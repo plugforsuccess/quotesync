@@ -1,6 +1,7 @@
 // src/pages/components/dashboard/FunnelDropoff.jsx
 // Funnel step drop-off visualization with worst-step callout
 
+import { T } from '../../../components/SiteCopy';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer, LabelList } from 'recharts';
 import { AlertTriangle } from 'lucide-react';
 import { useChartTheme } from '../../../lib/chartTheme';
@@ -49,7 +50,7 @@ export default function FunnelDropoff({ funnel }) {
 
   return (
     <div className="dark-card">
-      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}>Funnel Step Drop-off</h2>
+      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.funneldropoff.0c5658">Funnel Step Drop-off</T></h2>
 
       <div className="overflow-x-auto">
         <div style={{ minWidth: '600px' }}>
@@ -111,7 +112,7 @@ export default function FunnelDropoff({ funnel }) {
             <AlertTriangle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${worstStep.dropOffPercent > 15 ? 'text-red-500' : 'text-amber-500'}`} />
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>
-                Your biggest drop-off is at <strong>{worstStep.name}</strong> ({Math.round(worstStep.dropOffPercent)}%).
+                <T k="pages.components.dashboard.funneldropoff.2a712c">Your biggest drop-off is at</T> <strong>{worstStep.name}</strong> ({Math.round(worstStep.dropOffPercent)}%).
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--qs-dim)' }}>
                 {STEP_RECOMMENDATIONS[worstStep.name] || 'Review this step for usability issues.'}

@@ -1,6 +1,7 @@
 // src/pages/AdminAgencyDetailPage.jsx
 // Admin detail view for reviewing, approving, and configuring agencies — dark theme
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -85,8 +86,8 @@ const AdminAgencyDetailPage = () => {
       <div className="dark-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
           <ShieldOff style={{ width: 64, height: 64, color: '#F87171', margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>Access Denied</h2>
-          <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>You do not have permission to view this page.</p>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.adminagencydetailpage.095afb">Access Denied</T></h2>
+          <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.d22f74">You do not have permission to view this page.</T></p>
         </div>
       </div>
     );
@@ -98,8 +99,8 @@ const AdminAgencyDetailPage = () => {
     return (
       <div className="dark-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 16 }}>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>Agency Not Found</h2>
-          <Link to="/admin/agencies" style={{ color: 'var(--qs-primary, #3B82F6)', textDecoration: 'none' }}>Back to Agencies</Link>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.adminagencydetailpage.2c9abf">Agency Not Found</T></h2>
+          <Link to="/admin/agencies" style={{ color: 'var(--qs-primary, #3B82F6)', textDecoration: 'none' }}><T k="pages.adminagencydetailpage.a90b44">Back to Agencies</T></Link>
         </div>
       </div>
     );
@@ -228,7 +229,7 @@ const AdminAgencyDetailPage = () => {
                 </span>
               </div>
               {agency.brand_name && (
-                <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 4 }}>DBA: {agency.brand_name}</p>
+                <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 4 }}><T k="pages.adminagencydetailpage.2af0ed">DBA:</T> {agency.brand_name}</p>
               )}
             </div>
           </div>
@@ -246,25 +247,25 @@ const AdminAgencyDetailPage = () => {
                 }}
               >
                 <Eye size={14} />
-                View as Agent
+                <T k="pages.adminagencydetailpage.e532d2">View as Agent</T>
               </button>
             )}
             {agency.status !== 'approved' && (
               <button onClick={() => handleStatusChange('approved')} disabled={updateStatus.isPending}
                 style={{ ...btnPrimary, background: '#059669', opacity: updateStatus.isPending ? 0.5 : 1 }}>
-                <CheckCircle size={14} /> Approve
+                <CheckCircle size={14} /> <T k="pages.adminagencydetailpage.6f7351">Approve</T>
               </button>
             )}
             {agency.status !== 'rejected' && agency.status === 'pending' && (
               <button onClick={() => handleStatusChange('rejected')} disabled={updateStatus.isPending}
                 style={{ ...btnPrimary, background: '#DC2626', opacity: updateStatus.isPending ? 0.5 : 1 }}>
-                <XCircle size={14} /> Reject
+                <XCircle size={14} /> <T k="pages.adminagencydetailpage.d98ac1">Reject</T>
               </button>
             )}
             {agency.status === 'approved' && (
               <button onClick={() => handleStatusChange('suspended')} disabled={updateStatus.isPending}
                 style={{ ...btnPrimary, background: 'var(--qs-elevated)', color: 'var(--qs-dim)', border: '1px solid var(--qs-border)', opacity: updateStatus.isPending ? 0.5 : 1 }}>
-                <Ban size={14} /> Suspend
+                <Ban size={14} /> <T k="pages.adminagencydetailpage.b3834d">Suspend</T>
               </button>
             )}
           </div>
@@ -306,7 +307,7 @@ const AdminAgencyDetailPage = () => {
         {/* Application Tab */}
         {activeTab === 'application' && (
           <div className="dark-card" style={{ padding: 24 }}>
-            <h2 style={{ ...sectionHeadingStyle, marginBottom: 24 }}>Application Details</h2>
+            <h2 style={{ ...sectionHeadingStyle, marginBottom: 24 }}><T k="pages.adminagencydetailpage.31e410">Application Details</T></h2>
             <div className="grid gap-6 md:grid-cols-2">
               {[
                 ['Legal Name', agency.name],
@@ -322,7 +323,7 @@ const AdminAgencyDetailPage = () => {
                 </div>
               ))}
               <div className="md:col-span-2">
-                <label style={labelStyle}>States Licensed</label>
+                <label style={labelStyle}><T k="pages.adminagencydetailpage.ffca49">States Licensed</T></label>
                 <div className="flex flex-wrap gap-2">
                   {agency.state_licenses?.length > 0 ? (
                     agency.state_licenses.map(s => (
@@ -332,7 +333,7 @@ const AdminAgencyDetailPage = () => {
                 </div>
               </div>
               <div className="md:col-span-2">
-                <label style={labelStyle}>Lines of Business</label>
+                <label style={labelStyle}><T k="pages.adminagencydetailpage.352591">Lines of Business</T></label>
                 <div className="flex flex-wrap gap-2">
                   {agency.lines_of_business?.length > 0 ? (
                     agency.lines_of_business.map(lob => (
@@ -343,7 +344,7 @@ const AdminAgencyDetailPage = () => {
               </div>
               {agency.application_data?.license_identifiers && (
                 <div className="md:col-span-2">
-                  <label style={labelStyle}>License Identifiers</label>
+                  <label style={labelStyle}><T k="pages.adminagencydetailpage.25e4d6">License Identifiers</T></label>
                   <pre style={{ color: 'var(--qs-bright)', whiteSpace: 'pre-wrap', fontSize: 12, background: 'var(--qs-elevated)', padding: 12, borderRadius: 8 }}>
                     {agency.application_data.license_identifiers}
                   </pre>
@@ -351,7 +352,7 @@ const AdminAgencyDetailPage = () => {
               )}
               {agency.application_data?.desired_territories && (
                 <div className="md:col-span-2">
-                  <label style={labelStyle}>Desired Territories</label>
+                  <label style={labelStyle}><T k="pages.adminagencydetailpage.556b64">Desired Territories</T></label>
                   <pre style={{ color: 'var(--qs-bright)', whiteSpace: 'pre-wrap', fontSize: 12, background: 'var(--qs-elevated)', padding: 12, borderRadius: 8 }}>
                     {agency.application_data.desired_territories}
                   </pre>
@@ -368,13 +369,13 @@ const AdminAgencyDetailPage = () => {
               <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, padding: 16, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <Clock size={18} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 2 }} />
                 <p style={{ fontSize: 13, color: '#FBBF24' }}>
-                  Routing rules can be configured, but will only be active when the agency is approved.
+                  <T k="pages.adminagencydetailpage.0434ed">Routing rules can be configured, but will only be active when the agency is approved.</T>
                 </p>
               </div>
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={sectionHeadingStyle}>Routing Rules</h2>
+              <h2 style={sectionHeadingStyle}><T k="pages.adminagencydetailpage.4b4c21">Routing Rules</T></h2>
               <button
                 onClick={() => {
                   setEditingRule(null);
@@ -383,7 +384,7 @@ const AdminAgencyDetailPage = () => {
                 }}
                 style={btnPrimary}
               >
-                <Plus size={14} /> Add Rule
+                <Plus size={14} /> <T k="pages.adminagencydetailpage.79eccc">Add Rule</T>
               </button>
             </div>
 
@@ -392,7 +393,7 @@ const AdminAgencyDetailPage = () => {
                 <h3 style={{ fontWeight: 500, color: 'var(--qs-bright)', marginBottom: 16 }}>{editingRule ? 'Edit Rule' : 'New Routing Rule'}</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label style={labelStyle}>Rule Type</label>
+                    <label style={labelStyle}><T k="pages.adminagencydetailpage.3af25e">Rule Type</T></label>
                     <select value={ruleForm.rule_type} onChange={e => setRuleForm(f => ({ ...f, rule_type: e.target.value }))} className="dark-select" style={{ width: '100%' }}>
                       <option value="geographic">Geographic (State/ZIP)</option>
                       <option value="quality">Quality (Score/Carrier)</option>
@@ -400,7 +401,7 @@ const AdminAgencyDetailPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>State</label>
+                    <label style={labelStyle}><T k="pages.adminagencydetailpage.46a2a4">State</T></label>
                     <select value={ruleForm.state} onChange={e => setRuleForm(f => ({ ...f, state: e.target.value }))} className="dark-select" style={{ width: '100%' }}>
                       <option value="">All States</option>
                       {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -408,22 +409,22 @@ const AdminAgencyDetailPage = () => {
                   </div>
                   {(ruleForm.rule_type === 'geographic' || ruleForm.rule_type === 'combined') && (
                     <div>
-                      <label style={labelStyle}>ZIP Prefix</label>
+                      <label style={labelStyle}><T k="pages.adminagencydetailpage.be8f5b">ZIP Prefix</T></label>
                       <input type="text" value={ruleForm.zip} onChange={e => setRuleForm(f => ({ ...f, zip: e.target.value }))} placeholder="303 (matches 303xx)" className="dark-input" style={{ width: '100%' }} />
                     </div>
                   )}
                   {(ruleForm.rule_type === 'quality' || ruleForm.rule_type === 'combined') && (
                     <>
                       <div>
-                        <label style={labelStyle}>Min Score</label>
+                        <label style={labelStyle}><T k="pages.adminagencydetailpage.c30d05">Min Score</T></label>
                         <input type="number" value={ruleForm.min_score} onChange={e => setRuleForm(f => ({ ...f, min_score: e.target.value }))} placeholder="0" min="0" max="100" className="dark-input" style={{ width: '100%' }} />
                       </div>
                       <div>
-                        <label style={labelStyle}>Max Score</label>
+                        <label style={labelStyle}><T k="pages.adminagencydetailpage.72c534">Max Score</T></label>
                         <input type="number" value={ruleForm.max_score} onChange={e => setRuleForm(f => ({ ...f, max_score: e.target.value }))} placeholder="100" min="0" max="100" className="dark-input" style={{ width: '100%' }} />
                       </div>
                       <div>
-                        <label style={labelStyle}>Carrier Filter</label>
+                        <label style={labelStyle}><T k="pages.adminagencydetailpage.187ae6">Carrier Filter</T></label>
                         <select value={ruleForm.carrier_filter} onChange={e => setRuleForm(f => ({ ...f, carrier_filter: e.target.value }))} className="dark-select" style={{ width: '100%' }}>
                           <option value="">Any Carrier</option>
                           <option value="none">No Prior Insurance</option>
@@ -441,7 +442,7 @@ const AdminAgencyDetailPage = () => {
                     </>
                   )}
                   <div>
-                    <label style={labelStyle}>Exclusivity</label>
+                    <label style={labelStyle}><T k="pages.adminagencydetailpage.86fa37">Exclusivity</T></label>
                     <select value={ruleForm.exclusivity_level} onChange={e => setRuleForm(f => ({ ...f, exclusivity_level: e.target.value }))} className="dark-select" style={{ width: '100%' }}>
                       <option value="none">None</option>
                       <option value="zip">ZIP Exclusive</option>
@@ -449,30 +450,30 @@ const AdminAgencyDetailPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>Priority Tier</label>
+                    <label style={labelStyle}><T k="pages.adminagencydetailpage.78cb38">Priority Tier</T></label>
                     <input type="number" value={ruleForm.priority_tier} onChange={e => setRuleForm(f => ({ ...f, priority_tier: parseInt(e.target.value) || 0 }))} min="0" max="10" className="dark-input" style={{ width: '100%' }} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input type="checkbox" id="capacity_enabled" checked={ruleForm.capacity_enabled} onChange={e => setRuleForm(f => ({ ...f, capacity_enabled: e.target.checked }))} />
-                    <label htmlFor="capacity_enabled" style={{ fontSize: 13, color: 'var(--qs-dim)' }}>Enabled</label>
+                    <label htmlFor="capacity_enabled" style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.00d23a">Enabled</T></label>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button onClick={handleSaveRule} disabled={createRule.isPending || updateRule.isPending}
                     style={{ ...btnPrimary, opacity: (createRule.isPending || updateRule.isPending) ? 0.5 : 1 }}>
-                    <Save size={14} /> Save
+                    <Save size={14} /> <T k="pages.adminagencydetailpage.c9cc8c">Save</T>
                   </button>
-                  <button onClick={() => { setShowRuleForm(false); setEditingRule(null); }} style={btnSecondary}>Cancel</button>
+                  <button onClick={() => { setShowRuleForm(false); setEditingRule(null); }} style={btnSecondary}><T k="pages.adminagencydetailpage.ea4788">Cancel</T></button>
                 </div>
               </div>
             )}
 
             {rulesLoading ? (
-              <div style={{ textAlign: 'center', padding: 32, color: 'var(--qs-dim)' }}>Loading rules...</div>
+              <div style={{ textAlign: 'center', padding: 32, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.53ac34">Loading rules...</T></div>
             ) : routingRules.length === 0 ? (
               <div className="dark-card" style={{ padding: 32, textAlign: 'center' }}>
                 <MapPin size={48} style={{ color: 'var(--qs-subtle)', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>No routing rules configured</p>
+                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.9f6455">No routing rules configured</T></p>
               </div>
             ) : (
               <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -523,22 +524,22 @@ const AdminAgencyDetailPage = () => {
         {activeTab === 'users' && (
           <div className="space-y-6">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={sectionHeadingStyle}>Agency Users</h2>
+              <h2 style={sectionHeadingStyle}><T k="pages.adminagencydetailpage.922998">Agency Users</T></h2>
               <button onClick={() => setShowUserForm(true)} style={btnPrimary}>
-                <UserPlus size={14} /> Invite User
+                <UserPlus size={14} /> <T k="pages.adminagencydetailpage.440a99">Invite User</T>
               </button>
             </div>
 
             {showUserForm && (
               <div className="dark-card" style={{ padding: 24 }}>
-                <h3 style={{ fontWeight: 500, color: 'var(--qs-bright)', marginBottom: 16 }}>Invite Agency User</h3>
+                <h3 style={{ fontWeight: 500, color: 'var(--qs-bright)', marginBottom: 16 }}><T k="pages.adminagencydetailpage.6c2b3b">Invite Agency User</T></h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label style={labelStyle}>Email</label>
+                    <label style={labelStyle}><T k="pages.adminagencydetailpage.ce8ae9">Email</T></label>
                     <input type="email" value={userForm.email} onChange={e => setUserForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" className="dark-input" style={{ width: '100%' }} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Role</label>
+                    <label style={labelStyle}><T k="pages.adminagencydetailpage.bbbabd">Role</T></label>
                     <select value={userForm.role} onChange={e => setUserForm(f => ({ ...f, role: e.target.value }))} className="dark-select" style={{ width: '100%' }}>
                       <option value="producer">Producer</option>
                       <option value="manager">Manager</option>
@@ -549,32 +550,32 @@ const AdminAgencyDetailPage = () => {
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button onClick={handleInviteUser} disabled={inviteUser.isPending}
                     style={{ ...btnPrimary, opacity: inviteUser.isPending ? 0.5 : 1 }}>
-                    <UserPlus size={14} /> Invite
+                    <UserPlus size={14} /> <T k="pages.adminagencydetailpage.c6a00f">Invite</T>
                   </button>
-                  <button onClick={() => setShowUserForm(false)} style={btnSecondary}>Cancel</button>
+                  <button onClick={() => setShowUserForm(false)} style={btnSecondary}><T k="pages.adminagencydetailpage.ea4788">Cancel</T></button>
                 </div>
                 <p style={{ marginTop: 12, fontSize: 12, color: 'var(--qs-subtle)' }}>
-                  If the user exists, they will be added immediately. Otherwise, an invitation will be logged.
+                  <T k="pages.adminagencydetailpage.743821">If the user exists, they will be added immediately. Otherwise, an invitation will be logged.</T>
                 </p>
               </div>
             )}
 
             {usersLoading ? (
-              <div style={{ textAlign: 'center', padding: 32, color: 'var(--qs-dim)' }}>Loading users...</div>
+              <div style={{ textAlign: 'center', padding: 32, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.e42829">Loading users...</T></div>
             ) : agencyUsers.length === 0 ? (
               <div className="dark-card" style={{ padding: 32, textAlign: 'center' }}>
                 <Users size={48} style={{ color: 'var(--qs-subtle)', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>No users assigned to this agency</p>
+                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.1c2be5">No users assigned to this agency</T></p>
               </div>
             ) : (
               <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-                      <th className="dark-section-label" style={thStyle}>User ID</th>
-                      <th className="dark-section-label" style={thStyle}>Role</th>
-                      <th className="dark-section-label" style={thStyle}>Added</th>
-                      <th className="dark-section-label" style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
+                      <th className="dark-section-label" style={thStyle}><T k="pages.adminagencydetailpage.1edcda">User ID</T></th>
+                      <th className="dark-section-label" style={thStyle}><T k="pages.adminagencydetailpage.bbbabd">Role</T></th>
+                      <th className="dark-section-label" style={thStyle}><T k="pages.adminagencydetailpage.f29ddb">Added</T></th>
+                      <th className="dark-section-label" style={{ ...thStyle, textAlign: 'right' }}><T k="pages.adminagencydetailpage.06df33">Actions</T></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -602,13 +603,13 @@ const AdminAgencyDetailPage = () => {
         {/* Audit Log Tab */}
         {activeTab === 'audit' && (
           <div className="space-y-4">
-            <h2 style={sectionHeadingStyle}>Audit Log</h2>
+            <h2 style={sectionHeadingStyle}><T k="pages.adminagencydetailpage.5b2421">Audit Log</T></h2>
             {auditLoading ? (
-              <div style={{ textAlign: 'center', padding: 32, color: 'var(--qs-dim)' }}>Loading audit log...</div>
+              <div style={{ textAlign: 'center', padding: 32, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.d3f820">Loading audit log...</T></div>
             ) : auditLog.length === 0 ? (
               <div className="dark-card" style={{ padding: 32, textAlign: 'center' }}>
                 <History size={48} style={{ color: 'var(--qs-subtle)', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>No audit events recorded</p>
+                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminagencydetailpage.194988">No audit events recorded</T></p>
               </div>
             ) : (
               <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -646,14 +647,14 @@ const AdminAgencyDetailPage = () => {
             borderRadius: 12, padding: 24, width: '100%', maxWidth: 440,
           }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>
-              View as Agent
+              <T k="pages.adminagencydetailpage.e532d2">View as Agent</T>
             </h3>
             <p style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 16 }}>
-              You will be placed in <strong>read-only impersonation mode</strong> for{' '}
-              <strong>{agency.name}</strong>. All actions are logged. Enter a reason to continue.
+              <T k="pages.adminagencydetailpage.e0d6f2">You will be placed in</T> <strong><T k="pages.adminagencydetailpage.7f9c63">read-only impersonation mode</T></strong> <T k="pages.adminagencydetailpage.d55669">for</T>{' '}
+              <strong>{agency.name}</strong><T k="pages.adminagencydetailpage.1dbda7">. All actions are logged. Enter a reason to continue.</T>
             </p>
             <label style={{ display: 'block', fontSize: 12, color: 'var(--qs-dim)', marginBottom: 6 }}>
-              Reason <span style={{ color: '#F87171' }}>*</span>
+              <T k="pages.adminagencydetailpage.fffcb4">Reason</T> <span style={{ color: '#F87171' }}>*</span>
             </label>
             <input
               type="text"
@@ -671,7 +672,7 @@ const AdminAgencyDetailPage = () => {
                 onClick={() => { setShowImpersonateModal(false); setImpersonationReason(''); setImpersonateError(''); }}
                 style={btnSecondary}
               >
-                Cancel
+                <T k="pages.adminagencydetailpage.ea4788">Cancel</T>
               </button>
               <button
                 onClick={handleImpersonate}

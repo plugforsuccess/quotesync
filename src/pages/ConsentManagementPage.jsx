@@ -1,6 +1,7 @@
 // src/pages/ConsentManagementPage.jsx
 // View and manage customer consent records across the book.
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -87,13 +88,13 @@ export default function ConsentManagementPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <Link to="/admin/renewals" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
-        <ArrowLeft className="w-4 h-4" /> Back to Renewals
+        <ArrowLeft className="w-4 h-4" /> <T k="pages.consentmanagementpage.fef112">Back to Renewals</T>
       </Link>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Shield className="w-6 h-6 text-gray-600" />
-          Consent Management
+          <T k="pages.consentmanagementpage.4fd32f">Consent Management</T>
         </h1>
         <div className="flex gap-2">
           <button
@@ -102,14 +103,14 @@ export default function ConsentManagementPage() {
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            Export CSV
+            <T k="pages.consentmanagementpage.c04f1e">Export CSV</T>
           </button>
           <button
             onClick={() => { setEditRecord(null); setShowModal(true); }}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
           >
             <Plus className="w-4 h-4" />
-            Add Consent Record
+            <T k="pages.consentmanagementpage.28b18d">Add Consent Record</T>
           </button>
         </div>
       </div>
@@ -128,25 +129,25 @@ export default function ConsentManagementPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="text-center py-12 text-gray-500">Loading consent records...</div>
+        <div className="text-center py-12 text-gray-500"><T k="pages.consentmanagementpage.98ca86">Loading consent records...</T></div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">No consent records found.</p>
+          <p className="text-gray-500"><T k="pages.consentmanagementpage.9a718e">No consent records found.</T></p>
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg bg-white">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Auto-dial</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNC</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Collected By</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.ce2660">Customer</T></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.bcc254">Phone</T></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.0d593a">Auto-dial</T></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.b16cff">DNC</T></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.447497">Date</T></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.f31bbd">Source</T></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.b0115d">Collected By</T></th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.06df33">Actions</T></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -156,14 +157,14 @@ export default function ConsentManagementPage() {
                   <td className="px-4 py-3 text-gray-600 font-mono">{c.customer_phone}</td>
                   <td className="px-4 py-3">
                     {c.autodial_consent ? (
-                      <span className="inline-flex items-center gap-1 text-green-700"><CheckCircle className="w-4 h-4" /> Yes</span>
+                      <span className="inline-flex items-center gap-1 text-green-700"><CheckCircle className="w-4 h-4" /> <T k="pages.consentmanagementpage.93cba0">Yes</T></span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-gray-400"><XCircle className="w-4 h-4" /> No</span>
+                      <span className="inline-flex items-center gap-1 text-gray-400"><XCircle className="w-4 h-4" /> <T k="pages.consentmanagementpage.bafd73">No</T></span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {c.dnc ? (
-                      <span className="inline-flex items-center gap-1 text-red-700 font-medium"><PhoneOff className="w-4 h-4" /> DNC</span>
+                      <span className="inline-flex items-center gap-1 text-red-700 font-medium"><PhoneOff className="w-4 h-4" /> <T k="pages.consentmanagementpage.b16cff">DNC</T></span>
                     ) : (
                       <span className="text-gray-400">—</span>
                     )}
@@ -270,7 +271,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.66fd66">Phone Number *</T></label>
             <input
               type="text"
               value={phone}
@@ -281,7 +282,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.2ea989">Customer Name</T></label>
             <input
               type="text"
               value={name}
@@ -290,7 +291,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Policy Numbers (comma separated)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.905743">Policy Numbers (comma separated)</T></label>
             <input
               type="text"
               value={policyNumbers}
@@ -308,13 +309,13 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
                 onChange={(e) => setAutodialConsent(e.target.checked)}
                 className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
-              <span className="text-sm font-medium text-gray-700">Auto-dial consent granted</span>
+              <span className="text-sm font-medium text-gray-700"><T k="pages.consentmanagementpage.6dc3e3">Auto-dial consent granted</T></span>
             </label>
           </div>
 
           {autodialConsent ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Consent Source</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.de08df">Consent Source</T></label>
               <select
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
@@ -328,7 +329,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Opt-out Channel</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.c021a1">Opt-out Channel</T></label>
               <select
                 value={optOutChannel}
                 onChange={(e) => setOptOutChannel(e.target.value)}
@@ -358,21 +359,21 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
                 }}
                 className="rounded border-red-300 text-red-600 focus:ring-red-500"
               />
-              <span className="text-sm font-medium text-red-800">Do Not Call (DNC)</span>
+              <span className="text-sm font-medium text-red-800"><T k="pages.consentmanagementpage.d433f1">Do Not Call (DNC)</T></span>
             </label>
             {showDncConfirm && !dnc && (
               <div className="p-2 bg-white rounded border border-red-300 text-sm">
-                <p className="text-red-700 font-medium mb-2">Are you sure? This will block all AI and auto-dial outreach.</p>
+                <p className="text-red-700 font-medium mb-2"><T k="pages.consentmanagementpage.736000">Are you sure? This will block all AI and auto-dial outreach.</T></p>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => { setDnc(true); setShowDncConfirm(false); }} className="px-3 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded">Confirm DNC</button>
-                  <button type="button" onClick={() => setShowDncConfirm(false)} className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                  <button type="button" onClick={() => { setDnc(true); setShowDncConfirm(false); }} className="px-3 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded"><T k="pages.consentmanagementpage.26d65d">Confirm DNC</T></button>
+                  <button type="button" onClick={() => setShowDncConfirm(false)} className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded"><T k="pages.consentmanagementpage.ea4788">Cancel</T></button>
                 </div>
               </div>
             )}
             {dnc && (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-red-700 mb-1">DNC Source</label>
+                  <label className="block text-xs font-medium text-red-700 mb-1"><T k="pages.consentmanagementpage.c681f5">DNC Source</T></label>
                   <select value={dncSource} onChange={(e) => setDncSource(e.target.value)} className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm">
                     <option value="">Select source...</option>
                     <option value="verbal">Verbal</option>
@@ -383,7 +384,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-red-700 mb-1">DNC Notes</label>
+                  <label className="block text-xs font-medium text-red-700 mb-1"><T k="pages.consentmanagementpage.0782d5">DNC Notes</T></label>
                   <input type="text" value={dncNotes} onChange={(e) => setDncNotes(e.target.value)} className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm" placeholder="Reason for DNC..." />
                 </div>
               </>
@@ -391,7 +392,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Collected By</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.b0115d">Collected By</T></label>
             <select
               value={collectedBy}
               onChange={(e) => setCollectedBy(e.target.value)}
@@ -407,7 +408,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.f4c6f8">Notes</T></label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -424,7 +425,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
             >
-              Cancel
+              <T k="pages.consentmanagementpage.ea4788">Cancel</T>
             </button>
             <button
               type="submit"

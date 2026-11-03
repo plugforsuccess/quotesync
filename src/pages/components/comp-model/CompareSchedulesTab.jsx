@@ -1,4 +1,5 @@
 // src/pages/components/comp-model/CompareSchedulesTab.jsx
+import { T } from '../../../components/SiteCopy';
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useAllSchedules } from '../../../hooks/useCompSchedules';
@@ -177,21 +178,21 @@ export default function CompareSchedulesTab({ config, productMix }) {
   }, [allProducerConfigs, currentRates, compareRates, policyMixForBlend]);
 
   if (loadingSchedules) {
-    return <div className="text-sm text-[var(--qs-subtle)]">Loading schedules…</div>;
+    return <div className="text-sm text-[var(--qs-subtle)]"><T k="pages.components.compmodel.compareschedulestab.11e6bf">Loading schedules…</T></div>;
   }
 
   if (allSchedules.length < 2) {
     return (
       <div className="rounded border border-[var(--qs-border)] bg-[var(--qs-card)] p-8 text-center">
         <p className="text-[var(--qs-text)]">
-          Need at least two schedules to compare.
+          <T k="pages.components.compmodel.compareschedulestab.1d5a00">Need at least two schedules to compare.</T>
         </p>
         <p className="text-sm text-[var(--qs-subtle)] mt-2">
-          Create a second schedule (e.g., next year's announced rates) on the{' '}
+          <T k="pages.components.compmodel.compareschedulestab.9b2277">Create a second schedule (e.g., next year's announced rates) on the</T>{' '}
           <a href="/agency/comp-schedules" className="text-[var(--qs-info)] underline">
-            Comp Schedules
+            <T k="pages.components.compmodel.compareschedulestab.f37aa5">Comp Schedules</T>
           </a>{' '}
-          page.
+          <T k="pages.components.compmodel.compareschedulestab.a16574">page.</T>
         </p>
       </div>
     );
@@ -248,11 +249,11 @@ export default function CompareSchedulesTab({ config, productMix }) {
             <table className="w-full text-sm">
               <thead className="bg-[var(--qs-elevated)] text-xs uppercase text-[var(--qs-subtle)]">
                 <tr>
-                  <th className="px-4 py-2 text-right">Items/mo</th>
-                  <th className="px-4 py-2 text-right">Current Comp $</th>
-                  <th className="px-4 py-2 text-right">New Comp $</th>
-                  <th className="px-4 py-2 text-right">Delta $</th>
-                  <th className="px-4 py-2 text-right">Delta %</th>
+                  <th className="px-4 py-2 text-right"><T k="pages.components.compmodel.compareschedulestab.b942d4">Items/mo</T></th>
+                  <th className="px-4 py-2 text-right"><T k="pages.components.compmodel.compareschedulestab.b04a5c">Current Comp $</T></th>
+                  <th className="px-4 py-2 text-right"><T k="pages.components.compmodel.compareschedulestab.355140">New Comp $</T></th>
+                  <th className="px-4 py-2 text-right"><T k="pages.components.compmodel.compareschedulestab.6f4e55">Delta $</T></th>
+                  <th className="px-4 py-2 text-right"><T k="pages.components.compmodel.compareschedulestab.b52d38">Delta %</T></th>
                 </tr>
               </thead>
               <tbody>

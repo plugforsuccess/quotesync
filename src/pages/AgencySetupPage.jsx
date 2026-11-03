@@ -2,6 +2,7 @@
 // MT-04: Agency Onboarding Checklist Page
 // Shows a 5-step setup checklist for new agency agents
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, Circle, ArrowRight, Rocket } from 'lucide-react';
@@ -58,7 +59,7 @@ export default function AgencySetupPage() {
   if (!agency) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <p className="text-gray-600">No agency found.</p>
+        <p className="text-gray-600"><T k="pages.agencysetuppage.2d7b33">No agency found.</T></p>
       </div>
     );
   }
@@ -91,8 +92,8 @@ export default function AgencySetupPage() {
           <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Rocket className="w-8 h-8 text-primary-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to QuoteSync</h1>
-          <p className="text-gray-600 text-lg">Complete these steps before going live.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2"><T k="pages.agencysetuppage.78a271">Welcome to QuoteSync</T></h1>
+          <p className="text-gray-600 text-lg"><T k="pages.agencysetuppage.7f7c36">Complete these steps before going live.</T></p>
           <div className="mt-4 flex items-center justify-center gap-2">
             <div className="h-2 w-48 bg-gray-200 rounded-full overflow-hidden">
               <div
@@ -150,7 +151,7 @@ export default function AgencySetupPage() {
             to="/agency/leads/rate-checks"
             className="block w-full text-center text-sm text-gray-500 hover:text-gray-700 py-2 transition-colors"
           >
-            Skip setup, go to Rate Checks &rarr;
+            <T k="pages.agencysetuppage.f2bfe2">Skip setup, go to Rate Checks →</T>
           </Link>
         </div>
       </div>

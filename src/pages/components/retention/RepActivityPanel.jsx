@@ -2,6 +2,7 @@
 //   • By rep   — one rep, day-by-day over the last 14 days.
 //   • Daily    — one day, every rep side by side (the daily standup).
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -76,7 +77,7 @@ function WorkedRows({ worked, k, onCustomer }) {
           : <span style={{ color: 'var(--qs-muted)' }} title="No customer name on this case">—</span>}
         {' · '}
         {w.saved
-          ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
+          ? <span style={{ color: '#34D399', fontWeight: 600 }}><T k="pages.components.retention.repactivitypanel.a02001">✓ saved</T>{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
           : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
         {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
       </td>
@@ -90,9 +91,8 @@ function WorkedRows({ worked, k, onCustomer }) {
 function SavesLegend() {
   return (
     <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
-      Saves shows the day's total, split as <strong>cancels saved (c)</strong> /{' '}
-      <strong>renewals confirmed (r)</strong> — e.g. “1 (1c/0r)” is one save, a rescued cancellation.
-      Tap a row to see the cases worked.
+      <T k="pages.components.retention.repactivitypanel.67d015">Saves shows the day's total, split as</T> <strong><T k="pages.components.retention.repactivitypanel.3320bb">cancels saved (c)</T></strong> /{' '}
+      <strong><T k="pages.components.retention.repactivitypanel.464cd9">renewals confirmed (r)</T></strong> <T k="pages.components.retention.repactivitypanel.0e8c89">— e.g. “1 (1c/0r)” is one save, a rescued cancellation. Tap a row to see the cases worked.</T>
     </p>
   );
 }
@@ -103,7 +103,7 @@ function TaskDoneRows({ tasks, k }) {
     <tr key={`${k}-task-${i}`} style={{ background: 'var(--qs-elevated)' }}>
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
-          background: '#10B98122', color: '#34D399' }}>TASK ✓</span>
+          background: '#10B98122', color: '#34D399' }}><T k="pages.components.retention.repactivitypanel.1e9906">TASK ✓</T></span>
         <span style={{ color: 'var(--qs-text)' }}>{t.title}</span>
         {t.customer_name ? ` · ${titleCaseName(t.customer_name)}` : ''}
       </td>
@@ -136,18 +136,18 @@ function RepTimeline({ agencyId, employees }) {
         </select>
         {data && (
           <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-            last 14 days · <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> saves ·{' '}
-            <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} calls{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} tasks
+            <T k="pages.components.retention.repactivitypanel.d6928a">last 14 days ·</T> <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T>{' '}
+            <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
           </div>
         )}
       </div>
-      {isLoading || !data ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div> : (
+      {isLoading || !data ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.repactivitypanel.5f02f0">Loading…</T></div> : (
         <table style={{ width: '100%' }}>
-          <thead><tr><th style={{ textAlign: 'left' }}>Day</th>
-            <th style={{ textAlign: 'right' }}>Calls</th><th style={{ textAlign: 'right' }}>Reached</th>
+          <thead><tr><th style={{ textAlign: 'left' }}><T k="pages.components.retention.repactivitypanel.03727a">Day</T></th>
+            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.b21c39">Calls</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.94c326">Reached</T></th>
             <th style={{ textAlign: 'right' }}
-              title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
-            <th style={{ textAlign: 'right' }}>Premium</th><th style={{ textAlign: 'right' }}>Tasks done</th></tr></thead>
+              title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)"><T k="pages.components.retention.repactivitypanel.e25296">Saves</T></th>
+            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.8d5e7e">Premium</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.f38a5e">Tasks done</T></th></tr></thead>
           <tbody>
             {data.series.map(d => {
               const saves = d.cancelSaves + d.renewalSaves;
@@ -207,17 +207,17 @@ function DailyTeam({ agencyId, employees }) {
         <button onClick={() => shiftDay(1)} disabled={date >= localDay()} className="btn-ghost" style={{ padding: '6px 10px' }}>›</button>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}>{dayLabel(date)}</span>
         <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-          team: <strong style={{ color: '#10B981' }}>{totals.saves}</strong> saves · <strong style={{ color: '#10B981' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} calls{totals.attempts ? ` (${Math.round((totals.reached / totals.attempts) * 100)}% reached)` : ''} · {totals.tasksDone} tasks
+          <T k="pages.components.retention.repactivitypanel.617d1d">team:</T> <strong style={{ color: '#10B981' }}>{totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T> <strong style={{ color: '#10B981' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{totals.attempts ? ` (${Math.round((totals.reached / totals.attempts) * 100)}% reached)` : ''} · {totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
         </div>
       </div>
-      {isLoading ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>
-        : rows.length === 0 ? <div style={{ color: 'var(--qs-muted)', fontSize: 13 }}>No recorded activity on {dayLabel(date)}.</div> : (
+      {isLoading ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.repactivitypanel.5f02f0">Loading…</T></div>
+        : rows.length === 0 ? <div style={{ color: 'var(--qs-muted)', fontSize: 13 }}><T k="pages.components.retention.repactivitypanel.01821a">No recorded activity on</T> {dayLabel(date)}.</div> : (
         <table style={{ width: '100%' }}>
-          <thead><tr><th style={{ textAlign: 'left' }}>Rep</th>
-            <th style={{ textAlign: 'right' }}>Calls</th><th style={{ textAlign: 'right' }}>Reached</th>
+          <thead><tr><th style={{ textAlign: 'left' }}><T k="pages.components.retention.repactivitypanel.608033">Rep</T></th>
+            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.b21c39">Calls</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.94c326">Reached</T></th>
             <th style={{ textAlign: 'right' }}
-              title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
-            <th style={{ textAlign: 'right' }}>Premium</th><th style={{ textAlign: 'right' }}>Tasks done</th></tr></thead>
+              title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)"><T k="pages.components.retention.repactivitypanel.e25296">Saves</T></th>
+            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.8d5e7e">Premium</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.f38a5e">Tasks done</T></th></tr></thead>
           <tbody>
             {rows.map(({ e, a }) => {
               const saves = a.cancelSaves + a.renewalSaves;
@@ -258,13 +258,13 @@ function Bar({ pct, color }) {
 }
 function QueueCoverage({ agencyId }) {
   const { data: rows = [], isLoading } = useQueueCoverage(agencyId);
-  if (isLoading) return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>;
-  if (rows.length === 0) return <div style={{ color: 'var(--qs-muted)', fontSize: 13 }}>No cases assigned to any rep right now.</div>;
+  if (isLoading) return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.repactivitypanel.5f02f0">Loading…</T></div>;
+  if (rows.length === 0) return <div style={{ color: 'var(--qs-muted)', fontSize: 13 }}><T k="pages.components.retention.repactivitypanel.196572">No cases assigned to any rep right now.</T></div>;
   return (
     <>
       <table>
         <thead><tr>
-          <th>Rep</th><th>Queue</th><th>Untouched</th><th>Worked today</th><th>Calls vs target</th><th>Queue coverage</th>
+          <th><T k="pages.components.retention.repactivitypanel.608033">Rep</T></th><th><T k="pages.components.retention.repactivitypanel.722ad2">Queue</T></th><th><T k="pages.components.retention.repactivitypanel.e3b5c4">Untouched</T></th><th><T k="pages.components.retention.repactivitypanel.8fedbc">Worked today</T></th><th><T k="pages.components.retention.repactivitypanel.a0c76c">Calls vs target</T></th><th><T k="pages.components.retention.repactivitypanel.f7a42e">Queue coverage</T></th>
         </tr></thead>
         <tbody>
           {rows.map(r => {
@@ -297,8 +297,7 @@ function QueueCoverage({ agencyId }) {
         </tbody>
       </table>
       <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
-        Queue = active cases assigned to the rep (not snoozed). Untouched = never called; “overdue” = past their deadline
-        and never called. Worked today / coverage = distinct cases they've touched today. Calls vs target uses each rep's daily call target.
+        <T k="pages.components.retention.repactivitypanel.e5c067">Queue = active cases assigned to the rep (not snoozed). Untouched = never called; “overdue” = past their deadline and never called. Worked today / coverage = distinct cases they've touched today. Calls vs target uses each rep's daily call target.</T>
       </p>
     </>
   );
@@ -319,18 +318,18 @@ export default function RepActivityPanel({ agencyId }) {
   return (
     <div className="card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Activity</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.components.retention.repactivitypanel.ecfc2d">Activity</T></h3>
         <span title="Updates live as reps work" style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
           fontSize: 11, fontWeight: 700, color: '#34D399' }}>
           <span style={{ width: 7, height: 7, borderRadius: 4, background: '#34D399',
             boxShadow: '0 0 0 0 rgba(52,211,153,0.6)', animation: 'pulse 2s infinite' }} />
-          LIVE
+          <T k="pages.components.retention.repactivitypanel.f35d25">LIVE</T>
         </span>
         <style>{`@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,0.5)}70%{box-shadow:0 0 0 6px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}`}</style>
         <div style={{ display: 'flex', gap: 6, marginLeft: 6 }}>
-          <button style={tab(mode === 'queue')} onClick={() => setMode('queue')}>Queue — today</button>
-          <button style={tab(mode === 'daily')} onClick={() => setMode('daily')}>Daily — team</button>
-          <button style={tab(mode === 'rep')} onClick={() => setMode('rep')}>By rep</button>
+          <button style={tab(mode === 'queue')} onClick={() => setMode('queue')}><T k="pages.components.retention.repactivitypanel.1d55af">Queue — today</T></button>
+          <button style={tab(mode === 'daily')} onClick={() => setMode('daily')}><T k="pages.components.retention.repactivitypanel.296863">Daily — team</T></button>
+          <button style={tab(mode === 'rep')} onClick={() => setMode('rep')}><T k="pages.components.retention.repactivitypanel.bd805c">By rep</T></button>
         </div>
       </div>
       {mode === 'queue' ? <QueueCoverage agencyId={agencyId} />

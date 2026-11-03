@@ -3,6 +3,7 @@
 // rate. Cancel saves (amber) + confirmed renewals (blue), bucketed by the week
 // each case closed, with a per-rep rollup and a recent-vs-prior trend arrow.
 
+import { T } from '../../../components/SiteCopy';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useSaveVelocity } from '../../../hooks/useSaveVelocity';
@@ -78,7 +79,7 @@ export default function SaveVelocityPanel({ agencyId }) {
   });
 
   if (isLoading) {
-    return <div className="card" style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading save velocity…</div>;
+    return <div className="card" style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.savevelocitypanel.fc82af">Loading save velocity…</T></div>;
   }
   if (!data) return null;
 
@@ -91,11 +92,11 @@ export default function SaveVelocityPanel({ agencyId }) {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>
-            Save velocity — last 8 weeks
+            <T k="pages.components.retention.savevelocitypanel.09e7cb">Save velocity — last 8 weeks</T>
           </h3>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
-            <strong style={{ color: '#10B981' }}>{totalSaves}</strong> saves ·{' '}
-            <strong style={{ color: '#10B981' }}>{fmt$(totalPremium)}</strong> premium preserved
+            <strong style={{ color: '#10B981' }}>{totalSaves}</strong> <T k="pages.components.retention.savevelocitypanel.c94a10">saves ·</T>{' '}
+            <strong style={{ color: '#10B981' }}>{fmt$(totalPremium)}</strong> <T k="pages.components.retention.savevelocitypanel.3d5f9e">premium preserved</T>
           </div>
         </div>
 
@@ -126,18 +127,18 @@ export default function SaveVelocityPanel({ agencyId }) {
           })}
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 11, color: 'var(--qs-muted)' }}>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#F59E0B', borderRadius: 2, marginRight: 4 }} />Cancel saves</span>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#3B82F6', borderRadius: 2, marginRight: 4 }} />Confirmed renewals</span>
+          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#F59E0B', borderRadius: 2, marginRight: 4 }} /><T k="pages.components.retention.savevelocitypanel.537107">Cancel saves</T></span>
+          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#3B82F6', borderRadius: 2, marginRight: 4 }} /><T k="pages.components.retention.savevelocitypanel.ce4baa">Confirmed renewals</T></span>
         </div>
       </div>
 
       {/* By save method — "how did we keep them?" */}
       <div className="card">
         <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>
-          By save method (8-week window)
+          <T k="pages.components.retention.savevelocitypanel.cf1d64">By save method (8-week window)</T>
         </h4>
         {methods.length === 0 ? (
-          <div style={{ fontSize: 13, color: 'var(--qs-muted)' }}>No saves recorded in the window yet.</div>
+          <div style={{ fontSize: 13, color: 'var(--qs-muted)' }}><T k="pages.components.retention.savevelocitypanel.b4b9e9">No saves recorded in the window yet.</T></div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {methods.map(m => {
@@ -165,22 +166,22 @@ export default function SaveVelocityPanel({ agencyId }) {
           </div>
         )}
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
-          The tactic captured when each case was saved. "Not recorded" = saved before a method was selected.
+          <T k="pages.components.retention.savevelocitypanel.1bf2c1">The tactic captured when each case was saved. "Not recorded" = saved before a method was selected.</T>
         </p>
       </div>
 
       {/* Per-rep rollup */}
       <div className="card">
         <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>
-          By rep (8-week window)
+          <T k="pages.components.retention.savevelocitypanel.362686">By rep (8-week window)</T>
         </h4>
         {reps.length === 0 ? (
-          <div style={{ fontSize: 13, color: 'var(--qs-muted)' }}>No saves recorded in the window yet.</div>
+          <div style={{ fontSize: 13, color: 'var(--qs-muted)' }}><T k="pages.components.retention.savevelocitypanel.b4b9e9">No saves recorded in the window yet.</T></div>
         ) : (
           <table>
             <thead>
               <tr>
-                <th>Rep</th><th>Saves</th><th>Cancel</th><th>Renewal</th><th>Premium</th><th>Methods</th><th>Trend</th>
+                <th><T k="pages.components.retention.savevelocitypanel.608033">Rep</T></th><th><T k="pages.components.retention.savevelocitypanel.e25296">Saves</T></th><th><T k="pages.components.retention.savevelocitypanel.ea4788">Cancel</T></th><th><T k="pages.components.retention.savevelocitypanel.752242">Renewal</T></th><th><T k="pages.components.retention.savevelocitypanel.8d5e7e">Premium</T></th><th><T k="pages.components.retention.savevelocitypanel.20c51b">Methods</T></th><th><T k="pages.components.retention.savevelocitypanel.349d78">Trend</T></th>
               </tr>
             </thead>
             <tbody>
@@ -207,8 +208,7 @@ export default function SaveVelocityPanel({ agencyId }) {
           </table>
         )}
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
-          Trend compares the most recent 4 weeks against the prior 4. Saves are attributed to whoever closed the case.
-          Methods shows each rep's top save tactics (Transfer highlighted) — useful for coaching who leans where.
+          <T k="pages.components.retention.savevelocitypanel.2ae86e">Trend compares the most recent 4 weeks against the prior 4. Saves are attributed to whoever closed the case. Methods shows each rep's top save tactics (Transfer highlighted) — useful for coaching who leans where.</T>
         </p>
       </div>
     </div>

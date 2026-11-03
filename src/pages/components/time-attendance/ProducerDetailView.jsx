@@ -2,6 +2,7 @@
 // Simplified producer scorecard: outbound effort summary, 8-week trend, daily breakdown.
 // No grades, no PDF export — this is Cameron's visibility tool for producer call effort.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, TrendingUp, CalendarDays, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, DollarSign } from 'lucide-react';
@@ -61,7 +62,7 @@ function StatCard({ label, value, target, unit }) {
       </p>
       {hasTarget && (
         <p className={`text-xs mt-1 ${met ? 'text-emerald-400' : 'text-orange-600'}`}>
-          Target: {target}{unit ? ` ${unit}` : ''} {met ? '(met)' : '(below)'}
+          <T k="pages.components.timeattendance.producerdetailview.f1a035">Target:</T> {target}{unit ? ` ${unit}` : ''} {met ? '(met)' : '(below)'}
         </p>
       )}
     </div>
@@ -78,8 +79,8 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
     return (
       <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
         <Phone className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-qs-bright mb-2">No performance data</h2>
-        <p className="text-qs-dim">Upload RingCentral data for this week to see producer metrics.</p>
+        <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.components.timeattendance.producerdetailview.eaf06c">No performance data</T></h2>
+        <p className="text-qs-dim"><T k="pages.components.timeattendance.producerdetailview.4e20a5">Upload RingCentral data for this week to see producer metrics.</T></p>
       </div>
     );
   }
@@ -123,7 +124,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
             </div>
             <div className="flex items-center gap-4 text-sm text-qs-subtle">
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
-                Producer
+                <T k="pages.components.timeattendance.producerdetailview.a6ad87">Producer</T>
               </span>
               <span>{formatWeekRange(weekStart)}</span>
             </div>
@@ -134,7 +135,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-300 bg-emerald-900/20 hover:bg-qs-card border border-emerald-700/40 rounded-lg transition-colors"
             >
               <DollarSign className="w-3.5 h-3.5" />
-              Comp Model
+              <T k="pages.components.timeattendance.producerdetailview.8430aa">Comp Model</T>
             </Link>
           )}
         </div>
@@ -151,42 +152,42 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
       {/* YTD Attendance */}
       <div className="bg-qs-card rounded-lg border border-qs-border p-4">
         <p className="text-xs font-medium text-qs-subtle uppercase tracking-wide mb-3">
-          YTD Attendance ({currentYear})
+          <T k="pages.components.timeattendance.producerdetailview.a2b0b9">YTD Attendance (</T>{currentYear})
         </p>
         <div className="grid grid-cols-3 gap-3">
           <div>
             <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.daysWorked}</p>
-            <p className="text-xs text-qs-subtle mt-0.5">Days Worked</p>
+            <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.producerdetailview.10bf2e">Days Worked</T></p>
           </div>
           <div>
             <p className={`text-2xl font-bold ${ytdAttendance.sick > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
               {ytdAttendance.sick}
             </p>
-            <p className="text-xs text-qs-subtle mt-0.5">Sick</p>
+            <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.producerdetailview.cdc714">Sick</T></p>
           </div>
           <div>
             <p className={`text-2xl font-bold ${ytdAttendance.pto > 0 ? 'text-blue-400' : 'text-qs-bright'}`}>
               {ytdAttendance.pto}
             </p>
-            <p className="text-xs text-qs-subtle mt-0.5">PTO</p>
+            <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.producerdetailview.b0fde0">PTO</T></p>
           </div>
           <div>
             <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.appt}</p>
-            <p className="text-xs text-qs-subtle mt-0.5">Appt</p>
+            <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.producerdetailview.c4522c">Appt</T></p>
           </div>
           <div>
             <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.early}</p>
-            <p className="text-xs text-qs-subtle mt-0.5">Early Out</p>
+            <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.producerdetailview.18ca8a">Early Out</T></p>
           </div>
           <div>
             <p className={`text-2xl font-bold ${ytdAttendance.unexcused > 0 ? 'text-red-400' : 'text-qs-bright'}`}>
               {ytdAttendance.unexcused}
             </p>
-            <p className="text-xs text-qs-subtle mt-0.5">Unexcused</p>
+            <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.producerdetailview.bcc2b5">Unexcused</T></p>
           </div>
           <div>
             <p className="text-2xl font-bold text-blue-400">{ytdAttendance.holiday}</p>
-            <p className="text-xs text-qs-subtle mt-0.5">Holidays</p>
+            <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.producerdetailview.1d53c5">Holidays</T></p>
           </div>
         </div>
       </div>
@@ -196,7 +197,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
         <div className="bg-qs-card rounded-lg border border-qs-border p-4">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-primary-400" />
-            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">8-Week Outbound Trend</h4>
+            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.producerdetailview.22a31d">8-Week Outbound Trend</T></h4>
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -229,8 +230,8 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
       ) : (
         <div className="bg-qs-card rounded-lg border border-qs-border p-8 text-center">
           <TrendingUp className="w-12 h-12 text-qs-muted mx-auto mb-3" />
-          <p className="text-qs-subtle font-medium">Trend data requires at least 2 weeks of uploaded RingCentral reports.</p>
-          <p className="text-sm text-qs-muted mt-1">Keep uploading weekly and trends will appear here.</p>
+          <p className="text-qs-subtle font-medium"><T k="pages.components.timeattendance.producerdetailview.5584de">Trend data requires at least 2 weeks of uploaded RingCentral reports.</T></p>
+          <p className="text-sm text-qs-muted mt-1"><T k="pages.components.timeattendance.producerdetailview.c0600b">Keep uploading weekly and trends will appear here.</T></p>
         </div>
       )}
 
@@ -242,7 +243,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
             className="w-full px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2 hover:bg-qs-card transition-colors"
           >
             <CalendarDays className="w-5 h-5 text-primary-400" />
-            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Daily Detail</h4>
+            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.producerdetailview.ba8618">Daily Detail</T></h4>
             {dailyExpanded
               ? <ChevronDown className="w-4 h-4 text-qs-muted ml-auto" />
               : <ChevronRight className="w-4 h-4 text-qs-muted ml-auto" />}
@@ -253,11 +254,11 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
               <table className="w-full">
                 <thead className="bg-qs-elevated">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Day</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Outbound</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Total Calls</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Avg Handle (Out)</th>
-                    <th className="px-4 py-2 text-center text-xs font-semibold text-qs-subtle uppercase">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerdetailview.03727a">Day</T></th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerdetailview.4c32be">Outbound</T></th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerdetailview.a49675">Total Calls</T></th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerdetailview.4fc2c6">Avg Handle (Out)</T></th>
+                    <th className="px-4 py-2 text-center text-xs font-semibold text-qs-subtle uppercase"><T k="pages.components.timeattendance.producerdetailview.ec53a8">Status</T></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-qs-border">
@@ -280,12 +281,12 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
                           {day.total_calls || 0}
                         </td>
                         <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
-                          {(day.avg_handle_time_out_minutes || day.avg_handle_time_minutes || 0).toFixed(1)} min
+                          {(day.avg_handle_time_out_minutes || day.avg_handle_time_minutes || 0).toFixed(1)} <T k="pages.components.timeattendance.producerdetailview.d8bd79">min</T>
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           {isZeroOutbound ? (
                             <span className="inline-flex items-center gap-1 text-xs text-orange-600 font-medium">
-                              <AlertTriangle className="w-3.5 h-3.5" /> No Outbound
+                              <AlertTriangle className="w-3.5 h-3.5" /> <T k="pages.components.timeattendance.producerdetailview.fc07f4">No Outbound</T>
                             </span>
                           ) : (
                             <CheckCircle className="w-4 h-4 text-green-500 mx-auto" />

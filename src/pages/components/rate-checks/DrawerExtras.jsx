@@ -2,6 +2,7 @@
 // Rate check drawer sections: the competing agent on this dec page, and the
 // partner-referral box (only shown when the customer opted in).
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useCompetitorAgents, useReferralPartners, useReferrals, useCreateReferral } from '../../../hooks/useRateChecks';
 import { inputStyle, formatPhone, formatDate } from './ui';
@@ -24,8 +25,8 @@ export function CurrentAgentBox({ rc }) {
   return (
     <section>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}>Their current agent</h3>
-        <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Internal only</span>
+        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.drawerextras.565bea">Their current agent</T></h3>
+        <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.drawerextras.4dff40">Internal only</T></span>
       </div>
       <dl>
         <Field label="Agency" value={agency} />
@@ -40,7 +41,7 @@ export function CurrentAgentBox({ rc }) {
           {Number(stats.quoted) > 0 && ` Allstate beat the price ${stats.wins} of ${stats.quoted} times.`}
         </p>
       )}
-      <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>Never contact this agent about this customer.</p>
+      <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.drawerextras.334da6">Never contact this agent about this customer.</T></p>
     </section>
   );
 }
@@ -60,14 +61,14 @@ export function ReferralBox({ rc }) {
 
   return (
     <section>
-      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}>Refer to a partner</h3>
+      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.drawerextras.1b1a7a">Refer to a partner</T></h3>
       {consented && (
         <div className="space-y-2 text-sm">
           <p style={{ color: 'var(--qs-subtle)' }}>
-            They said yes to being referred if Allstate can&apos;t help ({formatDate(rc.referral_consent_given_at)}).
+            <T k="pages.components.ratechecks.drawerextras.158818">They said yes to being referred if Allstate can't help (</T>{formatDate(rc.referral_consent_given_at)}).
           </p>
           {active.length === 0 ? (
-            <p style={{ color: 'var(--qs-subtle)' }}>Add a partner in the Referral partners tab first.</p>
+            <p style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.drawerextras.569d06">Add a partner in the Referral partners tab first.</T></p>
           ) : (
             <form className="grid gap-2 sm:grid-cols-2" onSubmit={e => {
               e.preventDefault();
@@ -92,7 +93,7 @@ export function ReferralBox({ rc }) {
       {referrals.length > 0 && (
         <ul className="mt-2 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
           {referrals.map(r => (
-            <li key={r.id}>Referred to {r.referral_partners?.name || 'a partner'}{r.line ? ` for ${r.line}` : ''}{r.note ? ` — ${r.note}` : ''}
+            <li key={r.id}><T k="pages.components.ratechecks.drawerextras.870dc5">Referred to</T> {r.referral_partners?.name || 'a partner'}{r.line ? ` for ${r.line}` : ''}{r.note ? ` — ${r.note}` : ''}
               <span style={{ color: 'var(--qs-subtle)' }}> · {formatDate(r.created_at)}</span></li>
           ))}
         </ul>

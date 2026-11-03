@@ -2,6 +2,7 @@
 // Add/Edit Employee modal — redesigned with dark-theme-correct inputs,
 // section cards, and a two-column panel layout.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useCallback } from 'react';
 import { X, User, MapPin, Briefcase, Clock, Award, Calendar } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -431,7 +432,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     })}
                   </div>
                   {(!form.roles || form.roles.length === 0) && (
-                    <p style={{ fontSize: 11, color: 'var(--qs-danger)', marginTop: 4 }}>At least one role required</p>
+                    <p style={{ fontSize: 11, color: 'var(--qs-danger)', marginTop: 4 }}><T k="pages.components.employees.employeeformmodal.88a3f4">At least one role required</T></p>
                   )}
                 </Field>
 
@@ -446,7 +447,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     maxLength={20}
                   />
                   <p style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4 }}>
-                    Found in the "Bind ID" column of the Allstate New Business Details report.
+                    <T k="pages.components.employees.employeeformmodal.842758">Found in the "Bind ID" column of the Allstate New Business Details report.</T>
                   </p>
                 </Field>
                 <Field label="RingCentral Display Name *">
@@ -471,7 +472,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     pattern="\d{4}"
                   />
                   <p style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4 }}>
-                    Signs them in to Quick Send (insuredbycam.com/qs) to text upload links. Must be unique.
+                    <T k="pages.components.employees.employeeformmodal.ec7002">Signs them in to Quick Send (insuredbycam.com/qs) to text upload links. Must be unique.</T>
                   </p>
                 </Field>
               </div>
@@ -480,7 +481,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
             {/* Default Schedule */}
             <Section icon={Clock} title="Default Schedule">
               <p style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
-                Pre-fills the Attendance page for this employee each week.
+                <T k="pages.components.employees.employeeformmodal.be300b">Pre-fills the Attendance page for this employee each week.</T>
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field label="Start Time">
@@ -501,8 +502,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
             {/* Time Off Allotment */}
             <Section icon={Calendar} title="Time Off Allotment">
               <p style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
-                PTO is front-loaded Jan 1 with no rollover. Hard block enforced in time entry.
-                Sick days are tracked with a soft warning threshold only.
+                <T k="pages.components.employees.employeeformmodal.76829a">PTO is front-loaded Jan 1 with no rollover. Hard block enforced in time entry. Sick days are tracked with a soft warning threshold only.</T>
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field label="Annual PTO Days">
@@ -512,7 +512,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     onChange={e => handleChange('pto_days_per_year', e.target.value)}
                   />
                   <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 4 }}>
-                    Front-loaded Jan 1. No rollover. Hard block enforced in time entry.
+                    <T k="pages.components.employees.employeeformmodal.9b1c71">Front-loaded Jan 1. No rollover. Hard block enforced in time entry.</T>
                   </p>
                 </Field>
                 <Field label="Sick Day Advisory Threshold">
@@ -522,7 +522,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     onChange={e => handleChange('sick_days_per_year', e.target.value)}
                   />
                   <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 4 }}>
-                    Soft warning only — no hard block. Tracked for evaluation purposes.
+                    <T k="pages.components.employees.employeeformmodal.31652f">Soft warning only — no hard block. Tracked for evaluation purposes.</T>
                   </p>
                 </Field>
                 <Field label="PTO Eligible Date" span={2}>
@@ -532,7 +532,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     onChange={e => handleChange('pto_eligible_date', e.target.value)}
                   />
                   <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 4 }}>
-                    Typically hire date + 180 days. Leave blank if already eligible.
+                    <T k="pages.components.employees.employeeformmodal.843126">Typically hire date + 180 days. Leave blank if already eligible.</T>
                   </p>
                 </Field>
               </div>
@@ -570,7 +570,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     }} />
                   </button>
                   <span style={{ fontSize: 14, fontWeight: 500, color: form.is_licensed ? 'var(--qs-success)' : 'var(--qs-dim)' }}>
-                    Licensed
+                    <T k="pages.components.employees.employeeformmodal.82e3d4">Licensed</T>
                   </span>
                 </div>
 
@@ -582,7 +582,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
                 {/* Designations */}
                 <div>
-                  <label style={labelStyle}>Professional Designations</label>
+                  <label style={labelStyle}><T k="pages.components.employees.employeeformmodal.9e7562">Professional Designations</T></label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {DESIGNATION_OPTIONS.map(d => {
                       const active = (form.professional_designations || []).includes(d);
@@ -662,7 +662,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
               onMouseEnter={e => e.currentTarget.style.background = 'var(--qs-border)'}
               onMouseLeave={e => e.currentTarget.style.background = 'var(--qs-card)'}
             >
-              Cancel
+              <T k="pages.components.employees.employeeformmodal.ea4788">Cancel</T>
             </button>
             <button
               type="submit"

@@ -2,6 +2,7 @@
 // Platform Dashboard — cross-agency KPI overview
 // Route: /admin (index)
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -83,8 +84,8 @@ const AdminDashboardPage = () => {
     <div className="dark-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="dark-header rounded-xl mb-6">
-          <h1 className="dark-heading">Platform Overview</h1>
-          <p className="dark-subheading">Cross-agency health at a glance</p>
+          <h1 className="dark-heading"><T k="pages.admindashboardpage.ce8b90">Platform Overview</T></h1>
+          <p className="dark-subheading"><T k="pages.admindashboardpage.792309">Cross-agency health at a glance</T></p>
         </div>
 
         {/* KPI cards */}
@@ -102,16 +103,16 @@ const AdminDashboardPage = () => {
         {/* Agencies table */}
         <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)' }}>
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>All Agencies</h2>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.admindashboardpage.406250">All Agencies</T></h2>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}>Agency</th>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}>State</th>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}>Status</th>
-                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'right' }}>Actions</th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}><T k="pages.admindashboardpage.75ec3e">Agency</T></th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}><T k="pages.admindashboardpage.46a2a4">State</T></th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}><T k="pages.admindashboardpage.ec53a8">Status</T></th>
+                  <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'right' }}><T k="pages.admindashboardpage.06df33">Actions</T></th>
                 </tr>
               </thead>
               <tbody>
@@ -142,7 +143,7 @@ const AdminDashboardPage = () => {
                           textDecoration: 'none',
                         }}
                       >
-                        View <span style={{ fontSize: 11 }}>&rarr;</span>
+                        <T k="pages.admindashboardpage.4351cf">View</T> <span style={{ fontSize: 11 }}>&rarr;</span>
                       </Link>
                     </td>
                   </tr>
@@ -150,7 +151,7 @@ const AdminDashboardPage = () => {
                 {agencies.length === 0 && (
                   <tr>
                     <td colSpan={4} style={{ padding: 32, textAlign: 'center', color: 'var(--qs-dim)', fontSize: 13 }}>
-                      No agencies found
+                      <T k="pages.admindashboardpage.1b42d9">No agencies found</T>
                     </td>
                   </tr>
                 )}

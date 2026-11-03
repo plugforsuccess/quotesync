@@ -7,6 +7,7 @@
 // derived scoreboard. Other reports (Portfolio Growth, Loss, Commission)
 // follow the same pattern.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { useQueryClient } from '@tanstack/react-query';
@@ -166,11 +167,8 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
         fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12,
         background: 'var(--qs-elevated)', borderRadius: 8, padding: '10px 14px',
       }}>
-        Upload <strong>monthly</strong>. The <strong>Policy Audit</strong> posts early —
-        last month's audit is ready by ~the 5th. <strong>Premium &amp; Profitability</strong>
-        lags ~a month (posts mid-month, so its scoreboard reflects a book about a month
-        behind). They measure the outcome of the work the operating reports drive; order
-        between the two below doesn't matter — they write to independent tables.
+        <T k="pages.components.retention.bookmetricspanel.914124">Upload</T> <strong><T k="pages.components.retention.bookmetricspanel.708638">monthly</T></strong><T k="pages.components.retention.bookmetricspanel.8997b2">. The</T> <strong><T k="pages.components.retention.bookmetricspanel.cb2a63">Policy Audit</T></strong> <T k="pages.components.retention.bookmetricspanel.63ab57">posts early — last month's audit is ready by ~the 5th.</T> <strong><T k="pages.components.retention.bookmetricspanel.6841d7">Premium & Profitability</T></strong>
+        <T k="pages.components.retention.bookmetricspanel.db39af">lags ~a month (posts mid-month, so its scoreboard reflects a book about a month behind). They measure the outcome of the work the operating reports drive; order between the two below doesn't matter — they write to independent tables.</T>
       </div>
 
       {/* Upload */}
@@ -181,42 +179,42 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
 
       {/* Scoreboard */}
       {isLoading ? (
-        <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading book metrics…</div>
+        <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.bookmetricspanel.cba9f9">Loading book metrics…</T></div>
       ) : !totals ? (
         <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>
-          No book metrics yet. Upload the Premium &amp; Profitability report to see your book-retention scoreboard.
+          <T k="pages.components.retention.bookmetricspanel.777bce">No book metrics yet. Upload the Premium & Profitability report to see your book-retention scoreboard.</T>
         </div>
       ) : (
         <>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
-            Book of business as of <strong>{fmtMonth(data.latestMonth)}</strong>
+            <T k="pages.components.retention.bookmetricspanel.25e608">Book of business as of</T> <strong>{fmtMonth(data.latestMonth)}</strong>
           </div>
 
           {/* KPI cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
             <div className="card">
-              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}>Policies in Force</div>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}><T k="pages.components.retention.bookmetricspanel.73948a">Policies in Force</T></div>
               <div style={{ fontSize: 22, fontWeight: 700 }}>{totals.pifCurrent.toLocaleString()}</div>
               <div style={{ fontSize: 11, color: deltaColor(totals.pifVariance), marginTop: 2 }}>
-                {totals.pifVariance >= 0 ? '+' : ''}{totals.pifVariance} vs prior year
+                {totals.pifVariance >= 0 ? '+' : ''}{totals.pifVariance} <T k="pages.components.retention.bookmetricspanel.18fdcd">vs prior year</T>
               </div>
             </div>
             <div className="card">
-              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}>Net Retention (blended)</div>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}><T k="pages.components.retention.bookmetricspanel.83c4c4">Net Retention (blended)</T></div>
               <div style={{ fontSize: 22, fontWeight: 700 }}>{fmtPct(totals.blendedNetRetention)}</div>
-              <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>counts rewrites/transfers as kept</div>
+              <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}><T k="pages.components.retention.bookmetricspanel.75fd28">counts rewrites/transfers as kept</T></div>
             </div>
             <div className="card">
-              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}>Policy Retention (blended)</div>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}><T k="pages.components.retention.bookmetricspanel.008e8c">Policy Retention (blended)</T></div>
               <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-dim)' }}>{fmtPct(totals.blendedRetention)}</div>
               <div style={{ fontSize: 11, color: deltaColor(totals.retentionPointVariance), marginTop: 2 }}>
-                {totals.retentionPointVariance >= 0 ? '+' : ''}{totals.retentionPointVariance?.toFixed(1)} pts vs prior year
+                {totals.retentionPointVariance >= 0 ? '+' : ''}{totals.retentionPointVariance?.toFixed(1)} <T k="pages.components.retention.bookmetricspanel.636c2c">pts vs prior year</T>
               </div>
             </div>
             <div className="card">
-              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}>Prior-Year Retention</div>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}><T k="pages.components.retention.bookmetricspanel.749753">Prior-Year Retention</T></div>
               <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-dim)' }}>{fmtPct(totals.blendedRetentionPy)}</div>
-              <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>baseline</div>
+              <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}><T k="pages.components.retention.bookmetricspanel.e7e14c">baseline</T></div>
             </div>
           </div>
 
@@ -224,7 +222,7 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
           {trend.length >= 2 ? (
             <div className="card" style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 10 }}>
-                Book retention trend{goLive ? ' · SOP launch marked' : ''}
+                <T k="pages.components.retention.bookmetricspanel.37675d">Book retention trend</T>{goLive ? ' · SOP launch marked' : ''}
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={trend} margin={{ top: 8, right: 16, bottom: 4, left: -8 }}>
@@ -245,7 +243,7 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
             </div>
           ) : (
             <div className="card" style={{ marginBottom: 24, fontSize: 12, color: 'var(--qs-subtle)' }}>
-              Book-retention trend builds as you upload Premium &amp; Profitability monthly — needs at least 2 months.
+              <T k="pages.components.retention.bookmetricspanel.a5127d">Book-retention trend builds as you upload Premium & Profitability monthly — needs at least 2 months.</T>
             </div>
           )}
 
@@ -254,14 +252,14 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
             <table>
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th style={{ textAlign: 'right' }}>PIF</th>
-                  <th style={{ textAlign: 'right' }}>Δ PY</th>
-                  <th style={{ textAlign: 'right' }}>Net Ret</th>
-                  <th style={{ textAlign: 'right' }}>Policy Ret</th>
-                  <th style={{ textAlign: 'right' }}>Prior Yr</th>
-                  <th style={{ textAlign: 'right' }}>Δ pts</th>
-                  <th style={{ textAlign: 'right' }}>New (0–2 yr)</th>
+                  <th><T k="pages.components.retention.bookmetricspanel.deb105">Product</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.133516">PIF</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.cb51d8">Δ PY</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.8c758f">Net Ret</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.f09513">Policy Ret</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.4eeff3">Prior Yr</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.3b73fb">Δ pts</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.592f66">New (0–2 yr)</T></th>
                 </tr>
               </thead>
               <tbody>

@@ -4,6 +4,7 @@
 // at-risk, save velocity, terminations, escalations, parked cases), under a
 // single green/amber/red status. Each tile jumps to its drill-down tab.
 
+import { T } from '../../../components/SiteCopy';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useBookSnapshots } from '../../../hooks/useBookMetrics';
@@ -127,7 +128,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
         <div style={{ width: 14, height: 14, borderRadius: 7, background: status.color, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: status.color }}>
-            Retention health — {status.label}
+            <T k="pages.components.retention.retentionhealthoverview.6ef4e2">Retention health —</T> {status.label}
           </div>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 2 }}>{status.note}</div>
         </div>
@@ -135,14 +136,14 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           <div style={{ fontSize: 26, fontWeight: 800, color: status.color, lineHeight: 1 }}>
             {fmtBookPct(netRet)}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}>net retention · {NET_RETENTION_TARGET}% target</div>
+          <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}><T k="pages.components.retention.retentionhealthoverview.1e7929">net retention ·</T> {NET_RETENTION_TARGET}<T k="pages.components.retention.retentionhealthoverview.e5d943">% target</T></div>
         </div>
       </div>
 
       {/* Workflow leaks — the leading process signal */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
-          letterSpacing: '0.06em', marginBottom: 10 }}>Is the workflow catching cases in time?</div>
+          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.e171ff">Is the workflow catching cases in time?</T></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
           <StatCard label="Preventable lapses"
             value={hygiene?.lapsedUnworked ?? '—'}
@@ -168,8 +169,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
         </div>
         {(hygiene?.lapsedUnworked ?? 0) > 0 && (
           <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 8 }}>
-            These didn't lapse because they were hard — they lapsed because nobody worked them in time.
-            Fix the leak first: work the win-back list, then call everything due this week before it joins them.
+            <T k="pages.components.retention.retentionhealthoverview.bc89da">These didn't lapse because they were hard — they lapsed because nobody worked them in time. Fix the leak first: work the win-back list, then call everything due this week before it joins them.</T>
           </div>
         )}
 
@@ -179,7 +179,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           return (
             <div className="card" style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 8 }}>
-                Preventable lapses per week — trending to zero?
+                <T k="pages.components.retention.retentionhealthoverview.cbcbd3">Preventable lapses per week — trending to zero?</T>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 64 }}>
                 {hygiene.lapseTrend.map(t => (
@@ -205,7 +205,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
       {/* Book-level health */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
-          letterSpacing: '0.06em', marginBottom: 10 }}>Book health {book?.latestMonth ? `· as of ${book.latestMonth}` : ''}</div>
+          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.a10b6e">Book health</T> {book?.latestMonth ? `· as of ${book.latestMonth}` : ''}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
           <StatCard label="Net Retention" value={fmtBookPct(netRet)}
             sub="rewrites counted as kept" color={netRet != null && netRet >= NET_RETENTION_TARGET ? '#10B981' : '#F59E0B'}
@@ -245,7 +245,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
       {/* Operational health */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
-          letterSpacing: '0.06em', marginBottom: 10 }}>This period — outreach &amp; saves</div>
+          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.245b88">This period — outreach & saves</T></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
           <StatCard label="Save Rate" value={k.saveRate != null ? fmtPct(k.saveRate) : '—'}
             sub="saved / worked" color="#10B981" onClick={() => onNavigate?.('at_risk')} />
@@ -281,8 +281,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
       </div>
 
       <p style={{ fontSize: 11, color: 'var(--qs-muted)' }}>
-        Net retention &amp; policies-in-force come from your monthly book-health upload; save metrics
-        are this period's worked cases. Tiles open the full breakdown.
+        <T k="pages.components.retention.retentionhealthoverview.d3ab6b">Net retention & policies-in-force come from your monthly book-health upload; save metrics are this period's worked cases. Tiles open the full breakdown.</T>
       </p>
     </div>
   );

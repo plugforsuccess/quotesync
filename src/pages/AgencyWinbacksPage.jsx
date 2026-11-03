@@ -3,6 +3,7 @@
 // source 'winback'), as a call list — who left, what line, when, why, and the
 // premium that walked. Biggest premium first. The lead page does the logging.
 
+import { T } from '../components/SiteCopy';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, MessageSquare, ChevronRight } from 'lucide-react';
@@ -32,7 +33,7 @@ function WinbackCard({ lead }) {
         </div>
         {w?.premium != null && (
           <p className="shrink-0 text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>
-            {money(w.premium)}<span className="text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span>
+            {money(w.premium)}<span className="text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencywinbackspage.6d8fef">/yr</T></span>
           </p>
         )}
       </div>
@@ -41,11 +42,11 @@ function WinbackCard({ lead }) {
         {lead.phone && (
           <>
             <a href={`tel:+1${lead.phone}`} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
-              <Phone className="h-4 w-4" aria-hidden="true" /> Call {formatPhone(lead.phone)}
+              <Phone className="h-4 w-4" aria-hidden="true" /> <T k="pages.agencywinbackspage.c3755e">Call</T> {formatPhone(lead.phone)}
             </a>
             <a href={`sms:+1${lead.phone}`} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-semibold"
               style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
-              <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text
+              <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="pages.agencywinbackspage.9dffbf">Text</T>
             </a>
           </>
         )}
@@ -73,9 +74,9 @@ export default function AgencyWinbacksPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-      <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Winbacks</h1>
+      <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencywinbackspage.b01c5f">Winbacks</T></h1>
       <p className="mt-1" style={{ color: 'var(--qs-subtle)' }}>
-        Customers who left Allstate. {open.length} to call{openPremium ? ` · ${money(openPremium)}/yr walked out` : ''}.
+        <T k="pages.agencywinbackspage.eb82da">Customers who left Allstate.</T> {open.length} <T k="pages.agencywinbackspage.a8fd37">to call</T>{openPremium ? ` · ${money(openPremium)}/yr walked out` : ''}.
       </p>
 
       <div className="mt-4 inline-flex rounded-lg p-1" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }} role="tablist">
@@ -91,7 +92,7 @@ export default function AgencyWinbacksPage() {
       {error && <p className="mt-4 text-sm" style={{ color: 'var(--qs-danger)' }}>{error.message}</p>}
       {!error && list.length === 0 && (
         <p className="mt-6 rounded-xl p-6 text-center" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }}>
-          No winbacks yet. They come from historical termination reports uploaded under Retention.
+          <T k="pages.agencywinbackspage.fc8914">No winbacks yet. They come from historical termination reports uploaded under Retention.</T>
         </p>
       )}
       <ul className="mt-4 space-y-3">

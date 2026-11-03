@@ -3,6 +3,7 @@
 // email via the send-employee-invite edge function and links the resulting
 // auth user to the employee record.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { X, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -57,10 +58,10 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)',
               margin: 0 }}>
-              Invite {employee.first_name} to QuoteSync
+              <T k="pages.components.settings.employeeinvitemodal.c6a00f">Invite</T> {employee.first_name} <T k="pages.components.settings.employeeinvitemodal.1d3afa">to QuoteSync</T>
             </h2>
             <p style={{ fontSize: 12, color: 'var(--qs-muted)', margin: '4px 0 0' }}>
-              They'll receive an email with a link to set up their account.
+              <T k="pages.components.settings.employeeinvitemodal.af436e">They'll receive an email with a link to set up their account.</T>
             </p>
           </div>
           <button onClick={onClose}
@@ -75,7 +76,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, fontWeight: 600,
                 color: 'var(--qs-subtle)', display: 'block', marginBottom: 6 }}>
-                Email address
+                <T k="pages.components.settings.employeeinvitemodal.b357b5">Email address</T>
               </label>
               <input
                 type="email"
@@ -94,12 +95,12 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
               padding: '10px 12px', marginBottom: 20, fontSize: 12,
               color: 'var(--qs-dim)' }}>
               <strong style={{ color: 'var(--qs-text)' }}>
-                {employee.first_name} will have access to:
+                {employee.first_name} <T k="pages.components.settings.employeeinvitemodal.270c3a">will have access to:</T>
               </strong>
               <ul style={{ margin: '6px 0 0', paddingLeft: 16, lineHeight: 1.8 }}>
-                <li>My Queue — retention cases assigned to them</li>
-                <li>My Scorecard — personal performance metrics</li>
-                <li>Punch Clock — time entry</li>
+                <li><T k="pages.components.settings.employeeinvitemodal.bcfca0">My Queue — retention cases assigned to them</T></li>
+                <li><T k="pages.components.settings.employeeinvitemodal.fdc2c7">My Scorecard — personal performance metrics</T></li>
+                <li><T k="pages.components.settings.employeeinvitemodal.edf857">Punch Clock — time entry</T></li>
               </ul>
             </div>
 
@@ -108,7 +109,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
                 style={{ flex: 1, padding: '10px', borderRadius: 8,
                   background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
                   color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                Cancel
+                <T k="pages.components.settings.employeeinvitemodal.ea4788">Cancel</T>
               </button>
               <button
                 onClick={handleInvite}
@@ -129,18 +130,16 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
             <CheckCircle size={40} style={{ color: '#10B981', marginBottom: 12 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)',
               margin: '0 0 8px' }}>
-              Invite sent to {email}
+              <T k="pages.components.settings.employeeinvitemodal.0ff5fe">Invite sent to</T> {email}
             </p>
             <p style={{ fontSize: 13, color: 'var(--qs-dim)', margin: '0 0 20px' }}>
-              {employee.first_name} will receive an email with a link to set up
-              their QuoteSync account. They'll land on their Queue automatically
-              after signing in.
+              {employee.first_name} <T k="pages.components.settings.employeeinvitemodal.ee918f">will receive an email with a link to set up their QuoteSync account. They'll land on their Queue automatically after signing in.</T>
             </p>
             <button onClick={onClose}
               style={{ padding: '10px 24px', borderRadius: 8, background: '#10B98122',
                 border: '1px solid #10B98133', color: '#10B981',
                 cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-              Done
+              <T k="pages.components.settings.employeeinvitemodal.f92965">Done</T>
             </button>
           </div>
         )}
@@ -150,17 +149,17 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
             <CheckCircle size={40} style={{ color: '#3B82F6', marginBottom: 12 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)',
               margin: '0 0 8px' }}>
-              Account linked
+              <T k="pages.components.settings.employeeinvitemodal.ddcdeb">Account linked</T>
             </p>
             <p style={{ fontSize: 13, color: 'var(--qs-dim)', margin: '0 0 20px' }}>
-              {email} already has a Supabase account. It's now linked to{' '}
-              {employee.first_name}'s employee record. They can log in immediately.
+              {email} <T k="pages.components.settings.employeeinvitemodal.9f6727">already has a Supabase account. It's now linked to</T>{' '}
+              {employee.first_name}<T k="pages.components.settings.employeeinvitemodal.c38976">'s employee record. They can log in immediately.</T>
             </p>
             <button onClick={onClose}
               style={{ padding: '10px 24px', borderRadius: 8, background: '#3B82F622',
                 border: '1px solid #3B82F633', color: '#3B82F6',
                 cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-              Done
+              <T k="pages.components.settings.employeeinvitemodal.f92965">Done</T>
             </button>
           </div>
         )}
@@ -170,7 +169,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
             <AlertCircle size={40} style={{ color: '#EF4444', marginBottom: 12 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)',
               margin: '0 0 8px' }}>
-              Invite failed
+              <T k="pages.components.settings.employeeinvitemodal.e4747f">Invite failed</T>
             </p>
             <p style={{ fontSize: 13, color: '#EF4444', margin: '0 0 20px' }}>
               {errorMsg}
@@ -180,13 +179,13 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
                 style={{ flex: 1, padding: '10px', borderRadius: 8,
                   background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
                   color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                Try Again
+                <T k="pages.components.settings.employeeinvitemodal.d876a9">Try Again</T>
               </button>
               <button onClick={onClose}
                 style={{ flex: 1, padding: '10px', borderRadius: 8,
                   background: 'none', border: '1px solid var(--qs-border)',
                   color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 13 }}>
-                Close
+                <T k="pages.components.settings.employeeinvitemodal.d3d2e6">Close</T>
               </button>
             </div>
           </div>

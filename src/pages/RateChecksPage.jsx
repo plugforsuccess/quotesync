@@ -3,6 +3,7 @@
 // Agents copy the policy into an Allstate quote, enter Allstate's price, and
 // the outcome (won → call, lost → polite auto-text) is handled by rate-check-outcome.
 
+import { T } from '../components/SiteCopy';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -84,7 +85,7 @@ function Age({ rc, now }) {
   const mins = minutesSince(rc.created_at, now);
   const open = OPEN_STATUSES.includes(rc.status);
   if (open && mins >= OVERDUE_MINUTES) {
-    return <span className="font-semibold text-red-500" title="The page says we typically text within 30 minutes">Waiting {ageText(mins)}</span>;
+    return <span className="font-semibold text-red-500" title="The page says we typically text within 30 minutes"><T k="pages.ratecheckspage.5706de">Waiting</T> {ageText(mins)}</span>;
   }
   return <span style={{ color: 'var(--qs-text)' }}>{mins < 1 ? 'Just now' : `${ageText(mins)} ago`}</span>;
 }
@@ -101,13 +102,13 @@ function Savings({ delta }) {
   const n = Number(delta);
   return n > 0
     ? <span className="font-semibold text-green-600">{money(n)}</span>
-    : <span className="text-red-500">Allstate {money(Math.abs(n))} more</span>;
+    : <span className="text-red-500"><T k="pages.ratecheckspage.141fa1">Allstate</T> {money(Math.abs(n))} <T k="pages.ratecheckspage.addec4">more</T></span>;
 }
 
 function StaffTag() {
   return (
     <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-subtle)' }}
-      title="Uploaded by staff — no texting consent on file">staff upload</span>
+      title="Uploaded by staff — no texting consent on file"><T k="pages.ratecheckspage.25f6ed">staff upload</T></span>
   );
 }
 
@@ -297,7 +298,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       </div>
       {h.lead.promoter_name && h.lead.promoter_id && (
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-          Referred by{' '}
+          <T k="pages.ratecheckspage.36e9b1">Referred by</T>{' '}
           <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
             title={`Open ${partnerName(h.lead.promoter_name)}'s partner card`}
             className="font-medium underline underline-offset-2" style={{ color: 'var(--qs-dim)' }}>
@@ -323,7 +324,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
                 <MessageSquare className="h-5 w-5" aria-hidden="true" />
               </a>
             )}
-            <span className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote</span>
+            <span className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.ratecheckspage.5002c4">Start quote</T></span>
           </span>
         ) : <StatusChip status={h.status} quiet />}
       </div>
@@ -333,7 +334,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {(renewal || bundle) && (
         <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t pt-4" style={{ borderColor: 'var(--qs-border)' }}>
           {renewal && <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>}
-          {bundle && <CardPill>Bundle opportunity</CardPill>}
+          {bundle && <CardPill><T k="pages.ratecheckspage.6921b0">Bundle opportunity</T></CardPill>}
         </div>
       )}
     </li>
@@ -346,7 +347,7 @@ function NotifyButton() {
   return (
     <button onClick={() => Notification.requestPermission().then(setPerm)} title="Get a heads-up on this device when a policy comes in" aria-label="Alert me here"
       className="hidden h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold sm:inline-flex" style={inputStyle}>
-      <Bell className="h-4 w-4" aria-hidden="true" /><span className="hidden lg:inline">Alert me here</span>
+      <Bell className="h-4 w-4" aria-hidden="true" /><span className="hidden lg:inline"><T k="pages.ratecheckspage.4bd5f4">Alert me here</T></span>
     </button>
   );
 }
@@ -429,9 +430,9 @@ export default function RateChecksPage() {
       <div className="dark-page flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}>Rate Checks isn&apos;t enabled</h2>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.9eba0d">Rate Checks isn't enabled</T></h2>
           <p style={{ color: 'var(--qs-dim)' }}>
-            Ask a platform admin to turn on the Rate Checks feature for your agency.
+            <T k="pages.ratecheckspage.a401fc">Ask a platform admin to turn on the Rate Checks feature for your agency.</T>
           </p>
         </div>
       </div>
@@ -446,18 +447,18 @@ export default function RateChecksPage() {
         {/* Title and actions share one row, so the page reads title → tabs → list. */}
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="whitespace-nowrap text-xl font-bold sm:text-2xl" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
-            <p className="mt-0.5 hidden text-sm sm:block" style={{ color: 'var(--qs-dim)' }}>People who sent their policy to see if Allstate can beat it.</p>
+            <h1 className="whitespace-nowrap text-xl font-bold sm:text-2xl" style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.7427f1">Rate Checks</T></h1>
+            <p className="mt-0.5 hidden text-sm sm:block" style={{ color: 'var(--qs-dim)' }}><T k="pages.ratecheckspage.abcc59">People who sent their policy to see if Allstate can beat it.</T></p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <NotifyButton />
             <button onClick={() => setUploadOpen(true)} aria-label="Upload dec page" title="Upload dec page"
               className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
-              <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Upload dec page</span>
+              <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline"><T k="pages.ratecheckspage.d008bd">Upload dec page</T></span>
             </button>
             <button onClick={() => setInviteOpen(true)}
               className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
-              <Send className="h-4 w-4" aria-hidden="true" /> Send a link
+              <Send className="h-4 w-4" aria-hidden="true" /> <T k="pages.ratecheckspage.176f56">Send a link</T>
             </button>
           </div>
         </div>
@@ -483,8 +484,8 @@ export default function RateChecksPage() {
                 <Clock className="h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
                 <span className="min-w-0 flex-1 font-medium">
                   {overdueOnly
-                    ? <>Showing {overdue} waiting 30+ min</>
-                    : <>{overdue} waiting 30+ min for a quote</>}
+                    ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">waiting 30+ min</T></>
+                    : <>{overdue} <T k="pages.ratecheckspage.f9362d">waiting 30+ min for a quote</T></>}
                 </span>
                 <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show all' : 'Show'}</span>
               </button>
@@ -501,7 +502,7 @@ export default function RateChecksPage() {
                 ))}
               </div>
               <label className="relative ml-auto w-full sm:w-72">
-                <span className="sr-only">Search</span>
+                <span className="sr-only"><T k="pages.ratecheckspage.133484">Search</T></span>
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }} />
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, phone, carrier, ZIP"
                   className="w-full rounded-lg py-2 pl-8 pr-3 text-sm" style={inputStyle} />
@@ -510,9 +511,9 @@ export default function RateChecksPage() {
 
             <div className="dark-card overflow-hidden" style={{ padding: 0 }}>
               {isLoading ? (
-                <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading rate checks…</div>
+                <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.585e4c">Loading rate checks…</T></div>
               ) : error ? (
-                <div className="p-8 text-center text-red-600">Error loading rate checks. Please try again.</div>
+                <div className="p-8 text-center text-red-600"><T k="pages.ratecheckspage.c71c89">Error loading rate checks. Please try again.</T></div>
               ) : households.length === 0 ? (
                 <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
                   {search ? 'Nobody matches that search.' : filter === 'open' ? 'All caught up — nothing waiting for a quote.' : 'Nothing here yet.'}
@@ -542,7 +543,7 @@ export default function RateChecksPage() {
                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
                             <td className="px-4 py-3 text-sm">
                               <div className="font-medium whitespace-nowrap" style={{ color: 'var(--qs-bright)' }}>
-                                {personName(h.lead.first_name, h.policies) || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} policies</span>}{h.lead.upload_source === 'agent' && <StaffTag />}
+                                {personName(h.lead.first_name, h.policies) || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} <T k="pages.ratecheckspage.94422f">policies</T></span>}{h.lead.upload_source === 'agent' && <StaffTag />}
                               </div>
                               {h.lead.phone && (
                                 <a href={`tel:+1${h.lead.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-primary-600 hover:underline whitespace-nowrap">
@@ -644,7 +645,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               <OriginTag rc={rc} className="mt-0.5" />
               {rc.resubmitted_at && (
                 <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                  Sent again {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  <T k="pages.ratecheckspage.01fa31">Sent again</T> {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   {rc.resubmit_count > 1 ? ` · ${rc.resubmit_count} times` : ''}
                 </p>
               )}
@@ -657,20 +658,20 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           {rc.phone && (
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
               <a href={`tel:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 font-semibold text-white">
-                <Phone className="h-4 w-4" /> Call {formatPhone(rc.phone)}
+                <Phone className="h-4 w-4" /> <T k="pages.ratecheckspage.c3755e">Call</T> {formatPhone(rc.phone)}
               </a>
               <a href={`sms:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
-                <MessageSquare className="h-4 w-4" /> Text
+                <MessageSquare className="h-4 w-4" /> <T k="pages.ratecheckspage.9dffbf">Text</T>
               </a>
               {rc.email && (
                 <a href={`mailto:${rc.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
-                  <Mail className="h-4 w-4" /> Email
+                  <Mail className="h-4 w-4" /> <T k="pages.ratecheckspage.ce8ae9">Email</T>
                 </a>
               )}
               <CopyButton text={formatPhone(rc.phone)} label="Copy phone number" className="p-2" />
               {rc.lead_id && (
                 <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex items-center gap-1 text-primary-600 hover:underline">
-                  Lead record <ExternalLink className="w-3.5 h-3.5" />
+                  <T k="pages.ratecheckspage.9fc953">Lead record</T> <ExternalLink className="w-3.5 h-3.5" />
                 </Link>
               )}
             </div>
@@ -687,7 +688,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
                 {multi && <HouseholdCard rc={rc} household={household} onSelect={onSelect} />}
                 <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
                 {rc.upload_source === 'agent' && (
-                  <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
+                  <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.d03dfd">Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</T></p>
                 )}
               </div>
             ) },
@@ -698,7 +699,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
         <div className="space-y-6 p-5">
           {rc.extract_error && (
             <Notice tone="danger">
-              We couldn&apos;t read this photo. Look at it below and fill in the policy details by hand.
+              <T k="pages.ratecheckspage.08f079">We couldn't read this photo. Look at it below and fill in the policy details by hand.</T>
               {canRescan && (
                 <button onClick={() => rescan.mutate({ rateCheckId: rc.id })} disabled={rescan.isPending}
                   className="ml-2 inline-flex items-center gap-1 font-semibold text-primary-600 hover:underline disabled:opacity-50">
@@ -708,7 +709,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
             </Notice>
           )}
           {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
-          {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info">Scanned again — check the details below.</Notice>}
+          {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info"><T k="pages.ratecheckspage.75068f">Scanned again — check the details below.</T></Notice>}
           <PolicyDetails rc={rc} warning={!rc.extract_error ? warning : null} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
@@ -770,12 +771,12 @@ function QuoteBox({ rc, onQuoted }) {
         <PriceDrop current={rc.annual_premium} price={quotedPrice} market={market} />
       ) : (
         <>
-          <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
+          <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.318d2e">They pay now</T></p>
           <p className="mt-1 text-4xl font-bold leading-none" style={{ color: 'var(--qs-bright)' }}>
-            {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
+            {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.6d8fef">/yr</T></span></> : 'Price not read yet'}
           </p>
           {Number(rc.term_months) === 6 && rc.current_premium != null && (
-            <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
+            <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} <T k="pages.ratecheckspage.cdd738">every 6 months</T></p>
           )}
         </>
       )}
@@ -783,12 +784,12 @@ function QuoteBox({ rc, onQuoted }) {
 
       {bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
-          <div className="text-xl font-extrabold text-green-600">Bound with {boundInfo.bound_carrier || 'Allstate'}{boundInfo.bound_premium != null ? ` at ${money(boundInfo.bound_premium)}/yr` : ''}</div>
+          <div className="text-xl font-extrabold text-green-600"><T k="pages.ratecheckspage.79ec67">Bound with</T> {boundInfo.bound_carrier || 'Allstate'}{boundInfo.bound_premium != null ? ` at ${money(boundInfo.bound_premium)}/yr` : ''}</div>
           <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
         </div>
       )}
       {!bound && <form onSubmit={submit} className="mt-7 space-y-3">
-        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} price per year</label>
+        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} <T k="pages.ratecheckspage.f9fce9">price per year</T></label>
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
             {premium && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>}
@@ -805,19 +806,19 @@ function QuoteBox({ rc, onQuoted }) {
           <LiveDelta current={rc.annual_premium} price={parseMoney(premium)} />
         )}
         {looksTooLow(rc.annual_premium, parseMoney(premium)) && (
-          <p className="text-sm text-yellow-600">That&apos;s a big drop — double-check the limits match.</p>
+          <p className="text-sm text-yellow-600"><T k="pages.ratecheckspage.611b4f">That's a big drop — double-check the limits match.</T></p>
         )}
       </form>}
       {rc.annual_premium == null && !declined && (
-        <p className="mt-2 text-xs text-yellow-600">Fill in their current price under Policy first — otherwise we can&apos;t tell if Allstate wins.</p>
+        <p className="mt-2 text-xs text-yellow-600"><T k="pages.ratecheckspage.a04282">Fill in their current price under Policy first — otherwise we can't tell if Allstate wins.</T></p>
       )}
       {enterQuote.isError && <p className="mt-2 text-sm text-red-600">{enterQuote.error.message}</p>}
 
       {outcome === 'won' && !bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
-          <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>Call now. The lead is marked Interested.</p>
+          <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.62f9fb">Call now. The lead is marked Interested.</T></p>
           <p className="mt-3 select-text text-sm" style={{ color: 'var(--qs-bright)' }}>“{script}”</p>
-          <CopyTextButton text={script} className="mt-2 text-xs font-semibold text-primary-600 hover:underline">Copy script</CopyTextButton>
+          <CopyTextButton text={script} className="mt-2 text-xs font-semibold text-primary-600 hover:underline"><T k="pages.ratecheckspage.c38517">Copy script</T></CopyTextButton>
           <BindForm rc={rc} market={market} defaultPremium={result?.allstate_premium ?? rc.allstate_premium}
             onBound={(b) => { setLocalBound(b); onQuoted?.(b); }} />
         </div>
@@ -825,12 +826,12 @@ function QuoteBox({ rc, onQuoted }) {
       {outcome === 'lost' && (
         <div className="mt-4 text-sm">
           <div className="font-semibold" style={{ color: 'var(--qs-bright)' }}>
-            {market} can&apos;t beat {money(rc.annual_premium)}/yr (quoted {money(result?.allstate_premium ?? rc.allstate_premium)}). Lead closed.
+            {market} <T k="pages.ratecheckspage.b1006d">can't beat</T> {money(rc.annual_premium)}<T k="pages.ratecheckspage.97f493">/yr (quoted</T> {money(result?.allstate_premium ?? rc.allstate_premium)}<T k="pages.ratecheckspage.f265a3">). Lead closed.</T>
           </div>
           {result?.sms && (
             result.sms.attempted && result.sms.ok
-              ? <p className="mt-1 text-green-600">We sent them a polite text.</p>
-              : <p className="mt-1 text-yellow-600">No text sent{result.sms.reason ? ` — ${result.sms.reason}` : result.sms.error ? ` — ${result.sms.error}` : ''}.</p>
+              ? <p className="mt-1 text-green-600"><T k="pages.ratecheckspage.30b4c9">We sent them a polite text.</T></p>
+              : <p className="mt-1 text-yellow-600"><T k="pages.ratecheckspage.a055ce">No text sent</T>{result.sms.reason ? ` — ${result.sms.reason}` : result.sms.error ? ` — ${result.sms.error}` : ''}.</p>
           )}
         </div>
       )}
@@ -849,14 +850,14 @@ function PriceDrop({ current, price, market }) {
     <div>
       {/* Labels on their own row, so the prices below get the full width. */}
       <div className="flex items-baseline justify-between gap-2 text-xs font-bold uppercase tracking-[0.12em]">
-        <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}>They pay now</span>
+        <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.318d2e">They pay now</T></span>
         <span className="whitespace-nowrap" style={{ color: tone }}>{market}</span>
       </div>
       <div className="mt-1.5 flex items-end justify-between gap-2">
         {/* Struck through only when Allstate is cheaper: the price they pay goes away. */}
         <p className={`text-xl font-bold leading-none ${s && s.delta > 0 ? 'line-through decoration-2' : ''}`} style={{ color: 'var(--qs-subtle)' }}>{money(current)}</p>
         <ArrowRight className="mb-0.5 h-5 w-5 shrink-0" style={{ color: tone }} aria-hidden="true" />
-        <p className="whitespace-nowrap text-2xl font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-sm font-semibold">/yr</span></p>
+        <p className="whitespace-nowrap text-2xl font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-sm font-semibold"><T k="pages.ratecheckspage.6d8fef">/yr</T></span></p>
       </div>
       <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }} role="img"
         aria-label={s ? (up ? `${market} is ${money(-s.delta)} a year more` : `${market} is ${s.pct}% less`) : undefined}>
@@ -865,7 +866,7 @@ function PriceDrop({ current, price, market }) {
       {s && (
         <p className="mt-2 text-lg font-extrabold" style={{ color: tone }}>
           {s.delta > 0 ? `Saves ${money(s.delta)}/yr.` : s.delta < 0 ? `Costs ${money(-s.delta)}/yr more.` : 'Same as they pay.'}
-          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> That&apos;s {Math.abs(s.pct)}% {s.delta > 0 ? 'less!' : 'more.'}</span>}
+          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> <T k="pages.ratecheckspage.55453b">That's</T> {Math.abs(s.pct)}% {s.delta > 0 ? 'less!' : 'more.'}</span>}
         </p>
       )}
     </div>
@@ -884,14 +885,14 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
     <form className="mt-3 flex flex-wrap items-end gap-2 border-t pt-3" style={{ borderColor: 'var(--qs-border)' }}
       onSubmit={e => { e.preventDefault(); if (!chosen) return; bind.mutate({ rateCheckId: rc.id, carrier: chosen, premium: parseMoney(premium) },
         { onSuccess: (res) => onBound?.({ status: 'bound', bound_carrier: res.bound_carrier, bound_premium: res.bound_premium, bound_at: new Date().toISOString() }) }); }}>
-      <label className="text-sm"><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>Bound with</span>
+      <label className="text-sm"><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.79ec67">Bound with</T></span>
         <select value={carrier} onChange={e => setCarrier(e.target.value)} className="rounded-md px-2 py-1.5" style={inputStyle}>
           {options.map(o => <option key={o} value={o}>{o}</option>)}
           <option value="__other">Other…</option>
         </select>
       </label>
       {carrier === '__other' && <input value={other} onChange={e => setOther(e.target.value)} placeholder="Carrier" className="rounded-md px-2 py-1.5 text-sm" style={inputStyle} />}
-      <label className="text-sm"><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>Premium / yr</span>
+      <label className="text-sm"><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.db8115">Premium / yr</T></span>
         <input value={premium} onChange={e => setPremium(sanitizeMoneyInput(e.target.value))} inputMode="decimal" className="w-28 rounded-md px-2 py-1.5" style={inputStyle} />
       </label>
       <button type="submit" disabled={!chosen || bind.isPending} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
@@ -908,7 +909,7 @@ function PolicyDetails({ rc, warning, onRescan, rescanning }) {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}>Quote sheet</h3>
+        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.7558bf">Quote sheet</T></h3>
         {!editing && (
           <div className="flex items-center gap-3">
             {onRescan && (
@@ -917,7 +918,7 @@ function PolicyDetails({ rc, warning, onRescan, rescanning }) {
               </button>
             )}
             <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
-              <Pencil className="h-3.5 w-3.5" /> Fix details
+              <Pencil className="h-3.5 w-3.5" /> <T k="pages.ratecheckspage.7a6e64">Fix details</T>
             </button>
           </div>
         )}
@@ -932,22 +933,22 @@ function PolicyPhoto({ rc }) {
   const isPdf = rc.image_media_type === 'application/pdf';
   return (
     <section>
-      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}>What they sent</h3>
+      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.11ac95">What they sent</T></h3>
       {!rc.image_path ? (
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No photo on file. Photos are deleted after 90 days.</p>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.b53e83">No photo on file. Photos are deleted after 90 days.</T></p>
       ) : isLoading ? (
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</p>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.5f02f0">Loading…</T></p>
       ) : !imageUrl ? (
-        <p className="text-sm text-red-600">Couldn&apos;t load the photo.</p>
+        <p className="text-sm text-red-600"><T k="pages.ratecheckspage.567a3b">Couldn't load the photo.</T></p>
       ) : isPdf ? (
         <a href={imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary-600 hover:underline">
-          Open the PDF <ExternalLink className="h-3.5 w-3.5" />
+          <T k="pages.ratecheckspage.59cb8a">Open the PDF</T> <ExternalLink className="h-3.5 w-3.5" />
         </a>
       ) : (
         <a href={imageUrl} target="_blank" rel="noreferrer" className="block" title="Open full size">
           <img src={imageUrl} alt="Policy page the customer sent" className="max-h-72 w-full rounded-lg border object-contain object-top"
             style={{ borderColor: 'var(--qs-border)', background: '#fff' }} />
-          <span className="mt-1 inline-flex items-center gap-1 text-sm text-primary-600">Open full size <ExternalLink className="h-3.5 w-3.5" /></span>
+          <span className="mt-1 inline-flex items-center gap-1 text-sm text-primary-600"><T k="pages.ratecheckspage.562cd6">Open full size</T> <ExternalLink className="h-3.5 w-3.5" /></span>
         </a>
       )}
     </section>
@@ -1028,13 +1029,13 @@ function PolicyForm({ rc, onDone }) {
         </label>
       </div>
       <p className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-        That&apos;s <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{money(annual, { cents: true })}</span> a year.
+        <T k="pages.ratecheckspage.55453b">That's</T> <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{money(annual, { cents: true })}</span> <T k="pages.ratecheckspage.843c6d">a year.</T>
       </p>
       <div className="mt-3 flex items-center gap-2">
         <button onClick={save} disabled={update.isPending} className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
           {update.isPending ? 'Saving…' : 'Save'}
         </button>
-        <button onClick={onDone} disabled={update.isPending} className="rounded-lg px-3 py-1.5 text-sm" style={inputStyle}>Cancel</button>
+        <button onClick={onDone} disabled={update.isPending} className="rounded-lg px-3 py-1.5 text-sm" style={inputStyle}><T k="pages.ratecheckspage.ea4788">Cancel</T></button>
         {update.isError && <span className="text-sm text-red-600">{update.error.message}</span>}
       </div>
     </div>

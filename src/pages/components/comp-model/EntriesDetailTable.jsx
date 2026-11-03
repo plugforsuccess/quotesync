@@ -1,6 +1,7 @@
 // src/pages/components/comp-model/EntriesDetailTable.jsx
 // Collapsible detail table showing individual revenue entries for the selected month.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText } from 'lucide-react';
 
@@ -48,7 +49,7 @@ export default function EntriesDetailTable({ entries }) {
       >
         <FileText className="w-4 h-4 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Entry Detail ({entries.length} {entries.length === 1 ? 'entry' : 'entries'})
+          <T k="pages.components.compmodel.entriesdetailtable.5b8f8d">Entry Detail (</T>{entries.length} {entries.length === 1 ? 'entry' : 'entries'})
         </h4>
         {expanded
           ? <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
@@ -60,12 +61,12 @@ export default function EntriesDetailTable({ entries }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Date</th>
-                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Policy No</th>
-                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Product</th>
-                <th className="text-right py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Premium</th>
-                <th className="text-right py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Items</th>
-                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Customer</th>
+                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.entriesdetailtable.447497">Date</T></th>
+                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.entriesdetailtable.629706">Policy No</T></th>
+                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.entriesdetailtable.deb105">Product</T></th>
+                <th className="text-right py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.entriesdetailtable.8d5e7e">Premium</T></th>
+                <th className="text-right py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.entriesdetailtable.9dea40">Items</T></th>
+                <th className="text-left py-2 px-4 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"><T k="pages.components.compmodel.entriesdetailtable.ce2660">Customer</T></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -82,7 +83,7 @@ export default function EntriesDetailTable({ entries }) {
             </tbody>
             <tfoot>
               <tr className="border-t border-gray-300 bg-gray-50/50">
-                <td colSpan={3} className="py-2 px-4 text-xs font-bold text-gray-700 uppercase">Total</td>
+                <td colSpan={3} className="py-2 px-4 text-xs font-bold text-gray-700 uppercase"><T k="pages.components.compmodel.entriesdetailtable.96b014">Total</T></td>
                 <td className="py-2 px-4 text-right text-sm font-bold text-gray-900">
                   {fmt(entries.reduce((s, e) => s + e.premium, 0))}
                 </td>

@@ -1,4 +1,5 @@
 // src/pages/CrossSellPage.jsx
+import { T } from '../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -171,10 +172,10 @@ export default function CrossSellPage() {
       }}>
         <div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)' }}>
-            Cross-Sell
+            <T k="pages.crosssellpage.ec0945">Cross-Sell</T>
           </div>
           <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 2 }}>
-            {allCases.length} opportunities from {uploads.length} upload{uploads.length !== 1 ? 's' : ''}
+            {allCases.length} <T k="pages.crosssellpage.f76aa9">opportunities from</T> {uploads.length} <T k="pages.crosssellpage.76ee3d">upload</T>{uploads.length !== 1 ? 's' : ''}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -201,7 +202,7 @@ export default function CrossSellPage() {
               fontSize: 14, fontWeight: 600, cursor: 'pointer',
             }}
           >
-            + Upload Audit Report
+            <T k="pages.crosssellpage.fc6d65">+ Upload Audit Report</T>
           </button>
         </div>
       </div>
@@ -239,7 +240,7 @@ export default function CrossSellPage() {
           fontSize: 12, color: 'var(--qs-subtle)', cursor: 'pointer',
         }}>
           <input type="checkbox" checked={showWorked} onChange={e => setShowWorked(e.target.checked)} />
-          Show worked (sold / declined)
+          <T k="pages.crosssellpage.d65495">Show worked (sold / declined)</T>
         </label>
       </div>
 
@@ -250,14 +251,13 @@ export default function CrossSellPage() {
           borderRadius: 10, padding: '12px 16px', marginBottom: 16,
           fontSize: 13, color: 'var(--qs-dim)',
         }}>
-          ⚠ These customers have an active pending cancel or both a renewal and cancel.
-          Resolve the cancel first. These cases will be re-evaluated on next upload.
+          <T k="pages.crosssellpage.2e978c">⚠ These customers have an active pending cancel or both a renewal and cancel. Resolve the cancel first. These cases will be re-evaluated on next upload.</T>
         </div>
       )}
 
       {isLoading ? (
         <div style={{ textAlign: 'center', color: 'var(--qs-muted)', padding: '48px 0' }}>
-          Loading…
+          <T k="pages.crosssellpage.5f02f0">Loading…</T>
         </div>
       ) : (
         <CrossSellQueue

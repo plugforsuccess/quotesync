@@ -1,7 +1,6 @@
 // src/pages/components/rate-checks/DecisionCard.jsx
 // Where this rate check goes, per the agency's rules (rate_checks.decision).
-// Leads with what to do next, then why, what the page already tells us, and the
-// questions still to ask — answered right on the card (rate_checks.intake_answers).
+// Leads with what to do next, then why, and the questions still to ask — answered right on the card (rate_checks.intake_answers).
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
@@ -9,6 +8,7 @@ import { DECISION, decisionLabel } from './format';
 import { vehicleQuestions } from './policyView';
 import { CARD_STYLE } from './ui';
 import { useUpdateRateCheck } from '../../../hooks/useRateChecks';
+import { T } from '../../../components/SiteCopy';
 
 const PILL = {
   success: { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' },
@@ -17,16 +17,17 @@ const PILL = {
   neutral: { color: 'var(--qs-subtle)', background: 'var(--qs-card)', border: '1px solid var(--qs-border)' },
 };
 
-// The rules' PUP hints, turned into the action they call for.
+// The rules' PUP hints, turned into the action they call for. Each line is editable
+// on the page (Edit copy); the key is the hint it answers.
 const ACTIONS = [
-  [/home liability is under \$300k/i, 'Quote home at $300k+ liability → unlocks PUP', 'Their auto liability already qualifies.'],
-  [/get their home dec page/i, 'Get their home dec page → unlocks PUP', 'Auto liability qualifies; the PUP also needs $300k+ home liability.'],
-  [/auto liability is under 250\/500/i, 'Quote auto at 250/500+ → unlocks PUP', 'Their home liability already qualifies.'],
-  [/get their auto dec page/i, 'Get their auto dec page → unlocks PUP', 'Home liability qualifies; the PUP also needs auto liability at 250/500+.'],
+  [/home liability is under \$300k/i, 'home_limit', 'Quote the home at $300k liability, then add a PUP', 'Auto liability already qualifies. A $300k home limit makes the household PUP-eligible, so quote the umbrella with it.'],
+  [/get their home dec page/i, 'home_page', 'Get the home dec page, then add a PUP', 'Auto liability already qualifies. The PUP also needs the home at $300k liability, so get that page and quote it.'],
+  [/auto liability is under 250\/500/i, 'auto_limit', 'Quote the auto at 250/500 liability, then add a PUP', 'Home liability already qualifies. Auto at 250/500 makes the household PUP-eligible, so quote the umbrella with it.'],
+  [/get their auto dec page/i, 'auto_page', 'Get the auto dec page, then add a PUP', 'Home liability already qualifies. The PUP also needs auto liability at 250/500, so get that page and quote it.'],
 ];
 function actionFor(hint) {
   const hit = ACTIONS.find(([re]) => re.test(hint?.detail || ''));
-  return hit ? { headline: hit[1], why: hit[2] } : null;
+  return hit ? { key: hit[1], headline: hit[2], why: hit[3] } : null;
 }
 
 export default function DecisionCard({ rc, household = null, compact = false }) {
@@ -35,7 +36,6 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
   const all = Array.isArray(rc.decision_reasons) ? rc.decision_reasons : [];
   const reasons = all.filter(r => r.decision !== 'info' && r.decision !== 'fact');
   const hints = all.filter(r => r.decision === 'info');
-  const facts = all.filter(r => r.decision === 'fact');
   // The rules' questions, plus what only the producer can find out (loan payoff year per financed car).
   const questions = [...(Array.isArray(rc.decision_questions) ? rc.decision_questions : []), ...vehicleQuestions(rc)];
   // Lead with an action when a hint calls for one; the rest stay as notes.
@@ -47,9 +47,10 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
     <section className="flex h-full flex-col rounded-xl p-4" style={{ ...CARD_STYLE, color: 'var(--qs-bright)' }} aria-label="Routing decision">
       {action ? (
         <>
-          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}</span>
-          <h3 className="mt-2 text-lg font-bold leading-snug">{action.headline}</h3>
-          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{action.why}</p>
+          {/* "(+PUP)": the umbrella isn't unlocked yet; the action below gets it there. */}
+          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}{/PUP/.test(decisionLabel(rc, household) || '') ? '' : ' (+PUP)'}</span>
+          <h3 className="mt-2 text-lg font-bold leading-snug"><T k={`rc.decision.${action.key}.headline`}>{action.headline}</T></h3>
+          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k={`rc.decision.${action.key}.why`}>{action.why}</T></p>
         </>
       ) : (
         <h3 className="text-xl font-bold leading-tight" style={{ color: PILL[d.tone].color === 'var(--qs-subtle)' ? undefined : PILL[d.tone].color }}>{decisionLabel(rc, household)}</h3>
@@ -65,24 +66,13 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
           ))}
         </ul>
       )}
-      {reasons.length === 0 && !action && notes.length === 0 && <p className="mt-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>Nothing on the page needs special handling.</p>}
+      {reasons.length === 0 && !action && notes.length === 0 && <p className="mt-1 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.decisioncard.33aaed">Nothing on the page needs special handling.</T></p>}
 
       {notes.map((r, i) => (
         <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>
       ))}
 
-      {!compact && facts.length > 0 && (
-        <div className="mt-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>On the page</p>
-          <ul className="mt-1.5 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
-            {facts.flatMap(f => String(f.detail || '').split('; ')).filter(Boolean).map((t, i) => <li key={i}>{t}</li>)}
-          </ul>
-        </div>
-      )}
-
       {!compact && questions.length > 0 && <StillToAsk rc={rc} questions={questions} />}
-
-      <p className="mt-auto pt-4 text-[11px]" style={{ color: 'var(--qs-subtle)' }}>Per the rules, not an underwriting approval.</p>
     </section>
   );
 }
@@ -107,13 +97,13 @@ function StillToAsk({ rc, questions }) {
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>Still to ask</p>
-        {done && <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--qs-success)' }}><Check className="h-3.5 w-3.5" aria-hidden="true" /> All info collected</span>}
+        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.decisioncard.af77ad">Still to ask</T></p>
+        {done && <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--qs-success)' }}><Check className="h-3.5 w-3.5" aria-hidden="true" /> <T k="pages.components.ratechecks.decisioncard.e4b516">All info collected</T></span>}
       </div>
       <ul className="mt-1.5 space-y-2">
         {questions.map(q => <Question key={q} q={q} a={answers[q]} onSave={(patch) => save(q, patch)} />)}
       </ul>
-      {error && <p className="mt-1 text-xs text-red-500" role="alert">Couldn&apos;t save: {error}</p>}
+      {error && <p className="mt-1 text-xs text-red-500" role="alert"><T k="pages.components.ratechecks.decisioncard.da1a84">Couldn't save:</T> {error}</p>}
     </div>
   );
 }
@@ -166,7 +156,7 @@ function Question({ q, a, onSave }) {
                 aria-label={`${label}: details`} className="min-w-0 flex-1 rounded-md px-2 py-2 text-sm"
                 style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }} />
               <button type="button" onClick={() => { onSave({ details: details.trim() || null }); setOpen(false); }}
-                className="rounded-md bg-primary-600 px-3 text-sm font-semibold text-white">Done</button>
+                className="rounded-md bg-primary-600 px-3 text-sm font-semibold text-white"><T k="pages.components.ratechecks.decisioncard.f92965">Done</T></button>
             </div>
           )}
         </>

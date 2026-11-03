@@ -3,6 +3,7 @@
 // saves (marked saved with no real logged call — only the auto-record). Plus a
 // one-click reconcile against the latest termination report.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useSaveIntegrity, useReconcileFalseSaves } from '../../../hooks/useSaveIntegrity';
 import { titleCaseName } from '../../../lib/names';
@@ -55,10 +56,9 @@ export default function SaveIntegrityPanel({ agencyId }) {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Save integrity</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.components.retention.saveintegritypanel.b2e2ec">Save integrity</T></h3>
             <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2, maxWidth: 560 }}>
-              Saves caught by the Allstate termination report (reversed) or recorded with no real
-              call (only the auto-record). Reversed saves no longer count toward the save rate.
+              <T k="pages.components.retention.saveintegritypanel.233c42">Saves caught by the Allstate termination report (reversed) or recorded with no real call (only the auto-record). Reversed saves no longer count toward the save rate.</T>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -85,13 +85,13 @@ export default function SaveIntegrityPanel({ agencyId }) {
       </div>
 
       {isLoading ? (
-        <div className="card" style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>
+        <div className="card" style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.saveintegritypanel.5f02f0">Loading…</T></div>
       ) : rows.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '32px 20px' }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>No integrity flags</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.components.retention.saveintegritypanel.16eb4b">No integrity flags</T></div>
           <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 4 }}>
-            Every recorded save has a logged call and none have been reversed by Allstate.
+            <T k="pages.components.retention.saveintegritypanel.3742b8">Every recorded save has a logged call and none have been reversed by Allstate.</T>
           </div>
         </div>
       ) : (
@@ -100,7 +100,7 @@ export default function SaveIntegrityPanel({ agencyId }) {
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#F87171', textTransform: 'uppercase',
                 letterSpacing: '0.06em', marginBottom: 8 }}>
-                Reversed by Allstate ({reversed.length}) — credit clawed back
+                <T k="pages.components.retention.saveintegritypanel.5ca061">Reversed by Allstate (</T>{reversed.length}<T k="pages.components.retention.saveintegritypanel.58f21b">) — credit clawed back</T>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {reversed.map(r => <Row key={r.case_id} r={r} />)}
@@ -111,7 +111,7 @@ export default function SaveIntegrityPanel({ agencyId }) {
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase',
                 letterSpacing: '0.06em', marginBottom: 8 }}>
-                Saved with no logged call ({unverified.length}) — review
+                <T k="pages.components.retention.saveintegritypanel.35168a">Saved with no logged call (</T>{unverified.length}<T k="pages.components.retention.saveintegritypanel.b86c08">) — review</T>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {unverified.map(r => <Row key={r.case_id} r={r} />)}

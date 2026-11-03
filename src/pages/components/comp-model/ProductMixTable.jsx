@@ -2,6 +2,7 @@
 // Editable product mix table with live blended average and mix % validation.
 // Supports add/remove product rows with auto-save.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 import { calcBlendedAvg, calcMixPctTotal } from '../../../utils/compModelCalculations';
@@ -78,7 +79,7 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Product Mix
+          <T k="pages.components.compmodel.productmixtable.c53692">Product Mix</T>
         </h3>
         {carrierName && (
           <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
@@ -91,10 +92,10 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left py-2 pr-2 text-xs font-semibold text-gray-500 uppercase">Product</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase">% of VC Items</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase">Avg Premium</th>
-              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase">Weighted Avg</th>
+              <th className="text-left py-2 pr-2 text-xs font-semibold text-gray-500 uppercase"><T k="pages.components.compmodel.productmixtable.deb105">Product</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase"><T k="pages.components.compmodel.productmixtable.2a35a6">% of VC Items</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase"><T k="pages.components.compmodel.productmixtable.3724ad">Avg Premium</T></th>
+              <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase"><T k="pages.components.compmodel.productmixtable.905530">Weighted Avg</T></th>
               <th className="w-8"></th>
             </tr>
           </thead>
@@ -154,7 +155,7 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
           </tbody>
           <tfoot>
             <tr className="border-t border-gray-300">
-              <td className="py-2 pr-2 text-xs font-bold text-gray-700 uppercase">Total</td>
+              <td className="py-2 pr-2 text-xs font-bold text-gray-700 uppercase"><T k="pages.components.compmodel.productmixtable.96b014">Total</T></td>
               <td className="py-2 px-2 text-right">
                 <span
                   className={`inline-flex items-center gap-1 text-xs font-bold ${
@@ -182,12 +183,12 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
         className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add Product
+        <T k="pages.components.compmodel.productmixtable.f06cdf">Add Product</T>
       </button>
 
       <div className="mt-4 p-3 bg-primary-50 rounded-lg border border-primary-100">
         <p className="text-xs font-medium text-primary-600 uppercase tracking-wide mb-0.5">
-          Blended Avg VC Premium / Item
+          <T k="pages.components.compmodel.productmixtable.f0e2f2">Blended Avg VC Premium / Item</T>
         </p>
         <p className="text-2xl font-bold text-primary-900">
           {formatCurrency(blendedAvg)}

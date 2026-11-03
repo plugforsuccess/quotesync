@@ -1,3 +1,4 @@
+import { T } from '../components/SiteCopy';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import RevenueProjectionsDashboard from './components/revenue/RevenueProjectionsDashboard';
@@ -175,9 +176,9 @@ export default function PlanningHubPage() {
       <style>{PLANNING_STYLES}</style>
 
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Planning</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.planninghubpage.21d28a">Planning</T></h1>
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2 }}>
-          Revenue · Staffing · Compensation
+          <T k="pages.planninghubpage.e333f6">Revenue · Staffing · Compensation</T>
         </div>
       </div>
 
@@ -199,10 +200,10 @@ export default function PlanningHubPage() {
         <div style={{ marginTop: 8 }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 2 }}>
-              Sales Capacity Model
+              <T k="pages.planninghubpage.7cdd82">Sales Capacity Model</T>
             </div>
             <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
-              Model producer capacity, quoting throughput, and new hire ROI
+              <T k="pages.planninghubpage.154598">Model producer capacity, quoting throughput, and new hire ROI</T>
             </div>
           </div>
           <div className="space-y-6">

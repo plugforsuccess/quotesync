@@ -3,6 +3,7 @@
 // write. Referrals are only possible for rate checks whose customer opted in
 // (enforced in the database), and every referral is logged.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useReferralPartners, useSaveReferralPartner } from '../../../hooks/useRateChecks';
 import { inputStyle, formatPhone } from './ui';
@@ -41,14 +42,13 @@ export default function ReferralPartners({ agencyId }) {
   return (
     <div className="space-y-4">
       <div className="dark-card text-sm" style={{ padding: 12, color: 'var(--qs-subtle)' }}>
-        You can only refer customers who said yes to referrals on the Rate Check page. Before paying or accepting a
-        referral fee, check Georgia’s rules with your attorney.
+        <T k="pages.components.ratechecks.referralpartners.e9e40a">You can only refer customers who said yes to referrals on the Rate Check page. Before paying or accepting a referral fee, check Georgia’s rules with your attorney.</T>
       </div>
 
       <div className="dark-card overflow-hidden" style={{ padding: 0 }}>
         <div className="flex items-center justify-between p-3" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-          <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Agencies you refer to</span>
-          {data.length > 0 && <button onClick={() => start(null)} className="min-h-[40px] rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">Add agency</button>}
+          <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.referralpartners.c09f68">Agencies you refer to</T></span>
+          {data.length > 0 && <button onClick={() => start(null)} className="min-h-[40px] rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white"><T k="pages.components.ratechecks.referralpartners.1d90c7">Add agency</T></button>}
         </div>
 
         {editing && (
@@ -64,21 +64,21 @@ export default function ReferralPartners({ agencyId }) {
               <button type="submit" disabled={save.isPending} className="rounded bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
                 {save.isPending ? 'Saving…' : 'Save'}
               </button>
-              <button type="button" onClick={() => setEditing(null)} className="rounded px-3 py-1.5 text-sm" style={inputStyle}>Cancel</button>
+              <button type="button" onClick={() => setEditing(null)} className="rounded px-3 py-1.5 text-sm" style={inputStyle}><T k="pages.components.ratechecks.referralpartners.ea4788">Cancel</T></button>
               {save.isError && <span className="text-sm text-red-600">{save.error.message}</span>}
             </div>
           </form>
         )}
 
         {isLoading ? (
-          <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</div>
+          <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.referralpartners.5f02f0">Loading…</T></div>
         ) : error ? (
-          <div className="p-8 text-center text-red-600">Error loading partners.</div>
+          <div className="p-8 text-center text-red-600"><T k="pages.components.ratechecks.referralpartners.16f930">Error loading partners.</T></div>
         ) : data.length === 0 ? (
           !editing && (
             <div className="p-6 text-center">
-              <p style={{ color: 'var(--qs-subtle)' }}>No agencies yet. Add an agency that writes what Allstate can’t, like SR-22 or commercial.</p>
-              <button onClick={() => start(null)} className="mt-4 min-h-[44px] rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Add agency</button>
+              <p style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.referralpartners.746aa6">No agencies yet. Add an agency that writes what Allstate can’t, like SR-22 or commercial.</T></p>
+              <button onClick={() => start(null)} className="mt-4 min-h-[44px] rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.components.ratechecks.referralpartners.1d90c7">Add agency</T></button>
             </div>
           )
         ) : (
@@ -86,17 +86,17 @@ export default function ReferralPartners({ agencyId }) {
             {data.map(p => (
               <li key={p.id} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 py-3 text-sm" style={{ borderTop: '1px solid var(--qs-border)', opacity: p.active ? 1 : 0.5 }}>
                 <div className="min-w-0 flex-1 basis-full sm:basis-0">
-                  <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>Inactive</span>}</p>
+                  <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.referralpartners.3cab03">Inactive</T></span>}</p>
                   <p className="flex flex-wrap gap-x-2" style={{ color: 'var(--qs-text)' }}>
                     {p.contact_name && <span>{p.contact_name}</span>}
                     {p.phone && <span className="whitespace-nowrap">{formatPhone(p.phone)}</span>}
                     {p.email && <span className="break-all">{p.email}</span>}
                     {!p.contact_name && !p.phone && !p.email && '—'}
                   </p>
-                  {(p.lines || []).length > 0 && <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Writes {p.lines.join(', ')}</p>}
+                  {(p.lines || []).length > 0 && <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.referralpartners.7bfbb9">Writes</T> {p.lines.join(', ')}</p>}
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button onClick={() => start(p)} className="min-h-[40px] rounded-lg px-3 font-semibold text-primary-600" style={inputStyle}>Edit</button>
+                  <button onClick={() => start(p)} className="min-h-[40px] rounded-lg px-3 font-semibold text-primary-600" style={inputStyle}><T k="pages.components.ratechecks.referralpartners.7dce12">Edit</T></button>
                   <button onClick={() => save.mutate({ id: p.id, agencyId, values: { active: !p.active } })} className="min-h-[40px] rounded-lg px-3" style={{ ...inputStyle, color: 'var(--qs-subtle)' }}>
                     {p.active ? 'Deactivate' : 'Reactivate'}
                   </button>

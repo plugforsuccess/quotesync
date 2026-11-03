@@ -1,4 +1,5 @@
 // src/pages/components/StepModal.jsx
+import { T } from '../../components/SiteCopy';
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
@@ -69,7 +70,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               >
                 {detail.title}
               </h3>
-              <p className="text-indigo-100 text-sm mt-1">Step {step} of 7</p>
+              <p className="text-indigo-100 text-sm mt-1"><T k="pages.components.stepmodal.48c7c4">Step</T> {step} <T k="pages.components.stepmodal.f6729a">of 7</T></p>
             </div>
           </div>
 
@@ -117,10 +118,10 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
                       <span className="text-3xl">📱</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">
-                      Verification Code Screen
+                      <T k="pages.components.stepmodal.42f36f">Verification Code Screen</T>
                     </p>
                     <p className="text-sm text-gray-500 mt-2">
-                      You'll receive a code via text or email
+                      <T k="pages.components.stepmodal.d4cedf">You'll receive a code via text or email</T>
                     </p>
                   </div>
                 </div>
@@ -141,10 +142,10 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
                       <span className="text-3xl">✓</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">
-                      Contact Information
+                      <T k="pages.components.stepmodal.c00c8e">Contact Information</T>
                     </p>
                     <p className="text-sm text-gray-500 mt-2">
-                      Verify your contact details
+                      <T k="pages.components.stepmodal.236e5c">Verify your contact details</T>
                     </p>
                   </div>
                 </div>
@@ -156,9 +157,9 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
                     <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-secondary-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">👥</span>
                     </div>
-                    <p className="text-gray-700 font-semibold text-lg">Add Drivers</p>
+                    <p className="text-gray-700 font-semibold text-lg"><T k="pages.components.stepmodal.a2f1cb">Add Drivers</T></p>
                     <p className="text-sm text-gray-500 mt-2">
-                      Confirm all drivers on your policy
+                      <T k="pages.components.stepmodal.1f67d9">Confirm all drivers on your policy</T>
                     </p>
                   </div>
                 </div>
@@ -170,8 +171,8 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
                     <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">🎉</span>
                     </div>
-                    <p className="text-gray-700 font-semibold text-lg">All Done!</p>
-                    <p className="text-sm text-gray-500 mt-2">Your quote is on the way</p>
+                    <p className="text-gray-700 font-semibold text-lg"><T k="pages.components.stepmodal.d73dbc">All Done!</T></p>
+                    <p className="text-sm text-gray-500 mt-2"><T k="pages.components.stepmodal.921e76">Your quote is on the way</T></p>
                   </div>
                 </div>
               )}
@@ -181,7 +182,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
             {detail.tips?.length > 0 && (
               <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-2xl p-5 shadow-sm">
                 <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <span className="text-xl">💡</span> Pro Tips
+                  <span className="text-xl">💡</span> <T k="pages.components.stepmodal.34658f">Pro Tips</T>
                 </h4>
                 <ul className="space-y-2">
                   {detail.tips.map((tip, index) => (
@@ -210,7 +211,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
                 : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-lg hover:shadow-primary-500/30 transform hover:scale-105 active:scale-95'
             }`}
           >
-            ← Previous
+            <T k="pages.components.stepmodal.431a9b">← Previous</T>
           </button>
 
           <button
@@ -222,7 +223,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
                 : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-lg hover:shadow-primary-500/30 transform hover:scale-105 active:scale-95'
             }`}
           >
-            Next →
+            <T k="pages.components.stepmodal.c61bef">Next →</T>
           </button>
         </div>
 

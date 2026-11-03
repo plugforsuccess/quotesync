@@ -2,6 +2,7 @@
 // Weekly Operating Review — principal's Monday home.
 // Three sections: Where We Stand, What Slipped, This Week's Focus.
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { toMonday, toPriorMonday, formatWeekLabel } from '../lib/weekUtils';
@@ -24,7 +25,7 @@ export default function WeeklyOperatingReviewPage() {
   if (!currentAgencyId) {
     return (
       <div style={{ padding: 24, color: 'var(--qs-subtle)' }}>
-        Resolving agency context…
+        <T k="pages.weeklyoperatingreviewpage.0bb2f0">Resolving agency context…</T>
       </div>
     );
   }
@@ -45,13 +46,13 @@ export default function WeeklyOperatingReviewPage() {
               fontSize: 28, fontWeight: 700,
               color: 'var(--qs-bright)', margin: 0,
             }}>
-              Weekly Operating Review
+              <T k="pages.weeklyoperatingreviewpage.e9e6c9">Weekly Operating Review</T>
             </h1>
             <p style={{
               fontSize: 14, color: 'var(--qs-subtle)',
               marginTop: 4, marginBottom: 0,
             }}>
-              {formatWeekLabel(reviewWeekStart)} · A 15-minute Monday discipline
+              {formatWeekLabel(reviewWeekStart)} <T k="pages.weeklyoperatingreviewpage.2640fb">· A 15-minute Monday discipline</T>
             </p>
           </div>
 
@@ -135,7 +136,7 @@ function WeekPicker({ value, onChange }) {
           fontWeight: 500,
         }}
       >
-        Today
+        <T k="pages.weeklyoperatingreviewpage.1dd1c5">Today</T>
       </button>
       <button
         type="button"

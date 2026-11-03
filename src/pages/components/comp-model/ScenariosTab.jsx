@@ -1,6 +1,7 @@
 // src/pages/components/comp-model/ScenariosTab.jsx
 // Tab 2: Preset scenarios, break-even callout, custom scenario, annual comp table.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { Target } from 'lucide-react';
 import PresetScenariosTable from './PresetScenariosTable';
@@ -32,7 +33,7 @@ export default function ScenariosTab({ config, productMix }) {
       {/* Preset Scenarios */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
-          Monthly Scenarios
+          <T k="pages.components.compmodel.scenariostab.06f785">Monthly Scenarios</T>
         </h3>
         <PresetScenariosTable config={config} productMix={productMix} />
       </div>

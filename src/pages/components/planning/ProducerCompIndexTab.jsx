@@ -1,3 +1,4 @@
+import { T } from '../../../components/SiteCopy';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
@@ -19,13 +20,13 @@ export default function ProducerCompIndexTab({ agencyId }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  if (isLoading) return <div style={{ color: 'var(--qs-subtle)', padding: 24 }}>Loading...</div>;
+  if (isLoading) return <div style={{ color: 'var(--qs-subtle)', padding: 24 }}><T k="pages.components.planning.producercompindextab.8524de">Loading...</T></div>;
 
   if (producers.length === 0) return (
     <div style={{ color: 'var(--qs-subtle)', padding: 24, textAlign: 'center' }}>
-      No active sales producers found.
+      <T k="pages.components.planning.producercompindextab.e01b19">No active sales producers found.</T>
       <div style={{ fontSize: 12, marginTop: 8 }}>
-        Add producers with the 'sales' role in Employee Management.
+        <T k="pages.components.planning.producercompindextab.52ee58">Add producers with the 'sales' role in Employee Management.</T>
       </div>
     </div>
   );
@@ -33,7 +34,7 @@ export default function ProducerCompIndexTab({ agencyId }) {
   return (
     <div style={{ maxWidth: 600 }}>
       <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 20 }}>
-        Select a producer to configure or view their compensation model.
+        <T k="pages.components.planning.producercompindextab.19fa91">Select a producer to configure or view their compensation model.</T>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {producers.map(p => {
@@ -53,7 +54,7 @@ export default function ProducerCompIndexTab({ agencyId }) {
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>{name}</div>
                   <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>
-                    {p.roles?.join(', ')} · Hired {p.hire_date || '—'}
+                    {p.roles?.join(', ')} <T k="pages.components.planning.producercompindextab.7f795c">· Hired</T> {p.hire_date || '—'}
                   </div>
                 </div>
                 <span style={{ color: 'var(--qs-info)', fontSize: 18 }}>→</span>

@@ -4,6 +4,7 @@
 //   • ReferToSalesBox  — hand a cross-sell opportunity to the sales board
 // All three reuse the modals' dark-theme form classes (dark-label/input/select).
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useCaseEscalation, useEscalateCase } from '../../../hooks/useEscalations';
 import { useCaseServiceTasks, TASK_TYPE_MAP } from '../../../hooks/useServiceTasks';
@@ -42,7 +43,7 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
         borderRadius: 10, padding: '12px 14px',
       }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#F87171' }}>
-          ⤴ Escalated to agent — awaiting pickup
+          <T k="pages.components.retention.casehandoffextras.afd633">⤴ Escalated to agent — awaiting pickup</T>
         </div>
         <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>
           {open.reason || 'Needs a licensed agent'}
@@ -60,7 +61,7 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
         border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.06)',
         color: '#F87171', fontSize: 13, fontWeight: 700, cursor: 'pointer',
       }}>
-        ⤴ Escalate to agent
+        <T k="pages.components.retention.casehandoffextras.dbed1b">⤴ Escalate to agent</T>
       </button>
     );
   }
@@ -69,18 +70,18 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
     <div style={{ border: '1px solid rgba(239,68,68,0.35)', borderRadius: 10, padding: 14,
       background: 'rgba(239,68,68,0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#F87171' }}>Escalate to agent</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#F87171' }}><T k="pages.components.retention.casehandoffextras.7029fd">Escalate to agent</T></span>
         <button type="button" onClick={() => setOpenForm(false)}
           style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 13 }}>✕</button>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label">Why does this need an agent?</label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.fb9c74">Why does this need an agent?</T></label>
         <select className="dark-select" value={reason} onChange={e => setReason(e.target.value)}>
           {ESCALATION_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label">Details for the agent</label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.c50ac7">Details for the agent</T></label>
         <textarea className="dark-input" rows={2} value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="What you've tried, what the customer needs, any deadline." />
@@ -100,7 +101,7 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
       </button>
       {escalate.isError && (
         <div style={{ fontSize: 12, color: '#F87171', marginTop: 6 }}>
-          Couldn't escalate — {escalate.error?.message || 'try again'}.
+          <T k="pages.components.retention.casehandoffextras.b875c0">Couldn't escalate —</T> {escalate.error?.message || 'try again'}.
         </div>
       )}
     </div>
@@ -121,7 +122,7 @@ export function LinkedServiceTasks({ caseType, caseId }) {
       background: 'var(--qs-elevated)' }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)',
         textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-        🗂️ Service requests from this case ({tasks.length})
+        <T k="pages.components.retention.casehandoffextras.02091f">🗂️ Service requests from this case (</T>{tasks.length})
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {tasks.map(t => {
@@ -160,7 +161,7 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
     return (
       <div style={{ fontSize: 13, color: '#34D399', fontWeight: 600, padding: '8px 12px',
         border: '1px solid rgba(52,211,153,0.3)', borderRadius: 8, background: 'rgba(52,211,153,0.06)' }}>
-        ✓ Referred to sales — on the Cross-Sell board
+        <T k="pages.components.retention.casehandoffextras.8ee567">✓ Referred to sales — on the Cross-Sell board</T>
       </div>
     );
   }
@@ -172,7 +173,7 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
         border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
         color: 'var(--qs-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
       }}>
-        💡 Refer to sales (cross-sell)
+        <T k="pages.components.retention.casehandoffextras.470620">💡 Refer to sales (cross-sell)</T>
       </button>
     );
   }
@@ -181,18 +182,18 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
     <div style={{ border: '1px solid var(--qs-border)', borderRadius: 10, padding: 14,
       background: 'var(--qs-elevated)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>Refer cross-sell to sales</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.components.retention.casehandoffextras.c6c960">Refer cross-sell to sales</T></span>
         <button type="button" onClick={() => setOpenForm(false)}
           style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 13 }}>✕</button>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label">Product they're interested in</label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.dc337c">Product they're interested in</T></label>
         <select className="dark-select" value={product} onChange={e => setProduct(e.target.value)}>
           {REFER_PRODUCTS.map(p => <option key={p} value={p}>{productLabel(p)}</option>)}
         </select>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label">Note for sales</label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.9b5ca9">Note for sales</T></label>
         <textarea className="dark-input" rows={2} value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="What they said — e.g. asked about bundling their auto." />
@@ -216,7 +217,7 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
       </button>
       {refer.isError && (
         <div style={{ fontSize: 12, color: '#F87171', marginTop: 6 }}>
-          Couldn't refer — {refer.error?.message || 'try again'}.
+          <T k="pages.components.retention.casehandoffextras.453865">Couldn't refer —</T> {refer.error?.message || 'try again'}.
         </div>
       )}
     </div>

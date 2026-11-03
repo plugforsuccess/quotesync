@@ -6,6 +6,7 @@
 // Gating: when no enabled plan exists, no bonus figures are shown — only the
 // "configure a plan" affordance — so the UI never promises uncontracted money.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { DollarSign, Lock, CheckCircle2, Pencil } from 'lucide-react';
 import { useEmployeeBonusPlan, useSaveBonusPlan } from '../../../hooks/useEmployeeBonusPlan';
@@ -109,7 +110,7 @@ export default function BonusPlanEditor({
     <div className="mt-6">
       <h3 className="text-sm font-semibold text-qs-subtle uppercase tracking-wider mb-3 flex items-center gap-2">
         <DollarSign className="w-4 h-4" />
-        Retention Bonus — {month}
+        <T k="pages.components.timeattendance.bonusplaneditor.b7d191">Retention Bonus —</T> {month}
       </h3>
 
       <div className="bg-qs-card rounded-lg border border-qs-border p-5">
@@ -117,15 +118,15 @@ export default function BonusPlanEditor({
         {!hasPlan && !editing && (
           <div className="text-center py-4">
             <Lock className="w-8 h-8 text-qs-muted mx-auto mb-3" />
-            <div className="text-sm text-qs-dim mb-1">No bonus plan configured</div>
+            <div className="text-sm text-qs-dim mb-1"><T k="pages.components.timeattendance.bonusplaneditor.cb1a7f">No bonus plan configured</T></div>
             <div className="text-xs text-qs-subtle mb-4">
-              This employee won't see a bonus on their scorecard until you enable a plan.
+              <T k="pages.components.timeattendance.bonusplaneditor.b2d087">This employee won't see a bonus on their scorecard until you enable a plan.</T>
             </div>
             <button
               onClick={() => setEditing(true)}
               className="text-sm font-medium px-4 py-2 rounded-md bg-primary-600 hover:bg-primary-500 text-white"
             >
-              Configure bonus plan
+              <T k="pages.components.timeattendance.bonusplaneditor.77a290">Configure bonus plan</T>
             </button>
           </div>
         )}
@@ -139,13 +140,13 @@ export default function BonusPlanEditor({
                 checked={form.enabled}
                 onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
               />
-              Bonus plan active
+              <T k="pages.components.timeattendance.bonusplaneditor.90b9d2">Bonus plan active</T>
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                  Paid on
+                  <T k="pages.components.timeattendance.bonusplaneditor.948cf2">Paid on</T>
                 </label>
                 <select
                   value={form.bonus_unit}
@@ -159,7 +160,7 @@ export default function BonusPlanEditor({
               </div>
               <div>
                 <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                  Monthly threshold
+                  <T k="pages.components.timeattendance.bonusplaneditor.e7c460">Monthly threshold</T>
                 </label>
                 <input
                   type="number" min="0"
@@ -170,7 +171,7 @@ export default function BonusPlanEditor({
               </div>
               <div>
                 <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                  $ per unit above threshold
+                  <T k="pages.components.timeattendance.bonusplaneditor.702273">$ per unit above threshold</T>
                 </label>
                 <input
                   type="number" min="0" step="0.01"
@@ -183,7 +184,7 @@ export default function BonusPlanEditor({
 
             <div>
               <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                Notes (optional)
+                <T k="pages.components.timeattendance.bonusplaneditor.f7ee74">Notes (optional)</T>
               </label>
               <input
                 type="text"
@@ -206,7 +207,7 @@ export default function BonusPlanEditor({
                 onClick={() => setEditing(false)}
                 className="text-sm font-medium px-4 py-2 rounded-md border border-qs-border text-qs-dim hover:text-qs-text"
               >
-                Cancel
+                <T k="pages.components.timeattendance.bonusplaneditor.ea4788">Cancel</T>
               </button>
             </div>
           </div>
@@ -217,15 +218,15 @@ export default function BonusPlanEditor({
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="text-xs text-qs-subtle">
-                {meta.verifiedLabel} · threshold {plan.threshold} · $
-                {Number(plan.per_unit_amount).toLocaleString()} per unit
+                {meta.verifiedLabel} <T k="pages.components.timeattendance.bonusplaneditor.315a15">· threshold</T> {plan.threshold} · $
+                {Number(plan.per_unit_amount).toLocaleString()} <T k="pages.components.timeattendance.bonusplaneditor.beda54">per unit</T>
                 {plan.notes ? ` · ${plan.notes}` : ''}
               </div>
               <button
                 onClick={() => setEditing(true)}
                 className="text-xs text-qs-dim hover:text-qs-text flex items-center gap-1"
               >
-                <Pencil className="w-3 h-3" /> Edit plan
+                <Pencil className="w-3 h-3" /> <T k="pages.components.timeattendance.bonusplaneditor.a4d3ee">Edit plan</T>
               </button>
             </div>
 
@@ -258,7 +259,7 @@ export default function BonusPlanEditor({
                     disabled={finalizing}
                     className="text-xs px-3 py-1.5 rounded-md border border-qs-border text-qs-dim hover:text-qs-text disabled:opacity-60"
                   >
-                    Recompute
+                    <T k="pages.components.timeattendance.bonusplaneditor.d87d92">Recompute</T>
                   </button>
                   {ledger.status !== 'paid' && (
                     <button
@@ -266,7 +267,7 @@ export default function BonusPlanEditor({
                       disabled={finalizing}
                       className="text-xs px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-60"
                     >
-                      Mark paid
+                      <T k="pages.components.timeattendance.bonusplaneditor.cb0eb4">Mark paid</T>
                     </button>
                   )}
                 </div>
@@ -274,7 +275,7 @@ export default function BonusPlanEditor({
             ) : (
               <div className="flex items-center justify-between rounded-md border border-qs-border bg-qs-elevated px-4 py-3 mb-3">
                 <div className="text-sm text-qs-dim">
-                  Estimated — not yet frozen to payroll.
+                  <T k="pages.components.timeattendance.bonusplaneditor.8c1e96">Estimated — not yet frozen to payroll.</T>
                 </div>
                 <button
                   onClick={() => handleFinalize('finalized')}

@@ -1,5 +1,6 @@
 // src/pages/components/cross-sell/CrossSellQueue.jsx
 // Renders a list of cross-sell cases with inline outcome editing.
+import { T } from '../../../components/SiteCopy';
 import { Link } from 'react-router-dom';
 
 const PRODUCT_LABELS = {
@@ -49,13 +50,13 @@ export default function CrossSellQueue({ cases, tab, onUpdate, onOpenCase, empty
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {winbacks.length > 0 && (
         <>
-          <SectionHeader>♻ Win-backs — lost a line, best conversion ({winbacks.length})</SectionHeader>
+          <SectionHeader><T k="pages.components.crosssell.crosssellqueue.867f3d">♻ Win-backs — lost a line, best conversion (</T>{winbacks.length})</SectionHeader>
           {renderCards(winbacks)}
         </>
       )}
       {standard.length > 0 && (
         <>
-          {winbacks.length > 0 && <SectionHeader>Standard opportunities ({standard.length})</SectionHeader>}
+          {winbacks.length > 0 && <SectionHeader><T k="pages.components.crosssell.crosssellqueue.aa40bb">Standard opportunities (</T>{standard.length})</SectionHeader>}
           {renderCards(standard)}
         </>
       )}
@@ -102,7 +103,7 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
               border: '1px solid rgba(59,130,246,0.25)',
               color: '#60A5FA', borderRadius: 4, padding: '1px 6px',
             }}>
-              Pitch: {PRODUCT_LABELS[cs.recommended_product] || cs.recommended_product}
+              <T k="pages.components.crosssell.crosssellqueue.d7943c">Pitch:</T> {PRODUCT_LABELS[cs.recommended_product] || cs.recommended_product}
             </span>
             {cs.lostLine && (
               <span
@@ -113,12 +114,12 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
                   border: '1px solid rgba(16,185,129,0.35)',
                   color: '#34D399', borderRadius: 4, padding: '1px 6px', cursor: 'help',
                 }}>
-                ♻ Win back {PRODUCT_LABELS[cs.lostLine.product] || cs.lostLine.product} · lost {cs.lostLine.months}mo ago
+                <T k="pages.components.crosssell.crosssellqueue.0a06b1">♻ Win back</T> {PRODUCT_LABELS[cs.lostLine.product] || cs.lostLine.product} <T k="pages.components.crosssell.crosssellqueue.b606d3">· lost</T> {cs.lostLine.months}<T k="pages.components.crosssell.crosssellqueue.8ac38b">mo ago</T>
               </span>
             )}
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
-            Has: {PRODUCT_LABELS[cs.current_product] || cs.current_product || '—'}
+            <T k="pages.components.crosssell.crosssellqueue.5d4303">Has:</T> {PRODUCT_LABELS[cs.current_product] || cs.current_product || '—'}
             {cs.policy_no && ` · ${cs.policy_no}`}
             {cs.opportunity_tier && ` · Tier ${cs.opportunity_tier}`}
           </div>
@@ -151,7 +152,7 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
               color: '#60A5FA',
             }}
           >
-            🔄 Open renewal: {renewal.product?.toUpperCase()} · {renewal.renewal_date} →
+            <T k="pages.components.crosssell.crosssellqueue.5cafd4">🔄 Open renewal:</T> {renewal.product?.toUpperCase()} · {renewal.renewal_date} →
           </button>
         )}
         {cancel && (
@@ -165,7 +166,7 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
               color: '#F87171',
             }}
           >
-            ⚠ Open cancel: {cancel.product?.toUpperCase()} · due {cancel.cancel_effective_date}
+            <T k="pages.components.crosssell.crosssellqueue.de3c52">⚠ Open cancel:</T> {cancel.product?.toUpperCase()} <T k="pages.components.crosssell.crosssellqueue.9a1ee9">· due</T> {cancel.cancel_effective_date}
             {cancel.amount_due ? ` · $${Number(cancel.amount_due).toLocaleString()} owed` : ''} →
           </button>
         )}
@@ -176,7 +177,7 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
             border: '1px solid rgba(16,185,129,0.2)',
             color: '#34D399',
           }}>
-            ✓ Lead created in Lead Manager
+            <T k="pages.components.crosssell.crosssellqueue.1567dd">✓ Lead created in Lead Manager</T>
           </div>
         )}
       </div>

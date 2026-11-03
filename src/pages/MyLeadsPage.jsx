@@ -5,6 +5,7 @@
 // links to — leads are intentionally PII-light, so this view triages and the
 // detail page does the work.
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProducerQueue, useLogLeadTouch, useScheduleLeadFollowup, useSnoozeLead } from '../hooks/useProducerQueue';
@@ -46,7 +47,7 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
                 background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34D399',
               }}
               title="Former customer — generated from termination history. Batch work, no SLA clock.">
-                ♻ Winback
+                <T k="pages.myleadspage.01b991">♻ Winback</T>
               </span>
             )}
             <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--qs-dim)', marginLeft: 8 }}>
@@ -60,13 +61,13 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
           )}
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ textTransform: 'capitalize' }}>{(lead.status || 'new').replace('_', ' ')}</span>
-            {lead.attempt_count > 0 && <span>· {lead.attempt_count} attempt{lead.attempt_count !== 1 ? 's' : ''}{lead.last_attempt_result ? ` (${lead.last_attempt_result.replace('_', ' ')})` : ''}</span>}
-            {enrichment === 'enriched' && <span style={{ color: '#10B981' }}>· enriched</span>}
-            {lead.risk_flag && <span style={{ color: '#F59E0B' }}>· risk</span>}
-            <span>· created {relativeTime(lead.created_at)}</span>
+            {lead.attempt_count > 0 && <span>· {lead.attempt_count} <T k="pages.myleadspage.1db222">attempt</T>{lead.attempt_count !== 1 ? 's' : ''}{lead.last_attempt_result ? ` (${lead.last_attempt_result.replace('_', ' ')})` : ''}</span>}
+            {enrichment === 'enriched' && <span style={{ color: '#10B981' }}><T k="pages.myleadspage.96721e">· enriched</T></span>}
+            {lead.risk_flag && <span style={{ color: '#F59E0B' }}><T k="pages.myleadspage.ae2e3e">· risk</T></span>}
+            <span><T k="pages.myleadspage.116c0a">· created</T> {relativeTime(lead.created_at)}</span>
             {lead.next_followup_at && (
               <span style={{ color: due ? '#F59E0B' : 'var(--qs-subtle)' }}>
-                · follow-up {new Date(lead.next_followup_at).toLocaleDateString()}
+                <T k="pages.myleadspage.55c522">· follow-up</T> {new Date(lead.next_followup_at).toLocaleDateString()}
               </span>
             )}
           </div>
@@ -80,15 +81,15 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
               {Math.round(lead.lead_score)}
             </div>
           )}
-          <div style={{ fontSize: 9, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>score</div>
+          <div style={{ fontSize: 9, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}><T k="pages.myleadspage.ca1cd3">score</T></div>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-        <button onClick={() => onLog(lead)} style={btn('primary')}>Log Touch</button>
-        <button onClick={() => onFollowup(lead)} style={btn()}>📅 Follow-up</button>
-        <button onClick={() => onSnooze(lead)} style={btn()}>💤 Snooze</button>
-        <Link to={`/agency/leads/${lead.id}`} style={{ ...btn(), textDecoration: 'none', display: 'inline-block' }}>Open →</Link>
+        <button onClick={() => onLog(lead)} style={btn('primary')}><T k="pages.myleadspage.60866b">Log Touch</T></button>
+        <button onClick={() => onFollowup(lead)} style={btn()}><T k="pages.myleadspage.d0a869">📅 Follow-up</T></button>
+        <button onClick={() => onSnooze(lead)} style={btn()}><T k="pages.myleadspage.3dd493">💤 Snooze</T></button>
+        <Link to={`/agency/leads/${lead.id}`} style={{ ...btn(), textDecoration: 'none', display: 'inline-block' }}><T k="pages.myleadspage.a96b08">Open →</T></Link>
       </div>
     </div>
   );
@@ -118,16 +119,16 @@ export default function MyLeadsPage() {
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px' }}>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright, #fff)', marginBottom: 4 }}>New Business Queue</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright, #fff)', marginBottom: 4 }}><T k="pages.myleadspage.7ee534">New Business Queue</T></h1>
       <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-        {touchedToday}/{dailyTarget} touched today
-        {followupsDue > 0 && <span style={{ color: '#F59E0B' }}> · {followupsDue} follow-up{followupsDue !== 1 ? 's' : ''} due</span>}
+        {touchedToday}/{dailyTarget} <T k="pages.myleadspage.9d4176">touched today</T>
+        {followupsDue > 0 && <span style={{ color: '#F59E0B' }}> · {followupsDue} <T k="pages.myleadspage.ff8532">follow-up</T>{followupsDue !== 1 ? 's' : ''} <T k="pages.myleadspage.d6692d">due</T></span>}
       </div>
 
-      {isLoading && <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading your leads…</div>}
+      {isLoading && <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.myleadspage.b9e82a">Loading your leads…</T></div>}
       {error && <div style={{ color: '#EF4444', fontSize: 13 }}>{error.message}</div>}
       {!isLoading && !error && leads.length === 0 && (
-        <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>No open leads assigned to you. Nice — inbox zero.</div>
+        <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.myleadspage.04f7a2">No open leads assigned to you. Nice — inbox zero.</T></div>
       )}
 
       {leads.map((lead) => (
@@ -194,8 +195,8 @@ function Overlay({ title, children, onClose }) {
 function ActionRow({ onCancel, onConfirm, disabled }) {
   return (
     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-      <button onClick={onCancel} style={btn()}>Cancel</button>
-      <button onClick={onConfirm} disabled={disabled} style={{ ...btn('primary'), opacity: disabled ? 0.5 : 1 }}>Save</button>
+      <button onClick={onCancel} style={btn()}><T k="pages.myleadspage.ea4788">Cancel</T></button>
+      <button onClick={onConfirm} disabled={disabled} style={{ ...btn('primary'), opacity: disabled ? 0.5 : 1 }}><T k="pages.myleadspage.c9cc8c">Save</T></button>
     </div>
   );
 }

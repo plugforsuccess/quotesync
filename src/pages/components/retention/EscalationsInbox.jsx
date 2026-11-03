@@ -3,6 +3,7 @@
 // who escalated, why, the customer, and a one-click open of the case + resolve.
 // Rendered on the Retention Hub for principals only (resolve is principal-gated).
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useOpenEscalations, useResolveEscalation } from '../../../hooks/useEscalations';
 import { titleCaseName } from '../../../lib/names';
@@ -53,13 +54,13 @@ function Row({ esc, empName, onOpenCase, onResolve, resolving }) {
           style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--qs-border)',
             background: 'var(--qs-elevated)', color: 'var(--qs-text)', fontSize: 12,
             fontWeight: 600, cursor: 'pointer' }}>
-          Open case →
+          <T k="pages.components.retention.escalationsinbox.33c277">Open case →</T>
         </button>
         {!resolveOpen ? (
           <button type="button" onClick={() => setResolveOpen(true)}
             style={{ padding: '6px 12px', borderRadius: 7, border: 'none',
               background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-            ✓ Resolve
+            <T k="pages.components.retention.escalationsinbox.91450b">✓ Resolve</T>
           </button>
         ) : (
           <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 220 }}>
@@ -103,10 +104,10 @@ export default function EscalationsInbox({ agencyId, producers = [], onOpenCase 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <span style={{ fontSize: 16 }}>⤴</span>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: '#F87171', margin: 0 }}>
-          Escalations to you ({escalations.length})
+          <T k="pages.components.retention.escalationsinbox.0c6ed9">Escalations to you (</T>{escalations.length})
         </h3>
         <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-          cases a rep handed off for an agent decision
+          <T k="pages.components.retention.escalationsinbox.7bd55d">cases a rep handed off for an agent decision</T>
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

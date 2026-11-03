@@ -460,12 +460,12 @@ function Earnings({ token, data, onChange }) {
             <tbody key={m.month}>
               <tr className="border-t border-slate-200 bg-slate-50">
                 <th scope="colgroup" colSpan={2} className="px-3 py-2.5 text-left">
-                  <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</span>
+                  <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)}</span>
                 </th>
               </tr>
               {m.rows.map((r, i) => (
                 <tr key={i} className="border-t border-slate-100">
-                  <td className="px-3 py-2.5 font-semibold text-[#0F2D6B]">{r.first_name}</td>
+                  <td className="px-3 py-2.5 font-semibold text-[#0F2D6B]">{r.first_name}{r.last_initial ? ` ${r.last_initial}.` : ''}</td>
                   <td className="px-3 py-2.5 text-slate-600">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</td>
                 </tr>
               ))}

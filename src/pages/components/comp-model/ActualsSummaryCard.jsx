@@ -1,6 +1,7 @@
 // src/pages/components/comp-model/ActualsSummaryCard.jsx
 // Displays actual compensation computed from real revenue_entries for a selected month.
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { AlertTriangle, FileSpreadsheet } from 'lucide-react';
 import { tpBonus, fixedCostMonthly } from '../../../utils/compModelCalculations';
@@ -75,9 +76,9 @@ export default function ActualsSummaryCard({
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <FileSpreadsheet className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">No entries found</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1"><T k="pages.components.compmodel.actualssummarycard.c66add">No entries found</T></h3>
         <p className="text-sm text-gray-500">
-          No entries found for this producer in {monthLabel}. Upload the NB file to calculate actuals.
+          <T k="pages.components.compmodel.actualssummarycard.9d5ec6">No entries found for this producer in</T> {monthLabel}<T k="pages.components.compmodel.actualssummarycard.cbb61e">. Upload the NB file to calculate actuals.</T>
         </p>
       </div>
     );
@@ -92,9 +93,8 @@ export default function ActualsSummaryCard({
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-yellow-800">
-            <strong>{unattributedCount}</strong> {unattributedCount === 1 ? 'entry' : 'entries'} this month
-            {unattributedCount === 1 ? ' has' : ' have'} no producer attribution and {unattributedCount === 1 ? 'is' : 'are'} excluded.
-            Re-upload the NB file to resolve.
+            <strong>{unattributedCount}</strong> {unattributedCount === 1 ? 'entry' : 'entries'} <T k="pages.components.compmodel.actualssummarycard.42c96b">this month</T>
+            {unattributedCount === 1 ? ' has' : ' have'} <T k="pages.components.compmodel.actualssummarycard.afdd3b">no producer attribution and</T> {unattributedCount === 1 ? 'is' : 'are'} <T k="pages.components.compmodel.actualssummarycard.b378d2">excluded. Re-upload the NB file to resolve.</T>
           </p>
         </div>
       )}
@@ -102,7 +102,7 @@ export default function ActualsSummaryCard({
       {/* Summary card */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
-          Actuals — {monthLabel}
+          <T k="pages.components.compmodel.actualssummarycard.882080">Actuals —</T> {monthLabel}
         </h3>
 
         <div className="divide-y divide-gray-100">

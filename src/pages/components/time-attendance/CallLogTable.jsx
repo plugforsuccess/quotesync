@@ -1,6 +1,7 @@
 // src/pages/components/time-attendance/CallLogTable.jsx
 // Filterable, scrollable table showing individual call records for an employee.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { PhoneCall, ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -117,9 +118,9 @@ export default function CallLogTable({ calls }) {
       >
         <PhoneCall className="w-5 h-5 text-primary-400" />
         <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">
-          Call Log Detail
+          <T k="pages.components.timeattendance.calllogtable.167b2f">Call Log Detail</T>
         </h4>
-        <span className="text-xs text-qs-subtle ml-1">({calls.length} calls)</span>
+        <span className="text-xs text-qs-subtle ml-1">({calls.length} <T k="pages.components.timeattendance.calllogtable.529242">calls)</T></span>
         {expanded ? (
           <ChevronDown className="w-4 h-4 text-qs-muted ml-auto" />
         ) : (
@@ -165,7 +166,7 @@ export default function CallLogTable({ calls }) {
             />
             {dates.length > 1 && (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-qs-subtle font-medium">Date:</span>
+                <span className="text-xs text-qs-subtle font-medium"><T k="pages.components.timeattendance.calllogtable.0d8d58">Date:</T></span>
                 <select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
@@ -178,7 +179,7 @@ export default function CallLogTable({ calls }) {
                 </select>
               </div>
             )}
-            <span className="text-xs text-qs-muted ml-auto">{filtered.length} shown</span>
+            <span className="text-xs text-qs-muted ml-auto">{filtered.length} <T k="pages.components.timeattendance.calllogtable.3fdec1">shown</T></span>
           </div>
 
           {/* Table */}
@@ -186,12 +187,12 @@ export default function CallLogTable({ calls }) {
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-qs-elevated sticky top-0">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[100px]">Time</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[80px]">Direction</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[90px]">Result</th>
-                  <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle w-[70px]">Duration</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[100px]">Queue</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle">Contact</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[100px]"><T k="pages.components.timeattendance.calllogtable.a76d4e">Time</T></th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[80px]"><T k="pages.components.timeattendance.calllogtable.02674a">Direction</T></th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[90px]"><T k="pages.components.timeattendance.calllogtable.8eea62">Result</T></th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle w-[70px]"><T k="pages.components.timeattendance.calllogtable.e02d2a">Duration</T></th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[100px]"><T k="pages.components.timeattendance.calllogtable.722ad2">Queue</T></th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle"><T k="pages.components.timeattendance.calllogtable.bbaff1">Contact</T></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-qs-border">

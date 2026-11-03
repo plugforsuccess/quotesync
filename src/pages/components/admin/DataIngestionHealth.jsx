@@ -3,6 +3,7 @@
 // current. A stale feed silently rots retention + the ROI story, so overdue /
 // never-uploaded sources surface here per agency. Backed by the
 // admin_data_ingestion_health() RPC (platform-admin gated server-side).
+import { T } from '../../../components/SiteCopy';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 
@@ -55,7 +56,7 @@ export default function DataIngestionHealth() {
   return (
     <div className="dark-card" style={{ padding: 0, overflow: 'hidden', marginTop: 24 }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>Data Ingestion Health</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.components.admin.dataingestionhealth.d34648">Data Ingestion Health</T></h2>
         <span style={{ fontSize: 12, color: atRisk > 0 ? '#F87171' : 'var(--qs-subtle)' }}>
           {isLoading ? 'Loading…' : atRisk > 0 ? `${atRisk} agenc${atRisk === 1 ? 'y' : 'ies'} behind on uploads` : 'All agencies current'}
         </span>
@@ -72,7 +73,7 @@ export default function DataIngestionHealth() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
-                <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}>Agency</th>
+                <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left' }}><T k="pages.components.admin.dataingestionhealth.75ec3e">Agency</T></th>
                 {SOURCES.map(s => (
                   <th key={s} className="dark-section-label" style={{ padding: '10px 10px', textAlign: 'center', fontSize: 11 }}>{s}</th>
                 ))}
@@ -97,12 +98,12 @@ export default function DataIngestionHealth() {
                 </tr>
               ))}
               {!isLoading && agencies.length === 0 && (
-                <tr><td colSpan={SOURCES.length + 1} style={{ padding: 32, textAlign: 'center', color: 'var(--qs-dim)', fontSize: 13 }}>No agencies found</td></tr>
+                <tr><td colSpan={SOURCES.length + 1} style={{ padding: 32, textAlign: 'center', color: 'var(--qs-dim)', fontSize: 13 }}><T k="pages.components.admin.dataingestionhealth.1b42d9">No agencies found</T></td></tr>
               )}
             </tbody>
           </table>
           <div style={{ padding: '10px 16px', fontSize: 11, color: 'var(--qs-dim)', borderTop: '1px solid var(--qs-border)' }}>
-            Green = current · Red = overdue for its cadence · Amber = never uploaded. Hover a cell for the last upload date.
+            <T k="pages.components.admin.dataingestionhealth.93ae62">Green = current · Red = overdue for its cadence · Amber = never uploaded. Hover a cell for the last upload date.</T>
           </div>
         </div>
       )}

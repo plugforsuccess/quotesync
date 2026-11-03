@@ -2,6 +2,7 @@
 // Principal activates cadence types per employee, sets schedule,
 // generates calendar links. Multi-tenant — all queries scoped to agencyId.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
@@ -170,7 +171,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
 
   if (isLoading) return (
     <div style={{ padding: 40, textAlign: 'center', color: 'var(--qs-muted)' }}>
-      Loading cadence settings...
+      <T k="pages.components.settings.cadencesettingstab.2e5d1c">Loading cadence settings...</T>
     </div>
   );
 
@@ -182,18 +183,17 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          Management Cadence
+          <T k="pages.components.settings.cadencesettingstab.41f6e8">Management Cadence</T>
         </h2>
         <p style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 4 }}>
-          Activate recurring touchpoints for each employee. Each cadence generates
-          a calendar link so meetings actually happen on a schedule.
+          <T k="pages.components.settings.cadencesettingstab.21b32a">Activate recurring touchpoints for each employee. Each cadence generates a calendar link so meetings actually happen on a schedule.</T>
         </p>
       </div>
 
       {staffEmployees.length === 0 && (
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--qs-muted)',
           fontSize: 13, border: '1px solid var(--qs-border)', borderRadius: 10 }}>
-          No employees found. Add employees first to configure cadences.
+          <T k="pages.components.settings.cadencesettingstab.232e3f">No employees found. Add employees first to configure cadences.</T>
         </div>
       )}
 
@@ -240,7 +240,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                     {empRoles.join(', ')}
                     {activeCadenceCount > 0 && (
                       <span style={{ marginLeft: 8, color: '#10B981', fontWeight: 600 }}>
-                        · {activeCadenceCount} active cadence{activeCadenceCount > 1 ? 's' : ''}
+                        · {activeCadenceCount} <T k="pages.components.settings.cadencesettingstab.01bff4">active cadence</T>{activeCadenceCount > 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
@@ -326,7 +326,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                                 border: '1px solid #3B82F633', color: '#3B82F6',
                                 cursor: 'pointer', flexShrink: 0,
                               }}>
-                              📅 Add to Calendar
+                              <T k="pages.components.settings.cadencesettingstab.399e54">📅 Add to Calendar</T>
                             </button>
                           )}
                         </div>
@@ -337,7 +337,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                             flexWrap: 'wrap' }}>
                             <div>
                               <label style={{ fontSize: 11, color: 'var(--qs-muted)',
-                                display: 'block', marginBottom: 4 }}>Frequency</label>
+                                display: 'block', marginBottom: 4 }}><T k="pages.components.settings.cadencesettingstab.7cf395">Frequency</T></label>
                               <select
                                 value={freq}
                                 onChange={e => upsertCadence({
@@ -362,7 +362,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
 
                             <div>
                               <label style={{ fontSize: 11, color: 'var(--qs-muted)',
-                                display: 'block', marginBottom: 4 }}>Preferred time</label>
+                                display: 'block', marginBottom: 4 }}><T k="pages.components.settings.cadencesettingstab.e756c3">Preferred time</T></label>
                               <input
                                 type="time"
                                 value={time}
@@ -382,7 +382,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
 
                             <div>
                               <label style={{ fontSize: 11, color: 'var(--qs-muted)',
-                                display: 'block', marginBottom: 4 }}>Duration (min)</label>
+                                display: 'block', marginBottom: 4 }}><T k="pages.components.settings.cadencesettingstab.52fd2b">Duration (min)</T></label>
                               <select
                                 value={dur}
                                 onChange={e => upsertCadence({
@@ -413,8 +413,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                           }}>
                             <p style={{ fontSize: 12, color: 'var(--qs-muted)',
                               marginBottom: 10 }}>
-                              This adds a recurring event to your calendar with a
-                              link back to the QuoteSync agenda for each meeting.
+                              <T k="pages.components.settings.cadencesettingstab.648e9f">This adds a recurring event to your calendar with a link back to the QuoteSync agenda for each meeting.</T>
                             </p>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                               <a
@@ -435,7 +434,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                                   border: '1px solid #4285F433', color: '#4285F4',
                                   textDecoration: 'none',
                                 }}>
-                                Google Calendar
+                                <T k="pages.components.settings.cadencesettingstab.4924bf">Google Calendar</T>
                               </a>
                               <a
                                 href={buildOutlookLink({
@@ -454,7 +453,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                                   border: '1px solid #0078D433', color: '#0078D4',
                                   textDecoration: 'none',
                                 }}>
-                                Outlook
+                                <T k="pages.components.settings.cadencesettingstab.038e64">Outlook</T>
                               </a>
                               <button
                                 onClick={() => downloadICS({
@@ -472,7 +471,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                                   border: '1px solid var(--qs-border)',
                                   color: 'var(--qs-dim)', cursor: 'pointer',
                                 }}>
-                                Download .ics
+                                <T k="pages.components.settings.cadencesettingstab.d0857e">Download .ics</T>
                               </button>
                             </div>
                           </div>

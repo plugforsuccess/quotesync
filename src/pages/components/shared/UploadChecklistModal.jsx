@@ -1,4 +1,5 @@
 // src/pages/components/shared/UploadChecklistModal.jsx
+import { T } from '../../../components/SiteCopy';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertTriangle, Clock, ChevronRight, X } from 'lucide-react';
 
@@ -111,9 +112,9 @@ export default function UploadChecklistModal({
           <div style={{ marginBottom: 20 }}>
             <div style={{ marginBottom: 10 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-text)',
-                margin: 0 }}>🎯 Overdue Meetings & Commitments</p>
+                margin: 0 }}><T k="pages.components.shared.uploadchecklistmodal.764a09">🎯 Overdue Meetings & Commitments</T></p>
               <p style={{ fontSize: 11, color: 'var(--qs-muted)', margin: 0 }}>
-                Per-employee cadences past their next scheduled time
+                <T k="pages.components.shared.uploadchecklistmodal.bbae05">Per-employee cadences past their next scheduled time</T>
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -146,13 +147,13 @@ export default function UploadChecklistModal({
                         {label} — {empName}
                       </div>
                       <p style={{ fontSize: 11, color: '#EF4444', margin: 0, marginTop: 1 }}>
-                        Due {c.next_due_at ? new Date(c.next_due_at).toLocaleDateString() : '—'}
+                        <T k="pages.components.shared.uploadchecklistmodal.d03639">Due</T> {c.next_due_at ? new Date(c.next_due_at).toLocaleDateString() : '—'}
                       </p>
                     </div>
                     <ChevronRight size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
                     <span style={{ fontSize: 10, fontWeight: 700, flexShrink: 0,
                       color: '#EF4444', minWidth: 52, textAlign: 'right' }}>
-                      Overdue
+                      <T k="pages.components.shared.uploadchecklistmodal.3f165a">Overdue</T>
                     </span>
                   </div>
                 );
@@ -178,15 +179,15 @@ export default function UploadChecklistModal({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600,
                         color: 'var(--qs-bright)' }}>
-                        Commitment: {c.description}
+                        <T k="pages.components.shared.uploadchecklistmodal.38e42a">Commitment:</T> {c.description}
                       </div>
                       <p style={{ fontSize: 11, color: '#EF4444', margin: 0, marginTop: 1 }}>
-                        {empName} · Due {c.due_date}
+                        {empName} <T k="pages.components.shared.uploadchecklistmodal.2157f6">· Due</T> {c.due_date}
                       </p>
                     </div>
                     <span style={{ fontSize: 10, fontWeight: 700, flexShrink: 0,
                       color: '#EF4444', minWidth: 52, textAlign: 'right' }}>
-                      Overdue
+                      <T k="pages.components.shared.uploadchecklistmodal.3f165a">Overdue</T>
                     </span>
                   </div>
                 );
@@ -200,7 +201,7 @@ export default function UploadChecklistModal({
           marginTop: 8, display: 'flex', justifyContent: 'space-between',
           alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>
-            {current.length} of {items.filter(i => i.status !== 'upcoming').length} reports current
+            {current.length} <T k="pages.components.shared.uploadchecklistmodal.8bf885">of</T> {items.filter(i => i.status !== 'upcoming').length} <T k="pages.components.shared.uploadchecklistmodal.6fee87">reports current</T>
           </span>
           <button
             onClick={onDismiss}
@@ -269,14 +270,14 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, ag
                     <span style={{ fontSize: 9, color: 'var(--qs-muted)',
                       background: 'var(--qs-elevated)', padding: '1px 5px',
                       borderRadius: 3 }}>
-                      OPTIONAL
+                      <T k="pages.components.shared.uploadchecklistmodal.795181">OPTIONAL</T>
                     </span>
                   )}
                   {item.uploadOrder && item.status !== 'current' && item.status !== 'upcoming' && (
                     <span style={{ fontSize: 9, color: cfg.color,
                       background: cfg.bg, border: `1px solid ${cfg.color}33`,
                       padding: '1px 5px', borderRadius: 3 }}>
-                      UPLOAD ORDER {item.uploadOrder}
+                      <T k="pages.components.shared.uploadchecklistmodal.2f6751">UPLOAD ORDER</T> {item.uploadOrder}
                     </span>
                   )}
                 </div>
@@ -306,7 +307,7 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, ag
                     color: '#10B981',
                   }}
                 >
-                  ✓ Mark Done
+                  <T k="pages.components.shared.uploadchecklistmodal.69ec3f">✓ Mark Done</T>
                 </button>
               )}
 

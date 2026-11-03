@@ -1,3 +1,4 @@
+import { T } from '../../components/SiteCopy';
 import { useState } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 
@@ -38,7 +39,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                Close or Convert Lead
+                <T k="pages.components.dispositionmodal.7dd847">Close or Convert Lead</T>
               </h2>
               <button
                 onClick={onClose}
@@ -57,7 +58,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
             {/* Section 1: Outcome */}
             {!outcome && (
               <div className="space-y-3">
-                <p className="text-sm text-gray-600 mb-4">What happened with this lead?</p>
+                <p className="text-sm text-gray-600 mb-4"><T k="pages.components.dispositionmodal.1e9d48">What happened with this lead?</T></p>
                 <button
                   onClick={() => {
                     setOutcome('quoted_in_lm');
@@ -66,8 +67,8 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
                 >
                   <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">Quoted in Lead Manager</p>
-                    <p className="text-sm text-gray-500">Lead converted to a serious quote</p>
+                    <p className="font-semibold text-gray-900"><T k="pages.components.dispositionmodal.6bf316">Quoted in Lead Manager</T></p>
+                    <p className="text-sm text-gray-500"><T k="pages.components.dispositionmodal.4ddd85">Lead converted to a serious quote</T></p>
                   </div>
                 </button>
                 <button
@@ -76,8 +77,8 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
                 >
                   <XCircle className="w-6 h-6 text-gray-400 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">Close Lead</p>
-                    <p className="text-sm text-gray-500">Not interested, unreachable, or disqualified</p>
+                    <p className="font-semibold text-gray-900"><T k="pages.components.dispositionmodal.b4e191">Close Lead</T></p>
+                    <p className="text-sm text-gray-500"><T k="pages.components.dispositionmodal.52b03e">Not interested, unreachable, or disqualified</T></p>
                   </div>
                 </button>
               </div>
@@ -87,9 +88,9 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
             {outcome === 'quoted_in_lm' && (
               <div className="text-center py-4">
                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                <p className="text-gray-900 font-semibold mb-1">Mark as Converted</p>
+                <p className="text-gray-900 font-semibold mb-1"><T k="pages.components.dispositionmodal.0409bf">Mark as Converted</T></p>
                 <p className="text-sm text-gray-500">
-                  Lead will be marked as converted. Drip sequence stopped.
+                  <T k="pages.components.dispositionmodal.b90939">Lead will be marked as converted. Drip sequence stopped.</T>
                 </p>
               </div>
             )}
@@ -97,7 +98,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
             {/* Section 2: Close reason */}
             {outcome === 'close' && (
               <div className="space-y-4">
-                <p className="text-sm font-medium text-gray-700">Why are you closing this lead?</p>
+                <p className="text-sm font-medium text-gray-700"><T k="pages.components.dispositionmodal.06b574">Why are you closing this lead?</T></p>
                 <div className="space-y-2">
                   {CLOSE_REASONS.map((r) => (
                     <label

@@ -2,6 +2,7 @@
 // Required modal before Tracy can set followup_completed_at on escalated records.
 // Captures final_outcome (renewed / lost / unknown) and optional notes.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { X, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -104,7 +105,7 @@ export default function FinalOutcomeModal({ isOpen, onClose, policy, onSuccess }
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">How did this call go?</h3>
+            <h3 className="text-lg font-semibold text-gray-900"><T k="pages.components.renewals.finaloutcomemodal.5342d6">How did this call go?</T></h3>
             <p className="text-sm text-gray-500">{policy.customer_name} — {policy.policy_no}</p>
           </div>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
@@ -140,7 +141,7 @@ export default function FinalOutcomeModal({ isOpen, onClose, policy, onSuccess }
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.components.renewals.finaloutcomemodal.f7ee74">Notes (optional)</T></label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -159,7 +160,7 @@ export default function FinalOutcomeModal({ isOpen, onClose, policy, onSuccess }
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
             >
-              Cancel
+              <T k="pages.components.renewals.finaloutcomemodal.ea4788">Cancel</T>
             </button>
             <button
               type="submit"

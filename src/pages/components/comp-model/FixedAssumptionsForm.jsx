@@ -2,6 +2,7 @@
 // Editable form for fixed & rate compensation assumptions.
 // Saves via debounced auto-save on field change.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { DollarSign, Percent, Hash } from 'lucide-react';
 
@@ -78,7 +79,7 @@ export default function FixedAssumptionsForm({ config, onUpdate }) {
   return (
     <div>
       <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
-        Fixed & Rate Assumptions
+        <T k="pages.components.compmodel.fixedassumptionsform.584610">Fixed & Rate Assumptions</T>
       </h3>
       <div className="space-y-3">
         {FIELDS.map((field) => {

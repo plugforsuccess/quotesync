@@ -2,6 +2,7 @@
 // logged-in user. The single "what to dial next" view that ignores the
 // persona switcher (cross-role by design).
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -539,13 +540,13 @@ export default function TodayPage() {
   if (!employee) {
     return (
       <div style={{ padding: 32 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)' }}>Today</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.todaypage.1dd1c5">Today</T></h1>
         <div style={{ marginTop: 16, padding: 20, borderRadius: 10,
           background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
           color: 'var(--qs-dim)', fontSize: 14, maxWidth: 520,
         }}>
-          You don't have a rep workspace set up. Open <strong>Settings → Profile</strong>
-          and use "Work cases as a rep" to start receiving assigned cases.
+          <T k="pages.todaypage.3b88db">You don't have a rep workspace set up. Open</T> <strong><T k="pages.todaypage.a8e1b4">Settings → Profile</T></strong>
+          <T k="pages.todaypage.82cd32">and use "Work cases as a rep" to start receiving assigned cases.</T>
         </div>
       </div>
     );
@@ -555,11 +556,11 @@ export default function TodayPage() {
     <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)', margin: 0 }}>
-          Today
+          <T k="pages.todaypage.1dd1c5">Today</T>
         </h1>
         <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 2 }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          {' · '}what to dial next, ranked across cancels and renewals
+          {' · '}<T k="pages.todaypage.ef48d9">what to dial next, ranked across cancels and renewals</T>
         </div>
       </div>
 
@@ -580,7 +581,7 @@ export default function TodayPage() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8,
         }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-dim)' }}>
-            Today's focus <span style={{ color: 'var(--qs-muted)', fontWeight: 400 }}>· tap to see who ›</span>
+            <T k="pages.todaypage.5c7add">Today's focus</T> <span style={{ color: 'var(--qs-muted)', fontWeight: 400 }}><T k="pages.todaypage.ea258c">· tap to see who ›</T></span>
           </div>
           <div style={{
             fontSize: 18, fontWeight: 800, fontFamily: "'DM Mono', monospace",
@@ -601,22 +602,22 @@ export default function TodayPage() {
           }} />
         </div>
         <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-          {callsToday} worked · <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} reached</span>
-          {inboundToday > 0 && <> · <span style={{ color: '#60A5FA', fontWeight: 600 }}>{inboundToday} inbound</span></>} today
+          {callsToday} <T k="pages.todaypage.cbad40">worked ·</T> <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} <T k="pages.todaypage.f910ff">reached</T></span>
+          {inboundToday > 0 && <> · <span style={{ color: '#60A5FA', fontWeight: 600 }}>{inboundToday} <T k="pages.todaypage.a8e6fe">inbound</T></span></>} <T k="pages.todaypage.c5e7df">today</T>
         </div>
         {savedToday.count > 0 && (
           <div style={{ fontSize: 12, color: '#10B981', fontWeight: 700, marginTop: 6 }}>
-            🎉 {savedToday.count} saved · {savedPremiumLabel} kept today
+            🎉 {savedToday.count} <T k="pages.todaypage.cad264">saved ·</T> {savedPremiumLabel} <T k="pages.todaypage.6dd0b7">kept today</T>
           </div>
         )}
         {savedToday.inboundCount > 0 && (
           <div style={{ fontSize: 11, color: '#60A5FA', fontWeight: 600, marginTop: 4 }}>
-            📲 {savedToday.inboundCount} inbound save{savedToday.inboundCount === 1 ? '' : 's'} · {inboundSavedLabel} kept (customer called in)
+            📲 {savedToday.inboundCount} <T k="pages.todaypage.c2be2f">inbound save</T>{savedToday.inboundCount === 1 ? '' : 's'} · {inboundSavedLabel} <T k="pages.todaypage.675f22">kept (customer called in)</T>
           </div>
         )}
         {targetHit && (
           <div style={{ fontSize: 11, color: '#10B981', marginTop: 6, fontWeight: 600 }}>
-            ✓ Priority list cleared — you can stop here or work ahead.
+            <T k="pages.todaypage.44d406">✓ Priority list cleared — you can stop here or work ahead.</T>
           </div>
         )}
       </div>
@@ -631,13 +632,13 @@ export default function TodayPage() {
           <span style={{ fontSize: 18 }}>🗂️</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>
-              {serviceTasks.length} service {serviceTasks.length === 1 ? 'task' : 'tasks'} to batch
+              {serviceTasks.length} <T k="pages.todaypage.aaabf0">service</T> {serviceTasks.length === 1 ? 'task' : 'tasks'} <T k="pages.todaypage.a232bb">to batch</T>
             </div>
             <div style={{ fontSize: 12, color: serviceOverdue > 0 ? '#F87171' : 'var(--qs-muted)' }}>
-              {serviceOverdue > 0 ? `${serviceOverdue} past due · ` : ''}clear in one block, grouped by type
+              {serviceOverdue > 0 ? `${serviceOverdue} past due · ` : ''}<T k="pages.todaypage.024d27">clear in one block, grouped by type</T>
             </div>
           </div>
-          <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, flexShrink: 0 }}>Open Service Batch →</span>
+          <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, flexShrink: 0 }}><T k="pages.todaypage.17ce5f">Open Service Batch →</T></span>
         </a>
       )}
 
@@ -650,16 +651,16 @@ export default function TodayPage() {
         }}>
           <div style={{ fontSize: 13, fontWeight: 700,
             color: untouched.lapsed > 0 ? '#F87171' : '#FBBF24' }}>
-            ⚠ Call these before they lapse
+            <T k="pages.todaypage.371acd">⚠ Call these before they lapse</T>
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>
             {untouched.dueSoon > 0 && (
-              <span><strong>{untouched.dueSoon}</strong> due this week you haven't called yet. </span>
+              <span><strong>{untouched.dueSoon}</strong> <T k="pages.todaypage.8f58e8">due this week you haven't called yet.</T> </span>
             )}
             {untouched.lapsed > 0 && (
-              <span><strong style={{ color: '#F87171' }}>{untouched.lapsed}</strong> already past due, never called — try a reinstatement/rewrite now. </span>
+              <span><strong style={{ color: '#F87171' }}>{untouched.lapsed}</strong> <T k="pages.todaypage.ac77c5">already past due, never called — try a reinstatement/rewrite now.</T> </span>
             )}
-            They're in your ranked list below — work them first.
+            <T k="pages.todaypage.6dfb6a">They're in your ranked list below — work them first.</T>
           </div>
         </div>
       )}
@@ -672,7 +673,7 @@ export default function TodayPage() {
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-dim)', marginBottom: 8,
             textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            ⏳ Waiting to hear back ({waiting.length})
+            <T k="pages.todaypage.5035fa">⏳ Waiting to hear back (</T>{waiting.length})
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {waiting.map(item => {
@@ -720,7 +721,7 @@ export default function TodayPage() {
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-dim)', marginBottom: 8,
             textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            💵 Promised to pay ({promises.length})
+            <T k="pages.todaypage.f7380d">💵 Promised to pay (</T>{promises.length})
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {promises.map(item => {
@@ -760,7 +761,7 @@ export default function TodayPage() {
 
       {/* Ranked list */}
       {isLoading ? (
-        <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}>Loading…</div>
+        <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}><T k="pages.todaypage.5f02f0">Loading…</T></div>
       ) : ranked.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '64px 20px',
@@ -769,10 +770,10 @@ export default function TodayPage() {
         }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>
-            Nothing on your plate today
+            <T k="pages.todaypage.f26347">Nothing on your plate today</T>
           </div>
           <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 6 }}>
-            No active cancel or renewal cases assigned to you.
+            <T k="pages.todaypage.431355">No active cancel or renewal cases assigned to you.</T>
           </div>
         </div>
       ) : (
@@ -801,10 +802,10 @@ export default function TodayPage() {
               fontSize: 12, color: 'var(--qs-muted)',
               borderTop: '1px solid var(--qs-border)',
             }}>
-              {remainder} more {remainder === 1 ? 'case' : 'cases'} beyond today's target
+              {remainder} <T k="pages.todaypage.addec4">more</T> {remainder === 1 ? 'case' : 'cases'} <T k="pages.todaypage.ab913e">beyond today's target</T>
               {' · '}
               <a href="/my/queue" style={{ color: '#3B82F6', fontWeight: 600 }}>
-                Open full queue
+                <T k="pages.todaypage.90a419">Open full queue</T>
               </a>
             </div>
           )}
@@ -936,13 +937,13 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
             <span style={{
               fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
               background: '#10B98122', color: '#34D399', letterSpacing: '0.05em',
-            }}>CALLED TODAY</span>
+            }}><T k="pages.todaypage.535313">CALLED TODAY</T></span>
           )}
           {isCancel && item.promise_date && new Date(item.promise_date) < new Date() && (
             <span style={{
               fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
               background: '#EF444433', color: '#FCA5A5', letterSpacing: '0.05em',
-            }}>⚠ PAY PROMISE OVERDUE</span>
+            }}><T k="pages.todaypage.ded560">⚠ PAY PROMISE OVERDUE</T></span>
           )}
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -955,7 +956,7 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
               style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                 background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.35)',
                 color: '#34D399', letterSpacing: '0.04em' }}>
-              ♻ WIN BACK {productLabel(winback.product).toUpperCase()}
+              <T k="pages.todaypage.e5b8f8">♻ WIN BACK</T> {productLabel(winback.product).toUpperCase()}
             </span>
           )}
         </div>
@@ -966,7 +967,7 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
       </div>
 
       <div style={{ flexShrink: 0, fontSize: 12, color: 'var(--qs-dim)' }}>
-        Open →
+        <T k="pages.todaypage.a96b08">Open →</T>
       </div>
     </button>
   );

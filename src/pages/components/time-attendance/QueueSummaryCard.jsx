@@ -2,6 +2,7 @@
 // Compact summary card showing per-queue totals for the selected week.
 // Shows which dates have queue data uploaded and which are missing.
 
+import { T } from '../../../components/SiteCopy';
 import { BarChart3 } from 'lucide-react';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────────
@@ -81,7 +82,7 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
       <div className="flex items-center gap-3 mb-4">
         <BarChart3 className="w-5 h-5 text-indigo-400" />
         <h3 className="text-base font-semibold text-qs-bright">
-          Queue Coverage &mdash; Week of {formatWeekOfLabel(weekStart)}
+          <T k="pages.components.timeattendance.queuesummarycard.f877de">Queue Coverage — Week of</T> {formatWeekOfLabel(weekStart)}
         </h3>
       </div>
 
@@ -89,11 +90,11 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
         <table className="w-full text-sm">
           <thead className="bg-qs-elevated">
             <tr>
-              <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Queue</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">In</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Ans</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Abn</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Abn Rate</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.queuesummarycard.722ad2">Queue</T></th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.queuesummarycard.efeb36">In</T></th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.queuesummarycard.2168c5">Ans</T></th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.queuesummarycard.7cface">Abn</T></th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim"><T k="pages.components.timeattendance.queuesummarycard.b92b77">Abn Rate</T></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-qs-border">
@@ -114,7 +115,7 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
             })}
             {/* Totals row */}
             <tr className="bg-qs-elevated font-medium">
-              <td className="px-3 py-2 text-qs-bright">Total</td>
+              <td className="px-3 py-2 text-qs-bright"><T k="pages.components.timeattendance.queuesummarycard.96b014">Total</T></td>
               <td className="px-3 py-2 text-right text-qs-text">{totals.inbound}</td>
               <td className="px-3 py-2 text-right text-qs-text">{totals.answered}</td>
               <td className="px-3 py-2 text-right text-qs-text">{totals.abandoned}</td>
@@ -129,13 +130,13 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
       {/* Date coverage note */}
       <div className="mt-3 text-xs text-qs-subtle">
         {missingDates.length === 0 ? (
-          <span>Data for: {presentDates.map(formatDateShort).join(', ')}</span>
+          <span><T k="pages.components.timeattendance.queuesummarycard.0e5e2f">Data for:</T> {presentDates.map(formatDateShort).join(', ')}</span>
         ) : (
           <span>
-            Data for: {presentDates.map(formatDateShort).join(', ') || 'none'}
+            <T k="pages.components.timeattendance.queuesummarycard.0e5e2f">Data for:</T> {presentDates.map(formatDateShort).join(', ') || 'none'}
             {missingDates.length > 0 && (
               <span className="text-amber-400 ml-1">
-                ({missingDates.map(formatDateShort).join(', ')} missing)
+                ({missingDates.map(formatDateShort).join(', ')} <T k="pages.components.timeattendance.queuesummarycard.717e6f">missing)</T>
               </span>
             )}
           </span>

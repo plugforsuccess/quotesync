@@ -1,4 +1,5 @@
 // src/components/StartQuoteCard.jsx - WITH ZIP VALIDATION + DUAL CTA
+import { T } from '../../components/SiteCopy';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Shield, Zap, Lock, Eye } from 'lucide-react';
@@ -43,7 +44,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
 
                 <h2 className="text-4xl sm:text-5xl font-black mb-4 leading-tight">
                   <span className="bg-gradient-to-r from-gray-900 via-primary-900 to-secondary-900 bg-clip-text text-transparent animate-gradient-x">
-                    Start Your Quote
+                    <T k="pages.components.startquotecard.f261ec">Start Your Quote</T>
                   </span>
                 </h2>
 
@@ -67,7 +68,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
 
                       <span className="relative z-10 text-white font-black text-lg tracking-wide whitespace-nowrap">
-                        Check My Savings
+                        <T k="pages.components.startquotecard.59e107">Check My Savings</T>
                       </span>
                       <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:trangray-x-2" />
                     </div>
@@ -78,17 +79,17 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                     onClick={onGetQuote}
                     className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors cursor-pointer bg-transparent border-0"
                   >
-                    Already have your policy handy? Sync it now &rarr;
+                    <T k="pages.components.startquotecard.02948b">Already have your policy handy? Sync it now →</T>
                   </button>
 
                   <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-600">
                     <span className="flex items-center gap-1">
                       <Shield className="w-4 h-4 text-green-600" />
-                      Bank-level security
+                      <T k="pages.components.startquotecard.df3daa">Bank-level security</T>
                     </span>
                     <span className="flex items-center gap-1">
                       <Zap className="w-4 h-4 text-primary-600" />
-                      Takes 30 seconds
+                      <T k="pages.components.startquotecard.ea17a3">Takes 30 seconds</T>
                     </span>
                   </div>
                 </div>
@@ -138,10 +139,10 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-3">
                 <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-gray-900 via-primary-900 to-secondary-900 bg-clip-text text-transparent">
-                The Process is Simple
+                <T k="pages.components.startquotecard.c6345c">The Process is Simple</T>
               </h2>
             </div>
-            <p className="text-sm font-semibold text-indigo-600">Click any step for details</p>
+            <p className="text-sm font-semibold text-indigo-600"><T k="pages.components.startquotecard.b6c324">Click any step for details</T></p>
           </div>
 
           {/* Steps Grid */}
@@ -201,18 +202,18 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
               
               {/* Button Content */}
               <div className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-8 py-4 rounded-2xl transition-all duration-300 transform">
-                <span className="text-white font-black text-lg whitespace-nowrap">Start My Quote</span>
+                <span className="text-white font-black text-lg whitespace-nowrap"><T k="pages.components.startquotecard.fa15a9">Start My Quote</T></span>
                 <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:trangray-x-2" />
               </div>
             </button>
             <p className="text-xs text-gray-500 mt-3 flex items-center justify-center gap-4">
               <span className="flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-green-600" />
-                No credit check
+                <T k="pages.components.startquotecard.1f7e5b">No credit check</T>
               </span>
               <span className="flex items-center gap-1">
                 <Lock className="w-3 h-3 text-primary-600" />
-                No card required
+                <T k="pages.components.startquotecard.e7cb9a">No card required</T>
               </span>
             </p>
           </div>
@@ -250,7 +251,7 @@ const HowItWorks = ({ onGetQuote }) => {
             <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-2xl">💡</span>
             </div>
-            <h3 className="text-2xl font-black text-gray-900">How Does This Work?</h3>
+            <h3 className="text-2xl font-black text-gray-900"><T k="pages.components.startquotecard.2ae573">How Does This Work?</T></h3>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
@@ -261,12 +262,12 @@ const HowItWorks = ({ onGetQuote }) => {
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">😓</span>
                   <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-                    The Old Way
+                    <T k="pages.components.startquotecard.effd5a">The Old Way</T>
                   </p>
                 </div>
                 <p className="text-gray-700 leading-relaxed">
-                  Manually fill out <span className="font-bold text-gray-900">20 minutes</span> of online forms before getting{' '}
-                  <span className="font-bold text-red-600">spammed</span> by telemarketers.
+                  <T k="pages.components.startquotecard.d8e398">Manually fill out</T> <span className="font-bold text-gray-900"><T k="pages.components.startquotecard.f31f3e">20 minutes</T></span> <T k="pages.components.startquotecard.e9265a">of online forms before getting</T>{' '}
+                  <span className="font-bold text-red-600"><T k="pages.components.startquotecard.2023fd">spammed</T></span> <T k="pages.components.startquotecard.4de0b8">by telemarketers.</T>
                 </p>
               </div>
             </div>
@@ -278,13 +279,13 @@ const HowItWorks = ({ onGetQuote }) => {
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">✨</span>
                   <p className="text-sm font-bold text-primary-600 uppercase tracking-wider">
-                    The Modern Way
+                    <T k="pages.components.startquotecard.07996f">The Modern Way</T>
                   </p>
                 </div>
                 <p className="text-gray-700 leading-relaxed">
-                  Skip the forms and spam. Just link your current insurance policy{' '}
-                  <span className="font-bold text-primary-600">one time</span> in{' '}
-                  <span className="font-bold text-gray-900">2 minutes</span>.
+                  <T k="pages.components.startquotecard.7cb70b">Skip the forms and spam. Just link your current insurance policy</T>{' '}
+                  <span className="font-bold text-primary-600"><T k="pages.components.startquotecard.5992f5">one time</T></span> <T k="pages.components.startquotecard.13b5bf">in</T>{' '}
+                  <span className="font-bold text-gray-900"><T k="pages.components.startquotecard.4cec53">2 minutes</T></span>.
                 </p>
               </div>
             </div>
@@ -293,8 +294,8 @@ const HowItWorks = ({ onGetQuote }) => {
           {/* Comparison */}
           <div className="bg-gradient-to-r from-primary-100/50 to-indigo-100/50 rounded-2xl p-6 border border-primary-200">
             <p className="text-gray-700 leading-relaxed text-center">
-              <span className="font-semibold text-gray-900">Think of it like Plaid</span> (which links your bank to Venmo or Cash App) –{' '}
-              <span className="font-semibold text-primary-600">same security, way faster</span> than typing everything manually.
+              <span className="font-semibold text-gray-900"><T k="pages.components.startquotecard.d15f31">Think of it like Plaid</T></span> <T k="pages.components.startquotecard.8201fd">(which links your bank to Venmo or Cash App) –</T>{' '}
+              <span className="font-semibold text-primary-600"><T k="pages.components.startquotecard.a6fa70">same security, way faster</T></span> <T k="pages.components.startquotecard.373266">than typing everything manually.</T>
             </p>
           </div>
         </div>
@@ -308,12 +309,11 @@ const HowItWorks = ({ onGetQuote }) => {
           </div>
           <div>
             <h3 className="font-bold text-gray-900 mb-2 text-lg">
-              Important: Do you currently have auto insurance?
+              <T k="pages.components.startquotecard.78eadc">Important: Do you currently have auto insurance?</T>
             </h3>
             <p className="text-sm text-gray-700 leading-relaxed">
-              This service works by comparing your{' '}
-              <span className="font-semibold text-gray-900">existing policy</span> to an Allstate quote. 
-              You must have <span className="font-semibold text-gray-900">active insurance</span> to use this process.
+              <T k="pages.components.startquotecard.6374c9">This service works by comparing your</T>{' '}
+              <span className="font-semibold text-gray-900"><T k="pages.components.startquotecard.b050be">existing policy</T></span> <T k="pages.components.startquotecard.ae00d2">to an Allstate quote. You must have</T> <span className="font-semibold text-gray-900"><T k="pages.components.startquotecard.c4e472">active insurance</T></span> <T k="pages.components.startquotecard.ac9aa0">to use this process.</T>
             </p>
           </div>
         </div>
@@ -328,7 +328,7 @@ const HowItWorks = ({ onGetQuote }) => {
           <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-5 rounded-2xl">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
-            <span className="relative z-10 text-white font-black text-lg whitespace-nowrap">Compare Rates Now</span>
+            <span className="relative z-10 text-white font-black text-lg whitespace-nowrap"><T k="pages.components.startquotecard.11c7a2">Compare Rates Now</T></span>
             <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform group-hover:trangray-x-2" />
           </div>
         </button>
@@ -341,15 +341,15 @@ const HowItWorks = ({ onGetQuote }) => {
             <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center">
               <span className="text-white text-sm font-bold">?</span>
             </div>
-            What is Canopy Connect?
+            <T k="pages.components.startquotecard.f3666f">What is Canopy Connect?</T>
           </span>
           <span className="text-gray-400 group-open:rotate-180 transition-transform duration-300">▼</span>
         </summary>
         <div className="px-6 pb-6 text-sm text-gray-600 leading-relaxed space-y-3 bg-white/50">
           <p className="font-medium text-gray-700">
-            Canopy Connect is a secure data-sharing tool enabling you to safely transfer insurance information to your agent.
+            <T k="pages.components.startquotecard.d0818e">Canopy Connect is a secure data-sharing tool enabling you to safely transfer insurance information to your agent.</T>
           </p>
-          <p>This technology works similar to:</p>
+          <p><T k="pages.components.startquotecard.0b1e1a">This technology works similar to:</T></p>
           <div className="grid sm:grid-cols-3 gap-3">
             {[
               { name: 'Plaid', used: 'Venmo, Cash App, Robinhood' },
@@ -363,9 +363,9 @@ const HowItWorks = ({ onGetQuote }) => {
             ))}
           </div>
           <div className="bg-success-50 border border-success-200 rounded-lg p-4 mt-4">
-            <p className="font-semibold text-success-900 mb-2">🔒 Security Guarantee</p>
+            <p className="font-semibold text-success-900 mb-2"><T k="pages.components.startquotecard.b63a91">🔒 Security Guarantee</T></p>
             <p className="text-xs text-gray-700">
-              Your credentials are never stored. We use 256-bit encryption—the same security standard used by banks and financial institutions.
+              <T k="pages.components.startquotecard.b899ee">Your credentials are never stored. We use 256-bit encryption—the same security standard used by banks and financial institutions.</T>
             </p>
           </div>
         </div>

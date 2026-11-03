@@ -2,6 +2,7 @@
 // Role-aware team comparison table. Supports services (full scorecard),
 // producers (outbound effort), and a combined "all" view.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { Users, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import { GRADE_CONFIG, calculateGrade, computeMetrics, DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
@@ -107,7 +108,7 @@ function CellValue({ col, row }) {
     return <span className="text-sm text-qs-text">{isFinite(val) ? `${val.toFixed(1)}%` : '—'}</span>;
   }
   if (col.format === 'time') {
-    return <span className="text-sm text-qs-text">{(val || 0).toFixed(1)} min</span>;
+    return <span className="text-sm text-qs-text">{(val || 0).toFixed(1)} <T k="pages.components.timeattendance.teamcomparisonview.d8bd79">min</T></span>;
   }
   if (col.format === 'decimal') {
     return <span className="text-sm text-qs-text">{(val || 0).toFixed(1)}</span>;
@@ -157,7 +158,7 @@ function AvgCellValue({ col, teamAvg }) {
   const val = teamAvg[col.key];
 
   if (col.key === 'name') {
-    return <span className="text-sm font-semibold text-qs-text">Team Average</span>;
+    return <span className="text-sm font-semibold text-qs-text"><T k="pages.components.timeattendance.teamcomparisonview.15c1b7">Team Average</T></span>;
   }
   if (col.key === 'role') {
     return <span className="text-sm text-qs-muted">—</span>;
@@ -172,7 +173,7 @@ function AvgCellValue({ col, teamAvg }) {
     return <span className="text-sm font-semibold text-qs-text">{isFinite(val) ? `${val.toFixed(1)}%` : '—'}</span>;
   }
   if (col.format === 'time') {
-    return <span className="text-sm font-semibold text-qs-text">{(val || 0).toFixed(1)} min</span>;
+    return <span className="text-sm font-semibold text-qs-text">{(val || 0).toFixed(1)} <T k="pages.components.timeattendance.teamcomparisonview.d8bd79">min</T></span>;
   }
   if (col.format === 'decimal') {
     return <span className="text-sm font-semibold text-qs-text">{(val || 0).toFixed(1)}</span>;
@@ -348,7 +349,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
     return (
       <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
         <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-qs-bright mb-2">No team data</h2>
+        <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.components.timeattendance.teamcomparisonview.566a60">No team data</T></h2>
         <p className="text-qs-dim">
           {filterLabel
             ? `No ${filterLabel} data for this week. Upload RingCentral data to see team comparison.`
@@ -364,7 +365,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
     <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
       <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
         <Users className="w-5 h-5 text-primary-400" />
-        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Team Comparison</h4>
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide"><T k="pages.components.timeattendance.teamcomparisonview.3e52e0">Team Comparison</T></h4>
         <span className="text-xs text-qs-subtle ml-auto">{rows.length} {countLabel}</span>
       </div>
 

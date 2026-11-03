@@ -1,6 +1,7 @@
 // src/pages/components/dashboard/StaffingCapacity.jsx
 // Section 5: Staffing & Quoting Capacity — calculator, daily timeline, scenarios, peak alert
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo } from 'react';
 import { Users, Clock, Zap, AlertTriangle } from 'lucide-react';
 import { getBlendedValues } from '../../../lib/commissionUtils';
@@ -185,12 +186,12 @@ export default function StaffingCapacity({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Users className="w-5 h-5" style={{ color: 'var(--qs-info)' }} />
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>Staffing & Quoting Capacity</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.staffingcapacity.e098ba">Staffing & Quoting Capacity</T></h2>
       </div>
 
       {/* Row 1: Staffing Calculator */}
       <div className="dark-card">
-        <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Staffing Calculator</h3>
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3"><T k="pages.components.dashboard.staffingcapacity.519e28">Staffing Calculator</T></h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Inputs */}
           <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
@@ -203,7 +204,7 @@ export default function StaffingCapacity({
             {/* Producer Cost Template */}
             {producerConfigs?.length > 0 && (
               <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-                <label className="text-sm" style={{ color: 'var(--qs-dim)' }}>Cost Based On</label>
+                <label className="text-sm" style={{ color: 'var(--qs-dim)' }}><T k="pages.components.dashboard.staffingcapacity.a1be0f">Cost Based On</T></label>
                 <select
                   value={selectedProducerConfigId || 'none'}
                   onChange={(e) => onProducerConfigChange(e.target.value)}
@@ -246,29 +247,29 @@ export default function StaffingCapacity({
       <div className="dark-card">
         <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">
           <Clock className="w-4 h-4 inline mr-1" />
-          Producer Day Breakdown (per producer)
+          <T k="pages.components.dashboard.staffingcapacity.a73c54">Producer Day Breakdown (per producer)</T>
         </h3>
         <div className="flex rounded-lg overflow-hidden h-14 text-xs font-medium">
           <div
             className="bg-amber-100 border-r border-amber-200 flex flex-col items-center justify-center px-2 text-amber-800"
             style={{ width: `${nonQuotingPct}%`, minWidth: '80px' }}
           >
-            <span>Calls & Follow-ups ({Math.round(nonQuotingPct)}%)</span>
-            <span className="text-amber-600">~{callsInNonQuoting} calls @ 5 min</span>
+            <span><T k="pages.components.dashboard.staffingcapacity.d03c95">Calls & Follow-ups (</T>{Math.round(nonQuotingPct)}%)</span>
+            <span className="text-amber-600">~{callsInNonQuoting} <T k="pages.components.dashboard.staffingcapacity.264efa">calls @ 5 min</T></span>
           </div>
           <div
             className="bg-primary-100 flex flex-col items-center justify-center px-2 text-primary-800"
             style={{ width: `${quotingPct}%`, minWidth: '80px' }}
           >
-            <span>Quoting ({Math.round(quotingPct)}%)</span>
-            <span className="text-primary-600">~{quotesInQuoting.toFixed(1)} quotes @ {avgQuoteTime} min</span>
+            <span><T k="pages.components.dashboard.staffingcapacity.08f072">Quoting (</T>{Math.round(quotingPct)}%)</span>
+            <span className="text-primary-600">~{quotesInQuoting.toFixed(1)} <T k="pages.components.dashboard.staffingcapacity.58b52a">quotes @</T> {avgQuoteTime} <T k="pages.components.dashboard.staffingcapacity.d8bd79">min</T></span>
           </div>
         </div>
       </div>
 
       {/* Row 3: Staffing Scenarios Table */}
       <div className="dark-card">
-        <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-1">Staffing Scenarios</h3>
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-1"><T k="pages.components.dashboard.staffingcapacity.aa21f4">Staffing Scenarios</T></h3>
         <p className="text-xs mb-3" style={{ color: 'var(--qs-subtle)' }}>
           {ytdAvgPremium
             ? `Using YTD actuals: $${Math.round(ytdAvgPremium).toLocaleString()} avg premium · ${ytdCommissionRate.toFixed(1)}% blended rate`
@@ -278,17 +279,17 @@ export default function StaffingCapacity({
           <table className="min-w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--qs-border)' }}>
-                <th className="text-left py-2 pr-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Producers</th>
-                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Quotes/Mo</th>
-                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Lead Capacity</th>
-                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Gross Revenue</th>
+                <th className="text-left py-2 pr-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.staffingcapacity.40d2d6">Producers</T></th>
+                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.staffingcapacity.28d402">Quotes/Mo</T></th>
+                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.staffingcapacity.0730df">Lead Capacity</T></th>
+                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.staffingcapacity.2e1d88">Gross Revenue</T></th>
                 {selectedProducerConfig && (
-                  <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Producer Cost</th>
+                  <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.staffingcapacity.8601ee">Producer Cost</T></th>
                 )}
                 {selectedProducerConfig && (
-                  <th className="text-right py-2 px-4 text-xs font-medium text-green-700 uppercase">Net Profit</th>
+                  <th className="text-right py-2 px-4 text-xs font-medium text-green-700 uppercase"><T k="pages.components.dashboard.staffingcapacity.43d729">Net Profit</T></th>
                 )}
-                <th className="text-left py-2 pl-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Status</th>
+                <th className="text-left py-2 pl-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.staffingcapacity.ec53a8">Status</T></th>
               </tr>
             </thead>
             <tbody>
@@ -306,7 +307,7 @@ export default function StaffingCapacity({
                 >
                   <td className="py-2 pr-4 font-medium" style={{ color: 'var(--qs-bright)' }}>
                     {s.producers}
-                    {s.producers === activeProducers && <span className="ml-2 text-xs text-primary-600">(current)</span>}
+                    {s.producers === activeProducers && <span className="ml-2 text-xs text-primary-600"><T k="pages.components.dashboard.staffingcapacity.c2e8e0">(current)</T></span>}
                   </td>
                   <td className="py-2 px-4 text-right" style={{ color: 'var(--qs-text)' }}>{s.qpm.toLocaleString()}</td>
                   <td className="py-2 px-4 text-right" style={{ color: 'var(--qs-text)' }}>{s.canHandle.toLocaleString()}</td>
@@ -336,16 +337,13 @@ export default function StaffingCapacity({
         <div className="flex items-start gap-3">
           <Zap className={`w-5 h-5 mt-0.5 flex-shrink-0 ${outputs.minutesBetween < 10 ? 'text-red-500' : outputs.minutesBetween <= 20 ? 'text-amber-500' : 'text-green-500'}`} />
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Peak Hours</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.staffingcapacity.ce9a59">Peak Hours</T></p>
             <p className="text-sm mt-1" style={{ color: 'var(--qs-text)' }}>
-              Based on typical ad traffic patterns, ~40% of daily leads arrive between 5-9 PM.
-              At {outputs.leadsPerDay} leads/day, that&apos;s ~{outputs.peakLeads} leads in a 4-hour window.
-              With {activeProducers} producer{activeProducers !== 1 ? 's' : ''}, each would need to handle {outputs.peakPerProducer} initial
-              calls during peak &mdash; that&apos;s one every {outputs.minutesBetween} minutes while also quoting.
+              <T k="pages.components.dashboard.staffingcapacity.bbfb9e">Based on typical ad traffic patterns, ~40% of daily leads arrive between 5-9 PM. At</T> {outputs.leadsPerDay} <T k="pages.components.dashboard.staffingcapacity.8054e8">leads/day, that's ~</T>{outputs.peakLeads} <T k="pages.components.dashboard.staffingcapacity.183d44">leads in a 4-hour window. With</T> {activeProducers} <T k="pages.components.dashboard.staffingcapacity.f18122">producer</T>{activeProducers !== 1 ? 's' : ''}<T k="pages.components.dashboard.staffingcapacity.9e60b9">, each would need to handle</T> {outputs.peakPerProducer} <T k="pages.components.dashboard.staffingcapacity.70982b">initial calls during peak — that's one every</T> {outputs.minutesBetween} <T k="pages.components.dashboard.staffingcapacity.5f5cc2">minutes while also quoting.</T>
             </p>
             {outputs.minutesBetween < 10 && (
               <p className="text-sm text-red-700 font-medium mt-2">
-                Under 10 minutes between calls during peak means no quoting gets done &mdash; producers can only answer the phone.
+                <T k="pages.components.dashboard.staffingcapacity.9c1d39">Under 10 minutes between calls during peak means no quoting gets done — producers can only answer the phone.</T>
               </p>
             )}
           </div>

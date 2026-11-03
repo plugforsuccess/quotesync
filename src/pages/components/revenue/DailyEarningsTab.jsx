@@ -1,4 +1,5 @@
 // src/pages/components/revenue/DailyEarningsTab.jsx
+import { T } from '../../../components/SiteCopy';
 import { useMemo, useState } from 'react';
 import { AreaChart, Area, Line, ComposedChart, XAxis, YAxis, CartesianGrid,
          Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -80,7 +81,7 @@ export default function DailyEarningsTab({ agencyId }) {
 
   if (loading) return (
     <div style={{ color: 'var(--qs-subtle)', padding: 40, textAlign: 'center' }}>
-      Loading earnings data...
+      <T k="pages.components.revenue.dailyearningstab.d3d78b">Loading earnings data...</T>
     </div>
   );
 
@@ -89,10 +90,10 @@ export default function DailyEarningsTab({ agencyId }) {
       {/* Page header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 2 }}>
-          Daily Earnings — {today.toLocaleString('default', { month: 'long', year: 'numeric' })}
+          <T k="pages.components.revenue.dailyearningstab.9c74ca">Daily Earnings —</T> {today.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
-          Cumulative commission vs. ideal pace to $40k goal
+          <T k="pages.components.revenue.dailyearningstab.9963b2">Cumulative commission vs. ideal pace to $40k goal</T>
         </div>
       </div>
 
@@ -102,10 +103,10 @@ export default function DailyEarningsTab({ agencyId }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)' }}>
-              Cumulative Commission
+              <T k="pages.components.revenue.dailyearningstab.4fd7b3">Cumulative Commission</T>
             </div>
             <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
-              Actual MTD vs. ideal pace
+              <T k="pages.components.revenue.dailyearningstab.05a2fc">Actual MTD vs. ideal pace</T>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -216,18 +217,18 @@ export default function DailyEarningsTab({ agencyId }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
         <div className="card">
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            MTD Commission
+            <T k="pages.components.revenue.dailyearningstab.69c66f">MTD Commission</T>
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-success)' }}>
             {fmtFull$(mtdCommission)}
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
-            of {fmtFull$(COMMISSION_GOAL)} goal
+            <T k="pages.components.revenue.dailyearningstab.8bf885">of</T> {fmtFull$(COMMISSION_GOAL)} <T k="pages.components.revenue.dailyearningstab.a38985">goal</T>
           </div>
         </div>
         <div className="card">
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            Gap to $40k
+            <T k="pages.components.revenue.dailyearningstab.cb5a4a">Gap to $40k</T>
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: mtdCommission >= COMMISSION_GOAL ? 'var(--qs-success)' : 'var(--qs-warning)' }}>
             {mtdCommission >= COMMISSION_GOAL ? 'Achieved' : fmtFull$(mtdGap)}
@@ -260,7 +261,7 @@ export default function DailyEarningsTab({ agencyId }) {
             {displayEarned > 0 ? fmtFull$(displayEarned) : '—'}
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
-            commission earned
+            <T k="pages.components.revenue.dailyearningstab.056064">commission earned</T>
           </div>
         </div>
       </div>

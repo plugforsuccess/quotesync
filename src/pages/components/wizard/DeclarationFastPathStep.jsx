@@ -3,6 +3,7 @@
 // declarations page(s) instead of answering the manual questionnaire. We read
 // premium/coverages/vehicles/mortgage from the document(s) and then only need
 // contact + consent. Supports multiple uploads (e.g. one auto + one home).
+import { T } from '../../../components/SiteCopy';
 import { useRef, useCallback } from 'react';
 import { FileText, UploadCloud, CheckCircle, Loader2, Plus, ArrowRight } from 'lucide-react';
 import { SESSION_KEYS } from '../../../hooks/useWizard';
@@ -58,12 +59,10 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
         <FileText className="w-7 h-7 text-white" />
       </div>
       <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 leading-tight">
-        Skip the questions — upload your policy
+        <T k="pages.components.wizard.declarationfastpathstep.ad0dfc">Skip the questions — upload your policy</T>
       </h2>
       <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-        Have your current declarations page? Upload it (PDF preferred — a clear photo works too)
-        and we&apos;ll read your coverage, premium, and vehicles automatically. Bundling?
-        Add your auto <span className="font-medium">and</span> home dec pages.
+        <T k="pages.components.wizard.declarationfastpathstep.60a29f">Have your current declarations page? Upload it (PDF preferred — a clear photo works too) and we'll read your coverage, premium, and vehicles automatically. Bundling? Add your auto</T> <span className="font-medium"><T k="pages.components.wizard.declarationfastpathstep.be5d5d">and</T></span> <T k="pages.components.wizard.declarationfastpathstep.17cd1d">home dec pages.</T>
       </p>
 
       {/* Uploaded so far */}
@@ -73,7 +72,7 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
             <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success-50 border border-success-200">
               <CheckCircle className="w-4 h-4 text-success-600 flex-shrink-0" />
               <span className="text-sm font-medium text-gray-900">{declarationLabel(d)}</span>
-              <span className="text-xs text-gray-500">captured</span>
+              <span className="text-xs text-gray-500"><T k="pages.components.wizard.declarationfastpathstep.2f7765">captured</T></span>
             </div>
           ))}
         </div>
@@ -96,12 +95,12 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
         {working ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span>Reading {pendingName ? `"${pendingName}"` : 'your document'}…</span>
+            <span><T k="pages.components.wizard.declarationfastpathstep.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'your document'}…</span>
           </>
         ) : hasItems ? (
           <>
             <Plus className="w-5 h-5" />
-            <span>Add another dec page</span>
+            <span><T k="pages.components.wizard.declarationfastpathstep.e4e33d">Add another dec page</T></span>
           </>
         ) : (
           <>
@@ -120,7 +119,7 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
           onClick={() => onContinue(items)}
           className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-6 py-4 font-black text-white text-lg transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
         >
-          Continue
+          <T k="pages.components.wizard.declarationfastpathstep.a0bfb8">Continue</T>
           <ArrowRight className="w-5 h-5" />
         </button>
       )}
@@ -132,7 +131,7 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
         disabled={working}
         className="mt-4 text-sm font-semibold text-gray-500 hover:text-gray-800 bg-transparent border-0 cursor-pointer disabled:opacity-40"
       >
-        I don&apos;t have it — answer a few questions instead
+        <T k="pages.components.wizard.declarationfastpathstep.ebdca9">I don't have it — answer a few questions instead</T>
       </button>
     </div>
   );

@@ -5,6 +5,7 @@
 // A "queue for batch" fallback covers requests that genuinely can't be done
 // live (customer must send a document, left a voicemail).
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { useCreateServiceTask, TASK_TYPES, PRODUCTS } from '../../../hooks/useServiceTasks';
 
@@ -66,7 +67,7 @@ export default function LogServiceTaskButton({
           color: 'var(--qs-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
         }}
       >
-        ➕ Add service request
+        <T k="pages.components.retention.logservicetaskbutton.0798f9">➕ Add service request</T>
       </button>
     );
   }
@@ -90,7 +91,7 @@ export default function LogServiceTaskButton({
   return (
     <div style={{ border: '1px solid var(--qs-border)', borderRadius: 10, padding: 14, background: 'var(--qs-elevated)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>Service request</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}><T k="pages.components.retention.logservicetaskbutton.a779dd">Service request</T></span>
         <button type="button" onClick={() => setOpen(false)}
           style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 13 }}>✕</button>
       </div>
@@ -106,14 +107,14 @@ export default function LogServiceTaskButton({
               background: 'var(--qs-card)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
-              ➕ Add another
+              <T k="pages.components.retention.logservicetaskbutton.364ad1">➕ Add another</T>
             </button>
             <button type="button" onClick={() => { setOpen(false); setDone(false); }} style={{
               flex: 1, padding: '8px', borderRadius: 8, border: 'none',
               background: '#10B981', color: '#fff', fontSize: 13, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
-              Done
+              <T k="pages.components.retention.logservicetaskbutton.f92965">Done</T>
             </button>
           </div>
         </div>
@@ -122,27 +123,27 @@ export default function LogServiceTaskButton({
           {/* Resolve-on-call is the default; batch is the exception. */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
             <button type="button" style={tab(mode === 'resolved')} onClick={() => setMode('resolved')}>
-              ✓ Handled on this call
+              <T k="pages.components.retention.logservicetaskbutton.f7bab5">✓ Handled on this call</T>
             </button>
             <button type="button" style={tab(mode === 'batch')} onClick={() => setMode('batch')}>
-              ⏳ Queue for batch
+              <T k="pages.components.retention.logservicetaskbutton.f4afad">⏳ Queue for batch</T>
             </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <label style={lbl}>Type
+            <label style={lbl}><T k="pages.components.retention.logservicetaskbutton.a1fa27">Type</T>
               <select value={taskType} onChange={e => setTaskType(e.target.value)} style={input}>
                 {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </label>
-            <label style={lbl}>Product
+            <label style={lbl}><T k="pages.components.retention.logservicetaskbutton.deb105">Product</T>
               <select value={product} onChange={e => setProduct(e.target.value)} style={input}>
                 <option value="">— Line of business —</option>
                 {PRODUCTS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </label>
             {!onCall && (
-              <label style={{ ...lbl, gridColumn: '1 / -1' }}>Priority
+              <label style={{ ...lbl, gridColumn: '1 / -1' }}><T k="pages.components.retention.logservicetaskbutton.502996">Priority</T>
                 <select value={priority} onChange={e => setPriority(e.target.value)} style={input}>
                   <option value="urgent">Urgent</option>
                   <option value="high">High</option>
@@ -157,14 +158,14 @@ export default function LogServiceTaskButton({
             </label>
             {!onCall && (
               <div style={{ gridColumn: '1 / -1', fontSize: 11, color: 'var(--qs-muted)' }}>
-                Queued to the Service Batch on a 24-hour timer.
+                <T k="pages.components.retention.logservicetaskbutton.15cc43">Queued to the Service Batch on a 24-hour timer.</T>
               </div>
             )}
           </div>
 
           {(customerName || policyNo) && (
             <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 8 }}>
-              For {customerName || '—'}{policyNo ? ` · ${policyNo}` : ''}
+              <T k="pages.components.retention.logservicetaskbutton.39e61d">For</T> {customerName || '—'}{policyNo ? ` · ${policyNo}` : ''}
             </div>
           )}
 
@@ -179,7 +180,7 @@ export default function LogServiceTaskButton({
           {create.isError && (
             <div style={{ marginTop: 8, fontSize: 12, color: '#F87171', background: 'rgba(239,68,68,0.08)',
               border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 10px' }}>
-              Couldn't save: {create.error?.message || 'please try again'}
+              <T k="pages.components.retention.logservicetaskbutton.da1a84">Couldn't save:</T> {create.error?.message || 'please try again'}
             </div>
           )}
         </>

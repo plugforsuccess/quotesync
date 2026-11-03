@@ -1,6 +1,7 @@
 // src/pages/RetentionPage.jsx
 // Retention Hub — unified page combining Book Health + Renewals functionality.
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
@@ -66,7 +67,7 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount, onUrgentClick 
             userSelect: 'none',
           }}
         >
-          {urgentCount} urgent
+          {urgentCount} <T k="pages.retentionpage.8ff271">urgent</T>
         </div>
       )}
     </div>
@@ -356,7 +357,7 @@ export default function RetentionPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Retention Hub</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.retentionpage.1d263e">Retention Hub</T></h1>
           <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2 }}>
             {currentAgency?.agencies?.name || 'Wiley-Wilson Agency'}
           </div>
@@ -378,7 +379,7 @@ export default function RetentionPage() {
             {isRenewalFiring ? (
               <>
                 <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                Running...
+                <T k="pages.retentionpage.d18dcb">Running...</T>
               </>
             ) : '▶ Run AI Renewals'}
           </button>
@@ -399,7 +400,7 @@ export default function RetentionPage() {
             {isCancelFiring ? (
               <>
                 <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                Running...
+                <T k="pages.retentionpage.d18dcb">Running...</T>
               </>
             ) : '▶ Run AI Cancels'}
           </button>
@@ -428,7 +429,7 @@ export default function RetentionPage() {
 
           {lastSynced && (
             <span style={{ fontSize: 11, color: 'var(--qs-muted)', display: 'flex', alignItems: 'center' }}>
-              Last synced {lastSynced.toLocaleTimeString('en-US', {
+              <T k="pages.retentionpage.e5a254">Last synced</T> {lastSynced.toLocaleTimeString('en-US', {
                 hour: 'numeric', minute: '2-digit', hour12: true
               })}
             </span>
@@ -440,8 +441,8 @@ export default function RetentionPage() {
       {renewalQueueResult && !renewalQueueResult.suppressed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', fontSize: 13 }}>
           <span style={{ color: 'var(--qs-text)' }}>
-            <strong style={{ color: 'var(--qs-info)' }}>AI Renewals complete —</strong>{' '}
-            {renewalQueueResult.queued} queued · {renewalQueueResult.blocked} blocked · {renewalQueueResult.skipped} skipped
+            <strong style={{ color: 'var(--qs-info)' }}><T k="pages.retentionpage.908b9d">AI Renewals complete —</T></strong>{' '}
+            {renewalQueueResult.queued} <T k="pages.retentionpage.b0c6ff">queued ·</T> {renewalQueueResult.blocked} <T k="pages.retentionpage.1cdbdf">blocked ·</T> {renewalQueueResult.skipped} <T k="pages.retentionpage.e52e27">skipped</T>
             {renewalQueueResult.rate_limited ? ' · rate limited, retry later' : ''}
           </span>
           <button onClick={clearRenewalResult} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
@@ -450,10 +451,10 @@ export default function RetentionPage() {
       {showRenewalSuppressionOverride && renewalQueueResult?.suppressed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', fontSize: 13 }}>
           <span style={{ color: 'var(--qs-warning)', flex: 1 }}>
-            <strong>AI Renewals suppressed</strong> — {renewalQueueResult.message}
+            <strong><T k="pages.retentionpage.3352ae">AI Renewals suppressed</T></strong> — {renewalQueueResult.message}
           </span>
-          <button onClick={() => { setShowRenewalSuppressionOverride(false); clearRenewalResult(); }} style={{ background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
-          <button onClick={() => handleFireRenewalQueue(true)} style={{ padding: '4px 10px', borderRadius: 5, background: 'var(--qs-warning)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Override</button>
+          <button onClick={() => { setShowRenewalSuppressionOverride(false); clearRenewalResult(); }} style={{ background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 12 }}><T k="pages.retentionpage.ea4788">Cancel</T></button>
+          <button onClick={() => handleFireRenewalQueue(true)} style={{ padding: '4px 10px', borderRadius: 5, background: 'var(--qs-warning)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}><T k="pages.retentionpage.6da8e6">Override</T></button>
         </div>
       )}
 
@@ -461,8 +462,8 @@ export default function RetentionPage() {
       {cancelQueueResult && !cancelQueueResult.suppressed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', fontSize: 13 }}>
           <span style={{ color: 'var(--qs-text)' }}>
-            <strong style={{ color: 'var(--qs-warning)' }}>AI Cancels complete —</strong>{' '}
-            {cancelQueueResult.queued} queued · {cancelQueueResult.blocked} blocked · {cancelQueueResult.skipped} skipped
+            <strong style={{ color: 'var(--qs-warning)' }}><T k="pages.retentionpage.6e9b40">AI Cancels complete —</T></strong>{' '}
+            {cancelQueueResult.queued} <T k="pages.retentionpage.b0c6ff">queued ·</T> {cancelQueueResult.blocked} <T k="pages.retentionpage.1cdbdf">blocked ·</T> {cancelQueueResult.skipped} <T k="pages.retentionpage.e52e27">skipped</T>
             {cancelQueueResult.rate_limited ? ' · rate limited, retry later' : ''}
           </span>
           <button onClick={clearCancelResult} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
@@ -471,15 +472,15 @@ export default function RetentionPage() {
       {showCancelSuppressionOverride && cancelQueueResult?.suppressed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', fontSize: 13 }}>
           <span style={{ color: 'var(--qs-warning)', flex: 1 }}>
-            <strong>AI Cancels suppressed</strong> — {cancelQueueResult.message}
+            <strong><T k="pages.retentionpage.41f565">AI Cancels suppressed</T></strong> — {cancelQueueResult.message}
           </span>
-          <button onClick={() => { setShowCancelSuppressionOverride(false); clearCancelResult(); }} style={{ background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
-          <button onClick={() => handleFireCancelQueue(true)} style={{ padding: '4px 10px', borderRadius: 5, background: 'var(--qs-warning)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Override</button>
+          <button onClick={() => { setShowCancelSuppressionOverride(false); clearCancelResult(); }} style={{ background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 12 }}><T k="pages.retentionpage.ea4788">Cancel</T></button>
+          <button onClick={() => handleFireCancelQueue(true)} style={{ padding: '4px 10px', borderRadius: 5, background: 'var(--qs-warning)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}><T k="pages.retentionpage.6da8e6">Override</T></button>
         </div>
       )}
 
       {loading && (
-        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
+        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}><T k="pages.retentionpage.17fd4a">Loading events...</T></div>
       )}
 
       {/* KPI Cards */}

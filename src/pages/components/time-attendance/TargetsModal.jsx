@@ -1,6 +1,7 @@
 // src/pages/components/time-attendance/TargetsModal.jsx
 // Modal for editing per-employee performance targets with effective dating.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useCallback } from 'react';
 import { X, Target, RotateCcw, Save } from 'lucide-react';
 import { DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
@@ -123,7 +124,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
               <div className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-primary-600" />
                 <div>
-                  <h3 className="text-lg font-semibold text-qs-bright">Performance Goals</h3>
+                  <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.targetsmodal.c28929">Performance Goals</T></h3>
                   <p className="text-sm text-qs-subtle">{employeeName}</p>
                 </div>
               </div>
@@ -137,7 +138,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
           <div className="space-y-6">
             {/* Effective Date */}
             <div>
-              <label className="dark-label">Effective Date</label>
+              <label className="dark-label"><T k="pages.components.timeattendance.targetsmodal.8aafaf">Effective Date</T></label>
               <input
                 type="date"
                 value={effectiveDate}
@@ -145,7 +146,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
                 className="dark-input"
               />
               <p className="text-xs text-qs-subtle mt-1">
-                Targets apply from this date forward. Historical weeks before this date keep their original targets.
+                <T k="pages.components.timeattendance.targetsmodal.c272e3">Targets apply from this date forward. Historical weeks before this date keep their original targets.</T>
               </p>
             </div>
 
@@ -177,14 +178,14 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              Reset to Defaults
+              <T k="pages.components.timeattendance.targetsmodal.679597">Reset to Defaults</T>
             </button>
             <div className="flex gap-3">
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
               >
-                Cancel
+                <T k="pages.components.timeattendance.targetsmodal.ea4788">Cancel</T>
               </button>
               <button
                 onClick={handleSave}

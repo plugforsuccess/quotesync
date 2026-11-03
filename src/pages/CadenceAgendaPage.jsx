@@ -2,6 +2,7 @@
 // Live meeting agenda page. Auto-pulls data modules for the cadence type.
 // Principal logs notes + commitments, marks meeting complete.
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -65,7 +66,7 @@ function OutboundYesterdayModule({ employeeId, agencyId }) {
           {count}
         </span>
         <span style={{ fontSize: 14, color: 'var(--qs-muted)' }}>
-          / {target} target
+          / {target} <T k="pages.cadenceagendapage.42aefb">target</T>
         </span>
         <span style={{
           fontSize: 11, fontWeight: 700, padding: '2px 8px',
@@ -103,7 +104,7 @@ function OpenPendingCasesModule({ employeeId, agencyId }) {
   return (
     <ModuleCard label="Open Pending Cancel Cases">
       {data?.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#10B981' }}>✅ No open cases</p>
+        <p style={{ fontSize: 13, color: '#10B981' }}><T k="pages.cadenceagendapage.60f6d4">✅ No open cases</T></p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {data?.map(c => (
@@ -115,7 +116,7 @@ function OpenPendingCasesModule({ employeeId, agencyId }) {
             }}>
               <span style={{ color: 'var(--qs-text)' }}>{c.customer_name}</span>
               <span style={{ color: c.days_until_cancel <= 3 ? '#EF4444' : 'var(--qs-muted)' }}>
-                {c.days_until_cancel}d remaining
+                {c.days_until_cancel}<T k="pages.cadenceagendapage.e051c3">d remaining</T>
               </span>
             </div>
           ))}
@@ -172,8 +173,7 @@ function PTOBalanceModule({ employeeId }) {
       </div>
       {isLow && (
         <p style={{ fontSize: 11, color: '#EF4444', marginTop: 8 }}>
-          ⚠️ Only {remaining} PTO day{remaining !== 1 ? 's' : ''} remaining
-          for the rest of the year.
+          <T k="pages.cadenceagendapage.bd7fec">⚠️ Only</T> {remaining} <T k="pages.cadenceagendapage.f8b4a3">PTO day</T>{remaining !== 1 ? 's' : ''} <T k="pages.cadenceagendapage.36aa93">remaining for the rest of the year.</T>
         </p>
       )}
     </ModuleCard>
@@ -203,7 +203,7 @@ function OpenCommitmentsModule({ employeeId, agencyId }) {
   return (
     <ModuleCard label="Open Commitments from Previous Meetings">
       {commitments.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#10B981' }}>✅ No open commitments</p>
+        <p style={{ fontSize: 13, color: '#10B981' }}><T k="pages.cadenceagendapage.fc725b">✅ No open commitments</T></p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {commitments.map(c => {
@@ -218,7 +218,7 @@ function OpenCommitmentsModule({ employeeId, agencyId }) {
                   {c.description}
                 </div>
                 <div style={{ fontSize: 11, color: isOverdue ? '#EF4444' : 'var(--qs-muted)' }}>
-                  Due {c.due_date}
+                  <T k="pages.cadenceagendapage.d03639">Due</T> {c.due_date}
                   {isOverdue && ' · OVERDUE'}
                 </div>
               </div>
@@ -421,10 +421,10 @@ export default function CadenceAgendaPage() {
         <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)',
           marginBottom: 8 }}>
-          Meeting logged
+          <T k="pages.cadenceagendapage.86bc5a">Meeting logged</T>
         </h2>
         <p style={{ fontSize: 14, color: 'var(--qs-muted)' }}>
-          {template?.label} with {empName} has been recorded.
+          {template?.label} <T k="pages.cadenceagendapage.23a58b">with</T> {empName} <T k="pages.cadenceagendapage.c6f793">has been recorded.</T>
           {commitments.filter(c => c.description.trim()).length > 0 &&
             ` ${commitments.filter(c => c.description.trim()).length} commitment(s) tracked.`}
         </p>
@@ -433,7 +433,7 @@ export default function CadenceAgendaPage() {
           style={{ marginTop: 24, padding: '10px 24px', borderRadius: 8,
             background: '#3B82F6', border: 'none', color: '#fff',
             fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          Done
+          <T k="pages.cadenceagendapage.f92965">Done</T>
         </button>
       </div>
     );
@@ -462,7 +462,7 @@ export default function CadenceAgendaPage() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-          Agenda
+          <T k="pages.cadenceagendapage.49098c">Agenda</T>
         </div>
         {agendaModules.map(module => {
           const Component = MODULE_COMPONENTS[module.key];
@@ -477,7 +477,7 @@ export default function CadenceAgendaPage() {
         })}
         {agendaModules.length === 0 && (
           <p style={{ fontSize: 13, color: 'var(--qs-muted)' }}>
-            No agenda modules configured for this meeting type.
+            <T k="pages.cadenceagendapage.f208ef">No agenda modules configured for this meeting type.</T>
           </p>
         )}
       </div>
@@ -486,7 +486,7 @@ export default function CadenceAgendaPage() {
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-          Overall Assessment
+          <T k="pages.cadenceagendapage.4aaadf">Overall Assessment</T>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {SENTIMENT_OPTIONS.map(opt => (
@@ -510,7 +510,7 @@ export default function CadenceAgendaPage() {
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-          Meeting Notes
+          <T k="pages.cadenceagendapage.55b260">Meeting Notes</T>
         </div>
         <textarea
           value={notes}
@@ -530,11 +530,10 @@ export default function CadenceAgendaPage() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-          Commitments
+          <T k="pages.cadenceagendapage.2b1457">Commitments</T>
         </div>
         <p style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 10 }}>
-          Log 1–2 specific commitments with due dates. Keep it meaningful — not every
-          task needs to be tracked here.
+          <T k="pages.cadenceagendapage.381c9e">Log 1–2 specific commitments with due dates. Keep it meaningful — not every task needs to be tracked here.</T>
         </p>
         {commitments.map((c, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8,
@@ -585,7 +584,7 @@ export default function CadenceAgendaPage() {
               fontSize: 12, color: '#3B82F6', background: 'none',
               border: 'none', cursor: 'pointer', padding: '4px 0',
             }}>
-            + Add commitment
+            <T k="pages.cadenceagendapage.d2018e">+ Add commitment</T>
           </button>
         )}
       </div>

@@ -3,6 +3,7 @@
 // (calls, reached, saves, premium, tasks done) plus a personal "today" coverage
 // strip, but locked to the logged-in employee — no rep selector, no coworker data.
 
+import { T } from '../components/SiteCopy';
 import { useState, Fragment, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -130,7 +131,7 @@ function WorkedRows({ worked, k, onCustomer }) {
           : <span style={{ color: 'var(--qs-muted)' }} title="No customer name on this case">—</span>}
         {' · '}
         {w.saved
-          ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
+          ? <span style={{ color: '#34D399', fontWeight: 600 }}><T k="pages.myactivitypage.a02001">✓ saved</T>{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
           : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
         {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
       </td>
@@ -145,7 +146,7 @@ function TaskDoneRows({ tasks, k }) {
     <tr key={`${k}-task-${i}`} style={{ background: 'var(--qs-elevated)' }}>
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
-          background: '#10B98122', color: '#34D399' }}>TASK ✓</span>
+          background: '#10B98122', color: '#34D399' }}><T k="pages.myactivitypage.1e9906">TASK ✓</T></span>
         <span style={{ color: 'var(--qs-text)' }}>{t.title}</span>
         {t.customer_name ? ` · ${titleCaseName(t.customer_name)}` : ''}
       </td>
@@ -169,11 +170,11 @@ export default function MyActivityPage() {
   if (!employee) {
     return (
       <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)' }}>My Activity</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)' }}><T k="pages.myactivitypage.1f0b3d">My Activity</T></h1>
         <div style={{ marginTop: 16, padding: 20, borderRadius: 10,
           background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
           color: 'var(--qs-dim)', fontSize: 14, maxWidth: 520 }}>
-          You don't have a rep workspace set up yet.
+          <T k="pages.myactivitypage.159d70">You don't have a rep workspace set up yet.</T>
         </div>
       </div>
     );
@@ -192,17 +193,17 @@ export default function MyActivityPage() {
     <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)', margin: 0 }}>
-          My Activity
+          <T k="pages.myactivitypage.1f0b3d">My Activity</T>
         </h1>
         <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 2 }}>
-          Your retention output, day by day — calls, reached, saves, premium preserved, and tasks done.
+          <T k="pages.myactivitypage.f1014b">Your retention output, day by day — calls, reached, saves, premium preserved, and tasks done.</T>
         </div>
       </div>
 
       {/* Today's queue coverage — a personal version of the principal's Queue tab */}
       <div className="card" style={{ marginBottom: 18 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>
-          Today
+          <T k="pages.myactivitypage.1dd1c5">Today</T>
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 14 }}>
           <Stat label="In my queue" value={queue} />
@@ -216,7 +217,7 @@ export default function MyActivityPage() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12,
               color: 'var(--qs-dim)', marginBottom: 5 }}>
-              <span>Calls vs target</span>
+              <span><T k="pages.myactivitypage.a0c76c">Calls vs target</T></span>
               <span style={{ color: targetHit ? '#10B981' : 'var(--qs-text)', fontWeight: 600 }}>
                 {callsToday}/{target}
               </span>
@@ -226,7 +227,7 @@ export default function MyActivityPage() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12,
               color: 'var(--qs-dim)', marginBottom: 5 }}>
-              <span>Queue coverage</span>
+              <span><T k="pages.myactivitypage.f7a42e">Queue coverage</T></span>
               <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>{coverPct}%</span>
             </div>
             <Bar pct={coverPct} color={coverPct >= 80 ? '#10B981' : coverPct >= 40 ? '#3B82F6' : '#F59E0B'} />
@@ -237,28 +238,28 @@ export default function MyActivityPage() {
       {/* Last 14 days timeline */}
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Last 14 days</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.myactivitypage.beab46">Last 14 days</T></h3>
           {data && (
             <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-              <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> saves ·{' '}
+              <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> <T k="pages.myactivitypage.c94a10">saves ·</T>{' '}
               <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> ·{' '}
-              {data.totals.attempts} calls{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} tasks
+              {data.totals.attempts} <T k="pages.myactivitypage.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.myactivitypage.2cb1ad">tasks</T>
             </div>
           )}
         </div>
-        {isLoading || !data ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div> : (
+        {isLoading || !data ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.myactivitypage.5f02f0">Loading…</T></div> : (
           <table style={{ width: '100%' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left' }}>Day</th>
-                <th style={{ textAlign: 'right' }}>Calls</th>
-                <th style={{ textAlign: 'right' }}>Reached</th>
+                <th style={{ textAlign: 'left' }}><T k="pages.myactivitypage.03727a">Day</T></th>
+                <th style={{ textAlign: 'right' }}><T k="pages.myactivitypage.b21c39">Calls</T></th>
+                <th style={{ textAlign: 'right' }}><T k="pages.myactivitypage.94c326">Reached</T></th>
                 <th style={{ textAlign: 'right' }}
                   title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">
-                  Saves
+                  <T k="pages.myactivitypage.e25296">Saves</T>
                 </th>
-                <th style={{ textAlign: 'right' }}>Premium</th>
-                <th style={{ textAlign: 'right' }}>Tasks</th>
+                <th style={{ textAlign: 'right' }}><T k="pages.myactivitypage.8d5e7e">Premium</T></th>
+                <th style={{ textAlign: 'right' }}><T k="pages.myactivitypage.ef6155">Tasks</T></th>
               </tr>
             </thead>
             <tbody>
@@ -302,10 +303,7 @@ export default function MyActivityPage() {
           </table>
         )}
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
-          Calls = attempts you logged (auto-logged dials excluded). Reached = customer answered.
-          Saves = cancels saved + renewals confirmed, with the premium preserved — shown as the day's total
-          with the split <strong>cancels saved (c) / renewals confirmed (r)</strong>, e.g. “1 (1c/0r)” is one
-          save, a rescued cancellation. Tap a day to see the cases.
+          <T k="pages.myactivitypage.32715e">Calls = attempts you logged (auto-logged dials excluded). Reached = customer answered. Saves = cancels saved + renewals confirmed, with the premium preserved — shown as the day's total with the split</T> <strong><T k="pages.myactivitypage.899177">cancels saved (c) / renewals confirmed (r)</T></strong><T k="pages.myactivitypage.b0abdc">, e.g. “1 (1c/0r)” is one save, a rescued cancellation. Tap a day to see the cases.</T>
         </p>
       </div>
     </div>

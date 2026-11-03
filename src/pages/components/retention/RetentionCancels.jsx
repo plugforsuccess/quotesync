@@ -1,6 +1,7 @@
 // src/pages/components/retention/RetentionCancels.jsx
 // Extracted from BookHealthPage.jsx — UnifiedAtRiskTab + all modal dependencies.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -115,13 +116,13 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount, clickable, onC
       {urgent && (
         <div style={{ position: 'absolute', top: 10, right: 10, background: 'var(--qs-danger-subtle)',
           color: 'var(--qs-danger)', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
-          {urgentCount} URGENT
+          {urgentCount} <T k="pages.components.retention.retentioncancels.e395eb">URGENT</T>
         </div>
       )}
       {clickable && (
         <div style={{ position: 'absolute', bottom: 8, right: 10,
           fontSize: 9, color: 'var(--qs-muted)', letterSpacing: '0.05em' }}>
-          FILTER ↓
+          <T k="pages.components.retention.retentioncancels.22833b">FILTER ↓</T>
         </div>
       )}
       <div style={{ fontSize: 11, color: 'var(--qs-subtle)', fontWeight: 600,
@@ -159,7 +160,7 @@ function CustomerDrilldownModal({ event, onClose }) {
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
             <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
-              Policy #{event.policy_no || "\u2014"}
+              <T k="pages.components.retention.retentioncancels.c70c2b">Policy #</T>{event.policy_no || "\u2014"}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--qs-subtle)", fontSize: 20, cursor: "pointer" }}>×</button>
@@ -193,13 +194,13 @@ function CustomerDrilldownModal({ event, onClose }) {
         {/* Notes — full width, only if present */}
         {event.notes && (
           <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)", marginTop: 10 }}>
-            <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Notes</div>
+            <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}><T k="pages.components.retention.retentioncancels.f4c6f8">Notes</T></div>
             <div style={{ fontSize: 12, color: "var(--qs-dim)", lineHeight: 1.5 }}>{event.notes}</div>
           </div>
         )}
 
         <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 16, textAlign: "center" }}>
-          Click the row to open the full edit modal
+          <T k="pages.components.retention.retentioncancels.9c80c5">Click the row to open the full edit modal</T>
         </div>
       </div>
     </div>
@@ -248,7 +249,7 @@ function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
   return (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
       <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--qs-subtle)',
-        textTransform: 'uppercase', letterSpacing: '0.08em' }}>Household</span>
+        textTransform: 'uppercase', letterSpacing: '0.08em' }}><T k="pages.components.retention.retentioncancels.ea4be6">Household</T></span>
       {all.map(c => {
         const t = TAB_TYPE[c.type] || TAB_TYPE.renewal;
         const label = <>
@@ -293,7 +294,7 @@ function OtherCasesWarning({ cases }) {
     }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-warning)',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-        ⚠ Same customer has {cases.length} other active {cases.length === 1 ? 'case' : 'cases'}
+        <T k="pages.components.retention.retentioncancels.34430d">⚠ Same customer has</T> {cases.length} <T k="pages.components.retention.retentioncancels.e7b7ef">other active</T> {cases.length === 1 ? 'case' : 'cases'}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {cases.map(c => (
@@ -317,7 +318,7 @@ function OtherCasesWarning({ cases }) {
         ))}
       </div>
       <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
-        Address all active cases in one call when possible.
+        <T k="pages.components.retention.retentioncancels.d83357">Address all active cases in one call when possible.</T>
       </div>
     </div>
   );
@@ -335,14 +336,14 @@ function AlreadyPaidAction({ onConfirm, busy }) {
         border: "1px dashed var(--qs-border)", background: "transparent",
         color: "var(--qs-muted)", fontSize: 12, fontWeight: 600,
       }}>
-        Customer already paid in Allstate? Clear it without a call
+        <T k="pages.components.retention.retentioncancels.70ea28">Customer already paid in Allstate? Clear it without a call</T>
       </button>
     );
   }
   return (
     <div style={{ border: "1px solid var(--qs-border)", borderRadius: 8, padding: "10px 12px", background: "var(--qs-elevated)" }}>
       <div style={{ fontSize: 12, color: "var(--qs-dim)", marginBottom: 8 }}>
-        Clear this case as <strong>already paid</strong>? It resolves as auto-cleared — no call needed, and it does <strong>not</strong> count as a save.
+        <T k="pages.components.retention.retentioncancels.69c362">Clear this case as</T> <strong><T k="pages.components.retention.retentioncancels.1f64c2">already paid</T></strong><T k="pages.components.retention.retentioncancels.12f993">? It resolves as auto-cleared — no call needed, and it does</T> <strong><T k="pages.components.retention.retentioncancels.d529e9">not</T></strong> <T k="pages.components.retention.retentioncancels.25baf7">count as a save.</T>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button type="button" disabled={busy} onClick={() => { setConfirming(false); onConfirm(); }} style={{
@@ -355,7 +356,7 @@ function AlreadyPaidAction({ onConfirm, busy }) {
           flex: 1, padding: "8px", borderRadius: 8, border: "1px solid var(--qs-border)", background: "var(--qs-card)",
           color: "var(--qs-text)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
         }}>
-          Cancel
+          <T k="pages.components.retention.retentioncancels.ea4788">Cancel</T>
         </button>
       </div>
     </div>
@@ -767,7 +768,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
-              Policy {event.policy_no} · {productLabel(event.product)} · Cycle {event.cycle}
+              <T k="pages.components.retention.retentioncancels.51359e">Policy</T> {event.policy_no} · {productLabel(event.product)} <T k="pages.components.retention.retentioncancels.fc0083">· Cycle</T> {event.cycle}
             </div>
           </div>
           <button
@@ -807,16 +808,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 fontSize: 12, fontWeight: 700, color: 'var(--qs-danger)',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
               }}>
-                🚫 Coverage Lapsed — Reinstatement Required
+                <T k="pages.components.retention.retentioncancels.742f13">🚫 Coverage Lapsed — Reinstatement Required</T>
               </div>
               <div style={{ fontSize: 14, color: 'var(--qs-text)' }}>
-                Amount to reinstate:{' '}
+                <T k="pages.components.retention.retentioncancels.2acc73">Amount to reinstate:</T>{' '}
                 <strong style={{ color: 'var(--qs-warning)', fontFamily: "'DM Mono', monospace" }}>
                   {event.amount_due ? `$${Number(event.amount_due).toLocaleString()}` : '—'}
                 </strong>
               </div>
               <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 4 }}>
-                Customer must pay this amount to restore coverage before termination.
+                <T k="pages.components.retention.retentioncancels.19d3c4">Customer must pay this amount to restore coverage before termination.</T>
               </div>
             </div>
           )}
@@ -882,11 +883,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 fontSize: 11, fontWeight: 700, color: '#3B82F6',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
               }}>
-                ℹ This customer also has an active renewal
+                <T k="pages.components.retention.retentioncancels.cd94b0">ℹ This customer also has an active renewal</T>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Resolve this payment issue first. Their renewal case is active —
-                resolving the cancel strengthens the renewal conversation.
+                <T k="pages.components.retention.retentioncancels.f35f73">Resolve this payment issue first. Their renewal case is active — resolving the cancel strengthens the renewal conversation.</T>
               </div>
             </div>
           )}
@@ -902,13 +902,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 fontSize: 11, fontWeight: 700, color: '#10B981',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
-                💡 Bundle to save — {productLabel(event.cross_sell_product)}
+                <T k="pages.components.retention.retentioncancels.dfdf03">💡 Bundle to save —</T> {productLabel(event.cross_sell_product)}
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Quote <strong>{productLabel(event.cross_sell_product)}</strong> as part of the save: a
-                multi-policy bundle adds a discount that <strong>lowers this premium</strong> — often the
-                fix for a payment-driven cancellation. If they bundle, the cancel resolves and this
-                cross-sell auto-releases as a follow-through opportunity.
+                <T k="pages.components.retention.retentioncancels.c48e92">Quote</T> <strong>{productLabel(event.cross_sell_product)}</strong> <T k="pages.components.retention.retentioncancels.964616">as part of the save: a multi-policy bundle adds a discount that</T> <strong><T k="pages.components.retention.retentioncancels.e5ce1d">lowers this premium</T></strong> <T k="pages.components.retention.retentioncancels.ce68c7">— often the fix for a payment-driven cancellation. If they bundle, the cancel resolves and this cross-sell auto-releases as a follow-through opportunity.</T>
               </div>
             </div>
           )}
@@ -919,14 +916,14 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             borderRadius: 10, padding: "14px 16px", marginBottom: 20,
           }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
-              textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Contact</div>
+              textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}><T k="pages.components.retention.retentioncancels.bbaff1">Contact</T></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Phone</div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}><T k="pages.components.retention.retentioncancels.bcc254">Phone</T></div>
                 <div style={{ fontSize: 14, color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>{event.phone || "—"}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Email</div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}><T k="pages.components.retention.retentioncancels.ce8ae9">Email</T></div>
                 <div style={{ fontSize: 14, color: "var(--qs-dim)" }}>{event.email || "—"}</div>
               </div>
             </div>
@@ -936,7 +933,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 marginTop: 12, width: "100%", boxSizing: "border-box",
                 padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
                 fontSize: 15, fontWeight: 700, textDecoration: "none",
-              }}>{"📞"} Call {event.phone}</a>
+              }}>{"📞"} <T k="pages.components.retention.retentioncancels.c3755e">Call</T> {event.phone}</a>
             )}
             <div style={{ marginTop: 12 }}>
               <CallScriptBox label="Call script">
@@ -951,7 +948,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
           {/* ── Schedule a callback ──────────────────────────── */}
           <div style={{ marginBottom: 20 }}>
-            <label className="dark-label">Schedule a callback</label>
+            <label className="dark-label"><T k="pages.components.retention.retentioncancels.1ce60b">Schedule a callback</T></label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <input type="datetime-local" className="dark-input" value={cbTime}
                 onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
@@ -966,7 +963,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             </div>
             {event.callback_at && (
               <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
-                Current: {new Date(event.callback_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                <T k="pages.components.retention.retentioncancels.83a3be">Current:</T> {new Date(event.callback_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </div>
             )}
           </div>
@@ -978,7 +975,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             marginBottom: 12,
             display: "flex", alignItems: "center", gap: 8,
           }}>
-            <span>Attempt Log</span>
+            <span><T k="pages.components.retention.retentioncancels.78e5dc">Attempt Log</T></span>
             <span style={{
               background: "var(--qs-elevated)",
               border: "1px solid var(--qs-border)",
@@ -1015,7 +1012,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
               <div>
-                <label className="dark-label">Method</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.4c3880">Method</T></label>
                 <select
                   className="dark-select"
                   value={attemptForm.method}
@@ -1028,7 +1025,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 </select>
               </div>
               <div>
-                <label className="dark-label">Result</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.8eea62">Result</T></label>
                 <select
                   className="dark-select"
                   value={attemptForm.result}
@@ -1117,13 +1114,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                         {resultLabel}
                       </span>
                       <span style={{ fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
-                        via {a.method}
+                        <T k="pages.components.retention.retentioncancels.14f1f9">via</T> {a.method}
                       </span>
                       {a.direction === "inbound" && (
                         <span title="Customer called the agency — not an outbound dial" style={{
                           fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 4, marginLeft: 8,
                           background: "rgba(96,165,250,0.14)", border: "1px solid rgba(96,165,250,0.45)", color: "#60A5FA",
-                        }}>↙ CALLED IN</span>
+                        }}><T k="pages.components.retention.retentioncancels.d2c16c">↙ CALLED IN</T></span>
                       )}
                       {(a.interventions || []).length > 0 && (
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
@@ -1159,7 +1156,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
             textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14,
           }}>
-            Case Management
+            <T k="pages.components.retention.retentioncancels.d79992">Case Management</T>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1168,7 +1165,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 reached attempt is logged. */}
             <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
               title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
-              <label className="dark-label">Outcome (customer reached)</label>
+              <label className="dark-label"><T k="pages.components.retention.retentioncancels.28a575">Outcome (customer reached)</T></label>
               <select
                 className="dark-select"
                 value={form.status}
@@ -1213,13 +1210,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   fontSize: 11, fontWeight: 700, color: "#34D399",
                   textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12,
                 }}>
-                  Rewrite Details
+                  <T k="pages.components.retention.retentioncancels.eb883a">Rewrite Details</T>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
                     <label className="dark-label">
-                      New Premium <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span>
+                      <T k="pages.components.retention.retentioncancels.e8cd0b">New Premium</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span>
                       <span style={{ color: "#F87171", marginLeft: 2 }}>*</span>
                     </label>
                     {dollarInput(
@@ -1249,7 +1246,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   </div>
 
                   <div>
-                    <label className="dark-label">Reason for Rate Reduction</label>
+                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.27079b">Reason for Rate Reduction</T></label>
                     <select
                       className="dark-select"
                       value={form.rewrite_reason}
@@ -1266,7 +1263,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 </div>
 
                 <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 10 }}>
-                  Original premium: <strong style={{ color: "var(--qs-dim)" }}>
+                  <T k="pages.components.retention.retentioncancels.1baa74">Original premium:</T> <strong style={{ color: "var(--qs-dim)" }}>
                     {event.premium_at_risk
                       ? `$${Number(event.premium_at_risk).toLocaleString()}`
                       : "—"}
@@ -1278,7 +1275,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Saved premium — only on a straight save (reinstatement) */}
             {form.status === "saved" && (
               <div>
-                <label className="dark-label">Premium saved <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.c31724">Premium saved</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
                 {dollarInput(
                   <input
                     className="dark-input"
@@ -1291,17 +1288,17 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 )}
                 {prefilledFromCall != null && !premiumTouched && (
                   <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
-                    Pre-filled from the {fmtFull$(prefilledFromCall)} you quoted on the call — edit if they committed at a different amount.
+                    <T k="pages.components.retention.retentioncancels.1a7790">Pre-filled from the</T> {fmtFull$(prefilledFromCall)} <T k="pages.components.retention.retentioncancels.f7408e">you quoted on the call — edit if they committed at a different amount.</T>
                   </div>
                 )}
                 <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
-                  What the policy continues at after the save — on an endorsement save, enter the NEW (post-endorsement) premium.
+                  <T k="pages.components.retention.retentioncancels.9ec0fc">What the policy continues at after the save — on an endorsement save, enter the NEW (post-endorsement) premium.</T>
                   {event.premium_at_risk ? (
                     <button type="button"
                       onClick={() => { setPremiumTouched(true); setSavedPremium(String(event.premium_at_risk)); }}
                       style={{ marginLeft: 6, background: "none", border: "none", padding: 0,
                         color: "#34D399", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
-                      premium unchanged — use at-risk
+                      <T k="pages.components.retention.retentioncancels.7fd782">premium unchanged — use at-risk</T>
                     </button>
                   ) : null}
                 </div>
@@ -1317,7 +1314,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   const pct = (Math.abs(diff) / ar) * 100;
                   return (
                     <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
-                      vs at-risk:{" "}
+                      <T k="pages.components.retention.retentioncancels.62b5b3">vs at-risk:</T>{" "}
                       <strong style={{ color: diff < 0 ? "#FBBF24" : diff > 0 ? "#34D399" : "var(--qs-dim)" }}>
                         {diff === 0
                           ? "unchanged"
@@ -1334,7 +1331,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 captured; the closer is asked only when 2+ tactics were used. */}
             {["saved","rewritten"].includes(form.status) && (
               <div>
-                <label className="dark-label">What saved them?</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.9336df">What saved them?</T></label>
                 {onRecordTactics.length === 0 ? (
                   <InterventionPicker
                     context={caseContext}
@@ -1345,13 +1342,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   />
                 ) : onRecordTactics.length === 1 ? (
                   <div style={{ fontSize: 12, color: "var(--qs-dim)" }}>
-                    Tactic on record:{" "}
+                    <T k="pages.components.retention.retentioncancels.1691f2">Tactic on record:</T>{" "}
                     <strong style={{ color: "var(--qs-text)" }}>{tacticLabel(onRecordTactics[0])}</strong>
                   </div>
                 ) : (
                   <>
                     <div style={{ fontSize: 11, color: "var(--qs-muted)", marginBottom: 8 }}>
-                      Tactics on record: {onRecordTactics.map(tacticLabel).join(" · ")}
+                      <T k="pages.components.retention.retentioncancels.c31a07">Tactics on record:</T> {onRecordTactics.map(tacticLabel).join(" · ")}
                     </div>
                     <CloserPicker
                       codes={onRecordTactics}
@@ -1367,7 +1364,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Assignment + Promise date */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <label className="dark-label">Assigned To</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.0056a7">Assigned To</T></label>
                 {canReassign ? (
                   <select
                     className="dark-select"
@@ -1392,7 +1389,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 )}
               </div>
               <div>
-                <label className="dark-label">Pay Promise Date</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.fdfddf">Pay Promise Date</T></label>
                 <input
                   className="dark-input"
                   type="date"
@@ -1405,7 +1402,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Termination reason — only when requesting cancellation */}
             {form.status === "requested_cancellation" && (
               <div>
-                <label className="dark-label">Termination Reason</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.800fa5">Termination Reason</T></label>
                 <select
                   className="dark-select"
                   value={form.termination_reason}
@@ -1454,7 +1451,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
-                  Enter the premium amount above to close this case.
+                  <T k="pages.components.retention.retentioncancels.0775c0">Enter the premium amount above to close this case.</T>
                 </div>
               )}
               {saveError && (
@@ -2022,7 +2019,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
-              Policy {event.policy_no} · {productLabel(event.product)}
+              <T k="pages.components.retention.retentioncancels.51359e">Policy</T> {event.policy_no} · {productLabel(event.product)}
             </div>
           </div>
           <button
@@ -2141,12 +2138,11 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 fontSize: 11, fontWeight: 700, color: '#EF4444',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
               }}>
-                ⚠ This customer has an active pending cancel
+                <T k="pages.components.retention.retentioncancels.7d92d4">⚠ This customer has an active pending cancel</T>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Their <strong>{productLabel(event.active_cancel?.product) || 'other'}</strong> policy
-                {' '}is in pending cancel. Address that first — do not lead with the renewal
-                or a cross-sell pitch until the cancel issue is resolved.
+                <T k="pages.components.retention.retentioncancels.1fb40a">Their</T> <strong>{productLabel(event.active_cancel?.product) || 'other'}</strong> <T k="pages.components.retention.retentioncancels.f4af8b">policy</T>
+                {' '}<T k="pages.components.retention.retentioncancels.678ed9">is in pending cancel. Address that first — do not lead with the renewal or a cross-sell pitch until the cancel issue is resolved.</T>
               </div>
             </div>
           )}
@@ -2162,18 +2158,17 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 fontSize: 11, fontWeight: 700, color: '#10B981',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
-                💡 Cross-sell opportunity
+                <T k="pages.components.retention.retentioncancels.043480">💡 Cross-sell opportunity</T>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Allstate flagged this customer for{' '}
+                <T k="pages.components.retention.retentioncancels.687b5b">Allstate flagged this customer for</T>{' '}
                 <strong style={{ color: '#10B981' }}>
                   {productLabel(event.cross_sell_product)}
                 </strong>.
-                {' '}After confirming the renewal, ask:
+                {' '}<T k="pages.components.retention.retentioncancels.7aecd6">After confirming the renewal, ask:</T>
                 <em style={{ color: 'var(--qs-dim)', display: 'block', marginTop: 4 }}>
-                  "While I have you — I noticed you only have {productLabel(event.product)} with
-                  us. I'd love to get you a quick quote on {productLabel(event.cross_sell_product)}
-                  {' '}to see if we can save you some money by bundling."
+                  <T k="pages.components.retention.retentioncancels.f09b19">"While I have you — I noticed you only have</T> {productLabel(event.product)} <T k="pages.components.retention.retentioncancels.646c89">with us. I'd love to get you a quick quote on</T> {productLabel(event.cross_sell_product)}
+                  {' '}<T k="pages.components.retention.retentioncancels.5c6c41">to see if we can save you some money by bundling."</T>
                 </em>
               </div>
             </div>
@@ -2189,17 +2184,17 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
               textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10,
             }}>
-              Contact
+              <T k="pages.components.retention.retentioncancels.bbaff1">Contact</T>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Phone</div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}><T k="pages.components.retention.retentioncancels.bcc254">Phone</T></div>
                 <div style={{ fontSize: 14, color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>
                   {event.phone || "\u2014"}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Email</div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}><T k="pages.components.retention.retentioncancels.ce8ae9">Email</T></div>
                 <div style={{ fontSize: 14, color: "var(--qs-dim)" }}>
                   {event.email || "\u2014"}
                 </div>
@@ -2213,7 +2208,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
                   fontSize: 15, fontWeight: 700, textDecoration: "none",
                 }}>
-                {"\ud83d\udcde"} Call {event.phone}
+                {"\ud83d\udcde"} <T k="pages.components.retention.retentioncancels.c3755e">Call</T> {event.phone}
               </a>
             )}
             <div style={{ marginTop: 12 }}>
@@ -2229,7 +2224,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
           {/* ── Schedule a callback ──────────────────────────── */}
           <div style={{ marginBottom: 20 }}>
-            <label className="dark-label">Schedule a callback</label>
+            <label className="dark-label"><T k="pages.components.retention.retentioncancels.1ce60b">Schedule a callback</T></label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <input type="datetime-local" className="dark-input" value={cbTime}
                 onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
@@ -2247,7 +2242,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             </div>
             {event.callback_at && (
               <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
-                Current: {new Date(event.callback_at).toLocaleString("en-US", {
+                <T k="pages.components.retention.retentioncancels.83a3be">Current:</T> {new Date(event.callback_at).toLocaleString("en-US", {
                   month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
                 })}
               </div>
@@ -2261,7 +2256,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             marginBottom: 12,
             display: "flex", alignItems: "center", gap: 8,
           }}>
-            <span>Attempt Log</span>
+            <span><T k="pages.components.retention.retentioncancels.78e5dc">Attempt Log</T></span>
             <span style={{
               background: "var(--qs-elevated)",
               border: "1px solid var(--qs-border)",
@@ -2298,7 +2293,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
               <div>
-                <label className="dark-label">Method</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.4c3880">Method</T></label>
                 <select
                   className="dark-select"
                   value={attemptForm.method}
@@ -2311,7 +2306,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 </select>
               </div>
               <div>
-                <label className="dark-label">Result</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.8eea62">Result</T></label>
                 <select
                   className="dark-select"
                   value={attemptForm.result}
@@ -2400,13 +2395,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                         {resultLabel}
                       </span>
                       <span style={{ fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
-                        via {a.method}
+                        <T k="pages.components.retention.retentioncancels.14f1f9">via</T> {a.method}
                       </span>
                       {a.direction === "inbound" && (
                         <span title="Customer called the agency — not an outbound dial" style={{
                           fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 4, marginLeft: 8,
                           background: "rgba(96,165,250,0.14)", border: "1px solid rgba(96,165,250,0.45)", color: "#60A5FA",
-                        }}>↙ CALLED IN</span>
+                        }}><T k="pages.components.retention.retentioncancels.d2c16c">↙ CALLED IN</T></span>
                       )}
                       {(a.interventions || []).length > 0 && (
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
@@ -2442,7 +2437,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
             textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14,
           }}>
-            Case Management
+            <T k="pages.components.retention.retentioncancels.d79992">Case Management</T>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -2451,7 +2446,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 reached attempt is logged. */}
             <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
               title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
-              <label className="dark-label">Outcome (customer reached)</label>
+              <label className="dark-label"><T k="pages.components.retention.retentioncancels.28a575">Outcome (customer reached)</T></label>
               <select
                 className="dark-select"
                 value={form.status}
@@ -2486,14 +2481,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               <div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
-                    <label className="dark-label">Renewal offer <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>(from report)</span></label>
+                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.fd2ba5">Renewal offer</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}><T k="pages.components.retention.retentioncancels.99d447">(from report)</T></span></label>
                     <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
                       border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-dim)" }}>
                       {event.premium != null ? fmtFull$(event.premium) : "—"}
                     </div>
                   </div>
                   <div>
-                    <label className="dark-label">Renewal paid <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
+                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.f8987c">Renewal paid</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
                     {dollarInput(
                       <input
                         className="dark-input"
@@ -2506,7 +2501,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     )}
                     {prefilledFromCall != null && !premiumTouched && (
                       <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
-                        Pre-filled from the {fmtFull$(prefilledFromCall)} you quoted on the call.
+                        <T k="pages.components.retention.retentioncancels.1a7790">Pre-filled from the</T> {fmtFull$(prefilledFromCall)} <T k="pages.components.retention.retentioncancels.fcbd29">you quoted on the call.</T>
                       </div>
                     )}
                   </div>
@@ -2518,7 +2513,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   const pct = event.premium > 0 ? (Math.abs(diff) / event.premium) * 100 : 0;
                   return (
                     <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
-                      Premium difference:{" "}
+                      <T k="pages.components.retention.retentioncancels.69377d">Premium difference:</T>{" "}
                       <strong style={{ color: diff < 0 ? "#34D399" : diff > 0 ? "#FBBF24" : "var(--qs-dim)" }}>
                         {diff > 0 ? "+" : diff < 0 ? "−" : ""}{fmtFull$(Math.abs(diff))}
                         {pct ? ` (${pct.toFixed(0)}%)` : ""}
@@ -2534,7 +2529,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 captured; the closer is asked only when 2+ tactics were used. */}
             {form.status === "confirmed" && (
               <div>
-                <label className="dark-label">What saved them?</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.9336df">What saved them?</T></label>
                 {onRecordTactics.length === 0 ? (
                   <InterventionPicker
                     context={caseContext}
@@ -2545,13 +2540,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   />
                 ) : onRecordTactics.length === 1 ? (
                   <div style={{ fontSize: 12, color: "var(--qs-dim)" }}>
-                    Tactic on record:{" "}
+                    <T k="pages.components.retention.retentioncancels.1691f2">Tactic on record:</T>{" "}
                     <strong style={{ color: "var(--qs-text)" }}>{tacticLabel(onRecordTactics[0])}</strong>
                   </div>
                 ) : (
                   <>
                     <div style={{ fontSize: 11, color: "var(--qs-muted)", marginBottom: 8 }}>
-                      Tactics on record: {onRecordTactics.map(tacticLabel).join(" · ")}
+                      <T k="pages.components.retention.retentioncancels.c31a07">Tactics on record:</T> {onRecordTactics.map(tacticLabel).join(" · ")}
                     </div>
                     <CloserPicker
                       codes={onRecordTactics}
@@ -2567,7 +2562,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             {/* Shopping reason — only when shopping */}
             {form.status === "shopping" && (
               <div>
-                <label className="dark-label">Shopping Reason</label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.83e844">Shopping Reason</T></label>
                 <select
                   className="dark-select"
                   value={form.shopping_reason}
@@ -2585,7 +2580,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
             {/* Assigned To — reps can't reassign their own work; managers can. */}
             <div>
-              <label className="dark-label">Assigned To</label>
+              <label className="dark-label"><T k="pages.components.retention.retentioncancels.0056a7">Assigned To</T></label>
               {canReassign ? (
                 <select
                   className="dark-select"
@@ -2645,7 +2640,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
-                  Enter the premium amount above to close this case.
+                  <T k="pages.components.retention.retentioncancels.0775c0">Enter the premium amount above to close this case.</T>
                 </div>
               )}
               {saveError && (
@@ -2724,9 +2719,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
             {maskCustomerName(r.customer_name)}
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2 }}>
-            Policy {r.policy_no} · {productLabel(r.product)}
+            <T k="pages.components.retention.retentioncancels.51359e">Policy</T> {r.policy_no} · {productLabel(r.product)}
             {r.risk_type === 'dual_risk' && (
-              <span style={{ marginLeft: 8, color: 'var(--qs-danger)', fontWeight: 700 }}>⚡ DUAL RISK</span>
+              <span style={{ marginLeft: 8, color: 'var(--qs-danger)', fontWeight: 700 }}><T k="pages.components.retention.retentioncancels.e5ce1f">⚡ DUAL RISK</T></span>
             )}
           </div>
         </div>
@@ -2734,17 +2729,17 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
         {/* Contact info */}
         {(r.phone || r.email) && (
           <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 16, border: '1px solid var(--qs-border)' }}>
-            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>Contact</div>
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}><T k="pages.components.retention.retentioncancels.bbaff1">Contact</T></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {r.phone && (
                 <div>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>Phone</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}><T k="pages.components.retention.retentioncancels.bcc254">Phone</T></div>
                   <div style={{ fontSize: 13, color: 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{r.phone}</div>
                 </div>
               )}
               {r.email && (
                 <div>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>Email</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}><T k="pages.components.retention.retentioncancels.ce8ae9">Email</T></div>
                   <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>{r.email}</div>
                 </div>
               )}
@@ -2756,7 +2751,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
         {r.cancel_event_id && (
           <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-warning-border)' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-warning)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
-              ⚠ Pending Cancellation
+              <T k="pages.components.retention.retentioncancels.c59423">⚠ Pending Cancellation</T>
             </div>
 
             {/* Detail grid — color values used as inline style props */}
@@ -2800,7 +2795,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
 
               {/* Assigned — inline dropdown */}
               <div style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>Assigned To</div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T k="pages.components.retention.retentioncancels.0056a7">Assigned To</T></div>
                 <select
                   value={r.cancel_assigned_to_id || ''}
                   onChange={e => reassign('cancel', e.target.value || null)}
@@ -2828,7 +2823,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
         {r.renewal_event_id && (
           <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-info-border)' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-info)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
-              🔄 Renewal
+              <T k="pages.components.retention.retentioncancels.7a3f76">🔄 Renewal</T>
             </div>
 
             {/* Detail grid — color values used as inline style props */}
@@ -2894,7 +2889,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
 
               {/* Assigned — inline dropdown */}
               <div style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>Assigned To</div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T k="pages.components.retention.retentioncancels.0056a7">Assigned To</T></div>
                 <select
                   value={r.renewal_assigned_to_id || ''}
                   onChange={e => reassign('renewal', e.target.value || null)}
@@ -2929,7 +2924,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
             source="internal" />
         </div>
 
-        <button className="btn-ghost" onClick={onClose} style={{ width: '100%', marginTop: 8 }}>Close</button>
+        <button className="btn-ghost" onClick={onClose} style={{ width: '100%', marginTop: 8 }}><T k="pages.components.retention.retentioncancels.d3d2e6">Close</T></button>
       </div>
     </div>
   );
@@ -3374,7 +3369,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
   }, [filteredRows, kpiFilter]);
 
   if (isLoading) {
-    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading at-risk policies...</div>;
+    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.retentioncancels.ac833f">Loading at-risk policies...</T></div>;
   }
 
   return (
@@ -3521,7 +3516,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             background: 'var(--qs-info-subtle)', border: '1px solid var(--qs-info-border)',
             borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--qs-info)',
           }}>
-            Filtered: {
+            <T k="pages.components.retention.retentioncancels.55f690">Filtered:</T> {
               kpiFilter === 'renewal'        ? 'Renewals'        :
               kpiFilter === 'pending_cancel' ? 'Pending Cancel'  :
               kpiFilter === 'dual_risk'      ? 'Dual Risk'       :
@@ -3547,7 +3542,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           borderRadius: 8, padding: '8px 14px', marginBottom: 12,
         }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: '#EF4444' }}>
-            🚨 Showing urgent cases only — cancel date within 3 days
+            <T k="pages.components.retention.retentioncancels.69a045">🚨 Showing urgent cases only — cancel date within 3 days</T>
           </span>
           <button
             onClick={() => { onClearUrgentFilter?.(); }}
@@ -3556,7 +3551,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               background: 'none', border: 'none', cursor: 'pointer',
             }}
           >
-            Clear filter ✕
+            <T k="pages.components.retention.retentioncancels.22901b">Clear filter ✕</T>
           </button>
         </div>
       )}
@@ -3567,7 +3562,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           <thead>
             <tr>
               <SortTh col="priority"           label="Priority"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <th>Stage</th>
+              <th><T k="pages.components.retention.retentioncancels.64c6da">Stage</T></th>
               <SortTh col="customer_name"      label="Customer"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               {/* Cancel column — hide when filtering to renewal-only */}
               {riskFilter !== 'renewal' && (
@@ -3586,7 +3581,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               <SortTh col="premium"             label="Premium"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="premium_change_pct" label="Δ%"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="product"            label="Product"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <th>Attempts</th>
+              <th><T k="pages.components.retention.retentioncancels.7ba3b8">Attempts</T></th>
               <th style={{ whiteSpace: 'nowrap' }}>
                 <button
                   ref={assignBtnRef}
@@ -3600,7 +3595,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                     color: activeAssignLabel ? 'var(--qs-info)' : 'inherit',
                   }}
                 >
-                  Assigned
+                  <T k="pages.components.retention.retentioncancels.b12715">Assigned</T>
                   {activeAssignLabel && (
                     <span style={{ fontWeight: 700, textTransform: 'none' }}>
                       : {activeAssignLabel}
@@ -3611,7 +3606,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                   </span>
                 </button>
               </th>
-              <th style={{ whiteSpace: 'nowrap' }} title="Where each case sits in the assigned rep's call order (priority order)">Queue</th>
+              <th style={{ whiteSpace: 'nowrap' }} title="Where each case sits in the assigned rep's call order (priority order)"><T k="pages.components.retention.retentioncancels.722ad2">Queue</T></th>
             </tr>
           </thead>
           <tbody>
@@ -3640,12 +3635,12 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                     {row.cancel_stage === 'cancelled' ? (
                       <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
                         fontSize: 10, fontWeight: 700, background: 'var(--qs-danger-subtle)', color: 'var(--qs-danger)' }}>
-                        🚫 Lapsed
+                        <T k="pages.components.retention.retentioncancels.6c36bf">🚫 Lapsed</T>
                       </span>
                     ) : row.cancel_event_id ? (
                       <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
                         fontSize: 10, fontWeight: 700, background: 'var(--qs-warning-subtle)', color: 'var(--qs-warning)' }}>
-                        ⚠ Pending
+                        <T k="pages.components.retention.retentioncancels.c69e13">⚠ Pending</T>
                       </span>
                     ) : null}
                   </td>
@@ -3757,7 +3752,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             })}
             {kpiFilteredRows.length === 0 && (
               <tr><td colSpan={11} style={{ textAlign: 'center', color: 'var(--qs-muted)', padding: '32px 0' }}>
-                No at-risk policies in this filter
+                <T k="pages.components.retention.retentioncancels.50a133">No at-risk policies in this filter</T>
               </td></tr>
             )}
           </tbody>
@@ -3861,14 +3856,14 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8 }}
             onClick={() => openDrilldown(drilldown.unifiedRow, 'cancel')}
           >
-            Cancel Details
+            <T k="pages.components.retention.retentioncancels.d22b8a">Cancel Details</T>
           </button>
           <button
             className={drilldown.side === 'renewal' ? 'btn-primary' : 'btn-ghost'}
             style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8 }}
             onClick={() => openDrilldown(drilldown.unifiedRow, 'renewal')}
           >
-            Renewal Details
+            <T k="pages.components.retention.retentioncancels.38aa88">Renewal Details</T>
           </button>
         </div>
       )}

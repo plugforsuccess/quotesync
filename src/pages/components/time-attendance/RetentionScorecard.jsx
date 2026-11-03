@@ -1,3 +1,4 @@
+import { T } from '../../../components/SiteCopy';
 import { Shield, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
 function MetricRow({ label, value, sub, color = 'var(--qs-text)', warn = false }) {
@@ -19,7 +20,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
   if (isLoading) {
     return (
       <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 20 }} className="text-center text-qs-muted text-sm">
-        Loading retention data...
+        <T k="pages.components.timeattendance.retentionscorecard.c3e640">Loading retention data...</T>
       </div>
     );
   }
@@ -28,9 +29,9 @@ export default function RetentionScorecard({ metrics, isLoading }) {
     return (
       <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 20 }} className="text-center">
         <Shield className="w-10 h-10 text-qs-muted mx-auto mb-2" />
-        <p className="text-qs-subtle text-sm">No retention cases assigned yet.</p>
+        <p className="text-qs-subtle text-sm"><T k="pages.components.timeattendance.retentionscorecard.b203dd">No retention cases assigned yet.</T></p>
         <p className="text-xs text-qs-muted mt-1">
-          Upload a Pending Cancellation or Renewal report and assign cases to see metrics.
+          <T k="pages.components.timeattendance.retentionscorecard.07704c">Upload a Pending Cancellation or Renewal report and assign cases to see metrics.</T>
         </p>
       </div>
     );
@@ -68,9 +69,9 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             <div className="p-1.5 bg-amber-900/20 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
             </div>
-            <h4 className="text-sm font-semibold text-qs-bright">Pending Cancellations</h4>
+            <h4 className="text-sm font-semibold text-qs-bright"><T k="pages.components.timeattendance.retentionscorecard.f678b4">Pending Cancellations</T></h4>
             <span className="ml-auto text-xs text-qs-muted">
-              {metrics.cancelTotal} opened · {metrics.cancelWorkable} active
+              {metrics.cancelTotal} <T k="pages.components.timeattendance.retentionscorecard.570ead">opened ·</T> {metrics.cancelWorkable} <T k="pages.components.timeattendance.retentionscorecard.c76a5e">active</T>
             </span>
           </div>
 
@@ -112,7 +113,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             />
           )}
           <p className="text-xs text-qs-muted mt-3">
-            Save rate based on cases you originated (opener credit model).
+            <T k="pages.components.timeattendance.retentionscorecard.33b2c6">Save rate based on cases you originated (opener credit model).</T>
           </p>
         </div>
       )}
@@ -124,9 +125,9 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             <div className="p-1.5 bg-blue-900/20 rounded-lg">
               <CheckCircle className="w-4 h-4 text-blue-400" />
             </div>
-            <h4 className="text-sm font-semibold text-qs-bright">Renewals</h4>
+            <h4 className="text-sm font-semibold text-qs-bright"><T k="pages.components.timeattendance.retentionscorecard.61583c">Renewals</T></h4>
             <div className="ml-auto text-right">
-              <span className="text-xs text-qs-muted">{metrics.renewalWorkable} workable</span>
+              <span className="text-xs text-qs-muted">{metrics.renewalWorkable} <T k="pages.components.timeattendance.retentionscorecard.9de0ee">workable</T></span>
             </div>
           </div>
 
@@ -187,8 +188,8 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             <div className="p-1.5 bg-blue-900/20 rounded-lg">
               <CheckCircle className="w-4 h-4 text-blue-400" />
             </div>
-            <h4 className="text-sm font-semibold text-qs-bright">Inbound Closures</h4>
-            <span className="ml-auto text-xs text-qs-muted">cases originated by others</span>
+            <h4 className="text-sm font-semibold text-qs-bright"><T k="pages.components.timeattendance.retentionscorecard.458618">Inbound Closures</T></h4>
+            <span className="ml-auto text-xs text-qs-muted"><T k="pages.components.timeattendance.retentionscorecard.bef55a">cases originated by others</T></span>
           </div>
           <MetricRow
             label="Callbacks Closed"
@@ -202,8 +203,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             color="#10B981"
           />
           <p className="text-xs text-qs-muted mt-3">
-            These cases are credited to the outbound rep who originated them.
-            This section reflects your service volume only.
+            <T k="pages.components.timeattendance.retentionscorecard.e32566">These cases are credited to the outbound rep who originated them. This section reflects your service volume only.</T>
           </p>
         </div>
       )}

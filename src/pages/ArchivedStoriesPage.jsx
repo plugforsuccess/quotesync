@@ -1,3 +1,4 @@
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, RotateCcw, Trash2, Archive, AlertCircle } from 'lucide-react';
@@ -151,16 +152,16 @@ const ArchivedStoriesPage = () => {
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <T k="pages.archivedstoriespage.3649f1">Back to Dashboard</T>
             </button>
           </div>
 
           <div className="flex items-center gap-3">
             <Archive className="w-8 h-8 text-gray-700" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Archived Stories</h1>
+              <h1 className="text-3xl font-bold text-gray-900"><T k="pages.archivedstoriespage.8d833d">Archived Stories</T></h1>
               <p className="text-sm text-gray-500 mt-1">
-                {archivedStories.length} {archivedStories.length === 1 ? 'story' : 'stories'} archived
+                {archivedStories.length} {archivedStories.length === 1 ? 'story' : 'stories'} <T k="pages.archivedstoriespage.0d111f">archived</T>
               </p>
             </div>
           </div>
@@ -174,12 +175,12 @@ const ArchivedStoriesPage = () => {
           <div className="flex">
             <AlertCircle className="h-5 w-5 text-primary-400 mr-3 flex-shrink-0" />
             <div className="text-sm text-primary-700">
-              <p className="font-medium mb-1">About Archived Stories</p>
+              <p className="font-medium mb-1"><T k="pages.archivedstoriespage.2bf3e3">About Archived Stories</T></p>
               <ul className="list-disc list-inside space-y-1 text-primary-600">
-                <li>Archived stories are hidden from public view and the normal dashboard</li>
-                <li>You can restore stories to their previous status (draft, in_review, or published)</li>
-                <li>Stories must be archived for at least 7 days before permanent deletion</li>
-                <li>Permanent deletion is irreversible and removes the story from the database</li>
+                <li><T k="pages.archivedstoriespage.329469">Archived stories are hidden from public view and the normal dashboard</T></li>
+                <li><T k="pages.archivedstoriespage.95def9">You can restore stories to their previous status (draft, in_review, or published)</T></li>
+                <li><T k="pages.archivedstoriespage.73aea9">Stories must be archived for at least 7 days before permanent deletion</T></li>
+                <li><T k="pages.archivedstoriespage.48ee6a">Permanent deletion is irreversible and removes the story from the database</T></li>
               </ul>
             </div>
           </div>
@@ -189,9 +190,9 @@ const ArchivedStoriesPage = () => {
         {archivedStories.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <Archive className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Archived Stories</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2"><T k="pages.archivedstoriespage.db79cc">No Archived Stories</T></h3>
             <p className="text-gray-500">
-              Stories that are archived will appear here. They can be restored or permanently deleted.
+              <T k="pages.archivedstoriespage.6d6d7c">Stories that are archived will appear here. They can be restored or permanently deleted.</T>
             </p>
           </div>
         ) : (
@@ -200,19 +201,19 @@ const ArchivedStoriesPage = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Story
+                    <T k="pages.archivedstoriespage.dfba89">Story</T>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Author
+                    <T k="pages.archivedstoriespage.a51774">Author</T>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Archived
+                    <T k="pages.archivedstoriespage.7d69b3">Archived</T>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Previous Status
+                    <T k="pages.archivedstoriespage.c32008">Previous Status</T>
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    <T k="pages.archivedstoriespage.06df33">Actions</T>
                   </th>
                 </tr>
               </thead>
@@ -242,10 +243,10 @@ const ArchivedStoriesPage = () => {
                             {formatDate(story.archived_at)}
                           </span>
                           <span className="text-xs text-gray-500 mt-1">
-                            by {story.archived_by_name || 'Unknown'}
+                            <T k="pages.archivedstoriespage.df3f07">by</T> {story.archived_by_name || 'Unknown'}
                           </span>
                           <span className="text-xs text-gray-400 mt-1">
-                            {daysSince} day{daysSince !== 1 ? 's' : ''} ago
+                            {daysSince} <T k="pages.archivedstoriespage.628b7d">day</T>{daysSince !== 1 ? 's' : ''} <T k="pages.archivedstoriespage.6d0a57">ago</T>
                           </span>
                         </div>
                       </td>

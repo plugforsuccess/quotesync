@@ -2,6 +2,7 @@
 // Shared modal for logging contact attempts on renewal policies.
 // Used from RenewalsPage row cards and RenewalDetailPage.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { X, Phone, Mail, Bot, AlertTriangle, Shield } from 'lucide-react';
 import { useLogContact } from '../../../hooks/useRenewalCases';
@@ -139,7 +140,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Log Contact</h3>
+            <h3 className="text-lg font-semibold text-gray-900"><T k="pages.components.renewals.contactlogmodal.a8284d">Log Contact</T></h3>
             <p className="text-sm text-gray-500">{policy.customer_name} — {policy.policy_no}</p>
           </div>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
@@ -150,7 +151,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Channel */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Channel</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2"><T k="pages.components.renewals.contactlogmodal.781dc9">Channel</T></label>
             <div className="flex gap-2">
               {CHANNELS.map((ch) => {
                 const Icon = ch.icon;
@@ -175,7 +176,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
 
           {/* Outcome */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Outcome</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2"><T k="pages.components.renewals.contactlogmodal.cf73bd">Outcome</T></label>
             <select
               value={outcome}
               onChange={(e) => setOutcome(e.target.value)}
@@ -190,7 +191,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2"><T k="pages.components.renewals.contactlogmodal.f4c6f8">Notes</T></label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -211,7 +212,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
                   onChange={(e) => setEscalate(e.target.checked)}
                   className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-sm font-medium text-amber-800">Trigger escalation</span>
+                <span className="text-sm font-medium text-amber-800"><T k="pages.components.renewals.contactlogmodal.692e8a">Trigger escalation</T></span>
               </label>
             </div>
           </div>
@@ -219,7 +220,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
           {/* Followup reason — shown if escalation toggled */}
           {escalate && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Followup Reason</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2"><T k="pages.components.renewals.contactlogmodal.c1f54c">Followup Reason</T></label>
               <select
                 value={followupReason}
                 onChange={(e) => setFollowupReason(e.target.value)}
@@ -235,7 +236,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
 
           {/* Assign to */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2"><T k="pages.components.renewals.contactlogmodal.300a23">Assign To</T></label>
             <select
               value={assignedTo}
               onChange={(e) => setAssignedTo(e.target.value)}
@@ -255,7 +256,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-4 h-4 text-blue-500" />
-                <span className="text-sm font-medium text-blue-800">Consent (optional)</span>
+                <span className="text-sm font-medium text-blue-800"><T k="pages.components.renewals.contactlogmodal.00a593">Consent (optional)</T></span>
               </div>
               <div className="space-y-1">
                 {CONSENT_OPTIONS.map((opt) => (
@@ -287,7 +288,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
             >
-              Cancel
+              <T k="pages.components.renewals.contactlogmodal.ea4788">Cancel</T>
             </button>
             <button
               type="submit"

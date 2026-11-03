@@ -2,6 +2,7 @@
 // Admin editable weekly time entry table — pre-filled with REG/OFFICE defaults
 // Cameron enters the full week and only modifies exception days.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -303,21 +304,21 @@ export default function WeeklyTimeTable({
         fontSize: 12, color: 'var(--qs-dim)',
       }}>
         <span>
-          PTO:{' '}
+          <T k="pages.components.timeattendance.weeklytimetable.134f23">PTO:</T>{' '}
           <strong style={{ color: ptoExhausted ? '#EF4444' : '#10B981' }}>
-            {ptoRemaining} of {ptoDaysPerYear} days remaining
+            {ptoRemaining} <T k="pages.components.timeattendance.weeklytimetable.8bf885">of</T> {ptoDaysPerYear} <T k="pages.components.timeattendance.weeklytimetable.24c7f4">days remaining</T>
           </strong>
         </span>
         <span>
-          Sick:{' '}
+          <T k="pages.components.timeattendance.weeklytimetable.81d3ab">Sick:</T>{' '}
           <strong style={{ color: sickOverThreshold ? '#F59E0B' : 'var(--qs-text)' }}>
-            {sickUsed} of {sickDaysPerYear} days used
+            {sickUsed} <T k="pages.components.timeattendance.weeklytimetable.8bf885">of</T> {sickDaysPerYear} <T k="pages.components.timeattendance.weeklytimetable.d3c472">days used</T>
           </strong>
         </span>
       </div>
     ) : (
       <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 12 }}>
-        PTO eligible from {ptoEligibleDate}
+        <T k="pages.components.timeattendance.weeklytimetable.128b63">PTO eligible from</T> {ptoEligibleDate}
       </div>
     )}
 
@@ -326,14 +327,14 @@ export default function WeeklyTimeTable({
         <table className="w-full min-w-[950px]">
           <thead className="bg-qs-elevated border-b border-qs-border">
             <tr>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Day</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[120px]">Code</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[100px]">Location</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Start</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Lunch Out</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Lunch In</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">End</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase flex-1">Notes</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]"><T k="pages.components.timeattendance.weeklytimetable.03727a">Day</T></th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[120px]"><T k="pages.components.timeattendance.weeklytimetable.ca0dba">Code</T></th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[100px]"><T k="pages.components.timeattendance.weeklytimetable.ce5bf5">Location</T></th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]"><T k="pages.components.timeattendance.weeklytimetable.a6122a">Start</T></th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]"><T k="pages.components.timeattendance.weeklytimetable.a2cc36">Lunch Out</T></th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]"><T k="pages.components.timeattendance.weeklytimetable.f3f736">Lunch In</T></th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]"><T k="pages.components.timeattendance.weeklytimetable.87557f">End</T></th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase flex-1"><T k="pages.components.timeattendance.weeklytimetable.f4c6f8">Notes</T></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-qs-border">
@@ -355,7 +356,7 @@ export default function WeeklyTimeTable({
                         borderRadius: 6, padding: '6px 12px',
                         fontSize: 12, color: '#3B82F6', fontWeight: 500,
                       }}>
-                        🏛 {holidayLabel} — Agency closed
+                        🏛 {holidayLabel} <T k="pages.components.timeattendance.weeklytimetable.6261fd">— Agency closed</T>
                       </div>
                     </td>
                   </tr>
@@ -476,9 +477,8 @@ export default function WeeklyTimeTable({
           padding: '10px 14px',
           fontSize: 12, color: '#F59E0B',
         }}>
-          ⚠ {sickUsed} sick days used in {currentYear}
-          {' '}— exceeds the {sickDaysPerYear}-day advisory threshold.
-          Entry will still be saved.
+          ⚠ {sickUsed} <T k="pages.components.timeattendance.weeklytimetable.3c99e3">sick days used in</T> {currentYear}
+          {' '}<T k="pages.components.timeattendance.weeklytimetable.a7048c">— exceeds the</T> {sickDaysPerYear}<T k="pages.components.timeattendance.weeklytimetable.b0db37">-day advisory threshold. Entry will still be saved.</T>
         </div>
       )}
 
@@ -507,21 +507,21 @@ export default function WeeklyTimeTable({
 
     {/* Code legend */}
     <div className="flex flex-wrap gap-2 text-xs text-qs-subtle mt-3">
-      <span><strong className="text-qs-text">REG</strong> Regular</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.f4cf3f">REG</T></strong> <T k="pages.components.timeattendance.weeklytimetable.d2203c">Regular</T></span>
       <span className="text-qs-muted">|</span>
-      <span><strong className="text-qs-text">WFH</strong> Work from Home</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.cfcc7e">WFH</T></strong> <T k="pages.components.timeattendance.weeklytimetable.57d044">Work from Home</T></span>
       <span className="text-qs-muted">|</span>
-      <span><strong className="text-qs-text">SICK</strong> Sick (Full Day)</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.b1de57">SICK</T></strong> <T k="pages.components.timeattendance.weeklytimetable.4364a9">Sick (Full Day)</T></span>
       <span className="text-qs-muted">|</span>
-      <span><strong className="text-qs-text">SICK_PART</strong> Sick (Partial)</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.65bbae">SICK_PART</T></strong> <T k="pages.components.timeattendance.weeklytimetable.2bd976">Sick (Partial)</T></span>
       <span className="text-qs-muted">|</span>
-      <span><strong className="text-qs-text">PTO</strong> Paid Time Off</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.b0fde0">PTO</T></strong> <T k="pages.components.timeattendance.weeklytimetable.a9e4e2">Paid Time Off</T></span>
       <span className="text-qs-muted">|</span>
-      <span><strong className="text-qs-text">APPT</strong> Appointment</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.ef0742">APPT</T></strong> <T k="pages.components.timeattendance.weeklytimetable.7b0eae">Appointment</T></span>
       <span className="text-qs-muted">|</span>
-      <span><strong className="text-qs-text">EARLY</strong> Left Early</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.a79b9a">EARLY</T></strong> <T k="pages.components.timeattendance.weeklytimetable.110b17">Left Early</T></span>
       <span className="text-qs-muted">|</span>
-      <span><strong className="text-qs-text">HOLIDAY</strong> Federal Holiday</span>
+      <span><strong className="text-qs-text"><T k="pages.components.timeattendance.weeklytimetable.9f1674">HOLIDAY</T></strong> <T k="pages.components.timeattendance.weeklytimetable.9fb74d">Federal Holiday</T></span>
     </div>
     </>
   );

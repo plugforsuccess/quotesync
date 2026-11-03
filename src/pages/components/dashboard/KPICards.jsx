@@ -1,6 +1,7 @@
 // src/pages/components/dashboard/KPICards.jsx
 // KPI card row: Submissions, Conversion Rate, Avg Lead Score, Run Rate Projection
 
+import { T } from '../../../components/SiteCopy';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 function TrendBadge({ current, prior, suffix = '' }) {
@@ -50,27 +51,27 @@ export default function KPICards({ kpis, priorPeriod }) {
       {/* Submissions */}
       <div className="dark-card">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Submissions</span>
+          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.kpicards.10d81b">Submissions</T></span>
           <TrendBadge current={submissions} prior={priorPeriod?.submissions} />
         </div>
         <div className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>{submissions.toLocaleString()}</div>
-        <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}>Target: 700/mo</div>
+        <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.kpicards.dfe6a6">Target: 700/mo</T></div>
       </div>
 
       {/* Conversion Rate */}
       <div className="dark-card">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Conversion Rate</span>
+          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.kpicards.e4c3da">Conversion Rate</T></span>
           <TrendBadge current={conversionRate} prior={priorPeriod?.conversionRate} />
         </div>
         <div className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>{conversionRate}%</div>
-        <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}>Visits &rarr; Submissions</div>
+        <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}><T k="pages.components.dashboard.kpicards.e6b749">Visits → Submissions</T></div>
       </div>
 
       {/* Avg Lead Score */}
       <div className="dark-card">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Avg Lead Score</span>
+          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.kpicards.4c055b">Avg Lead Score</T></span>
           <TrendBadge current={avgScore} prior={priorPeriod?.avgScore} />
         </div>
         <div className={`text-3xl font-bold ${scoreColor}`}>{avgScore}</div>
@@ -83,7 +84,7 @@ export default function KPICards({ kpis, priorPeriod }) {
       {/* Run Rate Projection */}
       <div className="dark-card">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Projected This Month</span>
+          <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.dashboard.kpicards.81c754">Projected This Month</T></span>
         </div>
         <div className={`text-3xl font-bold ${projColor}`}>{projectedMonthly.toLocaleString()}</div>
         <div className={`text-xs mt-1 ${projColor}`}>

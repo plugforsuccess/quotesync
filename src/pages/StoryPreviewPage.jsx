@@ -1,6 +1,7 @@
 // src/pages/StoryPreviewPage.jsx
 // Preview page for draft and in_review stories (authenticated users only)
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, AlertTriangle } from 'lucide-react';
@@ -72,14 +73,14 @@ const StoryPreviewPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Preview Not Available</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.storypreviewpage.076198">Preview Not Available</T></h1>
           <p className="text-gray-600 mb-6">{error || 'Story not found'}</p>
           <button
             onClick={() => navigate('/news/dashboard')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            <T k="pages.storypreviewpage.3649f1">Back to Dashboard</T>
           </button>
         </div>
       </div>
@@ -104,9 +105,9 @@ const StoryPreviewPage = () => {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5" />
-            <span className="font-semibold">PREVIEW MODE</span>
+            <span className="font-semibold"><T k="pages.storypreviewpage.6c8f74">PREVIEW MODE</T></span>
             <span className="text-yellow-100 text-sm">
-              Status: <span className="font-medium capitalize">{story.status}</span>
+              <T k="pages.storypreviewpage.24a23d">Status:</T> <span className="font-medium capitalize">{story.status}</span>
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -114,14 +115,14 @@ const StoryPreviewPage = () => {
               onClick={() => navigate(`/news/editor/${story.id}`)}
               className="text-sm px-3 py-1 bg-white text-yellow-600 rounded hover:bg-yellow-50 transition-colors font-medium"
             >
-              Edit Story
+              <T k="pages.storypreviewpage.7db9b5">Edit Story</T>
             </button>
             <button
               onClick={() => navigate('/news/dashboard')}
               className="text-sm px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors font-medium flex items-center gap-1"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <T k="pages.storypreviewpage.3649f1">Back to Dashboard</T>
             </button>
           </div>
         </div>
@@ -204,7 +205,7 @@ const StoryPreviewPage = () => {
                 className="w-full"
                 poster={story.video_thumbnail}
               >
-                Your browser does not support the video tag.
+                <T k="pages.storypreviewpage.e26386">Your browser does not support the video tag.</T>
               </video>
             )}
           </div>
@@ -223,7 +224,7 @@ const StoryPreviewPage = () => {
         {story.source_name && story.source_url && (
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Source:{' '}
+              <T k="pages.storypreviewpage.77c8b9">Source:</T>{' '}
               <a
                 href={story.source_url}
                 target="_blank"

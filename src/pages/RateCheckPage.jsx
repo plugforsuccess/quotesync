@@ -852,11 +852,14 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
   const total = pages.reduce((t, pg) => t + (pg.pdfPages || 1), 0);
   const counting = pages.some(pg => isPdfName(pg.file) && pg.pdfPages === undefined);
 
+  const bytes = pages.reduce((t, pg) => t + (pg.file?.size || 0), 0);
+  const size = bytes ? (bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`) : null;
+  const pageCount = counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`;
+
   // One downloaded PDF: a single file row, not the photo tiles.
   if (allPdf && pages.length === 1) {
     const pg = pages[0];
     const name = String(pg.file?.name || '').replace(/\.pdf$/i, '') || 'Policy PDF';
-    const size = pg.file?.size ? (pg.file.size >= 1048576 ? `${(pg.file.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(pg.file.size / 1024))} KB`) : null;
     return (
       <li className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
         <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100">
@@ -866,7 +869,7 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-slate-900">{name}</p>
           <p className="mt-0.5 text-sm text-slate-500">
-            Policy {n} · <span>{counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}</span>{size && ` · ${size}`}
+            Policy {n} · <span>{pageCount}</span>{size && ` · ${size}`}
           </p>
         </div>
         <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Replace policy ${n}`}
@@ -888,9 +891,9 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
           <span className="text-[9px] font-extrabold tracking-wide">PHOTOS</span>
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-900">Policy {n}</p>
+          <p className="font-semibold text-slate-900">Photographed policy</p>
           <p className="mt-0.5 truncate text-sm text-slate-500">
-            {counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}
+            Policy {n} · <span>{pageCount}</span>{size && ` · ${size}`}
             {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
           </p>
         </div>

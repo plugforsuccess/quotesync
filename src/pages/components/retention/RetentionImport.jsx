@@ -1,6 +1,7 @@
 // src/pages/components/retention/RetentionImport.jsx
 // Extracted from BookHealthPage.jsx — Import tab with dual upload layout.
 
+import { T } from '../../../components/SiteCopy';
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -351,15 +352,14 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
         fontSize: 13, fontWeight: 600, color: 'var(--qs-warning)',
         marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8
       }}>
-        ⚠ {cases.length} cases not found in this report — review before closing
+        ⚠ {cases.length} <T k="pages.components.retention.retentionimport.c1b5b4">cases not found in this report — review before closing</T>
       </div>
 
       <div style={{
         fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16,
         background: 'var(--qs-elevated)', borderRadius: 6, padding: '8px 12px'
       }}>
-        These cases were being worked but are absent from this report. Confirm
-        whether they paid, mark as lost, or keep in the call queue for follow-up.
+        <T k="pages.components.retention.retentionimport.ae6a15">These cases were being worked but are absent from this report. Confirm whether they paid, mark as lost, or keep in the call queue for follow-up.</T>
         {/* "Active" deliberately avoided here — at Allstate it means coverage
             in force / current on payments, which these policies are not. */}
       </div>
@@ -367,11 +367,11 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <button className="btn-ghost" style={{ fontSize: 12 }}
           onClick={() => cases.forEach(c => onDecide(c.id, 'auto_resolved'))}>
-          Mark All Paid
+          <T k="pages.components.retention.retentionimport.c7b81c">Mark All Paid</T>
         </button>
         <button className="btn-ghost" style={{ fontSize: 12 }}
           onClick={() => cases.forEach(c => onDecide(c.id, 'keep'))}>
-          Keep All in Queue
+          <T k="pages.components.retention.retentionimport.d13521">Keep All in Queue</T>
         </button>
       </div>
 
@@ -399,8 +399,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
                   </span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
-                  {c.product?.toUpperCase()} · {fmt$(c.premium_at_risk)} at risk
-                  · Cancel {c.cancel_effective_date} · Last seen {c.last_seen_on}
+                  {c.product?.toUpperCase()} · {fmt$(c.premium_at_risk)} <T k="pages.components.retention.retentionimport.f26e46">at risk · Cancel</T> {c.cancel_effective_date} <T k="pages.components.retention.retentionimport.eeb556">· Last seen</T> {c.last_seen_on}
                   {c.attempt_count > 0 && ` · ${c.attempt_count} attempts`}
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--qs-muted)', marginTop: 2 }}>
@@ -435,9 +434,9 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
 
       {Object.keys(decisions).length > 0 && (
         <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
-          {counts.paid > 0 && <span style={{ color: '#10B981', marginRight: 12 }}>✓ {counts.paid} marked paid</span>}
-          {counts.lost > 0 && <span style={{ color: '#EF4444', marginRight: 12 }}>✗ {counts.lost} marked lost</span>}
-          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} kept in queue</span>}
+          {counts.paid > 0 && <span style={{ color: '#10B981', marginRight: 12 }}>✓ {counts.paid} <T k="pages.components.retention.retentionimport.0a7436">marked paid</T></span>}
+          {counts.lost > 0 && <span style={{ color: '#EF4444', marginRight: 12 }}>✗ {counts.lost} <T k="pages.components.retention.retentionimport.d1d655">marked lost</T></span>}
+          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} <T k="pages.components.retention.retentionimport.924f81">kept in queue</T></span>}
         </div>
       )}
 
@@ -446,11 +445,11 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
           opacity: allDecided ? 1 : 0.4,
           color: '#3B82F6', borderColor: '#3B82F655', fontWeight: 600,
         }}>
-        Save {cases.length} review decision{cases.length !== 1 ? 's' : ''}
+        <T k="pages.components.retention.retentionimport.c9cc8c">Save</T> {cases.length} <T k="pages.components.retention.retentionimport.549cc2">review decision</T>{cases.length !== 1 ? 's' : ''}
       </button>
       {!allDecided && (
         <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
-          Decide every case above to continue.
+          <T k="pages.components.retention.retentionimport.f97aa8">Decide every case above to continue.</T>
         </div>
       )}
     </div>
@@ -463,8 +462,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
   return (
     <div style={{ maxWidth: 640 }}>
       <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
-        Upload the Allstate <span style={{ color: "var(--qs-subtle)", fontFamily: "'DM Mono', monospace" }}>Pending Cancellation</span> report (XLSX).
-        The system will diff against existing active events — new policies added, resolved policies auto-closed.
+        <T k="pages.components.retention.retentionimport.1a1a01">Upload the Allstate</T> <span style={{ color: "var(--qs-subtle)", fontFamily: "'DM Mono', monospace" }}><T k="pages.components.retention.retentionimport.7a2e82">Pending Cancellation</T></span> <T k="pages.components.retention.retentionimport.282777">report (XLSX). The system will diff against existing active events — new policies added, resolved policies auto-closed.</T>
       </div>
 
       <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
@@ -476,7 +474,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
         <div style={{ fontSize: 14, color: "var(--qs-dim)", fontWeight: 500 }}>
           {uploadFile ? uploadFile.name : "Drop report here or click to browse"}
         </div>
-        {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}>Parsing\u2026</div>}
+        {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}><T k="pages.components.retention.retentionimport.7bf9ca">Parsing\u2026</T></div>}
       </div>
 
       {uploadError && (
@@ -487,7 +485,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
 
       {diffResult && !uploadMsg && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>Review before committing</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}><T k="pages.components.retention.retentionimport.c63bcb">Review before committing</T></div>
 
           {/* Detail grid — color values used as inline style props */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 20 }}>
@@ -509,9 +507,9 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           {/* Stage breakdown — shown for Cancellation Audit uploads */}
           {diffResult && (diffResult.stage1Count != null || diffResult.stage2Count != null) && (
             <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 6, marginBottom: 10 }}>
-              <span style={{ color: 'var(--qs-warning)' }}>⚠ {diffResult.stage1Count ?? 0} pending (Cancel)</span>
+              <span style={{ color: 'var(--qs-warning)' }}>⚠ {diffResult.stage1Count ?? 0} <T k="pages.components.retention.retentionimport.5fb48d">pending (Cancel)</T></span>
               {' · '}
-              <span style={{ color: 'var(--qs-danger)' }}>🚫 {diffResult.stage2Count ?? 0} lapsed (Cancelled)</span>
+              <span style={{ color: 'var(--qs-danger)' }}>🚫 {diffResult.stage2Count ?? 0} <T k="pages.components.retention.retentionimport.8c12b4">lapsed (Cancelled)</T></span>
             </div>
           )}
 
@@ -519,9 +517,9 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             <div style={{ fontSize: 12, background: '#EF444411', border: '1px solid #EF444433',
               borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
               <span style={{ color: '#EF4444', fontWeight: 600 }}>
-                ✗ {diffResult.autoLost.length} confirmed lost
+                ✗ {diffResult.autoLost.length} <T k="pages.components.retention.retentionimport.6a8dd5">confirmed lost</T>
               </span>
-              {' '}— matched termination report. Marked lost automatically.
+              {' '}<T k="pages.components.retention.retentionimport.35e2df">— matched termination report. Marked lost automatically.</T>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoLost.map(c => (
                   <div key={c.id} title={c.termination_reason || undefined} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -538,9 +536,9 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             <div style={{ fontSize: 12, background: '#34D39911', border: '1px solid #34D39933',
               borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
               <span style={{ color: '#34D399', fontWeight: 600 }}>
-                ✓ {diffResult.autoRewritten.length} rewritten / transferred
+                ✓ {diffResult.autoRewritten.length} <T k="pages.components.retention.retentionimport.487c15">rewritten / transferred</T>
               </span>
-              {' '}— cancelled only to move to a new policy. Counted as retained, not lost.
+              {' '}<T k="pages.components.retention.retentionimport.ca20ba">— cancelled only to move to a new policy. Counted as retained, not lost.</T>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoRewritten.map(c => (
                   <div key={c.id} title={c.termination_reason || undefined} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -557,9 +555,9 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             <div style={{ fontSize: 12, background: '#10B98111', border: '1px solid #10B98133',
               borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
               <span style={{ color: '#10B981', fontWeight: 600 }}>
-                ✓ {diffResult.autoPaid.length} cleared as paid
+                ✓ {diffResult.autoPaid.length} <T k="pages.components.retention.retentionimport.8e79ef">cleared as paid</T>
               </span>
-              {' '}— absent from this snapshot and not on the committed termination report covering their cancel month. Closed automatically.
+              {' '}<T k="pages.components.retention.retentionimport.16f0ff">— absent from this snapshot and not on the committed termination report covering their cancel month. Closed automatically.</T>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoPaid.map(c => (
                   <div key={c.id} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -592,10 +590,10 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               {isCommitting ? "Committing\u2026" : "Commit Upload"}
             </button>
             <button className="btn-ghost" onClick={onCancel}>
-              Cancel
+              <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
             </button>
             <span style={{ fontSize: 11, color: "var(--qs-muted)" }}>
-              Applies everything above \u2014 adds, updates, and auto-closures.
+              <T k="pages.components.retention.retentionimport.a05b43">Applies everything above \u2014 adds, updates, and auto-closures.</T>
             </span>
           </div>
         </div>
@@ -1125,7 +1123,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
   return (
     <div style={{ maxWidth: 640 }}>
       <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 16 }}>
-        Upload the Allstate <span style={{ fontFamily: "'DM Mono', monospace" }}>Renewal Review</span> report (XLSX).
+        <T k="pages.components.retention.retentionimport.1a1a01">Upload the Allstate</T> <span style={{ fontFamily: "'DM Mono', monospace" }}><T k="pages.components.retention.retentionimport.6d9640">Renewal Review</T></span> <T k="pages.components.retention.retentionimport.597d2f">report (XLSX).</T>
       </div>
 
       <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
@@ -1137,7 +1135,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         <div style={{ fontSize: 14, color: "var(--qs-dim)", fontWeight: 500 }}>
           {uploadFile ? uploadFile.name : "Drop renewal report here or click to browse"}
         </div>
-        {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}>Parsing{"\u2026"}</div>}
+        {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}><T k="pages.components.retention.retentionimport.8b08e5">Parsing</T>{"\u2026"}</div>}
       </div>
 
       {/* Assignment info — shown after parsing, before commit */}
@@ -1151,7 +1149,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       )}
       {parsedRows && producers.length === 0 && (
         <div style={{ fontSize: 12, color: 'var(--qs-warning)', marginTop: 12, marginBottom: 12 }}>
-          {"\u26A0"} No active service reps found — cases will be unassigned
+          {"\u26A0"} <T k="pages.components.retention.retentionimport.a7254b">No active service reps found — cases will be unassigned</T>
         </div>
       )}
 
@@ -1164,10 +1162,10 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       {parsedRows && !uploadMsg && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>
-            Preview — {parsedRows.length} actionable rows
+            <T k="pages.components.retention.retentionimport.3e8169">Preview —</T> {parsedRows.length} <T k="pages.components.retention.retentionimport.d41ecf">actionable rows</T>
             {excludedCount > 0 && (
               <span style={{ fontWeight: 400, fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
-                ({excludedCount} already renewed excluded)
+                ({excludedCount} <T k="pages.components.retention.retentionimport.2a4e26">already renewed excluded)</T>
               </span>
             )}
           </div>
@@ -1176,7 +1174,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
               {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
             </button>
             <button className="btn-ghost" onClick={() => { setParsedRows(null); setExcludedCount(0); setUploadFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
-              Cancel
+              <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
             </button>
           </div>
         </div>
@@ -1464,7 +1462,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
     <div>
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <div>
-          <label style={{ fontSize: 12, color: "var(--qs-subtle)", display: "block", marginBottom: 4 }}>Report Month</label>
+          <label style={{ fontSize: 12, color: "var(--qs-subtle)", display: "block", marginBottom: 4 }}><T k="pages.components.retention.retentionimport.2753d0">Report Month</T></label>
           <input
             type="month"
             value={reportMonth.slice(0, 7)}
@@ -1484,7 +1482,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
         }}
         title="For a one-time historical bulk load (e.g. 2023-2025) used to generate winback leads. Excluded from the Net Portfolio Growth trend and skips live-cycle reconciliation.">
           <input type="checkbox" checked={isBackfill} onChange={e => setIsBackfill(e.target.checked)} />
-          Historical backfill (winback only)
+          <T k="pages.components.retention.retentionimport.e499dc">Historical backfill (winback only)</T>
         </label>
       </div>
 
@@ -1497,7 +1495,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       {parsedRows && !commitMsg && (
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>
-            Preview — {parsedRows.length} rows for {reportMonth.slice(0, 7)}
+            <T k="pages.components.retention.retentionimport.3e8169">Preview —</T> {parsedRows.length} <T k="pages.components.retention.retentionimport.8916f9">rows for</T> {reportMonth.slice(0, 7)}
           </div>
           <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginBottom: 16 }}>
             {Object.entries(parsedRows.reduce((acc, r) => { acc[r.product] = (acc[r.product] || 0) + 1; return acc; }, {})).map(([prod, count]) => (
@@ -1509,7 +1507,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
               {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
             </button>
             <button className="btn-ghost" onClick={() => { setParsedRows(null); setLapseFile(null); }}>
-              Cancel
+              <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
             </button>
           </div>
         </div>
@@ -1540,7 +1538,7 @@ function ImportTab({
     <div style={{ maxWidth: 996, margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', textAlign: 'center', marginBottom: 14 }}>
-          Upload Allstate reports to refresh the At Risk queue.
+          <T k="pages.components.retention.retentionimport.174b28">Upload Allstate reports to refresh the At Risk queue.</T>
         </div>
 
         {/* Upload sequence strip */}
@@ -1570,7 +1568,7 @@ function ImportTab({
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--qs-muted)', textAlign: 'center', marginTop: 8 }}>
-          Upload in this order for the most accurate queue diff results
+          <T k="pages.components.retention.retentionimport.741049">Upload in this order for the most accurate queue diff results</T>
         </div>
       </div>
 
@@ -1585,11 +1583,10 @@ function ImportTab({
           fontSize: 12, fontWeight: 600, color: '#EF4444',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16
         }}>
-          {'\u2460'} Termination Report
+          {'\u2460'} <T k="pages.components.retention.retentionimport.b079de">Termination Report</T>
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-          Upload the Allstate <span style={{ fontFamily: "'DM Mono', monospace" }}>Termination</span> report (XLSX).
-          Confirmed lapses are recorded and any matching pending cases are automatically closed as lost.
+          <T k="pages.components.retention.retentionimport.1a1a01">Upload the Allstate</T> <span style={{ fontFamily: "'DM Mono', monospace" }}><T k="pages.components.retention.retentionimport.61e773">Termination</T></span> <T k="pages.components.retention.retentionimport.5d5c3f">report (XLSX). Confirmed lapses are recorded and any matching pending cases are automatically closed as lost.</T>
         </div>
         <TerminationUploadZone agencyId={agencyId} currentUserId={currentUserId} />
       </div>
@@ -1599,14 +1596,14 @@ function ImportTab({
         borderRadius: 12, padding: 20 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-danger)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-          {'\u2461'} Cancellation Audit
+          {'\u2461'} <T k="pages.components.retention.retentionimport.e9c280">Cancellation Audit</T>
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-          Upload the Allstate{' '}
-          <span style={{ fontFamily: "'DM Mono', monospace" }}>Cancellation Audit</span> report (XLSX).
+          <T k="pages.components.retention.retentionimport.1a1a01">Upload the Allstate</T>{' '}
+          <span style={{ fontFamily: "'DM Mono', monospace" }}><T k="pages.components.retention.retentionimport.e9c280">Cancellation Audit</T></span> <T k="pages.components.retention.retentionimport.597d2f">report (XLSX).</T>
           <br />
-          <span style={{ color: 'var(--qs-warning)' }}>Cancel</span> rows {'\u2192'} Stage 1 (pending).{' '}
-          <span style={{ color: 'var(--qs-danger)' }}>Cancelled</span> rows {'\u2192'} Stage 2 (coverage lapsed).
+          <span style={{ color: 'var(--qs-warning)' }}><T k="pages.components.retention.retentionimport.ea4788">Cancel</T></span> <T k="pages.components.retention.retentionimport.df347a">rows</T> {'\u2192'} <T k="pages.components.retention.retentionimport.ebb67a">Stage 1 (pending).</T>{' '}
+          <span style={{ color: 'var(--qs-danger)' }}><T k="pages.components.retention.retentionimport.a149e8">Cancelled</T></span> <T k="pages.components.retention.retentionimport.df347a">rows</T> {'\u2192'} <T k="pages.components.retention.retentionimport.d223d8">Stage 2 (coverage lapsed).</T>
         </div>
         <UploadTab
           uploadFile={cancelAuditFile}
@@ -1628,7 +1625,7 @@ function ImportTab({
         {/* ③ Pending Cancellation */}
         <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-warning-border)', borderRadius: 12, padding: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-warning)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-            {'\u2462'} Pending Cancellation Report
+            {'\u2462'} <T k="pages.components.retention.retentionimport.b2423b">Pending Cancellation Report</T>
           </div>
           <UploadTab
             uploadFile={uploadFile}
@@ -1650,7 +1647,7 @@ function ImportTab({
         {/* ④ Renewal Audit */}
         <div style={{ background: 'var(--qs-card)', border: '1px solid #3B82F633', borderRadius: 12, padding: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-info)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-            {'\u2463'} Renewal Audit Report
+            {'\u2463'} <T k="pages.components.retention.retentionimport.68865f">Renewal Audit Report</T>
           </div>
           <RenewalUploadZone
             agencyId={agencyId}
@@ -1681,14 +1678,11 @@ function CrossSellUploadCard({ agencyId, currentUserId }) {
         fontSize: 12, fontWeight: 600, color: '#10B981',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16,
       }}>
-        {'⑤'} Cross-Sell Audit
+        {'⑤'} <T k="pages.components.retention.retentionimport.9de67d">Cross-Sell Audit</T>
       </div>
       <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-        Upload the Allstate{' '}
-        <span style={{ fontFamily: "'DM Mono', monospace" }}>Cross-Sell Audit</span> report (XLSX).
-        Each row is matched against active renewals and pending cancels — overlap
-        customers are routed on hold, monoline matches surface on the renewal modal,
-        and unmatched rows become outbound leads.
+        <T k="pages.components.retention.retentionimport.1a1a01">Upload the Allstate</T>{' '}
+        <span style={{ fontFamily: "'DM Mono', monospace" }}><T k="pages.components.retention.retentionimport.9de67d">Cross-Sell Audit</T></span> <T k="pages.components.retention.retentionimport.c9814d">report (XLSX). Each row is matched against active renewals and pending cancels — overlap customers are routed on hold, monoline matches surface on the renewal modal, and unmatched rows become outbound leads.</T>
       </div>
       <button
         onClick={() => setOpen(true)}
@@ -1698,7 +1692,7 @@ function CrossSellUploadCard({ agencyId, currentUserId }) {
           fontSize: 14, fontWeight: 600, cursor: 'pointer',
         }}
       >
-        + Upload Cross-Sell Report
+        <T k="pages.components.retention.retentionimport.8a6c15">+ Upload Cross-Sell Report</T>
       </button>
       {open && (
         <CrossSellUploadModal

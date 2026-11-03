@@ -1,6 +1,7 @@
 // src/pages/AgencyLeadsPage.jsx
 // Agency Pipeline Dashboard - Lead List View
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -116,9 +117,9 @@ const AgencyLeadsPage = () => {
       <div className="dark-page flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}>No Agency Access</h2>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencyleadspage.e952ec">No Agency Access</T></h2>
           <p style={{ color: 'var(--qs-dim)' }}>
-            You are not currently associated with an agency. Please contact support if you believe this is an error.
+            <T k="pages.agencyleadspage.91f7bf">You are not currently associated with an agency. Please contact support if you believe this is an error.</T>
           </p>
         </div>
       </div>
@@ -131,10 +132,10 @@ const AgencyLeadsPage = () => {
         {/* Header */}
         <div className="dark-header rounded-xl mb-8">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>
-            {currentAgency.agencies?.name || 'Agency'} Pipeline
+            {currentAgency.agencies?.name || 'Agency'} <T k="pages.agencyleadspage.aeaeae">Pipeline</T>
           </h1>
           <div className="flex items-center gap-4 mt-1">
-            <p style={{ color: 'var(--qs-dim)' }}>Manage and track your leads</p>
+            <p style={{ color: 'var(--qs-dim)' }}><T k="pages.agencyleadspage.1b3000">Manage and track your leads</T></p>
           </div>
         </div>
 
@@ -144,21 +145,21 @@ const AgencyLeadsPage = () => {
             <div className="dark-card">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}>
                 <Users className="w-4 h-4" />
-                Total Leads
+                <T k="pages.agencyleadspage.e6b31b">Total Leads</T>
               </div>
               <div className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>{slaMetrics.totalLeads}</div>
             </div>
             <div className="dark-card">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}>
                 <AlertCircle className="w-4 h-4" />
-                Uncontacted
+                <T k="pages.agencyleadspage.136b8a">Uncontacted</T>
               </div>
               <div className="text-2xl font-bold text-orange-600">{slaMetrics.uncontactedBacklog}</div>
             </div>
             <div className="dark-card">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}>
                 <Clock className="w-4 h-4" />
-                Avg Contact (7d)
+                <T k="pages.agencyleadspage.f2f528">Avg Contact (7d)</T>
               </div>
               <div className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>
                 {slaMetrics.avgTimeToContact7d !== null ? `${slaMetrics.avgTimeToContact7d}h` : '-'}
@@ -167,7 +168,7 @@ const AgencyLeadsPage = () => {
             <div className="dark-card">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: 'var(--qs-subtle)' }}>
                 <Clock className="w-4 h-4" />
-                Avg Contact (30d)
+                <T k="pages.agencyleadspage.ecb876">Avg Contact (30d)</T>
               </div>
               <div className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>
                 {slaMetrics.avgTimeToContact30d !== null ? `${slaMetrics.avgTimeToContact30d}h` : '-'}
@@ -207,14 +208,14 @@ const AgencyLeadsPage = () => {
               className="flex items-center gap-2 text-sm" style={{ color: 'var(--qs-dim)' }}
             >
               <Filter className="w-4 h-4" />
-              More Filters
+              <T k="pages.agencyleadspage.c5ff7d">More Filters</T>
             </button>
           </div>
 
           {showFilters && (
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4" style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Source</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencyleadspage.f31bbd">Source</T></label>
                 <select
                   value={filters.source}
                   onChange={(e) => handleFilterChange('source', e.target.value)}
@@ -227,7 +228,7 @@ const AgencyLeadsPage = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Documents</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencyleadspage.f28128">Documents</T></label>
                 <select
                   value={filters.hasDocuments}
                   onChange={(e) => handleFilterChange('hasDocuments', e.target.value)}
@@ -240,7 +241,7 @@ const AgencyLeadsPage = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Risk Level</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencyleadspage.f9bf0a">Risk Level</T></label>
                 <select
                   value={filters.riskFlag}
                   onChange={(e) => handleFilterChange('riskFlag', e.target.value)}
@@ -253,7 +254,7 @@ const AgencyLeadsPage = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Min Score</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencyleadspage.c30d05">Min Score</T></label>
                 <input
                   type="number"
                   min="0"
@@ -266,7 +267,7 @@ const AgencyLeadsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Max Score</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencyleadspage.72c534">Max Score</T></label>
                 <input
                   type="number"
                   min="0"
@@ -287,15 +288,15 @@ const AgencyLeadsPage = () => {
           {leadsLoading ? (
             <div className="p-8 text-center">
               <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mb-2"></div>
-              <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading leads...</p>
+              <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencyleadspage.aec5c7">Loading leads...</T></p>
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-600">
-              Error loading leads. Please try again.
+              <T k="pages.agencyleadspage.abc2ab">Error loading leads. Please try again.</T>
             </div>
           ) : !leads || leads.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-              No leads found matching your filters.
+              <T k="pages.agencyleadspage.06815e">No leads found matching your filters.</T>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -303,30 +304,30 @@ const AgencyLeadsPage = () => {
                 <thead>
                   <tr style={{ background: 'var(--qs-elevated)' }}>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
-                      Created
+                      <T k="pages.agencyleadspage.0eceeb">Created</T>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
                       <div className="flex items-center gap-1">
-                        Score <ArrowUpDown className="w-3 h-3" />
+                        <T k="pages.agencyleadspage.5dd135">Score</T> <ArrowUpDown className="w-3 h-3" />
                       </div>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
-                      Status
+                      <T k="pages.agencyleadspage.ec53a8">Status</T>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
-                      Location
+                      <T k="pages.agencyleadspage.ce5bf5">Location</T>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
-                      Intent
+                      <T k="pages.agencyleadspage.3f76f7">Intent</T>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
-                      Source
+                      <T k="pages.agencyleadspage.f31bbd">Source</T>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
-                      Docs
+                      <T k="pages.agencyleadspage.a3907c">Docs</T>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>
-                      SLA
+                      <T k="pages.agencyleadspage.1b45e7">SLA</T>
                     </th>
                     <th className="px-4 py-3"></th>
                   </tr>
@@ -379,7 +380,7 @@ const AgencyLeadsPage = () => {
                               border: '1px solid rgba(245,158,11,0.3)',
                               marginLeft: 6,
                             }}>
-                              Partial
+                              <T k="pages.agencyleadspage.44ffd3">Partial</T>
                             </span>
                           )}
                         </td>
@@ -399,7 +400,7 @@ const AgencyLeadsPage = () => {
                           })()}
                           {lead.allstate_conflict && (
                             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700" title="Current carrier is Allstate — cannot write">
-                              🟣 Allstate
+                              <T k="pages.agencyleadspage.92f130">🟣 Allstate</T>
                             </span>
                           )}
                         </td>
@@ -426,7 +427,7 @@ const AgencyLeadsPage = () => {
                             to={`/agency/leads/${lead.id}`}
                             className="text-primary-600 hover:text-primary-800 inline-flex items-center gap-1 text-sm"
                           >
-                            View <ChevronRight className="w-4 h-4" />
+                            <T k="pages.agencyleadspage.4351cf">View</T> <ChevronRight className="w-4 h-4" />
                           </Link>
                         </td>
                       </tr>
@@ -441,7 +442,7 @@ const AgencyLeadsPage = () => {
         {/* Results count */}
         {leads && leads.length > 0 && (
           <div className="mt-4 text-sm text-center" style={{ color: 'var(--qs-subtle)' }}>
-            Showing {leads.length} lead{leads.length !== 1 ? 's' : ''}
+            <T k="pages.agencyleadspage.b4e610">Showing</T> {leads.length} <T k="pages.agencyleadspage.13edbe">lead</T>{leads.length !== 1 ? 's' : ''}
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 // src/pages/SaveConfirmationPage.jsx — Funnel Step 3: Confirmation + Canopy Upsell
+import { T } from '../components/SiteCopy';
 import { useEffect } from 'react';
 import { CheckCircle, Zap, Shield, Clock, ArrowRight, Star } from 'lucide-react';
 import { trackFunnelStep, trackEvent } from '../lib/analytics';
@@ -53,10 +54,10 @@ export default function SaveConfirmationPage() {
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">
-              You&apos;re All Set! Your Personalized Quote Is Being Prepared.
+              <T k="pages.saveconfirmationpage.9f4804">You're All Set! Your Personalized Quote Is Being Prepared.</T>
             </h1>
             <p className="text-lg text-white/80">
-              {agentName} will reach out within the next few minutes to walk you through your options.
+              {agentName} <T k="pages.saveconfirmationpage.ae1008">will reach out within the next few minutes to walk you through your options.</T>
             </p>
           </div>
 
@@ -69,9 +70,9 @@ export default function SaveConfirmationPage() {
                   <span className="text-2xl font-bold text-primary-600">{agentName.charAt(0)}</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-lg">About {agentName}</h3>
+                  <h3 className="font-bold text-gray-900 text-lg"><T k="pages.saveconfirmationpage.8f7f4c">About</T> {agentName}</h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    {brandName} — licensed insurance agent who personally reviews every quote.
+                    {brandName} <T k="pages.saveconfirmationpage.2cb3c9">— licensed insurance agent who personally reviews every quote.</T>
                   </p>
                 </div>
               </div>
@@ -85,12 +86,12 @@ export default function SaveConfirmationPage() {
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="w-5 h-5 text-accent-500" />
                 <h3 className="font-bold text-gray-900 text-lg">
-                  Want Your Exact Savings Number — Not Just a Range?
+                  <T k="pages.saveconfirmationpage.08c9ba">Want Your Exact Savings Number — Not Just a Range?</T>
                 </h3>
               </div>
 
               <p className="text-gray-600 mb-5 leading-relaxed">
-                Sync your current policy and {agentName} can have your comparison ready before the call.
+                <T k="pages.saveconfirmationpage.a26181">Sync your current policy and</T> {agentName} <T k="pages.saveconfirmationpage.59a945">can have your comparison ready before the call.</T>
               </p>
 
               <div className="space-y-3 mb-6">
@@ -114,14 +115,14 @@ export default function SaveConfirmationPage() {
                 <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-8 py-4 rounded-xl transition-all duration-300">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
                   <span className="relative z-10 text-white font-black text-lg">
-                    Sync My Policy
+                    <T k="pages.saveconfirmationpage.03b047">Sync My Policy</T>
                   </span>
                   <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:trangray-x-1" />
                 </div>
               </button>
 
               <p className="text-center text-sm text-gray-500 mt-4 font-medium italic">
-                &ldquo;9 out of 10 people who sync get a better quote.&rdquo;
+                <T k="pages.saveconfirmationpage.c7a2ad">“9 out of 10 people who sync get a better quote.”</T>
               </p>
             </div>
           </div>
@@ -129,7 +130,7 @@ export default function SaveConfirmationPage() {
           {/* Social Proof */}
           <div className="text-center">
             <p className="text-white/70 text-sm font-medium mb-2">
-              Trusted by 500+ families
+              <T k="pages.saveconfirmationpage.3f01f2">Trusted by 500+ families</T>
             </p>
             <div className="flex items-center justify-center gap-1">
               {[...Array(5)].map((_, i) => (

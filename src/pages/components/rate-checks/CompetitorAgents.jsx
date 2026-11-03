@@ -4,6 +4,7 @@
 // we beat them. Internal market intel only — never contact a competitor about
 // a specific customer, never share pricing with competitors.
 
+import { T } from '../../../components/SiteCopy';
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Lock, SlidersHorizontal, Star } from 'lucide-react';
 import { useCompetitorAgents, useUpdateCompetitorAgent } from '../../../hooks/useRateChecks';
@@ -55,7 +56,7 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
   return (
     <div className="dark-card overflow-hidden" style={{ padding: 0 }}>
       <p className="flex items-center gap-1.5 px-4 pt-3 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-        <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Internal only — never mention a customer to their agent.
+        <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> <T k="pages.components.ratechecks.competitoragents.57fafa">Internal only — never mention a customer to their agent.</T>
       </p>
       <div className="flex flex-wrap items-center gap-2 p-3 text-sm" style={{ borderBottom: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }}>
         <select value={carrier} onChange={e => setCarrier(e.target.value)} className="dark-select min-w-0 flex-1 sm:w-auto sm:flex-none" style={inputStyle} aria-label="Carrier">
@@ -66,19 +67,19 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
           className="w-[4.5rem] rounded px-2 py-2" style={inputStyle} inputMode="numeric" />
         <button type="button" onClick={() => setFiltersOpen(o => !o)} aria-expanded={filtersOpen}
           className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 font-semibold" style={{ ...inputStyle, color: 'var(--qs-bright)' }}>
-          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Filters
+          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.competitoragents.f3f43e">Filters</T>
           {filterCount > 0 && <span className="rounded-full bg-primary-600 px-1.5 text-xs text-white">{filterCount}</span>}
           <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
         </button>
         {filtersOpen && (
           <div className="flex w-full flex-col gap-3 rounded-lg p-3" style={{ background: 'var(--qs-elevated)' }}>
-            <label className="flex items-center justify-between gap-3">At least this many customers
+            <label className="flex items-center justify-between gap-3"><T k="pages.components.ratechecks.competitoragents.a9f411">At least this many customers</T>
               <input type="number" min={1} value={minSeen} onChange={e => setMinSeen(Math.max(1, Number(e.target.value) || 1))}
                 className="w-16 rounded px-2 py-1.5" style={inputStyle} />
             </label>
-            <label className="flex min-h-[32px] items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={acquirableOnly} onChange={e => setAcquirableOnly(e.target.checked)} /> Books we could buy</label>
-            <label className="flex min-h-[32px] items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={starredOnly} onChange={e => setStarredOnly(e.target.checked)} /> Starred only</label>
-            <label className="flex items-center justify-between gap-3 md:hidden">Sort by
+            <label className="flex min-h-[32px] items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={acquirableOnly} onChange={e => setAcquirableOnly(e.target.checked)} /> <T k="pages.components.ratechecks.competitoragents.439a78">Books we could buy</T></label>
+            <label className="flex min-h-[32px] items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={starredOnly} onChange={e => setStarredOnly(e.target.checked)} /> <T k="pages.components.ratechecks.competitoragents.7bc1e7">Starred only</T></label>
+            <label className="flex items-center justify-between gap-3 md:hidden"><T k="pages.components.ratechecks.competitoragents.33d804">Sort by</T>
               <select value={sort} onChange={e => setSort(e.target.value)} className="dark-select" style={{ width: 'auto', ...inputStyle }}>
                 <option value="rate_checks">Most customers</option>
                 <option value="avg_annual_premium">Highest premium</option>
@@ -99,9 +100,9 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
       )}
 
       {isLoading ? (
-        <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</div>
+        <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.competitoragents.5f02f0">Loading…</T></div>
       ) : error ? (
-        <div className="p-8 text-center text-red-600">Error loading competing agents.</div>
+        <div className="p-8 text-center text-red-600"><T k="pages.components.ratechecks.competitoragents.2cbe15">Error loading competing agents.</T></div>
       ) : rows.length === 0 ? (
         <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
           {data.length === 0 ? 'No agents yet. They show up here when a policy lists the customer’s agent.' : 'No agents match these filters.'}
@@ -116,15 +117,15 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
               <thead>
                 <tr style={{ background: 'var(--qs-elevated)' }}>
                   <th className={thCls} style={thStyle}></th>
-                  <th className={thCls} style={thStyle}>Agency</th>
-                  <th className={thCls} style={thStyle}>Carrier</th>
-                  <th className={`${thCls} whitespace-nowrap`} style={thStyle}>Book</th>
-                  <th className={thCls} style={thStyle}>ZIPs</th>
-                  <SortTh k="rate_checks">Customers</SortTh>
-                  <SortTh k="avg_annual_premium">Avg premium</SortTh>
-                  <SortTh k="win_rate_pct">We win</SortTh>
-                  <SortTh k="avg_savings_when_won">Avg savings</SortTh>
-                  <th className={thCls} style={thStyle}>Last seen</th>
+                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.competitoragents.75ec3e">Agency</T></th>
+                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.competitoragents.914419">Carrier</T></th>
+                  <th className={`${thCls} whitespace-nowrap`} style={thStyle}><T k="pages.components.ratechecks.competitoragents.2b1f94">Book</T></th>
+                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.competitoragents.10e458">ZIPs</T></th>
+                  <SortTh k="rate_checks"><T k="pages.components.ratechecks.competitoragents.e6d0e1">Customers</T></SortTh>
+                  <SortTh k="avg_annual_premium"><T k="pages.components.ratechecks.competitoragents.45906e">Avg premium</T></SortTh>
+                  <SortTh k="win_rate_pct"><T k="pages.components.ratechecks.competitoragents.26bd90">We win</T></SortTh>
+                  <SortTh k="avg_savings_when_won"><T k="pages.components.ratechecks.competitoragents.77e44d">Avg savings</T></SortTh>
+                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.competitoragents.55d959">Last seen</T></th>
                 </tr>
               </thead>
               <tbody>
@@ -176,7 +177,7 @@ function AgentCard({ r, open, onToggle, update }) {
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
               {r.avg_annual_premium != null && `Avg ${money(r.avg_annual_premium)}/yr`}
               {Number(r.quoted) > 0 && ` · We win ${r.wins} of ${r.quoted}`}
-              {r.avg_savings_when_won != null && <span className="text-green-600"> · saves {money(r.avg_savings_when_won)}</span>}
+              {r.avg_savings_when_won != null && <span className="text-green-600"> <T k="pages.components.ratechecks.competitoragents.b28734">· saves</T> {money(r.avg_savings_when_won)}</span>}
             </p>
           )}
         </div>
@@ -242,11 +243,11 @@ function AgentDetails({ r, update }) {
           {r.agent_code && <Field label="Agent code" value={r.agent_code} copy mono />}
         </dl>
         <p className="mt-2" style={{ color: 'var(--qs-subtle)' }}>
-          Writes {(r.policy_types || []).join(' and ') || '—'}. Their customers we&apos;ve seen pay {money(r.total_annual_premium_seen)}/yr in total. First seen {formatDate(r.first_seen_at)}.
+          <T k="pages.components.ratechecks.competitoragents.7bfbb9">Writes</T> {(r.policy_types || []).join(' and ') || '—'}<T k="pages.components.ratechecks.competitoragents.c16543">. Their customers we've seen pay</T> {money(r.total_annual_premium_seen)}<T k="pages.components.ratechecks.competitoragents.4f18d0">/yr in total. First seen</T> {formatDate(r.first_seen_at)}.
         </p>
       </div>
       <label className="space-y-1">
-        <span style={{ color: 'var(--qs-subtle)' }}>Book</span>
+        <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.competitoragents.2b1f94">Book</T></span>
         <select value={r.book_ownership} onChange={e => update.mutate({ id: r.id, updates: { book_ownership: e.target.value } })}
           className="w-full rounded px-2 py-1.5" style={inputStyle}>
           {Object.entries(BOOK_OWNERSHIP).map(([k, o]) => <option key={k} value={k}>{o.label}</option>)}
@@ -254,12 +255,12 @@ function AgentDetails({ r, update }) {
         <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{(BOOK_OWNERSHIP[r.book_ownership] || BOOK_OWNERSHIP.check).hint}</span>
       </label>
       <div className="space-y-1">
-        <span style={{ color: 'var(--qs-subtle)' }}>Notes</span>
+        <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.competitoragents.f4c6f8">Notes</T></span>
         <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full rounded px-2 py-1.5" style={inputStyle}
           placeholder="e.g. met at a chamber event; may retire in 2027" />
         <button onClick={() => update.mutate({ id: r.id, updates: { notes: notes.trim() || null } })}
           disabled={update.isPending || notes === (r.notes || '')}
-          className="rounded bg-primary-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50">Save notes</button>
+          className="rounded bg-primary-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"><T k="pages.components.ratechecks.competitoragents.a7a25d">Save notes</T></button>
       </div>
     </div>
   );

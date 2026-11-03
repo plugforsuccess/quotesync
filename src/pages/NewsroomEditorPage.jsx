@@ -1,6 +1,7 @@
 // src/pages/NewsroomEditorPage.jsx
 // CMS interface for editors to create and manage stories
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Send, Archive, Plus, Clock, CheckCircle, AlertCircle, Wifi, WifiOff, X } from 'lucide-react';
@@ -459,8 +460,8 @@ const NewsroomEditorPage = () => {
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium text-sm sm:text-base"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
-              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline"><T k="pages.newsroomeditorpage.3649f1">Back to Dashboard</T></span>
+              <span className="sm:hidden"><T k="pages.newsroomeditorpage.0557fa">Back</T></span>
             </button>
 
             <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
@@ -469,7 +470,7 @@ const NewsroomEditorPage = () => {
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
               >
                 <Eye className="w-4 h-4" />
-                <span className="hidden sm:inline">Preview</span>
+                <span className="hidden sm:inline"><T k="pages.newsroomeditorpage.31fde7">Preview</T></span>
               </button>
 
               {id && userRole === 'admin' && (
@@ -478,7 +479,7 @@ const NewsroomEditorPage = () => {
                   className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
                 >
                   <Archive className="w-4 h-4" />
-                  <span className="hidden sm:inline">Archive</span>
+                  <span className="hidden sm:inline"><T k="pages.newsroomeditorpage.e727b0">Archive</T></span>
                 </button>
               )}
 
@@ -491,7 +492,7 @@ const NewsroomEditorPage = () => {
                   >
                     <Save className="w-4 h-4" />
                     <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Draft'}</span>
-                    <span className="sm:hidden">Save</span>
+                    <span className="sm:hidden"><T k="pages.newsroomeditorpage.c9cc8c">Save</T></span>
                   </button>
 
                   <button
@@ -500,8 +501,8 @@ const NewsroomEditorPage = () => {
                     className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
                   >
                     <Send className="w-4 h-4" />
-                    <span className="hidden sm:inline">Submit for Review</span>
-                    <span className="sm:hidden">Submit</span>
+                    <span className="hidden sm:inline"><T k="pages.newsroomeditorpage.d8d370">Submit for Review</T></span>
+                    <span className="sm:hidden"><T k="pages.newsroomeditorpage.a4d3b1">Submit</T></span>
                   </button>
                 </>
               )}
@@ -521,7 +522,7 @@ const NewsroomEditorPage = () => {
             }`}>
               {story.status === 'in_review' ? 'IN REVIEW' : story.status.toUpperCase()}
             </span>
-            {id && <span>• Story ID: {id}</span>}
+            {id && <span><T k="pages.newsroomeditorpage.6abbc3">• Story ID:</T> {id}</span>}
 
             {/* Autosave Status Indicator */}
             {!loading && user && (
@@ -531,27 +532,27 @@ const NewsroomEditorPage = () => {
                   {autosave.isSaving && (
                     <>
                       <Clock className="w-4 h-4 animate-spin text-primary-500" />
-                      <span className="text-primary-600">Saving...</span>
+                      <span className="text-primary-600"><T k="pages.newsroomeditorpage.575f5f">Saving...</T></span>
                     </>
                   )}
                   {autosave.hasSaved && !autosave.isSaving && (
                     <>
                       <CheckCircle className="w-4 h-4 text-green-500" />
                       <span className="text-green-600">
-                        Saved {autosave.lastSavedAt && new Date(autosave.lastSavedAt).toLocaleTimeString()}
+                        <T k="pages.newsroomeditorpage.248336">Saved</T> {autosave.lastSavedAt && new Date(autosave.lastSavedAt).toLocaleTimeString()}
                       </span>
                     </>
                   )}
                   {autosave.hasError && !autosave.isSaving && (
                     <>
                       <AlertCircle className="w-4 h-4 text-red-500" />
-                      <span className="text-red-600">Save failed</span>
+                      <span className="text-red-600"><T k="pages.newsroomeditorpage.e32a4e">Save failed</T></span>
                     </>
                   )}
                   {!autosave.isOnline && (
                     <>
                       <WifiOff className="w-4 h-4 text-orange-500" />
-                      <span className="text-orange-600">Offline</span>
+                      <span className="text-orange-600"><T k="pages.newsroomeditorpage.8d9da4">Offline</T></span>
                     </>
                   )}
                 </div>
@@ -573,7 +574,7 @@ const NewsroomEditorPage = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700">
-                  <strong>Story is under review.</strong> Content cannot be edited while in review. An admin will either publish or return it to draft status.
+                  <strong><T k="pages.newsroomeditorpage.0b390e">Story is under review.</T></strong> <T k="pages.newsroomeditorpage.c1aff3">Content cannot be edited while in review. An admin will either publish or return it to draft status.</T>
                 </p>
               </div>
             </div>
@@ -583,7 +584,7 @@ const NewsroomEditorPage = () => {
           {/* Title */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Title <span className="text-red-500">*</span>
+              <T k="pages.newsroomeditorpage.b78a32">Title</T> <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -598,7 +599,7 @@ const NewsroomEditorPage = () => {
           {/* Slug */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Slug <span className="text-red-500">*</span>
+              <T k="pages.newsroomeditorpage.0c9085">Slug</T> <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -609,14 +610,14 @@ const NewsroomEditorPage = () => {
               placeholder="story-url-slug"
             />
             <p className="text-xs text-gray-500 mt-1">
-              URL: /news/{story.slug || 'your-slug-here'}
+              <T k="pages.newsroomeditorpage.7b28e1">URL: /news/</T>{story.slug || 'your-slug-here'}
             </p>
           </div>
 
           {/* Preview Hook */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Preview Hook (2-3 sentences) <span className="text-red-500">*</span>
+              <T k="pages.newsroomeditorpage.9b9a75">Preview Hook (2-3 sentences)</T> <span className="text-red-500">*</span>
             </label>
             <textarea
               value={story.preview_hook}
@@ -627,14 +628,14 @@ const NewsroomEditorPage = () => {
               placeholder="Write a compelling preview that appears in the feed..."
             />
             <p className="text-xs text-gray-500 mt-1">
-              {story.preview_hook.length} characters
+              {story.preview_hook.length} <T k="pages.newsroomeditorpage.2593c7">characters</T>
             </p>
           </div>
 
           {/* Body */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Article Body <span className="text-red-500">*</span>
+              <T k="pages.newsroomeditorpage.8d415e">Article Body</T> <span className="text-red-500">*</span>
             </label>
             <textarea
               value={story.body}
@@ -650,7 +651,7 @@ const NewsroomEditorPage = () => {
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Category <span className="text-red-500">*</span>
+                <T k="pages.newsroomeditorpage.3adbdb">Category</T> <span className="text-red-500">*</span>
               </label>
               <select
                 value={story.category}
@@ -672,7 +673,7 @@ const NewsroomEditorPage = () => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Region
+                <T k="pages.newsroomeditorpage.f447ac">Region</T>
               </label>
               <select
                 value={story.region}
@@ -696,10 +697,10 @@ const NewsroomEditorPage = () => {
           {/* Secondary Tags (Optional) */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Secondary Tags <span className="text-gray-400 font-normal">(Optional)</span>
+              <T k="pages.newsroomeditorpage.696e04">Secondary Tags</T> <span className="text-gray-400 font-normal"><T k="pages.newsroomeditorpage.d9e6f3">(Optional)</T></span>
             </label>
             <p className="text-xs text-gray-500 mb-3">
-              Add optional tags for additional categorization. These help with filtering and SEO.
+              <T k="pages.newsroomeditorpage.a28905">Add optional tags for additional categorization. These help with filtering and SEO.</T>
             </p>
             <div className="flex flex-wrap gap-2 mb-3">
               {SECONDARY_TAGS.map((tag) => {
@@ -729,7 +730,7 @@ const NewsroomEditorPage = () => {
             </div>
             {story.secondary_tags?.length > 0 && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>Selected:</span>
+                <span><T k="pages.newsroomeditorpage.e8418a">Selected:</T></span>
                 <div className="flex flex-wrap gap-1">
                   {story.secondary_tags.map((tagSlug) => {
                     const tag = SECONDARY_TAGS.find(t => t.slug === tagSlug);
@@ -756,11 +757,11 @@ const NewsroomEditorPage = () => {
 
           {/* Video */}
           <div className="mb-6 border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Video (Optional)</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4"><T k="pages.newsroomeditorpage.837441">Video (Optional)</T></h3>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Video Type
+                <T k="pages.newsroomeditorpage.2b946b">Video Type</T>
               </label>
               <select
                 value={story.video_type || ''}
@@ -778,7 +779,7 @@ const NewsroomEditorPage = () => {
               <>
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Video URL
+                    <T k="pages.newsroomeditorpage.cf26c0">Video URL</T>
                   </label>
                   <input
                     type="url"
@@ -791,7 +792,7 @@ const NewsroomEditorPage = () => {
 
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Video Thumbnail URL
+                    <T k="pages.newsroomeditorpage.0b05cb">Video Thumbnail URL</T>
                   </label>
                   <input
                     type="url"
@@ -807,12 +808,12 @@ const NewsroomEditorPage = () => {
 
           {/* Source Attribution */}
           <div className="mb-6 border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Source Attribution</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4"><T k="pages.newsroomeditorpage.7eb968">Source Attribution</T></h3>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Source Name
+                  <T k="pages.newsroomeditorpage.9d58d5">Source Name</T>
                 </label>
                 <input
                   type="text"
@@ -825,7 +826,7 @@ const NewsroomEditorPage = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Source URL
+                  <T k="pages.newsroomeditorpage.19436a">Source URL</T>
                 </label>
                 <input
                   type="url"
@@ -840,11 +841,11 @@ const NewsroomEditorPage = () => {
 
           {/* SEO */}
           <div className="mb-6 border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">SEO & Social</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4"><T k="pages.newsroomeditorpage.4dd77c">SEO & Social</T></h3>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Meta Title <span className="text-red-500">*</span>
+                <T k="pages.newsroomeditorpage.c4144f">Meta Title</T> <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -855,13 +856,13 @@ const NewsroomEditorPage = () => {
                 maxLength={60}
               />
               <p className="text-xs text-gray-500 mt-1">
-                {story.meta_title.length}/60 characters - Appears in Google search results
+                {story.meta_title.length}<T k="pages.newsroomeditorpage.475238">/60 characters - Appears in Google search results</T>
               </p>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Meta Description <span className="text-red-500">*</span>
+                <T k="pages.newsroomeditorpage.81a35e">Meta Description</T> <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={story.meta_description}
@@ -872,13 +873,13 @@ const NewsroomEditorPage = () => {
                 maxLength={160}
               />
               <p className="text-xs text-gray-500 mt-1">
-                {story.meta_description.length}/160 characters - Appears in Google search results
+                {story.meta_description.length}<T k="pages.newsroomeditorpage.396fae">/160 characters - Appears in Google search results</T>
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                OpenGraph Image URL
+                <T k="pages.newsroomeditorpage.e385c1">OpenGraph Image URL</T>
               </label>
               <input
                 type="url"

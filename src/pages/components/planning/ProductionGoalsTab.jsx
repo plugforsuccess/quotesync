@@ -7,6 +7,7 @@
 // Phase 3: per-producer rows + Mode-A suggestions + effective-month picker.
 // (Phase 4 adds the agency-goal rollup band and "Apply suggested to all".)
 
+import { T } from '../../../components/SiteCopy';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Target, ChevronDown, ChevronUp, Check, Sparkles, Wand2 } from 'lucide-react';
@@ -200,7 +201,7 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>{name}</div>
             {isNewHire && (
               <div style={{ fontSize: 11, color: 'var(--qs-warning, #D97706)' }}>
-                Ramping · {Number.isFinite(tenureMo) ? `${tenureMo} mo` : 'new'}
+                <T k="pages.components.planning.productiongoalstab.5d6737">Ramping ·</T> {Number.isFinite(tenureMo) ? `${tenureMo} mo` : 'new'}
               </div>
             )}
           </div>
@@ -208,18 +209,18 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
 
         {/* Trailing context */}
         <div style={{ minWidth: 90 }}>
-          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }} title="Average of recent producing months">Avg / mo</div>
+          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }} title="Average of recent producing months"><T k="pages.components.planning.productiongoalstab.cf3bcb">Avg / mo</T></div>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)' }}>{money(stats.avgPremium)}</div>
         </div>
         <div style={{ minWidth: 120 }}>
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>
-            Last mo{stats.lastMonth ? ` (${stats.lastMonth.month})` : ''}
+            <T k="pages.components.planning.productiongoalstab.de13c6">Last mo</T>{stats.lastMonth ? ` (${stats.lastMonth.month})` : ''}
           </div>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)' }}>
             {money(lastPremium)}
             {pctOfGoal != null && (
               <span style={{ marginLeft: 6, fontSize: 11, color: pctOfGoal >= 100 ? 'var(--qs-success, #059669)' : 'var(--qs-subtle)' }}>
-                {pctOfGoal}% of goal
+                {pctOfGoal}<T k="pages.components.planning.productiongoalstab.77e83c">% of goal</T>
               </span>
             )}
           </div>
@@ -231,7 +232,7 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
         {/* Goal inputs */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <div>
-            <label style={{ fontSize: 11 }}>Premium / Mo</label>
+            <label style={{ fontSize: 11 }}><T k="pages.components.planning.productiongoalstab.99a58a">Premium / Mo</T></label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>$</span>
               <input
@@ -253,12 +254,12 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
                   color: 'var(--qs-info)', fontSize: 11,
                 }}
               >
-                <Sparkles size={11} /> Suggested {money(suggestion.premium)}
+                <Sparkles size={11} /> <T k="pages.components.planning.productiongoalstab.d67bbc">Suggested</T> {money(suggestion.premium)}
               </button>
             )}
           </div>
           <div>
-            <label style={{ fontSize: 11 }}>VC Items / Mo</label>
+            <label style={{ fontSize: 11 }}><T k="pages.components.planning.productiongoalstab.c7ff7b">VC Items / Mo</T></label>
             <input
               type="number" min="0" step="1"
               value={form.vc_items_monthly}
@@ -268,10 +269,10 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
             />
           </div>
           <div style={{ width: 60, paddingTop: 18, textAlign: 'right' }}>
-            {status === 'saving' && <span style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>Saving…</span>}
+            {status === 'saving' && <span style={{ fontSize: 11, color: 'var(--qs-subtle)' }}><T k="pages.components.planning.productiongoalstab.eedf6b">Saving…</T></span>}
             {status === 'saved' && (
               <span style={{ fontSize: 11, color: 'var(--qs-success, #059669)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                <Check size={11} /> Saved
+                <Check size={11} /> <T k="pages.components.planning.productiongoalstab.248336">Saved</T>
               </span>
             )}
           </div>
@@ -284,7 +285,7 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
           className="btn-ghost"
           style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
-          Advanced {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          <T k="pages.components.planning.productiongoalstab.9b6545">Advanced</T> {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
       </div>
 
@@ -425,10 +426,10 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
         <Target size={36} style={{ color: 'var(--qs-muted)', margin: '0 auto 12px' }} />
         <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 4 }}>
-          No producers found
+          <T k="pages.components.planning.productiongoalstab.1cbe8c">No producers found</T>
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
-          Add employees with the “sales” role to set production goals.
+          <T k="pages.components.planning.productiongoalstab.f23363">Add employees with the “sales” role to set production goals.</T>
         </div>
       </div>
     );
@@ -439,14 +440,14 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Target size={18} style={{ color: 'var(--qs-info)' }} /> Production Goals
+            <Target size={18} style={{ color: 'var(--qs-info)' }} /> <T k="pages.components.planning.productiongoalstab.f726e6">Production Goals</T>
           </div>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 2 }}>
-            Set each producer’s monthly goal. Changes are kept as history per effective month.
+            <T k="pages.components.planning.productiongoalstab.dd6c04">Set each producer’s monthly goal. Changes are kept as history per effective month.</T>
           </div>
         </div>
         <div>
-          <label style={{ fontSize: 11 }}>Effective month</label>
+          <label style={{ fontSize: 11 }}><T k="pages.components.planning.productiongoalstab.77fd9d">Effective month</T></label>
           <input type="month" value={monthStr} onChange={(e) => setMonthStr(e.target.value)} />
         </div>
       </div>
@@ -457,21 +458,21 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
         gap: 24, flexWrap: 'wrap',
       }}>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>Agency goal / mo</div>
+          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}><T k="pages.components.planning.productiongoalstab.d03716">Agency goal / mo</T></div>
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)' }}>
             {agencyGoal > 0 ? money(agencyGoal) : '—'}
           </div>
         </div>
         <div style={{ color: 'var(--qs-muted)', fontSize: 18 }}>=</div>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>Allocated</div>
+          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}><T k="pages.components.planning.productiongoalstab.030218">Allocated</T></div>
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-text)' }}>{money(allocated)}</div>
         </div>
         {agencyGoal > 0 && (
           <>
             <div style={{ color: 'var(--qs-muted)', fontSize: 18 }}>·</div>
             <div>
-              <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>Gap</div>
+              <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}><T k="pages.components.planning.productiongoalstab.466b98">Gap</T></div>
               <div style={{
                 fontSize: 18, fontWeight: 700,
                 color: Math.abs(gap) < 1 ? 'var(--qs-success, #059669)'
@@ -499,7 +500,7 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
             </button>
           ) : (
             <span style={{ fontSize: 12, color: 'var(--qs-dim)' }}>
-              Set an agency premium goal in Settings to enable allocation.
+              <T k="pages.components.planning.productiongoalstab.04d3f3">Set an agency premium goal in Settings to enable allocation.</T>
             </span>
           )}
         </div>

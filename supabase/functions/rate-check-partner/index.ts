@@ -168,8 +168,14 @@ function earnings(agencyScans: any[], promoterId: string, schedule: Record<strin
     const { tier, base } = tierOf(pages)
     if (!tier) return null
     const extras = Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base))
+    // "Stephen M.": first name as typed, last initial from the dec page's named insured
+    // (or a second word the customer typed), so the partner can tell their Stephens apart.
+    const typed = (sorted.find(s => s.first_name)?.first_name || '').trim().split(/\s+/)
+    const insured = (sorted.find(s => s.insured_name)?.insured_name || '').trim().split(/\s+/)
+    const lastWord = insured.length > 1 ? insured[insured.length - 1] : typed.length > 1 ? typed[typed.length - 1] : ''
     return {
-      first_name: (sorted.find(s => s.first_name)?.first_name || 'Someone').split(/\s+/)[0],
+      first_name: typed[0] || 'Someone',
+      last_initial: /^[A-Za-z]/.test(lastWord) ? lastWord[0].toUpperCase() : null,
       tier, label: LABEL[tier] + (extras ? ` + ${extras} extra` : ''),
       fee: schedule[tier] + extras * schedule.extra_line,
       firstAt: pages[0].created_at, month: monthKey(pages[0].created_at),
@@ -183,7 +189,7 @@ function earnings(agencyScans: any[], promoterId: string, schedule: Record<strin
   return Object.entries(months).map(([month, list]) => {
     const paying = list.filter(h => !h.pending)
     // The cap counts payable households in arrival order, like the staff tab.
-    const rows = paying.map((h, i) => ({ first_name: h.first_name, label: h.label, fee: cap && i >= cap ? 0 : h.fee, over_cap: !!(cap && i >= cap), at: h.firstAt }))
+    const rows = paying.map((h, i) => ({ first_name: h.first_name, last_initial: h.last_initial, label: h.label, fee: cap && i >= cap ? 0 : h.fee, over_cap: !!(cap && i >= cap), at: h.firstAt }))
     return {
       month, households: rows.length, pending: list.length - paying.length,
       earned: rows.reduce((t, r) => t + r.fee, 0), rows: rows.reverse(), pay_day: payDay(month),
@@ -352,7 +358,7 @@ Deno.serve(async (req) => {
     const [{ data: scans }, { data: payouts }] = await Promise.all([
       // Every partner-tagged scan in the agency (not test uploads): a household is credited
       // to the partner whose link sent its first page, as on the staff Partners tab.
-      supabase.from('rate_checks').select('id, promoter_id, phone, first_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at, call_confirmed_at')
+      supabase.from('rate_checks').select('id, promoter_id, phone, first_name, insured_name:extracted->>insured_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at, call_confirmed_at')
         .eq('agency_id', p.agency_id).eq('is_test', false).not('promoter_id', 'is', null).order('created_at', { ascending: true }).limit(5000),
       supabase.from('rate_check_promoter_payouts').select('period, amount, paid_at').eq('promoter_id', p.id),
     ])

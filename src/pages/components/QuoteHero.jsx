@@ -1,4 +1,5 @@
 // src/components/QuoteHero.jsx
+import { T } from '../../components/SiteCopy';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ZipHeroInput from '../../components/ZipHeroInput';
@@ -32,24 +33,24 @@ const QuoteHero = ({ isVisible }) => {
         {/* Strong, Opinionated Value Prop */}
         <div className="inline-block mb-6 px-6 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
           <p className="text-sm md:text-base font-semibold text-white/90">
-            Compare coverage, not just price
+            <T k="pages.components.quotehero.667dec">Compare coverage, not just price</T>
           </p>
         </div>
 
         <h1 className="text-5xl md:text-7xl font-black text-white mb-4 leading-tight">
-          Georgia Homeowners Are Saving
+          <T k="pages.components.quotehero.8896dc">Georgia Homeowners Are Saving</T>
           <br />
           <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent inline-block">
-            Up To $742 Per Year
+            <T k="pages.components.quotehero.d3967e">Up To $742 Per Year</T>
           </span>
         </h1>
 
         <p className="text-2xl md:text-3xl text-white/90 mb-2 font-bold">
-          On Home + Auto Insurance
+          <T k="pages.components.quotehero.adc374">On Home + Auto Insurance</T>
         </p>
 
         <p className="text-lg md:text-xl text-white/80 mb-8 font-medium max-w-3xl mx-auto leading-relaxed">
-          Check your eligibility in 30 seconds. No phone call required.
+          <T k="pages.components.quotehero.41be42">Check your eligibility in 30 seconds. No phone call required.</T>
         </p>
 
         {/* Inline ZIP Input - Above the fold */}
@@ -65,14 +66,14 @@ const QuoteHero = ({ isVisible }) => {
           <div className="flex items-center gap-1">
             <span className="text-accent-400 font-bold">4.9</span>
             <span className="text-accent-400">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-            <span className="font-semibold">rating</span>
+            <span className="font-semibold"><T k="pages.components.quotehero.2c5504">rating</T></span>
           </div>
           <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
-          <span className="font-semibold">Licensed Insurance Agency</span>
+          <span className="font-semibold"><T k="pages.components.quotehero.50ea84">Licensed Insurance Agency</T></span>
           <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
-          <span className="font-semibold">Serving GA Since 2015</span>
+          <span className="font-semibold"><T k="pages.components.quotehero.7e7c83">Serving GA Since 2015</T></span>
           <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
-          <span className="font-semibold">4,300+ Georgia families served</span>
+          <span className="font-semibold"><T k="pages.components.quotehero.ca30fa">4,300+ Georgia families served</T></span>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-base text-white/80">
@@ -82,7 +83,7 @@ const QuoteHero = ({ isVisible }) => {
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             </div>
-            <span className="font-semibold">Real coverage comparison</span>
+            <span className="font-semibold"><T k="pages.components.quotehero.9c8b94">Real coverage comparison</T></span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 bg-success-400 rounded-full flex items-center justify-center">
@@ -90,7 +91,7 @@ const QuoteHero = ({ isVisible }) => {
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             </div>
-            <span className="font-semibold">No spam calls</span>
+            <span className="font-semibold"><T k="pages.components.quotehero.dfe486">No spam calls</T></span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 bg-success-400 rounded-full flex items-center justify-center">
@@ -98,7 +99,7 @@ const QuoteHero = ({ isVisible }) => {
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             </div>
-            <span className="font-semibold">Takes 2 minutes</span>
+            <span className="font-semibold"><T k="pages.components.quotehero.5bbc77">Takes 2 minutes</T></span>
           </div>
         </div>
       </div>
@@ -125,17 +126,17 @@ const QuoteHero = ({ isVisible }) => {
         </div>
 
         <div className="text-center md:text-left">
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-2">I'm Cameron</h2>
-          <p className="text-xl text-white mb-4">Allstate Agency Owner in Georgia</p>
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-2"><T k="pages.components.quotehero.32775c">I'm Cameron</T></h2>
+          <p className="text-xl text-white mb-4"><T k="pages.components.quotehero.9f922c">Allstate Agency Owner in Georgia</T></p>
           <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-500">
             <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full font-semibold">
-              Licensed Agent
+              <T k="pages.components.quotehero.6d8711">Licensed Agent</T>
             </span>
             <span className="px-3 py-1 bg-success-100 text-success-700 rounded-full font-semibold">
-              Low Rates
+              <T k="pages.components.quotehero.3a313c">Low Rates</T>
             </span>
             <span className="px-3 py-1 bg-secondary-100 text-secondary-700 rounded-full font-semibold">
-              Great Service
+              <T k="pages.components.quotehero.ecf32e">Great Service</T>
             </span>
           </div>
         </div>

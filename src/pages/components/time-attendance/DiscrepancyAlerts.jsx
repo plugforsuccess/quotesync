@@ -4,6 +4,7 @@
 // Revised: Uses total handle time and answer rate as proxy indicators
 // for desk presence and engagement (RC does not export logged-in time).
 
+import { T } from '../../../components/SiteCopy';
 import { AlertTriangle, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 const SEVERITY_CONFIG = {
@@ -114,9 +115,9 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, role
       <div className="flex gap-3 p-4 rounded-lg border bg-qs-elevated border-qs-border">
         <Info className="w-5 h-5 mt-0.5 flex-shrink-0 text-qs-muted" />
         <div>
-          <p className="text-sm font-medium text-qs-text">No RingCentral data for this week</p>
+          <p className="text-sm font-medium text-qs-text"><T k="pages.components.timeattendance.discrepancyalerts.f3b45e">No RingCentral data for this week</T></p>
           <p className="text-xs text-qs-subtle mt-0.5">
-            Upload a RingCentral XLSX on the CS Performance tab to enable cross-check alerts.
+            <T k="pages.components.timeattendance.discrepancyalerts.bceb64">Upload a RingCentral XLSX on the CS Performance tab to enable cross-check alerts.</T>
           </p>
         </div>
       </div>
@@ -133,7 +134,7 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, role
     <div className="space-y-3">
       <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide flex items-center gap-2">
         <AlertTriangle className="w-4 h-4 text-amber-400" />
-        Cross-Check Alerts ({alerts.length})
+        <T k="pages.components.timeattendance.discrepancyalerts.e9a665">Cross-Check Alerts (</T>{alerts.length})
       </h4>
       {alerts.map((alert, i) => {
         const config = SEVERITY_CONFIG[alert.severity];
@@ -163,10 +164,10 @@ export function BonusVerificationAlert({ verificationData, month }) {
         <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-emerald-400" />
         <div>
           <p className="text-sm font-medium text-emerald-300">
-            All {verificationData.verified} reached attempts verified against RingCentral
+            <T k="pages.components.timeattendance.discrepancyalerts.b1c94c">All</T> {verificationData.verified} <T k="pages.components.timeattendance.discrepancyalerts.4aab36">reached attempts verified against RingCentral</T>
           </p>
           <p className="text-xs text-emerald-400 mt-0.5">
-            {month} — full bonus eligibility confirmed
+            {month} <T k="pages.components.timeattendance.discrepancyalerts.f430d0">— full bonus eligibility confirmed</T>
           </p>
         </div>
       </div>
@@ -180,10 +181,10 @@ export function BonusVerificationAlert({ verificationData, month }) {
           <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-400" />
           <div>
             <p className="text-sm font-medium text-red-300">
-              {verificationData.unverified} reached attempt{verificationData.unverified > 1 ? 's' : ''} not found in RingCentral
+              {verificationData.unverified} <T k="pages.components.timeattendance.discrepancyalerts.e03965">reached attempt</T>{verificationData.unverified > 1 ? 's' : ''} <T k="pages.components.timeattendance.discrepancyalerts.c738e9">not found in RingCentral</T>
             </p>
             <p className="text-xs text-red-400 mt-1">
-              These saves are ineligible for bonus until a matching outbound connected call is found.
+              <T k="pages.components.timeattendance.discrepancyalerts.5594d5">These saves are ineligible for bonus until a matching outbound connected call is found.</T>
             </p>
             <div className="mt-2 space-y-1">
               {(verificationData.attempts || [])
@@ -207,10 +208,10 @@ export function BonusVerificationAlert({ verificationData, month }) {
           <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0 text-amber-400" />
           <div>
             <p className="text-sm font-medium text-amber-300">
-              {verificationData.noPhone} case{verificationData.noPhone > 1 ? 's' : ''} missing phone number — cannot verify
+              {verificationData.noPhone} <T k="pages.components.timeattendance.discrepancyalerts.cd14c3">case</T>{verificationData.noPhone > 1 ? 's' : ''} <T k="pages.components.timeattendance.discrepancyalerts.04ed8e">missing phone number — cannot verify</T>
             </p>
             <p className="text-xs text-amber-400 mt-0.5">
-              Add phone numbers to these cases to enable RC verification.
+              <T k="pages.components.timeattendance.discrepancyalerts.16792c">Add phone numbers to these cases to enable RC verification.</T>
             </p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 // src/pages/DefensiveOverviewPage.jsx
 // Read-only overview of the Defensive Drivers Discount List (principal + staff).
+import { T } from '../components/SiteCopy';
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Loader2, ArrowRight } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function DefensiveOverviewPage() {
   }
   if (!user) return <Navigate to="/admin-access-8by2X" replace />;
   if (access && !access.isStaff && !access.isPrincipal) {
-    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6">You don’t have access to this dashboard.</div>;
+    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6"><T k="pages.defensiveoverviewpage.0f2fdf">You don’t have access to this dashboard.</T></div>;
   }
   if (error || !data) {
     return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6">{error || 'No data.'}</div>;
@@ -63,11 +64,11 @@ export default function DefensiveOverviewPage() {
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-black">Defensive Drivers — Overview</h1>
-            <p className="text-sm text-gray-400">Read-only summary of the discount queue.</p>
+            <h1 className="text-2xl font-black"><T k="pages.defensiveoverviewpage.74d705">Defensive Drivers — Overview</T></h1>
+            <p className="text-sm text-gray-400"><T k="pages.defensiveoverviewpage.aef1a0">Read-only summary of the discount queue.</T></p>
           </div>
           <Link to="/defensive-driving/queue" className="text-sm text-success-300 hover:text-success-200 flex items-center gap-1">
-            Open full list <ArrowRight className="w-4 h-4" />
+            <T k="pages.defensiveoverviewpage.e5442a">Open full list</T> <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -83,7 +84,7 @@ export default function DefensiveOverviewPage() {
 
         {/* Throughput */}
         <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 mb-8">
-          <h2 className="text-sm font-semibold mb-4">Throughput — last 12 weeks</h2>
+          <h2 className="text-sm font-semibold mb-4"><T k="pages.defensiveoverviewpage.2b6a51">Throughput — last 12 weeks</T></h2>
           <div style={{ width: '100%', height: 280 }}>
             <ResponsiveContainer>
               <BarChart data={data.throughput || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
@@ -101,21 +102,21 @@ export default function DefensiveOverviewPage() {
 
         {/* Staff workload */}
         <div className="rounded-xl border border-gray-800 overflow-hidden">
-          <div className="px-5 py-3 bg-gray-900/60 text-sm font-semibold">Staff workload</div>
+          <div className="px-5 py-3 bg-gray-900/60 text-sm font-semibold"><T k="pages.defensiveoverviewpage.1baa95">Staff workload</T></div>
           <table className="w-full text-sm">
             <thead className="bg-gray-900/40 text-gray-400 text-xs uppercase tracking-wide">
               <tr>
-                <th className="text-left px-5 py-2">Assignee</th>
-                <th className="text-right px-3 py-2">New</th>
-                <th className="text-right px-3 py-2">In review</th>
-                <th className="text-right px-3 py-2">Applied</th>
-                <th className="text-right px-3 py-2">Completed</th>
-                <th className="text-right px-5 py-2">Total</th>
+                <th className="text-left px-5 py-2"><T k="pages.defensiveoverviewpage.780f85">Assignee</T></th>
+                <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.03c2e7">New</T></th>
+                <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.e7c095">In review</T></th>
+                <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.733d43">Applied</T></th>
+                <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.07ca50">Completed</T></th>
+                <th className="text-right px-5 py-2"><T k="pages.defensiveoverviewpage.96b014">Total</T></th>
               </tr>
             </thead>
             <tbody>
               {(data.staff_workload || []).length === 0 && (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-500">No items yet.</td></tr>
+                <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-500"><T k="pages.defensiveoverviewpage.db5104">No items yet.</T></td></tr>
               )}
               {(data.staff_workload || []).map((w) => (
                 <tr key={w.assigned_to || 'unassigned'} className="border-t border-gray-800">

@@ -3,6 +3,7 @@
 // the follow-up text, reconnecting after a quote that came in high, and asking
 // someone to share the link. Each script copies in one tap; texts open Messages.
 
+import { T } from '../../../components/SiteCopy';
 import { MessageSquare } from 'lucide-react';
 import { CopyTextButton } from './Copyable';
 import SendPitch from './SendPitch';
@@ -97,11 +98,11 @@ export default function ScriptsTab() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <CopyTextButton text={s.text} className="h-9 w-[8.5rem] justify-center rounded-full px-3.5 text-sm font-semibold text-primary-600"
-                    style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>Copy</CopyTextButton>
+                    style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}><T k="pages.components.ratechecks.scriptstab.5fb635">Copy</T></CopyTextButton>
                   {s.kind === 'text' && (
                     <a href={`sms:?&body=${encodeURIComponent(s.text)}`} aria-label={`Text: ${s.name}`}
                       className="inline-flex h-9 w-[8.5rem] items-center justify-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
-                      <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text it
+                      <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.scriptstab.98ea21">Text it</T>
                     </a>
                   )}
                   {s.pitch && <SendPitch className="h-9 w-[8.5rem] justify-center rounded-full px-3.5" />}
@@ -113,7 +114,7 @@ export default function ScriptsTab() {
       ))}
 
       <section className="dark-card" style={{ padding: 16 }} aria-label="Tips">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>Tips</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.scriptstab.a0d4cc">Tips</T></h3>
         <ul className="mt-2 space-y-2.5">
           {TIPS.map(([lead, rest]) => (
             <li key={lead} className="text-sm leading-relaxed" style={{ color: 'var(--qs-text)' }}>
