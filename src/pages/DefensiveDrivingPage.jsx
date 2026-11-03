@@ -3,6 +3,7 @@
 // Consumer-site styling (royal-blue hero with the shared nav, white cards, deep-blue
 // headings, the brand green as the accent; no black). The enrollment card (magic-link sign-in / checkout) lives
 // in the hero (#enroll); CTAs throughout scroll to it.
+import { T } from '../components/SiteCopy';
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -63,7 +64,7 @@ export default function DefensiveDrivingPage() {
   }
   if (!course) {
     return <div className="min-h-screen bg-white text-[#0F2D6B] flex items-center justify-center p-6">
-      <p>This course isn’t available right now. {error}</p>
+      <p><T k="pages.defensivedrivingpage.08f6c9">This course isn’t available right now.</T> {error}</p>
     </div>;
   }
   const price = formatPrice(course.price_cents, course.currency);
@@ -79,33 +80,31 @@ export default function DefensiveDrivingPage() {
           <ConsumerNav current="drivers" />
           <div className="py-10 lg:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-start">
             <div>
-              <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white">← Drivers Ed</Link>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: ACCENT }}>Defensive Driving · Georgia</p>
+              <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white"><T k="pages.defensivedrivingpage.3401c4">← Drivers Ed</T></Link>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: ACCENT }}><T k="pages.defensivedrivingpage.9496f3">Defensive Driving · Georgia</T></p>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4">
                 {course.title}
               </h1>
               <p className="text-lg text-blue-100 max-w-xl mb-6">
-                A self-paced online defensive driving course built to help you earn an
-                auto-insurance premium discount. Complete the modules, pass the final exam,
-                and your certificate is forwarded to the agency automatically.
+                <T k="pages.defensivedrivingpage.4cdffd">A self-paced online defensive driving course built to help you earn an auto-insurance premium discount. Complete the modules, pass the final exam, and your certificate is forwarded to the agency automatically.</T>
               </p>
               <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-blue-50 mb-8">
                 {['100% online & self-paced', 'Progress saved automatically', 'Certificate forwarded for you'].map((t) => (
-                  <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4" style={{ color: ACCENT }} strokeWidth={3} /> {t}</li>
+                  <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4" style={{ color: ACCENT }} strokeWidth={3} /> <T>{t}</T></li>
                 ))}
               </ul>
               <div className="flex items-center gap-4">
                 <a href="#enroll" className="rounded-2xl px-7 py-3.5 text-base font-bold shadow-lg shadow-emerald-500/25 transition hover:brightness-95" style={{ background: ACCENT, color: DEEP }}>
-                  Enroll for {price}
+                  <T k="pages.defensivedrivingpage.6ba3ba">Enroll for</T> {price}
                 </a>
-                <span className="text-sm text-blue-100">One-time payment</span>
+                <span className="text-sm text-blue-100"><T k="pages.defensivedrivingpage.47455c">One-time payment</T></span>
               </div>
             </div>
 
             <div id="enroll" className="scroll-mt-24">
               {canceled && (
                 <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  Checkout was canceled. You can start again whenever you’re ready.
+                  <T k="pages.defensivedrivingpage.dbb35d">Checkout was canceled. You can start again whenever you’re ready.</T>
                 </div>
               )}
               <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} />
@@ -159,7 +158,7 @@ export default function DefensiveDrivingPage() {
           <div className="rounded-3xl border-2 bg-white p-8 shadow-[0_0_0_4px_rgba(57,255,136,0.18)]" style={{ borderColor: ACCENT }}>
             <div className="flex items-baseline justify-center gap-2 mb-5">
               <span className="text-5xl font-extrabold text-[#0F2D6B]">{price}</span>
-              <span className="text-sm text-slate-500">one-time</span>
+              <span className="text-sm text-slate-500"><T k="pages.defensivedrivingpage.771120">one-time</T></span>
             </div>
             <ul className="space-y-2.5 text-left max-w-sm mx-auto mb-7">
               {[
@@ -169,12 +168,12 @@ export default function DefensiveDrivingPage() {
                 'Valid for three years',
               ].map((t) => (
                 <li key={t} className="flex items-start gap-2.5 text-sm text-slate-700">
-                  <Check className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" strokeWidth={3} /> {t}
+                  <Check className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" strokeWidth={3} /> <T>{t}</T>
                 </li>
               ))}
             </ul>
             <a href="#enroll" className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white shadow-lg shadow-blue-700/25 transition">
-              <CreditCard className="w-4 h-4" /> Enroll now
+              <CreditCard className="w-4 h-4" /> <T k="pages.defensivedrivingpage.e3b2ff">Enroll now</T>
             </a>
           </div>
         </div>
@@ -191,7 +190,7 @@ export default function DefensiveDrivingPage() {
         <div className="max-w-6xl mx-auto px-4 pb-6 lg:px-8">
           <p className="text-xs text-slate-500 leading-relaxed">{course.compliance_label}</p>
           {course.is_dds_approved && course.dds_provider_no && (
-            <p className="text-xs text-slate-500 mt-2">DDS Provider #: {course.dds_provider_no}</p>
+            <p className="text-xs text-slate-500 mt-2"><T k="pages.defensivedrivingpage.8be54c">DDS Provider #:</T> {course.dds_provider_no}</p>
           )}
         </div>
         <RateCheckFooter wide />
@@ -240,15 +239,15 @@ function ModuleCard({ m, index }) {
         </span>
       </div>
       <p className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-blue-700">
-        Module {m.ordinal || index + 1}
-        {georgia && <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.1em]" style={{ background: 'rgba(57,255,136,0.18)', color: DEEP }}>Georgia law</span>}
+        <T k="pages.defensivedrivingpage.e55f75">Module</T> {m.ordinal || index + 1}
+        {georgia && <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.1em]" style={{ background: 'rgba(57,255,136,0.18)', color: DEEP }}><T k="pages.defensivedrivingpage.1426fa">Georgia law</T></span>}
       </p>
       <h3 className="text-lg font-extrabold leading-snug tracking-tight text-[#0F2D6B]">{m.title}</h3>
       {content?.summary && <p className="mt-2.5 pb-5 text-sm leading-relaxed text-slate-600">{content.summary}</p>}
       {lessons.length > 0 && (
         <div className="mt-auto border-t border-slate-100 pt-4">
           <p className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
-            <BookOpen className="h-3.5 w-3.5" /> {lessons.length} lessons
+            <BookOpen className="h-3.5 w-3.5" /> {lessons.length} <T k="pages.defensivedrivingpage.851adb">lessons</T>
           </p>
           <ul className="grid gap-1.5">
             {lessons.map((l) => (
@@ -276,8 +275,8 @@ const FAQ_ITEMS = [
 function SectionHeading({ eyebrow, title, center }) {
   return (
     <div className={`mb-8 ${center ? 'text-center' : ''}`}>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700 mb-2">{eyebrow}</p>
-      <h2 className="text-[28px] lg:text-[36px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]">{title}</h2>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700 mb-2"><T>{eyebrow}</T></p>
+      <h2 className="text-[28px] lg:text-[36px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T>{title}</T></h2>
     </div>
   );
 }
@@ -289,8 +288,8 @@ function Benefit({ icon, title, body }) {
       <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center mb-3">
         <Icon className="w-5 h-5 text-blue-700" />
       </div>
-      <p className="font-bold text-[#0F2D6B] mb-1">{title}</p>
-      <p className="text-sm text-slate-600 leading-relaxed">{body}</p>
+      <p className="font-bold text-[#0F2D6B] mb-1"><T>{title}</T></p>
+      <p className="text-sm text-slate-600 leading-relaxed"><T>{body}</T></p>
     </div>
   );
 }
@@ -303,8 +302,8 @@ function Step({ n, icon, title, body }) {
         <span className="flex h-10 w-10 items-center justify-center rounded-2xl text-base font-extrabold" style={{ background: DEEP, color: ACCENT }}>{n}</span>
         <Icon className="w-5 h-5 text-slate-300" />
       </div>
-      <p className="font-bold text-[#0F2D6B] mb-1">{title}</p>
-      <p className="text-sm text-slate-600 leading-relaxed">{body}</p>
+      <p className="font-bold text-[#0F2D6B] mb-1"><T>{title}</T></p>
+      <p className="text-sm text-slate-600 leading-relaxed"><T>{body}</T></p>
     </div>
   );
 }
@@ -318,10 +317,10 @@ function FAQ({ items }) {
           <button onClick={() => setOpen(open === i ? -1 : i)}
             className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
             aria-expanded={open === i}>
-            <span className="font-semibold text-[#0F2D6B]">{it.q}</span>
+            <span className="font-semibold text-[#0F2D6B]"><T>{it.q}</T></span>
             <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform ${open === i ? 'rotate-180' : ''}`} />
           </button>
-          {open === i && <p className="px-5 pb-5 -mt-1 text-sm text-slate-600 leading-relaxed">{it.a}</p>}
+          {open === i && <p className="px-5 pb-5 -mt-1 text-sm text-slate-600 leading-relaxed"><T>{it.a}</T></p>}
         </div>
       ))}
     </div>
@@ -335,14 +334,14 @@ function EnrollCard({ course, enrollment, user, profile }) {
     <div className="rounded-3xl bg-white p-6 text-slate-700 shadow-2xl shadow-blue-950/30 sm:p-7">
       <div className="flex items-baseline gap-2 mb-4">
         <span className="text-3xl font-extrabold text-[#0F2D6B]">{formatPrice(course.price_cents, course.currency)}</span>
-        <span className="text-xs text-slate-500">one-time</span>
+        <span className="text-xs text-slate-500"><T k="pages.defensivedrivingpage.771120">one-time</T></span>
       </div>
       {hasAccess ? (
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-emerald-700">You’re enrolled.</p>
+          <p className="text-sm font-semibold text-emerald-700"><T k="pages.defensivedrivingpage.de80cb">You’re enrolled.</T></p>
           <Link to="/courses/defensive-driving/portal"
             className="block text-center w-full rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white transition">
-            Go to your course
+            <T k="pages.defensivedrivingpage.21acac">Go to your course</T>
           </Link>
         </div>
       ) : user ? (
@@ -380,20 +379,20 @@ function EnrollForm({ course, defaultName }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <p className="text-xs text-slate-500">Enter your legal details exactly as they should appear on your certificate.</p>
+      <p className="text-xs text-slate-500"><T k="pages.defensivedrivingpage.d7c784">Enter your legal details exactly as they should appear on your certificate.</T></p>
       <Field label="Legal name" value={studentName} onChange={setStudentName} placeholder="First Middle Last" autoComplete="name" />
       <Field label="Driver license number" value={dln} onChange={(v) => setDln(v.toUpperCase())} placeholder="GA DLN" />
       <Field label="Date of birth" type="date" value={dob} onChange={setDob} />
       <label className="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
         <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-blue-700" />
-        <span>I agree to the <Link to="/terms#course-refunds" target="_blank" className="font-semibold text-blue-700 underline">terms and refund policy</Link>. I understand this course is not DDS-certified and any insurance discount is up to my insurer.</span>
+        <span data-copy="fixed">I agree to the <Link to="/terms#course-refunds" target="_blank" className="font-semibold text-blue-700 underline">terms and refund policy</Link>. I understand this course is not DDS-certified and any insurance discount is up to my insurer.</span>
       </label>
       {error && <p className="flex items-start gap-2 text-xs font-medium text-red-700"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
       <button type="submit" disabled={submitting}
         className="w-full rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white transition flex items-center justify-center gap-2">
-        {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting…</> : 'Enroll & Pay'}
+        {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingpage.15f045">Redirecting…</T></> : 'Enroll & Pay'}
       </button>
-      <p className="text-[11px] text-slate-500 text-center">Secure checkout with Stripe.</p>
+      <p className="text-[11px] text-slate-500 text-center"><T k="pages.defensivedrivingpage.21180b">Secure checkout with Stripe.</T></p>
     </form>
   );
 }
@@ -482,7 +481,7 @@ function AuthPanel() {
       <Field label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
 
       <label className="block">
-        <span className="block text-xs font-semibold text-slate-600 mb-1">Password</span>
+        <span className="block text-xs font-semibold text-slate-600 mb-1"><T k="pages.defensivedrivingpage.dc647e">Password</T></span>
         <div className="relative">
           <input
             type={showPw ? 'text' : 'password'}
@@ -496,7 +495,7 @@ function AuthPanel() {
             {showPw ? 'Hide' : 'Show'}
           </button>
         </div>
-        {isCreate && <span className="mt-1 block text-[11px] text-slate-500">At least 6 characters. Write it down somewhere safe.</span>}
+        {isCreate && <span className="mt-1 block text-[11px] text-slate-500"><T k="pages.defensivedrivingpage.832a90">At least 6 characters. Write it down somewhere safe.</T></span>}
       </label>
 
       {error && <p className="flex items-start gap-2 text-xs font-medium text-red-700"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
@@ -516,7 +515,7 @@ function AuthPanel() {
           {isCreate ? 'Sign in' : 'Create an account'}
         </button>
       </p>
-      <p className="text-xs text-slate-500 text-center pt-1">Need help? Call <a href="tel:+17707861616" className="text-blue-700 font-semibold">(770) 786-1616</a></p>
+      <p className="text-xs text-slate-500 text-center pt-1"><T k="pages.defensivedrivingpage.0e2384">Need help? Call</T> <a href="tel:+17707861616" className="text-blue-700 font-semibold">(770) 786-1616</a></p>
     </form>
   );
 }

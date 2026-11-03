@@ -37,6 +37,8 @@ function mark(file) {
           const t = tagName(a.node);
           if (SKIP_TAGS.has(t)) return;
           if (a.node.openingElement.attributes.some(x => x.type === 'JSXAttribute' && x.name.name === 'dangerouslySetInnerHTML')) return;
+          // Consent and legal wording is versioned; it's marked data-copy="fixed" and stays as written.
+          if (a.node.openingElement.attributes.some(x => x.type === 'JSXAttribute' && x.name.name === 'data-copy')) return;
         }
       }
       // Plain whitespace only: a non-breaking space is part of the text and stays inside.

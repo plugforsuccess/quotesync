@@ -1,6 +1,7 @@
 // src/components/newsroom/StoryCard.jsx
 // Story card component for newsroom feed with video embedding and analytics
 
+import { T } from '../SiteCopy';
 import { useState, useEffect, useRef } from 'react';
 import { Share2, ExternalLink, ChevronRight } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
@@ -140,7 +141,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
       {story.is_featured && (
         <div className="mb-3">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-accent-100 text-accent-800 border border-accent-200">
-            ⭐ Featured
+            <T k="components.newsroom.storycard.52254f">⭐ Featured</T>
           </span>
         </div>
       )}
@@ -153,7 +154,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
       {/* Author Byline */}
       {story.author_name && (
         <div className="text-sm text-gray-600 mb-3">
-          By <span className="font-medium text-gray-900">{story.author_name}</span>
+          <T k="components.newsroom.storycard.53e5aa">By</T> <span className="font-medium text-gray-900">{story.author_name}</span>
         </div>
       )}
 
@@ -167,7 +168,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
         onClick={handleReadMore}
         className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-semibold text-sm mb-4 transition-colors"
       >
-        Read more
+        <T k="components.newsroom.storycard.43340e">Read more</T>
         <ChevronRight className="w-4 h-4" />
       </button>
 
@@ -186,7 +187,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
           {story.source_name && (
             <div className="mt-2 flex items-center text-xs text-gray-500">
               <ExternalLink className="w-3 h-3 mr-1" />
-              <span>Source: {story.source_name}</span>
+              <span><T k="components.newsroom.storycard.77c8b9">Source:</T> {story.source_name}</span>
               {story.source_url && (
                 <a
                   href={story.source_url}
@@ -195,7 +196,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
                   className="ml-1 underline hover:text-gray-700"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  View original
+                  <T k="components.newsroom.storycard.773c80">View original</T>
                 </a>
               )}
             </div>
@@ -229,7 +230,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
           className="flex items-center gap-1 text-gray-600 hover:text-gray-800 transition-colors"
         >
           <Share2 className="w-4 h-4" />
-          <span>Share</span>
+          <span><T k="components.newsroom.storycard.5a95a4">Share</T></span>
         </button>
       </div>
     </div>

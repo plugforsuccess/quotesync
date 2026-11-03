@@ -1,6 +1,7 @@
 // src/pages/NewsroomPage.jsx
 // Main newsroom feed with infinite scroll and story filtering
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import StoryCard from '../components/newsroom/StoryCard';
 import StoryModal from '../components/newsroom/StoryModal';
@@ -173,18 +174,18 @@ const NewsroomPage = () => {
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight mb-1.5">
-                Newsroom
+                <T k="pages.newsroompage.ca4bba">Newsroom</T>
               </h1>
               <p className="text-sm text-gray-700 font-medium leading-snug">
-                Help, real stories and Georgia news from Cam Wiley Agency
-                {updated && <span className="text-gray-500 font-normal"> · Updated {updated}</span>}
+                <T k="pages.newsroompage.bf44bb">Help, real stories and Georgia news from Cam Wiley Agency</T>
+                {updated && <span className="text-gray-500 font-normal"> <T k="pages.newsroompage.c91702">· Updated</T> {updated}</span>}
               </p>
             </div>
           </div>
 
           {/* Category Filter - Editorial sections style */}
           <div className="flex items-center gap-1 overflow-x-auto pb-2 pt-2 border-t border-gray-200/50 lg:flex-wrap lg:overflow-visible">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mr-2 flex-shrink-0">Sections</span>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mr-2 flex-shrink-0"><T k="pages.newsroompage.855c3e">Sections</T></span>
             {categories.map((cat) => (
               <button
                 key={cat.value}
@@ -209,7 +210,7 @@ const NewsroomPage = () => {
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-              <p className="text-gray-600">Loading stories...</p>
+              <p className="text-gray-600"><T k="pages.newsroompage.6154a5">Loading stories...</T></p>
             </div>
           </div>
         ) : stories.length === 0 ? (
@@ -217,9 +218,9 @@ const NewsroomPage = () => {
           <div className="flex items-center justify-center py-20">
             <div className="text-center max-w-md">
               <div className="text-6xl mb-4">📰</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">No Stories Yet</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.newsroompage.b1c61a">No Stories Yet</T></h2>
               <p className="text-gray-600">
-                Check back soon.
+                <T k="pages.newsroompage.47cf04">Check back soon.</T>
               </p>
             </div>
           </div>
@@ -240,19 +241,19 @@ const NewsroomPage = () => {
             {hasMore && (
               <div ref={loadMoreRef} className="py-8 text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                <p className="text-gray-500 text-sm mt-2">Loading more stories...</p>
+                <p className="text-gray-500 text-sm mt-2"><T k="pages.newsroompage.ca0146">Loading more stories...</T></p>
               </div>
             )}
 
             {/* End of feed - using primary brand color */}
             {!hasMore && stories.length > 0 && (
               <div className="py-8 text-center border-t border-gray-200">
-                <p className="text-gray-500">You've reached the end of the feed</p>
+                <p className="text-gray-500"><T k="pages.newsroompage.b92fa8">You've reached the end of the feed</T></p>
                 <button
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                   className="mt-3 text-primary-600 hover:text-primary-700 font-medium text-sm"
                 >
-                  Back to top ↑
+                  <T k="pages.newsroompage.ab0463">Back to top ↑</T>
                 </button>
               </div>
             )}
