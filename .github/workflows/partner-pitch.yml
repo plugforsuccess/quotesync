@@ -1,0 +1,49 @@
+# Keeps the partner-pitch screenshots (public/partner-pitch) matching the site.
+# After every change to the site on main, it builds the site, retakes the four
+# screenshots with sample data, and commits them if anything changed. That commit
+# deploys like any other, so the pictures a new partner receives are always current.
+name: Partner pitch screenshots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/logos/**'
+      - 'index.html'
+      - 'tailwind.config.*'
+      - 'scripts/partner-pitch.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build
+        run: npx vite build
+        env:
+          VITE_SUPABASE_URL: https://ghnpzllykteelveezhnv.supabase.co
+          VITE_SUPABASE_ANON_KEY: screenshots-only
+      - name: Retake screenshots
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          for i in $(seq 1 30); do curl -sf http://localhost:4173 >/dev/null && break; sleep 1; done
+          node scripts/partner-pitch.cjs http://localhost:4173
+      - name: Commit if changed
+        run: |
+          git add public/partner-pitch
+          if git diff --cached --quiet; then echo "No change"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Partner pitch screenshots: retaken from the current site"
+          git push
