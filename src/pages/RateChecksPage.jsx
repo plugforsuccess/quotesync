@@ -308,10 +308,10 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
 
       {/* What they pay now (labeled), then the price with the text button and Start quote. */}
-      <p className="mt-3 text-xs" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
-      <div className="flex items-center justify-between gap-3">
+      <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
+      <div className="mt-1 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-lg font-bold leading-7 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
+          <p className="text-lg font-bold leading-6 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
           {!open && h.delta != null && <p className="text-sm"><Savings delta={h.delta} /></p>}
         </div>
         {open ? (

@@ -11,13 +11,16 @@ import { getCategoryLabel, getCategoryContextMessage, getTagLabel, getTagColor }
  * Format body text with basic paragraph support
  * In production, you might want to use a markdown renderer
  */
+// Blank lines separate paragraphs; a single line break stays a line break.
 const formatBody = (body) => {
-  return body.split('\n\n').map((paragraph, index) => (
+  return (body || '').split(/\n\s*\n/).filter((p) => p.trim()).map((paragraph, index) => (
     <p key={index} className="mb-4">
-      {paragraph}
+      {paragraph.split('\n').map((line, i) => <span key={i}>{i > 0 && <br />}{line}</span>)}
     </p>
   ));
 };
+
+const AGENCY_SMS = '+17707861616';
 
 const StoryModal = ({ story, isOpen, onClose }) => {
   // Close on ESC key
@@ -46,11 +49,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
 
     // Navigate after closing modal
     setTimeout(() => {
-      if (ctaType === 'compare_policy') {
-        window.location.href = '/';
-      } else if (ctaType === 'webinar') {
-        window.location.href = '/courses';
-      }
+      if (ctaType === 'compare_policy') window.location.href = '/';
     }, 300);
   };
 
@@ -157,11 +156,10 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               {/* "Why this matters" section */}
               <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">
-                  Why This Matters for Georgia Drivers
+                  Why this matters
                 </h2>
                 <p className="text-gray-700 leading-relaxed">
-                  Understanding these developments helps you make informed decisions about your coverage.
-                  {getCategoryContextMessage(story.category) && ` ${getCategoryContextMessage(story.category)}`}
+                  {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
                 </p>
               </div>
 
@@ -189,22 +187,24 @@ const StoryModal = ({ story, isOpen, onClose }) => {
 
               {/* CTA Block */}
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  Take Action
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  Does this touch your policy?
                 </h3>
+                <p className="text-sm text-gray-600 mb-4">Send your declarations page and a licensed agent will check it, or text Cam the question.</p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={() => handleCTAClick('compare_policy')}
                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                   >
-                    Compare Your Policy
+                    Upload my policy
                   </button>
-                  <button
-                    onClick={() => handleCTAClick('webinar')}
-                    className="flex-1 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-6 rounded-lg border border-gray-300 transition-colors"
+                  <a
+                    href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}
+                    onClick={() => trackNewsroomCTAClick(story, 'text_cam')}
+                    className="flex-1 text-center bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-6 rounded-lg border border-gray-300 transition-colors"
                   >
-                    Join Next Live Breakdown
-                  </button>
+                    Text Cam
+                  </a>
                 </div>
               </div>
             </div>

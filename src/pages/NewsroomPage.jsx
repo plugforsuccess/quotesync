@@ -2,7 +2,6 @@
 // Main newsroom feed with infinite scroll and story filtering
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import StoryCard from '../components/newsroom/StoryCard';
 import StoryModal from '../components/newsroom/StoryModal';
 import { supabase } from '../lib/supabase';
@@ -22,9 +21,7 @@ const NewsroomPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const observerRef = useRef(null);
   const loadMoreRef = useRef(null);
-  const navigate = useNavigate();
 
   // Track feed view on mount
   useEffect(() => {
@@ -158,14 +155,16 @@ const NewsroomPage = () => {
 
   // Get categories from centralized config (with "All Stories" option)
   const categories = getCategoryOptions(true);
+  const newest = stories.reduce((d, s) => (s.published_at && (!d || s.published_at > d) ? s.published_at : d), null);
+  const updated = newest ? new Date(newest).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <title>Insurance News & Resources | insuredbycam Newsroom</title>
-      <meta name="description" content="Georgia insurance news, coverage tips, and resources from Cameron at insuredbycam. Stay informed about auto, home, and renters insurance." />
+      <meta name="description" content="Plain-language help, real client stories and Georgia insurance news from Cam Wiley Agency, an Allstate agency serving all of Georgia." />
       <meta property="og:type" content="website" />
       <meta property="og:title" content="Newsroom | insuredbycam" />
-      <meta property="og:description" content="Insurance news, tips, and resources for Georgia residents." />
+      <meta property="og:description" content="Help, real stories and Georgia insurance news from Cam Wiley Agency." />
       <meta property="og:url" content="https://insuredbycam.com/news" />
       <link rel="canonical" href="https://insuredbycam.com/news" />
       {/* Header with subtle brand gradient */}
@@ -173,25 +172,12 @@ const NewsroomPage = () => {
         <div className="max-w-4xl mx-auto px-4 py-5">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              {/* Live updates indicator */}
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center gap-1.5">
-                  <div className="relative flex items-center justify-center">
-                    <span className="absolute inline-flex h-3 w-3 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </div>
-                  <span className="text-xs font-semibold text-emerald-700 tracking-wide uppercase">Live updates</span>
-                </div>
-              </div>
-
-              {/* Main headline - stronger hierarchy */}
               <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight mb-1.5">
-                Insurance Newsroom
+                Newsroom
               </h1>
-
-              {/* Tighter editorial subhead */}
               <p className="text-sm text-gray-700 font-medium leading-snug">
-                Real-time coverage intelligence for Georgia drivers
+                Help, real stories and Georgia news from Cam Wiley Agency
+                {updated && <span className="text-gray-500 font-normal"> · Updated {updated}</span>}
               </p>
             </div>
           </div>
@@ -233,7 +219,7 @@ const NewsroomPage = () => {
               <div className="text-6xl mb-4">📰</div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">No Stories Yet</h2>
               <p className="text-gray-600">
-                Check back soon for the latest insurance news and updates for Georgia drivers.
+                Check back soon.
               </p>
             </div>
           </div>

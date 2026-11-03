@@ -24,7 +24,7 @@ function StorePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
       <title>Insurance Resources & Courses | insuredbycam Store</title>
-      <meta name="description" content="Drivers ed courses, insurance guides, and resources for Georgia drivers. Defensive driving and Georgia-approved Joshua's Law courses." />
+      <meta name="description" content="Drivers ed courses, insurance guides, and resources for Georgia drivers. Georgia-approved defensive driving and Joshua's Law courses." />
       <meta property="og:type" content="website" />
       <meta property="og:title" content="Store | insuredbycam" />
       <meta property="og:url" content="https://insuredbycam.com/store" />
