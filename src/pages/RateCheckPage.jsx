@@ -51,20 +51,20 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', license: '209488' };
 // "Meet the Owner" carousel: three photos, each with its story underneath.
-// Family first (it backs up "Family comes first" just above), then the agency, then the court.
+// Family first (it backs up "Family comes first" just above), then the court, then the agency.
 // { key, photo, alt, caption, position, paragraphs? }
 const ABOUT = [
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his mom, dad and sister at his cousin’s wedding', caption: 'My family: Mom, Dad and my sister at my cousin’s wedding', position: '50% 35%' },
-  // From Cam's Allstate agent bio, condensed; statewide, not one town.
-  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
-    'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
-    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
-  ] },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
   { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%', paragraphs: [
     'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
+  ] },
+  // From Cam's Allstate agent bio, condensed; statewide, not one town.
+  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
+    'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
+    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
 ];
 
