@@ -65,7 +65,7 @@ const ABOUT = [
   { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
     'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
-  ] },
+  ], cta: true },
 ];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -1091,19 +1091,29 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
-function MeetCam() {
+function MeetCam({ onUpload }) {
   // Each slide: the photo with its caption, then its story (if it has one) underneath.
   const slides = ABOUT.map(a => ({
     key: a.key, label: a.caption, untitled: true, bare: true,
     content: (
       <figure className="flex h-full min-h-[300px] flex-col text-left">
-        <div className={`relative ${a.paragraphs ? 'h-56 shrink-0' : 'flex-1'}`}>
+        <div className={`relative ${a.cta ? 'h-44 shrink-0' : a.paragraphs ? 'h-56 shrink-0' : 'flex-1'}`}>
           <img src={a.photo} alt={a.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.position }} />
           <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-sm font-semibold text-white"><T k={`rc.about.${a.key}.caption`}>{a.caption}</T></figcaption>
         </div>
         {a.paragraphs && (
-          <div className="space-y-2.5 px-4 py-4 text-[15px] leading-relaxed text-slate-700">
+          <div className={`space-y-2.5 px-4 text-[15px] leading-relaxed text-slate-700 ${a.cta ? 'pb-3 pt-3.5' : 'py-4'}`}>
             {a.paragraphs.map((t, i) => <p key={i}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
+          </div>
+        )}
+        {a.cta && (
+          <div className="mx-3 mb-3 mt-auto rounded-xl p-3.5" style={{ background: HERO_BG }}>
+            <p className="text-base font-extrabold leading-snug text-white [&_b]:text-[#39FF88]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
+            <p className="mt-1 text-sm leading-snug text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
+            <button type="button" onClick={onUpload}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#39FF88] px-4 py-2.5 text-[15px] font-bold text-[#0F2D6B] active:bg-[#2ee87a]">
+              <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
+            </button>
           </div>
         )}
       </figure>
@@ -1426,7 +1436,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
               <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Agency, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
             </p>
           </div>
-          <div className="min-w-0"><MeetCam /></div>
+          <div className="min-w-0"><MeetCam onUpload={onUpload} /></div>
         </div>
       </section>
 
