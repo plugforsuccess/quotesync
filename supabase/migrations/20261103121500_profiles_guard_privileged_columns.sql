@@ -25,7 +25,6 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS profiles_guard_privileged_trigger ON public.profiles;
 CREATE TRIGGER profiles_guard_privileged_trigger
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.profiles_guard_privileged();
