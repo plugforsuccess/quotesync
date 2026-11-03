@@ -138,3 +138,30 @@ test('typing a space in a button label edits the text and does not press the but
   await page.waitForTimeout(300);
   expect(pickers).toBe(0);
 });
+
+// On an iPhone, tapping blank space or the Done editing button doesn't take focus off the
+// line, so blur never fires. The edit must still save: a moment after typing stops, and
+// when edit mode closes.
+test('an edit saves without tapping away: after a pause, and on Done editing', async ({ page }) => {
+  const writes = await mock(page, { loggedIn: true });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Edit this page' }).click();
+  const line = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
+  await line.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' today');
+  // No blur: it saves once typing stops.
+  await expect.poll(() => writes.length, { timeout: 4000 }).toBe(1);
+  expect(writes[0].body).toMatchObject({ key: 'rc.products.heading', value: 'Products we insure today' });
+
+  // Typed, then straight to Done editing, with focus never leaving the line.
+  await line.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type('!');
+  await page.evaluate(() => {
+    const done = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Done editing'));
+    done.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await expect.poll(() => writes.length).toBe(2);
+  expect(writes[1].body).toMatchObject({ key: 'rc.products.heading', value: 'Products we insure today!' });
+});
