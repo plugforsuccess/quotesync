@@ -465,7 +465,7 @@ function Earnings({ token, data, onChange }) {
               </tr>
               {m.rows.map((r, i) => (
                 <tr key={i} className="border-t border-slate-100">
-                  <td className="px-3 py-2.5 font-semibold text-[#0F2D6B]">{r.first_name}</td>
+                  <td className="px-3 py-2.5 font-semibold text-[#0F2D6B]">{r.first_name}{r.last_initial ? ` ${r.last_initial}.` : ''}</td>
                   <td className="px-3 py-2.5 text-slate-600">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</td>
                 </tr>
               ))}

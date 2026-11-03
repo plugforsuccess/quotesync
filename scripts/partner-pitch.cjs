@@ -18,7 +18,7 @@ const LAUNCH = process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.P
 
 const month = (d) => d.toLocaleDateString('en-CA').slice(0, 7);
 const back = (n) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - n); return month(d); };
-const row = (first_name, label, fee) => ({ first_name, label, fee, over_cap: false });
+const row = (name, label, fee) => ({ first_name: name.split(' ')[0], last_initial: name.split(' ')[1] || null, label, fee, over_cap: false });
 const portal = () => ({
   first_name: 'Alex', name: 'Alex Johnson', agency_name: 'Cam Wiley Agency, Inc.', active: true, code: 'ALEX2026',
   agreement: { required: false, version: 'partner-v2', text: null, signed: false, signed_at: null },
@@ -27,11 +27,11 @@ const portal = () => ({
   w9: { on_file: true, tin_type: 'ssn', last4: '1234', signed_at: `${back(2)}-02T15:00:00Z`, revision: 'Rev. March 2024', prefill: {} },
   months: [
     { month: back(0), households: 3, pending: 2, earned: 70, paid: null,
-      rows: [row('Stephen', 'Auto + home or condo', 45), row('Ana', 'Auto only', 10), row('Marcus', 'Auto + renters', 15)] },
+      rows: [row('Stephen M', 'Auto + home or condo', 45), row('Ana R', 'Auto only', 10), row('Marcus T', 'Auto + renters', 15)] },
     { month: back(1), households: 4, pending: 3, earned: 85, paid: { amount: 85, paid_at: `${back(0)}-21T15:00:00Z` },
-      rows: [row('Lee', 'Auto + home or condo', 45), row('Dana', 'Home or condo only', 15), row('Chris', 'Auto only', 10), row('Tasha', 'Auto + renters', 15)] },
+      rows: [row('Lee P', 'Auto + home or condo', 45), row('Dana W', 'Home or condo only', 15), row('Chris B', 'Auto only', 10), row('Tasha K', 'Auto + renters', 15)] },
     { month: back(2), households: 2, pending: 0, earned: 55, paid: { amount: 55, paid_at: `${back(1)}-21T15:00:00Z` },
-      rows: [row('Jordan', 'Auto + home or condo', 45), row('Kim', 'Auto only', 10)] },
+      rows: [row('Jordan S', 'Auto + home or condo', 45), row('Kim L', 'Auto only', 10)] },
   ],
 });
 

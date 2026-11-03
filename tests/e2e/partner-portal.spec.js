@@ -146,7 +146,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
     w9: { on_file: true, tin_type: 'ssn', last4: '1234', signed_at: '2026-10-01T12:00:00Z', revision: 'Rev. March 2024', prefill: {} },
     months: [
       { month: thisMonth, households: 2, earned: 55, paid: null, rows: [
-        { first_name: 'Stephen', label: 'Auto + home or condo', fee: 45, over_cap: false },
+        { first_name: 'Stephen', last_initial: 'M', label: 'Auto + home or condo', fee: 45, over_cap: false },
         { first_name: 'Ana', label: 'Auto only', fee: 10, over_cap: false }] },
       { month: lastMonth, households: 1, earned: 15, paid: { amount: 15, paid_at: '2026-10-21T15:00:00Z' }, rows: [
         { first_name: 'Lee', label: 'Auto + renters', fee: 15, over_cap: false }] },
@@ -160,7 +160,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
   const earnings = page.getByRole('row', { name: 'Earnings $15.00' });
   await expect(earnings).toBeVisible();
   await expect(page.getByText('$15.00', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('Stephen')).toBeVisible();
+  await expect(page.getByText('Stephen M.')).toBeVisible();
   await expect(page.getByText('$45')).toHaveCount(0);
   await expect(page.getByText('$55')).toHaveCount(0);
 });
