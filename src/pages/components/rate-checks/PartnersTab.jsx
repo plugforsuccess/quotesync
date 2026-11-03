@@ -344,8 +344,9 @@ function PartnerPhoto({ promoter: p, canEdit }) {
       </button>
       {canEdit && (
         <button type="button" onClick={() => (photo ? setPhoto.mutate({ promoter: p, dataUrl: null }) : input.current?.click())}
-          disabled={setPhoto.isPending} className="text-[11px] font-semibold text-primary-600">
-          {setPhoto.isPending ? 'Saving…' : photo ? 'Remove photo' : 'Add photo'}
+          disabled={setPhoto.isPending} className="text-[11px] font-semibold text-primary-600"
+          aria-label={photo ? `Remove ${first}'s photo` : `Add ${first}'s photo`}>
+          {setPhoto.isPending ? 'Saving…' : photo ? 'Remove' : 'Add photo'}
         </button>
       )}
       {error && <p className="max-w-[7rem] text-center text-[11px] text-red-500">{error}</p>}
