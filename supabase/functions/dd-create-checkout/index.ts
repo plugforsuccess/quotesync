@@ -147,8 +147,9 @@ Deno.serve(async (req) => {
 
     const base = (Deno.env.get('SITE_URL') || req.headers.get('origin') || 'https://insuredbycam.com').replace(/\/$/, '')
 
-    // TEST BYPASS: activate without payment when enabled on the course.
-    if (course.allow_test_bypass) {
+    // TEST BYPASS: activate without payment when enabled on the course. Never with a
+    // live Stripe key: real payments configured means real students.
+    if (course.allow_test_bypass && !String(STRIPE_SECRET_KEY || '').startsWith('sk_live')) {
       await supabase
         .from('dd_enrollments')
         .update({ status: 'active', purchased_at: new Date().toISOString() })
