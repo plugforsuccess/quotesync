@@ -1273,11 +1273,11 @@ function OwnerDetails({ className }) {
     <dl className={className}>
       <div>
         <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Owner</dt>
-        <dd className="whitespace-nowrap text-sm font-semibold text-white">{AGENT.name}</dd>
+        <dd className="whitespace-nowrap text-sm font-semibold text-blue-200/80">{AGENT.name}</dd>
       </div>
       <div>
         <dt className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Agency license</dt>
-        <dd className="text-sm font-semibold tabular-nums text-white">#{AGENCY.license}</dd>
+        <dd className="text-sm font-semibold tabular-nums text-blue-200/80">#{AGENCY.license}</dd>
       </div>
     </dl>
   );
