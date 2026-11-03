@@ -225,12 +225,15 @@ function EditableText({ k, text, fallback, edited, save, fail }) {
   const current = useRef(text);
   current.current = text;
   const timer = useRef(null);
-  const finish = () => {
+  const finish = (paused = false) => {
     clearTimeout(timer.current);
     timer.current = null;
     if (!ref.current) return;
     const next = (ref.current.textContent || '').replace(/\s+/g, ' ').trim();
     if (next === current.current) return;
+    // A line emptied mid-edit (select all, then a pause before typing) isn't a reset:
+    // only clearing it and leaving brings back the original.
+    if (paused && next === '') return;
     if (next.length > limit) {
       // Keep what they typed so nothing is lost; it isn't saved until it fits (Esc undoes).
       fail(`That’s ${next.length} characters; this line fits ${limit}. Shorten it, or press Esc to undo.`);
@@ -268,7 +271,7 @@ function EditableText({ k, text, fallback, edited, save, fail }) {
         document.execCommand('insertText', false, plain);
       }}
       onDrop={e => e.preventDefault()}
-      onInput={() => { clearTimeout(timer.current); timer.current = setTimeout(() => finishRef.current(), 1200); }}
+      onInput={() => { clearTimeout(timer.current); timer.current = setTimeout(() => finishRef.current(true), 1200); }}
       onKeyDown={e => {
         e.stopPropagation();
         // Space inside a button's label would press the button (open the camera, etc.):
