@@ -460,7 +460,7 @@ function Earnings({ token, data, onChange }) {
             <tbody key={m.month}>
               <tr className="border-t border-slate-200 bg-slate-50">
                 <th scope="colgroup" colSpan={2} className="px-3 py-2.5 text-left">
-                  <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</span>
+                  <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)}</span>
                 </th>
               </tr>
               {m.rows.map((r, i) => (
