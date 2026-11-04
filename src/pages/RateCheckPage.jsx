@@ -1399,9 +1399,9 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
           <T k="rc.upload.line">PDF, photos or screenshots</T><span className="hidden lg:inline"> · or drag your PDF here</span>
         </p>
       </div>
-      <p className="mt-3 flex items-start gap-2.5 rounded-2xl bg-blue-50 px-3.5 py-3 text-left text-sm leading-snug text-[#0F2D6B]">
-        <Layers className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" />
-        <span><T k="rc.upload.multi">**Have more than one policy?** Select them all at once: auto, home, renters, umbrella. Checking them together saves the most.</T></span>
+      <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[13px] text-slate-500">
+        <Layers className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <T k="rc.upload.multi">Have several policies? Select them all at once.</T>
       </p>
       <button type="button" onClick={onCamera}
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 active:bg-slate-50">
