@@ -882,13 +882,13 @@ function PriceDrop({ current, price, market }) {
 function ReviewAsk({ rc, review }) {
   const sent = review?.ok || !!rc.review_requested_at;
   if (sent) {
-    return <p className="mt-2 flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-text)' }}><Star className="h-4 w-4" /> <T k="rc.desk.review.sent">Thank-you and review request texted.</T></p>;
+    return <p className="mt-2 flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-text)' }}><Star className="h-4 w-4" /> <T k="rc.desk.review.sent">Thank-you and Google review request texted.</T></p>;
   }
   if (!rc.phone) return null;
   return (
     <a href={smsHref(rc.phone, customerReviewText(rc.first_name))}
       className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
-      <Star className="h-4 w-4" /> <T k="rc.desk.review.ask">Text them the review request</T>
+      <Star className="h-4 w-4" /> <T k="rc.desk.review.ask">Text them the Google review request</T>
     </a>
   );
 }

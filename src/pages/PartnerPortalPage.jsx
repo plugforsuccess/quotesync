@@ -104,7 +104,7 @@ function ReviewCard() {
         An honest Google review about your experience helps other families find Cam. Please mention you’re a referral partner. It’s optional and has nothing to do with your referral fees.
       </p>
       <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noreferrer" className="qb qb-outline qb-md mt-3 w-full">
-        Write a review <ExternalLink className="h-4 w-4" aria-hidden="true" />
+        Write a Google review <ExternalLink className="h-4 w-4" aria-hidden="true" />
       </a>
     </section>
   );

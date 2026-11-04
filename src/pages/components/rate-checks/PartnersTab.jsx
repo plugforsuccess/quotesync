@@ -200,7 +200,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
             {p.phone && (
               <a href={smsHref(p.phone, partnerReviewText(p.name))} title="Opens Messages with your Google review link written in"
                 className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:underline">
-                <Star className="h-3.5 w-3.5" aria-hidden="true" /> <T k="rc.partners.askreview">Ask for a review (if they’re a customer)</T>
+                <Star className="h-3.5 w-3.5" aria-hidden="true" /> <T k="rc.partners.askreview">Ask for a Google review (if they’re a customer)</T>
               </a>
             )}
 
