@@ -9,6 +9,7 @@ import { T } from '../../../components/SiteCopy';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus, Star } from 'lucide-react';
 import { partnerReviewText, smsHref } from '../../../lib/reviews';
+import { buildText } from '../../../lib/textTemplates';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
@@ -306,21 +307,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
 const portalUrl = (token) => `${window.location.origin}/partner/${token}`;
 // Opens the Messages app with the partner's portal link written in.
-const portalSms = (p) => {
-  const first = p.name.split(' ')[0];
-  const msg = [
-    `Hi ${first}, it's Cam with Cam Wiley Agency. Welcome aboard as a referral partner!`,
-    '',
-    `Your private partner page: ${portalUrl(p.portal_token)}`,
-    '',
-    '1. Tap the link. There\'s no username or password: the link is your login, so don\'t share it.',
-    '2. Tap "Sign my W-9" and add your Social Security number (about 30 seconds) so we can pay you.',
-    '3. Tap "Copy link" to share your referral link with friends, family and people in your network. Let them know you get a referral fee.',
-    '',
-    'Save the page to check what you\'ve earned anytime. Questions? Just reply here.',
-  ].join('\n');
-  return `sms:+1${p.phone}?&body=${encodeURIComponent(msg)}`;
-};
+const portalSms = (p) => `sms:+1${p.phone}?&body=${encodeURIComponent(buildText('partnerWelcome', { name: p.name, portalLink: portalUrl(p.portal_token) }))}`;
 
 // The photo on their share link's landing page. Partners can add their own in the
 // portal; staff add one here only with the partner's OK.

@@ -7,7 +7,6 @@ import { T } from '../../../components/SiteCopy';
 import { MessageSquare } from 'lucide-react';
 import { CopyTextButton } from './Copyable';
 import SendPitch from './SendPitch';
-import { REVIEW_TEXTS, REVIEW_LINK_KEY, REVIEW_LINK_FALLBACK, customerReviewText, partnerReviewText, reviewUrl } from '../../../lib/reviews';
 
 const SITE = 'insuredbycam.com';
 
@@ -79,53 +78,6 @@ const TIPS = [
   ['Show it live.', 'Upload one on your phone in front of them. Seeing it take a minute is the best pitch.'],
 ];
 
-// Google review texts: each paragraph is editable in place (pencil), and every send
-// uses what's saved here, including the automatic thank-you on "Mark bound".
-const REVIEW_SCRIPTS = [
-  { which: 'customer', name: 'Customer who bought', when: 'Sent automatically when you mark a rate check bound (with texting consent). Or text it yourself.', build: customerReviewText },
-  { which: 'partner', name: 'Partner who’s also a customer', when: 'Optional. Nothing is offered for a review, and they should say they’re a partner.', build: partnerReviewText },
-];
-
-function ReviewScripts() {
-  return (
-    <section aria-label="Google reviews">
-      <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="rc.scripts.reviews.title">Google reviews</T></h3>
-      <div className="space-y-3">
-        <div className="dark-card" style={{ padding: 16 }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Your Google review link</p>
-          <p className="mt-1 break-all rounded-lg p-2.5 font-mono text-[13px]" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
-            <T k={REVIEW_LINK_KEY}>{REVIEW_LINK_FALLBACK}</T>
-          </p>
-          <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>Edit with the pencil and paste your link (Google Business Profile → Ask for reviews). Every review text uses it, including the automatic one.</p>
-        </div>
-        {REVIEW_SCRIPTS.map(s => {
-          const { key, paragraphs } = REVIEW_TEXTS[s.which];
-          return (
-            <article key={s.which} className="dark-card" style={{ padding: 16 }} aria-label={s.name}>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>{s.name}</h4>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}>Text</span>
-              </div>
-              <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{s.when}</p>
-              <div className="mt-3 space-y-3 rounded-lg p-3 text-[15px] leading-relaxed"
-                style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
-                {paragraphs.map((p, i) => <p key={i}><T k={`${key}.${i + 1}`}>{p}</T></p>)}
-              </div>
-              <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                [first name] and [review link] fill in when it’s sent. <a href={reviewUrl()} target="_blank" rel="noreferrer" className="underline">Test the link</a>
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <CopyTextButton text={s.build('')} className="h-9 w-[8.5rem] justify-center rounded-full px-3.5 text-sm font-semibold text-primary-600"
-                  style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}><T k="pages.components.ratechecks.scriptstab.5fb635">Copy</T></CopyTextButton>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 export default function ScriptsTab() {
   return (
     <div className="space-y-5">
@@ -160,8 +112,6 @@ export default function ScriptsTab() {
           </div>
         </section>
       ))}
-
-      <ReviewScripts />
 
       <section className="dark-card" style={{ padding: 16 }} aria-label="Tips">
         <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.scriptstab.a0d4cc">Tips</T></h3>

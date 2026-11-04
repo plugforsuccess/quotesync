@@ -59,6 +59,41 @@ async function audit(supabase: any, row: Record<string, unknown>) {
   if (error) console.error('[RATE_CHECK_OUTCOME] audit insert failed:', row.event_type, error.message)
 }
 
+// The texts are edited by the owner in Rate Checks → Texts (site_copy keys
+// `${key}.1`, `${key}.2`, …). These defaults match src/lib/textTemplates.js.
+const TEXTS: Record<string, string[]> = {
+  'sms.quote.ready': [
+    "Hi [first name], it's Cam Wiley's office. Your Allstate quote is ready and it looks like we can save you money.",
+    "Reply Y and we'll call you to go over it.",
+  ],
+  'sms.quote.lost': [
+    "Hi [first name], this is Cam Wiley's office. We checked your [carrier] policy and you're in good shape: we couldn't beat it today.",
+    "We'll reach out if that changes.",
+  ],
+  'sms.review.customer': [
+    "Hi [first name], it's Cam with Cam Wiley Agency. Thank you for trusting us with your insurance!",
+    'If you have a minute, an honest Google review helps other Georgia families find us: [review link]',
+    'Questions about your policy? Just reply here.',
+  ],
+}
+
+/** The saved text with blanks filled in; always ends with the opt-out line. */
+async function textFor(supabase: any, key: string, vars: { name?: string | null, carrier?: string | null, reviewLink?: string }) {
+  const defaults = TEXTS[key]
+  const keys = defaults.map((_, i) => `${key}.${i + 1}`)
+  const { data: saved } = await supabase.from('site_copy').select('key, value').in('key', keys)
+  const byKey = Object.fromEntries((saved || []).map((r: any) => [r.key, r.value]))
+  const first = String(vars.name || '').trim().split(/\s+/)[0] || 'there'
+  let body = defaults.map((d, i) => (typeof byKey[keys[i]] === 'string' && byKey[keys[i]].trim()) ? byKey[keys[i]] : d)
+    .filter(t => t.trim()).join('\n\n')
+    .replace(/\[first name\]/gi, first)
+    .replace(/\[carrier\]/gi, vars.carrier || 'current')
+    .replace(/\[review link\]/gi, vars.reviewLink || '')
+  if (vars.reviewLink && !body.includes(vars.reviewLink)) body += `\n\n${vars.reviewLink}`
+  if (!/\bSTOP\b/.test(body)) body += '\n\nReply STOP to opt out.'
+  return body
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
 
@@ -172,23 +207,7 @@ Deno.serve(async (req) => {
       else if (!reviewLink) review = { attempted: false, reason: 'no Google review link set' }
       else if (!lead?.phone) review = { attempted: false, reason: 'lead has no phone' }
       else {
-        // The text is edited in the copy editor (Rate Checks → Scripts → Google reviews,
-        // keys sms.review.customer.1-3); these defaults match src/lib/reviews.js.
-        const DEFAULTS = [
-          "Hi [first name], it's Cam with Cam Wiley Agency. Thank you for trusting us with your insurance!",
-          'If you have a minute, an honest Google review helps other Georgia families find us: [review link]',
-          'Questions about your policy? Just reply here.',
-        ]
-        const keys = DEFAULTS.map((_, i) => `sms.review.customer.${i + 1}`)
-        const { data: saved } = await supabase.from('site_copy').select('key, value').in('key', keys)
-        const byKey = Object.fromEntries((saved || []).map((r: any) => [r.key, r.value]))
-        const firstName = String(b.first_name || '').trim().split(/\s+/)[0] || 'there'
-        let reviewBody = DEFAULTS.map((d, i) => (typeof byKey[keys[i]] === 'string' && byKey[keys[i]].trim()) ? byKey[keys[i]] : d)
-          .filter(t => t.trim()).join('\n\n')
-          .replace(/\[first name\]/gi, firstName)
-          .replace(/\[review link\]/gi, reviewLink)
-        if (!reviewBody.includes(reviewLink)) reviewBody += `\n\n${reviewLink}`
-        if (!/\bSTOP\b/.test(reviewBody)) reviewBody += '\n\nReply STOP to opt out.'
+        const reviewBody = await textFor(supabase, 'sms.review.customer', { name: b.first_name, reviewLink })
         try {
           const smsRes = await fetch(`${supabaseUrl}/functions/v1/send-manual-sms`, {
             method: 'POST',
@@ -262,9 +281,7 @@ Deno.serve(async (req) => {
       else if (!agency?.twilio_from_number) readySms = { attempted: false, reason: 'agency has no twilio_from_number' }
       else if (!lead?.phone) readySms = { attempted: false, reason: 'lead has no phone' }
       else {
-        const readyBody =
-          `Hi ${rc.first_name || 'there'}, it's Cam Wiley's office. Your Allstate quote is ready and it looks like we can save you money. ` +
-          `Reply Y and we'll call you to go over it. Reply STOP to opt out.`
+        const readyBody = await textFor(supabase, 'sms.quote.ready', { name: rc.first_name })
         try {
           const smsRes = await fetch(`${supabaseUrl}/functions/v1/send-manual-sms`, {
             method: 'POST',
@@ -327,9 +344,7 @@ Deno.serve(async (req) => {
       } else if (!lead?.phone) {
         sms = { attempted: false, reason: 'lead has no phone' }
       } else {
-        const smsBody =
-          `Hi ${rc.first_name || 'there'}, this is Cam Wiley's office. We checked your ${rc.carrier || 'current'} policy ` +
-          `and you're in good shape — we couldn't beat it today. We'll reach out if that changes. Reply STOP to opt out.`
+        const smsBody = await textFor(supabase, 'sms.quote.lost', { name: rc.first_name, carrier: rc.carrier })
         try {
           // Forward the agent's JWT so send-manual-sms runs its own membership check.
           const smsRes = await fetch(`${supabaseUrl}/functions/v1/send-manual-sms`, {
