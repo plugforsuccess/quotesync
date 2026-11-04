@@ -644,30 +644,30 @@ gmp-placeautocomplete input:focus {
    ════════════════════════════════════════════════════════════ */
 .ddc {
   --ddc-fs: 16.5px;
-  --ddc-bg:#ffffff; --ddc-surface:#f6f8fb; --ddc-surface-2:#eef2f6;
-  --ddc-text:#1f2937; --ddc-heading:#0b1220; --ddc-muted:#46505e; --ddc-faint:#5b6671;
-  --ddc-border:#d6dde4; --ddc-bar-bg:rgba(255,255,255,.92);
-  --ddc-accent:#046c4e; --ddc-accent-solid:#059669; --ddc-track:#e5e7eb;
-  --ddc-btn-bg:#047857; --ddc-btn-fg:#ffffff;
-  --law-c:#036aa1; --law-bg:#eef6fd; --law-bd:#bae0f5;
-  --key-c:#046c4e; --key-bg:#eafaf2; --key-bd:#a7e8c8;
+  --ddc-bg:#ffffff; --ddc-surface:#f5f8ff; --ddc-surface-2:#e8eefc;
+  --ddc-text:#334155; --ddc-heading:#0F2D6B; --ddc-muted:#475569; --ddc-faint:#64748b;
+  --ddc-border:#d5def3; --ddc-bar-bg:rgba(255,255,255,.94);
+  --ddc-accent:#1D4ED8; --ddc-accent-solid:#16a34a; --ddc-track:#e2e8f5;
+  --ddc-btn-bg:#1D4ED8; --ddc-btn-fg:#ffffff;
+  --law-c:#1D4ED8; --law-bg:#eef3ff; --law-bd:#c3d3fb;
+  --key-c:#15803d; --key-bg:#ecfdf3; --key-bd:#a6e9c0;
   --warn-c:#a85a07; --warn-bg:#fdf6e9; --warn-bd:#f5dca0;
   --tip-c:#0e7468; --tip-bg:#ecfbf7; --tip-bd:#9be8da;
-  --ok-c:#046c4e; --ok-bg:#eafaf2; --ok-bd:#34d399;
+  --ok-c:#15803d; --ok-bg:#ecfdf3; --ok-bd:#4ade80;
   --no-c:#b3261e; --no-bg:#fdf0ef; --no-bd:#f3a8a3;
   font-size: var(--ddc-fs);
 }
 .ddc[data-theme="dark"] {
-  --ddc-bg:#030712; --ddc-surface:rgba(17,24,39,.6); --ddc-surface-2:#0f172a;
-  --ddc-text:#d6dbe2; --ddc-heading:#f9fafb; --ddc-muted:#9aa4b2; --ddc-faint:#7b8694;
-  --ddc-border:#1f2937; --ddc-bar-bg:rgba(3,7,18,.95);
-  --ddc-accent:#6ee7b7; --ddc-accent-solid:#10b981; --ddc-track:#1f2937;
-  --ddc-btn-bg:#34d399; --ddc-btn-fg:#04210f;
-  --law-c:#7dd3fc; --law-bg:rgba(56,189,248,.12); --law-bd:rgba(56,189,248,.4);
+  --ddc-bg:#0F2D6B; --ddc-surface:rgba(255,255,255,.06); --ddc-surface-2:#16397f;
+  --ddc-text:#dbe5ff; --ddc-heading:#ffffff; --ddc-muted:#a9bbe6; --ddc-faint:#8ea2d4;
+  --ddc-border:#2b4c93; --ddc-bar-bg:rgba(15,45,107,.96);
+  --ddc-accent:#39FF88; --ddc-accent-solid:#39FF88; --ddc-track:#23448c;
+  --ddc-btn-bg:#39FF88; --ddc-btn-fg:#0F2D6B;
+  --law-c:#93c5fd; --law-bg:rgba(56,189,248,.12); --law-bd:rgba(56,189,248,.4);
   --key-c:#6ee7b7; --key-bg:rgba(16,185,129,.12); --key-bd:rgba(16,185,129,.4);
   --warn-c:#fcd34d; --warn-bg:rgba(245,158,11,.12); --warn-bd:rgba(245,158,11,.4);
   --tip-c:#5eead4; --tip-bg:rgba(20,184,166,.12); --tip-bd:rgba(20,184,166,.4);
-  --ok-c:#6ee7b7; --ok-bg:rgba(16,185,129,.12); --ok-bd:rgba(16,185,129,.5);
+  --ok-c:#39FF88; --ok-bg:rgba(57,255,136,.12); --ok-bd:rgba(57,255,136,.5);
   --no-c:#fca5a5; --no-bg:rgba(248,113,113,.12); --no-bd:rgba(248,113,113,.5);
 }
 .ddc[data-size="large"]  { --ddc-fs: 18.5px; }
@@ -710,6 +710,37 @@ gmp-placeautocomplete input:focus {
 .ddc-opt.is-no  { border-color: var(--no-bd); background: var(--no-bg); color: var(--no-c); }
 
 .ddc-good { color: var(--ok-c); } .ddc-bad { color: var(--no-c); } .ddc-warn { color: var(--warn-c); }
+
+/* Read-along: the block being read aloud. */
+.ddc-reading { background: var(--key-bg); box-shadow: 0 0 0 6px var(--key-bg); border-radius: 6px; transition: background .2s; }
+
+/* Course figures (components/dd/DDFigures.jsx). Loops are slow and calm; all motion
+   stops for readers who ask for reduced motion. */
+.ddc-fig svg { width: 100%; height: auto; display: block; overflow: visible; }
+.ddc-fig-spin { animation: ddc-spin 6s linear infinite; }
+@keyframes ddc-spin { to { transform: rotate(360deg); } }
+.ddc-fig-cross { animation: ddc-cross 5s linear infinite; }
+@keyframes ddc-cross { from { transform: translate(14px, 63px); } to { transform: translate(272px, 63px); } }
+.ddc-fig-grow { transform-box: fill-box; transform-origin: left center; animation: ddc-grow 1.2s ease-out both; }
+@keyframes ddc-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ddc-fig-lead, .ddc-fig-follow { animation: ddc-lane 6s linear infinite; }
+.ddc-fig-follow { animation-delay: 3s; }
+@keyframes ddc-lane { from { transform: translate(-40px, 66px); } to { transform: translate(330px, 66px); } }
+.ddc-fig-count { animation: ddc-fade 6s ease-in-out infinite; }
+@keyframes ddc-fade { 0%, 15% { opacity: .25; } 35%, 75% { opacity: 1; } 100% { opacity: .25; } }
+.ddc-fig-pulse { animation: ddc-pulse 2.4s ease-in-out infinite; }
+@keyframes ddc-pulse { 50% { opacity: .6; } }
+.ddc-fig-blink { animation: ddc-blink 1s steps(1) infinite; }
+.ddc-fig-blink-b { animation: ddc-blink 1s steps(1) infinite .5s; }
+@keyframes ddc-blink { 50% { opacity: .1; } }
+.ddc-fig-moveover { animation: ddc-moveover 6s ease-in-out infinite; }
+@keyframes ddc-moveover { 0% { transform: translate(-10px, 98px); } 35% { transform: translate(110px, 98px); } 55% { transform: translate(190px, 50px); } 100% { transform: translate(330px, 50px); } }
+.ddc-fig-step { opacity: 0; animation-name: ddc-step; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+@keyframes ddc-step { 0% { opacity: 0; } 8% { opacity: 1; } 30% { opacity: 1; } 40% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .ddc-fig * { animation: none !important; }
+  .ddc-fig-step { opacity: 1; }
+}
 
 .ddc a:focus-visible, .ddc button:focus-visible, .ddc input:focus-visible, .ddc label:focus-within {
   outline: 2px solid var(--ddc-accent-solid); outline-offset: 2px; border-radius: 8px;

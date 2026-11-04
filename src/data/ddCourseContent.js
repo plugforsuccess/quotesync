@@ -49,6 +49,7 @@ export const ddModuleContent = {
         heading: 'The collision-prevention process: SIPDE',
         blocks: [
           { type: 'p', text: 'Defensive driving is a process you run continuously. The classic model is SIPDE — practice it until it is automatic:' },
+          { type: 'figure', name: 'sipde', caption: 'SIPDE is a loop, not a checklist: run it again every few seconds.' },
           { type: 'ol', items: [
             'Search — scan 12 to 15 seconds ahead and check mirrors every 5 to 8 seconds; keep your eyes moving.',
             'Identify — pick out fixed, moving, and potential hazards (a ball in the road means a child may follow).',
@@ -81,14 +82,14 @@ export const ddModuleContent = {
             'Speeding 19–23 mph over — 3 points (more the faster you go)',
             'Failure to obey a traffic-control device — 3 points',
           ] },
-          { type: 'callout', variant: 'law', title: 'Georgia law: point reduction', text: 'A certified defensive driving course can reduce your record by up to 7 points, but only once every 5 years — separate from the insurance discount. Drivers under 18 and 21 face stricter thresholds.' },
+          { type: 'callout', variant: 'law', title: 'Georgia law: point reduction', text: 'Only a DDS-certified defensive driving course can reduce your record, by up to 7 points, once every 5 years. This course is not DDS-certified, so it does not remove points; any insurance discount is separate, and up to your insurer. Drivers under 18 and 21 face stricter thresholds.' },
         ],
         quiz: [
           { q: 'How many points within 24 months trigger a license suspension in Georgia?', choices: [
             { t: '10 points', correct: false },
             { t: '15 points', correct: true },
             { t: '20 points', correct: false },
-          ], explain: 'Accumulating 15 points within any 24-month period results in suspension. A course can remove up to 7 points once every 5 years.' },
+          ], explain: 'Accumulating 15 points within any 24-month period results in suspension. Only a DDS-certified course can remove points (up to 7, once every 5 years).' },
         ],
       },
     ],
@@ -96,7 +97,7 @@ export const ddModuleContent = {
       'Most crashes are preventable — they come from a few high-risk behaviors, not bad luck.',
       'You control only your own preparation and response; plan for everyone else’s mistakes.',
       'Run SIPDE continuously and always keep an "out."',
-      '15 points in 24 months suspends your Georgia license; a course removes up to 7 points once every 5 years.',
+      '15 points in 24 months suspends your Georgia license; only a DDS-certified course can remove points (up to 7, once every 5 years).',
     ],
   },
 
@@ -128,6 +129,7 @@ export const ddModuleContent = {
         heading: 'Distracted driving',
         blocks: [
           { type: 'p', text: 'Distraction comes in three forms, and the most dangerous activities combine all three:' },
+          { type: 'figure', name: 'distraction', caption: 'Reading a text takes your eyes off the road for about 5 seconds. At 55 mph, that’s the length of a football field.' },
           { type: 'ul', items: [
             'Visual — eyes off the road.',
             'Manual — hands off the wheel.',
@@ -214,6 +216,7 @@ export const ddModuleContent = {
             '0.04% — commercial drivers',
             '0.02% — drivers under 21 (near zero tolerance)',
           ] },
+          { type: 'figure', name: 'bac', caption: 'Georgia’s legal limits. Impairment starts well below them.' },
           { type: 'p', text: 'By driving in Georgia you give "implied consent" to chemical testing if lawfully arrested for DUI. Refusing the test carries its own automatic license suspension.' },
           { type: 'ul', items: [
             'Penalties can include fines, possible jail, suspension, and a state-approved Risk Reduction (DUI) Program.',
@@ -277,6 +280,7 @@ export const ddModuleContent = {
         heading: 'Managing the space around you',
         blocks: [
           { type: 'p', text: 'A defensive driver keeps a cushion on all four sides and protects the space ahead. The simplest tool is the three-second rule.' },
+          { type: 'figure', name: 'following', caption: 'When the car ahead passes a fixed point, count to three before you reach it. Add time in rain or at night.' },
           { type: 'callout', variant: 'key', title: 'The 3-second following rule', text: 'Watch the vehicle ahead pass a fixed point, then count "one-one-thousand, two-one-thousand, three-one-thousand." If you reach the point first, you are too close. Three seconds is the ideal-condition minimum.' },
           { type: 'ul', items: [
             'Increase to 4+ seconds in rain, fog, darkness, heavy traffic, when towing, or when tailgated.',
@@ -296,6 +300,7 @@ export const ddModuleContent = {
         heading: 'Speed and stopping distance',
         blocks: [
           { type: 'p', text: 'Total stopping distance is more than braking. It is the sum of three parts:' },
+          { type: 'figure', name: 'stopping', caption: 'You keep moving at full speed while you react, then the braking distance grows much faster than your speed.' },
           { type: 'ol', items: [
             'Perception distance — traveled while your brain notices the hazard.',
             'Reaction distance — traveled during the ~3/4 second it takes to hit the brake.',
@@ -361,6 +366,7 @@ export const ddModuleContent = {
         heading: 'Right-of-way: give it, don’t take it',
         blocks: [
           { type: 'p', text: 'Right-of-way is what the law tells you about when to yield — it is never something you "have" the right to seize. When in doubt, give way; being right is no comfort after a crash.' },
+          { type: 'figure', name: 'truckzones', caption: 'If you can’t see the truck driver in their mirror, they can’t see you.' },
           { type: 'ul', items: [
             'Four-way stop: first to stop goes first; if two stop together, the one on the right goes first.',
             'Turning left across oncoming traffic: yield to oncoming vehicles and to pedestrians.',
@@ -445,6 +451,7 @@ export const ddModuleContent = {
         heading: 'Adverse conditions',
         blocks: [
           { type: 'p', text: 'Most bad-weather crashes come from driving the same way you would on a clear, dry day. Slow down and increase your following distance before you need it.' },
+          { type: 'figure', name: 'wet', caption: 'Slow down and leave more room: on wet pavement it can take about twice as far to stop.' },
           { type: 'ul', items: [
             'Rain: the first few minutes are most dangerous as oil lifts off the pavement; beware hydroplaning.',
             'Fog: slow down and use low beams — high beams reflect back. Use the right edge line as a guide.',
@@ -507,6 +514,7 @@ export const ddModuleContent = {
             'Report and exchange. Georgia requires reporting injury, death, or property damage at or above the statutory threshold; exchange info and cooperate with police.',
             'Document and notify. Photograph the scene, collect witness info, notify your insurer, and clear travel lanes when safe.',
           ] },
+          { type: 'figure', name: 'crashsteps', caption: 'The order matters: safety first, then information, then the report.' },
           { type: 'p', text: 'The habits that prevent the most crashes are simple: scan far ahead, keep space, manage speed for conditions, drive unimpaired and undistracted, share the road, and always buckle up.' },
         ],
         quiz: [
@@ -535,12 +543,12 @@ export const ddModuleContent = {
         heading: 'Points & your driving record',
         blocks: [
           { type: 'p', text: 'The Georgia Department of Driver Services (DDS) adds points to your record when you are convicted of a moving violation. The points are a running total over time, and too many in a short window costs you your license.' },
-          { type: 'callout', variant: 'law', title: 'The 15-point rule', text: 'Accumulating 15 points within any 24-month period results in a license suspension. A certified defensive driving course can remove up to 7 points — but only once every 5 years. Drivers under 18 and 21 face stricter thresholds.' },
+          { type: 'callout', variant: 'law', title: 'The 15-point rule', text: 'Accumulating 15 points within any 24-month period results in a license suspension. Only a DDS-certified defensive driving course can remove points (up to 7, once every 5 years); this course is not one. Drivers under 18 and 21 face stricter thresholds.' },
         ],
         quiz: [
           { q: 'How many points within 24 months suspend a Georgia license?', choices: [
             { t: '10', correct: false }, { t: '15', correct: true }, { t: '20', correct: false },
-          ], explain: '15 points within any 24-month period triggers suspension; a course can remove up to 7 points once every 5 years.' },
+          ], explain: '15 points within any 24-month period triggers suspension; only a DDS-certified course can remove points (up to 7, once every 5 years).' },
         ],
       },
       {
@@ -590,6 +598,7 @@ export const ddModuleContent = {
         heading: 'Sharing the road: Move Over, buses & restraints',
         blocks: [
           { type: 'callout', variant: 'law', title: 'Move Over law', text: 'When passing a stationary emergency, law-enforcement, utility, or recovery vehicle displaying flashing lights, move over one lane if you safely can. If you cannot, slow below the speed limit and be prepared to stop.' },
+          { type: 'figure', name: 'moveover', caption: 'Move over a lane if you safely can. If you can’t, slow down below the limit and be ready to stop.' },
           { type: 'ul', items: [
             'School bus with red flashing lights and stop arm out: stop and stay stopped until it withdraws.',
             'Emergency vehicles in motion with lights/siren: yield and pull to the right.',
@@ -625,7 +634,7 @@ export const ddModuleContent = {
       },
     ],
     takeaways: [
-      'Points: 15 in 24 months suspends your license; a course removes up to 7 once every 5 years.',
+      'Points: 15 in 24 months suspends your license; only a DDS-certified course removes points (up to 7, once every 5 years).',
       'Hands-Free Act: no holding a phone while driving — including at a red light.',
       'DUI per se limits: 0.08% (21+), 0.04% (commercial), 0.02% (under 21); refusal = suspension.',
       'Super Speeder: $200 fee for 75+ (two-lane) or 85+ mph; Move Over for stationary responders; stop for school buses; leaving an injury crash is a crime.',
@@ -698,6 +707,7 @@ export const ddModuleContent = {
         heading: 'After a crash: making a claim',
         blocks: [
           { type: 'p', text: 'Once everyone is safe and the legal duties from Module 6 and Module 7 are handled, a few habits make the insurance side go smoothly.' },
+          { type: 'figure', name: 'claimsteps', caption: 'Report the claim promptly and keep notes and photos at every step.' },
           { type: 'ol', items: [
             'Take photos of all vehicles, plates, the scene, road conditions, and any injuries.',
             'Get the other driver’s name, phone, insurer, and policy number, plus names and numbers of witnesses.',
