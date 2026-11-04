@@ -18,6 +18,8 @@ import { getModuleContent } from '../data/ddCourseContent';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 
 const ACCENT = '#39FF88';
+// Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
+const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 
@@ -81,7 +83,7 @@ export default function DefensiveDrivingPage() {
           <div className="py-10 lg:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-start">
             <div>
               <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white"><T k="pages.defensivedrivingpage.3401c4">← Drivers Ed</T></Link>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: ACCENT }}><T k="pages.defensivedrivingpage.9496f3">Defensive Driving · Georgia</T></p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: GOLD }}><T k="pages.defensivedrivingpage.9496f3">Defensive Driving · Georgia</T></p>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4">
                 {course.title}
               </h1>
@@ -90,7 +92,7 @@ export default function DefensiveDrivingPage() {
               </p>
               <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-blue-50 mb-8">
                 {['100% online & self-paced', 'Progress saved automatically', 'Certificate forwarded for you'].map((t) => (
-                  <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4" style={{ color: ACCENT }} strokeWidth={3} /> <T>{t}</T></li>
+                  <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4" style={{ color: GOLD }} strokeWidth={3} /> <T>{t}</T></li>
                 ))}
               </ul>
               <div className="flex items-center gap-4">
@@ -233,7 +235,7 @@ function ModuleCard({ m, index }) {
     <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-900/10 lg:p-5">
       <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, #1D4ED8, ${ACCENT})` }} />
       <div className="mb-5 flex items-center justify-between">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-extrabold tracking-tight shadow-md shadow-blue-900/20" style={{ background: DEEP, color: ACCENT }}>{n}</span>
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-extrabold tracking-tight shadow-md shadow-blue-900/20" style={{ background: DEEP, color: GOLD }}>{n}</span>
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100 transition group-hover:bg-blue-700 group-hover:text-white">
           <Icon className="h-5 w-5" />
         </span>
@@ -299,7 +301,7 @@ function Step({ n, icon, title, body }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6">
       <div className="flex items-center justify-between mb-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-2xl text-base font-extrabold" style={{ background: DEEP, color: ACCENT }}>{n}</span>
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl text-base font-extrabold" style={{ background: DEEP, color: GOLD }}>{n}</span>
         <Icon className="w-5 h-5 text-slate-300" />
       </div>
       <p className="font-bold text-[#0F2D6B] mb-1"><T>{title}</T></p>

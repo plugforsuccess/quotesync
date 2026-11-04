@@ -806,7 +806,7 @@ function PartnerHeroStrip({ name, photo, initials }) {
       {photo ? (
         <img src={photo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
       ) : (
-        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
+        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: GOLD }}>
           {initials}
         </span>
       )}
@@ -1118,7 +1118,7 @@ function MeetCam({ onUpload }) {
     key: 'cta', label: 'Let’s make sure your insurance fits your life', untitled: true, bare: true,
     content: (
       <div className="flex h-full min-h-[300px] flex-col justify-center p-6 text-left" style={{ background: HERO_BG }}>
-        <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#39FF88]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
+        <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#F5D061]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
         <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
         <button type="button" onClick={onUpload}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#39FF88] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#2ee87a]">
@@ -1133,7 +1133,7 @@ function MeetCam({ onUpload }) {
 function Trust({ icon: Icon, k, label }) {
   return (
     <li className="inline-flex items-center gap-1.5">
-      <Icon className="h-4 w-4 text-[#39FF88]" aria-hidden="true" />
+      <Icon className="h-4 w-4 text-[#F5D061]" aria-hidden="true" />
       <T k={k}>{label}</T>
     </li>
   );
@@ -1208,7 +1208,7 @@ function ProductsWeInsure() {
       <ul className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:mt-8 lg:grid-cols-6 lg:gap-3">
         {PRODUCTS.map(([key, Icon, name, sub]) => (
           <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
-            <Icon className="h-6 w-6 text-[#39FF88]" aria-hidden="true" strokeWidth={1.75} />
+            <Icon className="h-6 w-6 text-[#F5D061]" aria-hidden="true" strokeWidth={1.75} />
             <p className="mt-2 max-w-full truncate whitespace-nowrap text-[15px] font-extrabold leading-5 tracking-tight text-white"><T k={`rc.products.${key}.title`}>{name}</T></p>
             <p className="mt-0.5 max-w-full truncate whitespace-nowrap text-[11px] leading-4 text-blue-100"><T k={`rc.products.${key}.line`}>{sub}</T></p>
           </li>
@@ -1275,6 +1275,8 @@ function CarrierLogos() {
 // the fluorescent green are the brand pair; the green marks what matters. No black:
 // dark surfaces are deep blue, headings are deep blue, body text is slate gray.
 const ACCENT = '#39FF88';
+// Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
+const GOLD = '#F5D061';
 const NAVY = '#0F2D6B'; // deep royal blue (headings, step numbers)
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const ACCEPTS = (f) => /^image\//.test(f.type) || f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
@@ -1309,13 +1311,13 @@ function OwnerCard() {
   return (
     <aside aria-label={AGENCY.name} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
       {/* Phones: the name centered across the top, then a big headshot with the rest beside it. */}
-      <h2 className="mb-4 whitespace-nowrap text-center text-[clamp(22px,7vw,28px)] font-black leading-none tracking-tight lg:hidden" style={{ color: ACCENT }}>{AGENCY.short}</h2>
+      <h2 className="mb-4 whitespace-nowrap text-center text-[clamp(22px,7vw,28px)] font-black leading-none tracking-tight lg:hidden" style={{ color: GOLD }}>{AGENCY.short}</h2>
       <div className="flex items-center gap-3.5 lg:flex-col lg:gap-4 lg:text-center">
         <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
           className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
           style={{ objectPosition: '50% 30%' }} />
         <div className="min-w-0 flex-1">
-          <h2 className="hidden whitespace-nowrap font-black leading-none tracking-tight lg:block lg:text-[30px]" style={{ color: ACCENT }}>{AGENCY.short}</h2>
+          <h2 className="hidden whitespace-nowrap font-black leading-none tracking-tight lg:block lg:text-[30px]" style={{ color: GOLD }}>{AGENCY.short}</h2>
           <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-2.5 lg:text-xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
           <OwnerDetails className="mt-2.5 flex gap-x-5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:gap-x-8 lg:border-0 lg:pt-0" />
         </div>
@@ -1324,7 +1326,7 @@ function OwnerCard() {
         {PROMISES.map(([k, text]) => (
           <li key={k} className="flex items-center gap-2.5 text-[15px] text-white">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(57,255,136,0.15)' }}>
-              <Check className="h-4 w-4" style={{ color: ACCENT }} aria-hidden="true" strokeWidth={3} />
+              <Check className="h-4 w-4" style={{ color: GOLD }} aria-hidden="true" strokeWidth={3} />
             </span>
             <T k={`rc.promise.${k}`}>{text}</T>
           </li>
@@ -1380,7 +1382,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
             <div>
               {note}
-              <h1 className="text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
+              <h1 className="text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#F5D061]">
                 <T k="rc.headline">Get a **second opinion** on your insurance.</T>
               </h1>
               <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
@@ -1405,7 +1407,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <ol className="mt-8 grid gap-4 sm:grid-cols-3 lg:gap-6">
             {HOW.map(([n, Icon, title, line]) => (
               <li key={n} className="relative rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-extrabold" style={{ background: NAVY, color: ACCENT }}>{n}</span>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-extrabold" style={{ background: NAVY, color: GOLD }}>{n}</span>
                 <Icon className="absolute right-6 top-6 h-6 w-6 text-slate-300" aria-hidden="true" />
                 <p className="mt-4 text-lg font-extrabold text-[#0F2D6B]"><T k={`rc.how.${n}.title`}>{title}</T></p>
                 <p className="mt-1 text-slate-600"><T k={`rc.how.${n}.line`}>{line}</T></p>
@@ -1461,7 +1463,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
           style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(96,165,250,0.35), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
-          <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#39FF88]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
+          <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#39FF88] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-emerald-500/30 active:bg-[#2ee87a]">

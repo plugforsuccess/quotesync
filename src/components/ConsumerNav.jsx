@@ -10,6 +10,8 @@ import { Menu, X } from 'lucide-react';
 import { T, EditPagePencil } from './SiteCopy';
 
 const ACCENT = '#39FF88';
+// Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
+const GOLD = '#F5D061';
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 
 // The agency's display name and license, as shown in every consumer page's footer.
@@ -38,7 +40,7 @@ export function ConsumerNav({ current }) {
 
   return (
     <header className="flex items-center justify-between gap-2 pt-5 lg:pt-7">
-      <Link to="/" className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam.com</Link>
+      <Link to="/" className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: GOLD }}>by</span>cam.com</Link>
       <div className="flex items-center gap-1">
         <nav aria-label="insuredbycam" className="hidden items-center gap-1 whitespace-nowrap text-sm font-semibold sm:flex">
           {PAGES.map(([key, to, label]) => (key === current
@@ -57,7 +59,7 @@ export function ConsumerNav({ current }) {
           <div className="absolute inset-0" style={{ background: 'rgba(15,45,107,0.55)' }} onClick={() => setOpen(false)} aria-hidden="true" />
           <div className="absolute inset-y-0 right-0 flex w-[82%] max-w-xs flex-col shadow-2xl" style={{ background: HERO_BG }}>
             <div className="flex items-center justify-between px-5 pt-5">
-              <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam.com</span>
+              <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: GOLD }}>by</span>cam.com</span>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close menu"
                 className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10">
                 <X className="h-6 w-6" aria-hidden="true" />

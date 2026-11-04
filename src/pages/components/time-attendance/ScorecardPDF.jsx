@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: '#9ca3af',
   },
-  good: { color: '#16a34a' },
+  good: { color: '#A16207' },
   bad: { color: '#dc2626' },
   neutral: { color: '#6b7280' },
   section: {

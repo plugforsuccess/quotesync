@@ -853,7 +853,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {b.source_filename}
                 </span>
-                <span style={{ color: '#10B981', fontWeight: 600 }}>
+                <span style={{ color: '#B07A0E', fontWeight: 600 }}>
                   +{b.rows_inserted}
                   {b.rows_duplicate > 0 &&
                     <span style={{ color: 'var(--qs-muted)', fontWeight: 400 }}>

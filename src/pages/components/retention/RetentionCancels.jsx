@@ -35,7 +35,7 @@ const STATUS_CONFIG = {
   contacted:              { label: "Contacted",         color: "#3B82F6", bg: "#3B82F622" }, // legacy
   payment_plan_requested: { label: "Payment Plan",      color: "#8B5CF6", bg: "#8B5CF622" },
   promise_to_pay:         { label: "Promise to Pay",    color: "#8B5CF6", bg: "#8B5CF622" },
-  saved:                  { label: "Saved ✓",      color: "#10B981", bg: "#10B98122" },
+  saved:                  { label: "Saved ✓",      color: "#B07A0E", bg: "#10B98122" },
   rewritten:              { label: "Rewritten ✓",  color: "#34D399", bg: "#34D39922" },
   promise_broken:         { label: "Promise Broken",    color: "#EF4444", bg: "#EF444422" },
   requested_cancellation: { label: "Wants to Cancel",   color: "#EF4444", bg: "#EF444422" },
@@ -899,7 +899,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               borderRadius: 10, padding: '12px 16px', marginBottom: 16,
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#10B981',
+                fontSize: 11, fontWeight: 700, color: '#B07A0E',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
                 <T k="pages.components.retention.retentioncancels.dfdf03">💡 Bundle to save —</T> {productLabel(event.cross_sell_product)}
@@ -1478,7 +1478,7 @@ const RENEWAL_STATUS_CONFIG = {
   left_voicemail:   { label: "Left Voicemail",   color: "#F59E0B", bg: "#FEF3C7" },
   review_requested: { label: "Review Requested", color: "#3B82F6", bg: "#DBEAFE" },
   shopping:         { label: "Shopping",         color: "#EF4444", bg: "#FEE2E2" },
-  confirmed:        { label: "Confirmed ✓", color: "#10B981", bg: "#D1FAE5" },
+  confirmed:        { label: "Confirmed ✓", color: "#B07A0E", bg: "#D1FAE5" },
   at_risk:          { label: "At Risk",          color: "#EF4444", bg: "#FEE2E2" },
   escalated:        { label: "Escalated",        color: "#8B5CF6", bg: "#EDE9FE" },
   lost:             { label: "Lost",             color: "#6B7280", bg: "#F3F4F6" },
@@ -1494,14 +1494,14 @@ const RENEWAL_STATUS_CONFIG = {
 // it" when a rep actually confirmed it, or vice-versa.
 function renewalResolutionBanner(status, outcomeSource) {
   if (status === "confirmed")
-    return { label: "Renewed — saved", sub: "rep-confirmed", color: "#10B981", bg: "#D1FAE5" };
+    return { label: "Renewed — saved", sub: "rep-confirmed", color: "#B07A0E", bg: "#D1FAE5" };
   if (status === "lost")
     return { label: "Lost — did not renew", sub: null, color: "#6B7280", bg: "#F3F4F6" };
   if (status === "unreachable")
     return { label: "Unreachable", sub: "no contact made", color: "var(--qs-subtle)", bg: "#F1F5F9" };
   if (status === "auto_resolved") {
     return (outcomeSource === "observed" || outcomeSource === "rep")
-      ? { label: "Renewed — confirmed by rep", sub: "not credited as a save", color: "#10B981", bg: "#D1FAE5" }
+      ? { label: "Renewed — confirmed by rep", sub: "not credited as a save", color: "#B07A0E", bg: "#D1FAE5" }
       : { label: "Auto-resolved — system-inferred", sub: "no call logged", color: "var(--qs-dim)", bg: "#F1F5F9" };
   }
   return null;
@@ -2155,14 +2155,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               borderRadius: 10, padding: '12px 16px', marginBottom: 16,
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#10B981',
+                fontSize: 11, fontWeight: 700, color: '#B07A0E',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
                 <T k="pages.components.retention.retentioncancels.043480">💡 Cross-sell opportunity</T>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
                 <T k="pages.components.retention.retentioncancels.687b5b">Allstate flagged this customer for</T>{' '}
-                <strong style={{ color: '#10B981' }}>
+                <strong style={{ color: '#B07A0E' }}>
                   {productLabel(event.cross_sell_product)}
                 </strong>.
                 {' '}<T k="pages.components.retention.retentioncancels.7aecd6">After confirming the renewal, ask:</T>

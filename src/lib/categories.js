@@ -19,7 +19,7 @@ export const STORY_CATEGORIES = [
     slug: 'help',
     label: 'Help',
     description: 'A question people bring to the desk, answered in plain language, with one thing to do at the end',
-    color: 'bg-[#d1fae5] text-[#065f46] border border-[#a7f3d0]',
+    color: 'bg-[#fdf6e3] text-[#A16207] border border-[#f1d68a]',
     contextMessage: 'If this is your situation, check your own policy for the same thing, or send it to Cam and he’ll look.'
   },
   {
@@ -82,7 +82,7 @@ export const STORY_CATEGORIES = [
     slug: 'consumer-guidance',
     label: 'Consumer Guidance',
     description: 'Tips, advice, how-tos, and educational content for policyholders',
-    color: 'bg-[#d1fae5] text-[#065f46] border border-[#a7f3d0]',
+    color: 'bg-[#fdf6e3] text-[#A16207] border border-[#f1d68a]',
     contextMessage: 'Practical guidance helps you make smarter decisions about your coverage.'
   },
   {

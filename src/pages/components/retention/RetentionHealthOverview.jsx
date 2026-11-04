@@ -103,7 +103,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
         note: 'Net retention is below target and the book is shrinking.' };
       else if (belowTarget || shrinking) s = { key: 'amber', color: '#F59E0B', label: 'Watch',
         note: belowTarget ? 'Net retention is below target.' : 'The book is shrinking month-over-month.' };
-      else s = { key: 'green', color: '#10B981', label: 'Healthy',
+      else s = { key: 'green', color: '#B07A0E', label: 'Healthy',
         note: 'Net retention is on target and the book is holding or growing.' };
     }
     // Any preventable lapse keeps it off green.

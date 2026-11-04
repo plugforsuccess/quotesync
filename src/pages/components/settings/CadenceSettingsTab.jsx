@@ -239,7 +239,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                   <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 2 }}>
                     {empRoles.join(', ')}
                     {activeCadenceCount > 0 && (
-                      <span style={{ marginLeft: 8, color: '#10B981', fontWeight: 600 }}>
+                      <span style={{ marginLeft: 8, color: '#B07A0E', fontWeight: 600 }}>
                         · {activeCadenceCount} <T k="pages.components.settings.cadencesettingstab.01bff4">active cadence</T>{activeCadenceCount > 1 ? 's' : ''}
                       </span>
                     )}

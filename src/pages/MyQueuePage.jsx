@@ -1786,7 +1786,7 @@ export default function MyQueuePage() {
               }} />
             </div>
             {targetHit && (
-              <div style={{ fontSize: 11, color: '#10B981', marginTop: 4, fontWeight: 600 }}>
+              <div style={{ fontSize: 11, color: '#B07A0E', marginTop: 4, fontWeight: 600 }}>
                 <T k="pages.myqueuepage.7556d5">✓ Daily target reached</T>
               </div>
             )}

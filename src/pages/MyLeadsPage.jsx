@@ -62,7 +62,7 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ textTransform: 'capitalize' }}>{(lead.status || 'new').replace('_', ' ')}</span>
             {lead.attempt_count > 0 && <span>· {lead.attempt_count} <T k="pages.myleadspage.1db222">attempt</T>{lead.attempt_count !== 1 ? 's' : ''}{lead.last_attempt_result ? ` (${lead.last_attempt_result.replace('_', ' ')})` : ''}</span>}
-            {enrichment === 'enriched' && <span style={{ color: '#10B981' }}><T k="pages.myleadspage.96721e">· enriched</T></span>}
+            {enrichment === 'enriched' && <span style={{ color: '#B07A0E' }}><T k="pages.myleadspage.96721e">· enriched</T></span>}
             {lead.risk_flag && <span style={{ color: '#F59E0B' }}><T k="pages.myleadspage.ae2e3e">· risk</T></span>}
             <span><T k="pages.myleadspage.116c0a">· created</T> {relativeTime(lead.created_at)}</span>
             {lead.next_followup_at && (

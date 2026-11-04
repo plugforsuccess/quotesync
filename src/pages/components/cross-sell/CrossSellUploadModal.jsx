@@ -253,7 +253,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
     renewal_only: { label: 'Renewal match',    color: '#3B82F6', note: 'Pitch during renewal call' },
     cancel_only:  { label: 'Cancel match',     color: '#F59E0B', note: 'On hold — resolve cancel first' },
     both:         { label: 'Renewal + Cancel', color: '#EF4444', note: 'On hold — cancel takes priority' },
-    new_lead:     { label: 'Outbound pitch',   color: '#10B981', note: 'Active customer — worked in the Outbound tab' },
+    new_lead:     { label: 'Outbound pitch',   color: '#B07A0E', note: 'Active customer — worked in the Outbound tab' },
   };
 
   return (

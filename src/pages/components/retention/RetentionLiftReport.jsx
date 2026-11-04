@@ -130,12 +130,12 @@ export default function RetentionLiftReport({ agencyId }) {
         <div style={{ flex: 1, minWidth: 240 }}>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 600 }}><T k="pages.components.retention.retentionliftreport.8987d9">Retention lift on worked renewals</T></div>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 4 }}>
-            <T k="pages.components.retention.retentionliftreport.b1d252">Worked renewals retained</T> <strong style={{ color: '#10B981' }}>{fmtPct(worked.retainRate)}</strong> <T k="pages.components.retention.retentionliftreport.84f507">vs.</T>{' '}
+            <T k="pages.components.retention.retentionliftreport.b1d252">Worked renewals retained</T> <strong style={{ color: '#B07A0E' }}>{fmtPct(worked.retainRate)}</strong> <T k="pages.components.retention.retentionliftreport.84f507">vs.</T>{' '}
             <strong style={{ color: 'var(--qs-text)' }}>{fmtPct(untouched.retainRate)}</strong> <T k="pages.components.retention.retentionliftreport.24e5f6">for the ones never called.</T>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 34, fontWeight: 800, color: '#10B981', lineHeight: 1 }}>
+          <div style={{ fontSize: 34, fontWeight: 800, color: '#B07A0E', lineHeight: 1 }}>
             {liftPoints == null ? '—' : `${liftPoints >= 0 ? '+' : ''}${Math.round(liftPoints)} pts`}
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}><T k="pages.components.retention.retentionliftreport.74df0e">worked − untouched retain rate</T></div>

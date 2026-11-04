@@ -296,7 +296,7 @@ function Layout({ forcePlane = null }) {
             {/* The insuredbycam.com wordmark, as on the public site; the agency's own name underneath when it differs. */}
             <NavLink to="/" className="flex flex-col leading-tight">
               <span className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
-                insured<span style={{ color: '#39FF88' }}>by</span>cam.com
+                insured<span style={{ color: '#F5D061' }}>by</span>cam.com
               </span>
               {!scrolled && agencyBrandName && !/^insuredbycam(\.com)?$/i.test(agencyBrandName.trim()) && (
                 <span className="text-xs text-blue-100">{agencyBrandName}</span>
@@ -510,7 +510,7 @@ function Layout({ forcePlane = null }) {
                         [
                           'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors mx-2 rounded-lg',
                           isActive
-                            ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-400'
+                            ? 'bg-white/10 text-emerald-400 border-l-2 border-[#F5D061]'
                             : 'text-gray-300 hover:bg-white/10 hover:text-white',
                         ].join(' ')
                       }

@@ -602,11 +602,11 @@ export default function TodayPage() {
           }} />
         </div>
         <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-          {callsToday} <T k="pages.todaypage.cbad40">worked ·</T> <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} <T k="pages.todaypage.f910ff">reached</T></span>
+          {callsToday} <T k="pages.todaypage.cbad40">worked ·</T> <span style={{ color: '#B07A0E', fontWeight: 600 }}>{reachedToday} <T k="pages.todaypage.f910ff">reached</T></span>
           {inboundToday > 0 && <> · <span style={{ color: '#60A5FA', fontWeight: 600 }}>{inboundToday} <T k="pages.todaypage.a8e6fe">inbound</T></span></>} <T k="pages.todaypage.c5e7df">today</T>
         </div>
         {savedToday.count > 0 && (
-          <div style={{ fontSize: 12, color: '#10B981', fontWeight: 700, marginTop: 6 }}>
+          <div style={{ fontSize: 12, color: '#B07A0E', fontWeight: 700, marginTop: 6 }}>
             🎉 {savedToday.count} <T k="pages.todaypage.cad264">saved ·</T> {savedPremiumLabel} <T k="pages.todaypage.6dd0b7">kept today</T>
           </div>
         )}
@@ -616,7 +616,7 @@ export default function TodayPage() {
           </div>
         )}
         {targetHit && (
-          <div style={{ fontSize: 11, color: '#10B981', marginTop: 6, fontWeight: 600 }}>
+          <div style={{ fontSize: 11, color: '#B07A0E', marginTop: 6, fontWeight: 600 }}>
             <T k="pages.todaypage.44d406">✓ Priority list cleared — you can stop here or work ahead.</T>
           </div>
         )}

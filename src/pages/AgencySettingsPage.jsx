@@ -130,7 +130,7 @@ const AgencySettingsPage = () => {
 // principal can finish account setup without leaving Settings.
 
 const TEAM_ROLE_CONFIG = {
-  principal: { label: 'Principal',  color: '#10B981', bg: '#10B98111' },
+  principal: { label: 'Principal',  color: '#B07A0E', bg: '#10B98111' },
   employee:  { label: 'Employee',   color: '#3B82F6', bg: '#3B82F611' },
   producer:  { label: 'Producer',   color: '#8B5CF6', bg: '#8B5CF611' },
   manager:   { label: 'Manager',    color: '#F59E0B', bg: '#F59E0B11' },
@@ -343,7 +343,7 @@ function TeamTab({ agencyId, isAgent }) {
                     ) : hasLogin ? (
                       <span style={{
                         fontSize: 11, fontWeight: 600, padding: '3px 8px',
-                        borderRadius: 4, color: '#10B981', background: '#10B98111',
+                        borderRadius: 4, color: '#B07A0E', background: '#10B98111',
                       }}>
                         <T k="pages.agencysettingspage.798702">● Active</T>
                       </span>

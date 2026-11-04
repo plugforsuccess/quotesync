@@ -11,7 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 // ── Sentiment config ──────────────────────────────────────────
 const SENTIMENT_OPTIONS = [
-  { value: 'on_track',        label: '✅ On Track',         color: '#10B981' },
+  { value: 'on_track',        label: '✅ On Track',         color: '#B07A0E' },
   { value: 'needs_attention', label: '⚠️ Needs Attention',  color: '#F59E0B' },
   { value: 'at_risk',         label: '🔴 At Risk',          color: '#EF4444' },
 ];
@@ -104,7 +104,7 @@ function OpenPendingCasesModule({ employeeId, agencyId }) {
   return (
     <ModuleCard label="Open Pending Cancel Cases">
       {data?.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#10B981' }}><T k="pages.cadenceagendapage.60f6d4">✅ No open cases</T></p>
+        <p style={{ fontSize: 13, color: '#B07A0E' }}><T k="pages.cadenceagendapage.60f6d4">✅ No open cases</T></p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {data?.map(c => (
@@ -203,7 +203,7 @@ function OpenCommitmentsModule({ employeeId, agencyId }) {
   return (
     <ModuleCard label="Open Commitments from Previous Meetings">
       {commitments.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#10B981' }}><T k="pages.cadenceagendapage.fc725b">✅ No open commitments</T></p>
+        <p style={{ fontSize: 13, color: '#B07A0E' }}><T k="pages.cadenceagendapage.fc725b">✅ No open commitments</T></p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {commitments.map(c => {

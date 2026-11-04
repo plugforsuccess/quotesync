@@ -136,8 +136,8 @@ function RepTimeline({ agencyId, employees }) {
         </select>
         {data && (
           <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-            <T k="pages.components.retention.repactivitypanel.d6928a">last 14 days ·</T> <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T>{' '}
-            <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
+            <T k="pages.components.retention.repactivitypanel.d6928a">last 14 days ·</T> <strong style={{ color: '#B07A0E' }}>{data.totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T>{' '}
+            <strong style={{ color: '#B07A0E' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
           </div>
         )}
       </div>
@@ -207,7 +207,7 @@ function DailyTeam({ agencyId, employees }) {
         <button onClick={() => shiftDay(1)} disabled={date >= localDay()} className="btn-ghost" style={{ padding: '6px 10px' }}>›</button>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}>{dayLabel(date)}</span>
         <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-          <T k="pages.components.retention.repactivitypanel.617d1d">team:</T> <strong style={{ color: '#10B981' }}>{totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T> <strong style={{ color: '#10B981' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{totals.attempts ? ` (${Math.round((totals.reached / totals.attempts) * 100)}% reached)` : ''} · {totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
+          <T k="pages.components.retention.repactivitypanel.617d1d">team:</T> <strong style={{ color: '#B07A0E' }}>{totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T> <strong style={{ color: '#B07A0E' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{totals.attempts ? ` (${Math.round((totals.reached / totals.attempts) * 100)}% reached)` : ''} · {totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
         </div>
       </div>
       {isLoading ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.repactivitypanel.5f02f0">Loading…</T></div>

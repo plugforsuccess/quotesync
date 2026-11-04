@@ -26,7 +26,7 @@ export const TASK_TYPES = [
   { value: 'terminate', label: 'Cancel / Terminate Policy', icon: '🚫', lane: 'licensed', color: '#DC2626' },
   // Quick Tasks (clerical — the front desk can close these out)
   { value: 'claim',     label: 'Claim / FNOL',           icon: '📋', lane: 'clerical',  color: '#EAB308' },
-  { value: 'id_cards',  label: 'ID Cards / Proof of Ins.', icon: '🪪', lane: 'clerical', color: '#10B981' },
+  { value: 'id_cards',  label: 'ID Cards / Proof of Ins.', icon: '🪪', lane: 'clerical', color: '#B07A0E' },
   { value: 'document',  label: 'Document Request',       icon: '📄', lane: 'clerical',  color: '#22C55E' },
   { value: 'other',     label: 'Other',                  icon: '📌', lane: 'clerical',  color: '#94A3B8' },
 ];
