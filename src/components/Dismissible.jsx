@@ -1,18 +1,22 @@
 // src/components/Dismissible.jsx
-// An alert note with an X. Closing it is remembered on this device; it comes back
-// if `version` changes (pass something that changes when the message does).
+// An alert note with an X. Closing it is remembered on this device for 24 hours; it
+// comes back sooner if `version` changes (pass something that changes when the message does).
 // Not for errors, security notices (impersonation) or legal disclosures.
 import { useState } from 'react';
 import { X } from 'lucide-react';
 
 const STORE = 'qs_dismissed_v1';
+const DAY = 24 * 60 * 60 * 1000;
 const read = () => { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { return {}; } };
+// Closed = same message, closed less than 24 hours ago.
+const isClosed = (entry, version) =>
+  !!entry && typeof entry === 'object' && entry.v === String(version) && Date.now() - Number(entry.at) < DAY;
 
 export default function Dismissible({ id, version = '1', children, className = '', light = false }) {
-  const [closed, setClosed] = useState(() => read()[id] === String(version));
+  const [closed, setClosed] = useState(() => isClosed(read()[id], version));
   if (closed) return null;
   const close = () => {
-    try { localStorage.setItem(STORE, JSON.stringify({ ...read(), [id]: String(version) })); } catch { /* private mode: closes for now */ }
+    try { localStorage.setItem(STORE, JSON.stringify({ ...read(), [id]: { v: String(version), at: Date.now() } })); } catch { /* private mode: closes for now */ }
     setClosed(true);
   };
   return (
