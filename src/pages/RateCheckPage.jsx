@@ -16,7 +16,7 @@ import { T, CopyImage } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
-  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem,
+  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -91,6 +91,9 @@ export default function RateCheckPage() {
   // The policy we're asking "more pages?" about, and photos picked together that
   // might be one policy or several.
   const [askingMore, setAskingMore] = useState(null);
+  // One-time nudge when someone continues with a single policy.
+  const [moreNudge, setMoreNudge] = useState(false);
+  const nudgedRef = useRef(false);
   const [grouping, setGrouping] = useState(null); // File[]
   const [fields, setFields] = useState({ firstName: '', phone: '', email: '', zip: '', housing: '' });
   // Text-message verification of the mobile number. The verified number is kept for
@@ -660,8 +663,12 @@ export default function RateCheckPage() {
 
   // ── Step 1: policies ──
   const returning = sent.length > 0 && !!given;
-  const goNext = () => {
+  const goNext = (force) => {
     if (!drafts.length) return;
+    setMoreNudge(false);
+    if (force !== true && drafts.length === 1 && sent.length === 0 && !nudgedRef.current) {
+      nudgedRef.current = true; setMoreNudge(true); return;
+    }
     if (returning && contactOk) { submit(); return; }
     setStep('you');
     window.scrollTo(0, 0);
@@ -673,13 +680,31 @@ export default function RateCheckPage() {
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700">
           <Plus className="h-6 w-6" aria-hidden="true" />
         </button>
-        <button type="button" onClick={goNext} className={primaryBtn}>
+        <button type="button" onClick={() => goNext()} className={primaryBtn}>
           {returning ? (drafts.length === 1 ? 'Send it' : `Send all ${drafts.length}`) : 'Continue'}
           <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-sm tabular-nums">{drafts.length}</span>
         </button>
       </ActionBar>
     )}>
       {fileInputs}
+      {moreNudge && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F2D6B]/50 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="rc-more-title"
+          onClick={(e) => { if (e.target === e.currentTarget) setMoreNudge(false); }}>
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Layers className="h-6 w-6" aria-hidden="true" /></span>
+            <h2 id="rc-more-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.more.title">Only one policy?</T></h2>
+            <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.more.line">Add your home, renters or another car too. Checking them together usually finds the biggest savings.</T></p>
+            <button type="button" onClick={() => { setMoreNudge(false); setAskingMore(null); openFiles(); }}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+              <Plus className="h-5 w-5" aria-hidden="true" /> <T k="rc.more.add">Add another policy</T>
+            </button>
+            <button type="button" onClick={() => goNext(true)}
+              className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+              <T k="rc.more.skip">Continue with one</T>
+            </button>
+          </div>
+        </div>
+      )}
       {drafts.length === 0 && !returning ? notices : banner}
       {returning && (
         <p className="mb-4 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
@@ -1200,14 +1225,29 @@ const PRODUCTS = [
   ['specialty', Gem, 'Specialty', 'Hard-to-place'],
 ];
 
-// Three tiles to a row: filled brand blue with a fluorescent border.
+// Tiles: filled brand blue, borders in a gold / light-blue checkerboard. The grid is
+// 2, 3 or 6 across depending on width, so each width gets its own pattern (Tailwind
+// needs the full class names written out).
+const TILE_EDGE = {
+  gold: ['border-[#F5D061] shadow-[0_0_10px_rgba(245,208,97,0.35)]',
+    'sm:border-[#F5D061] sm:shadow-[0_0_10px_rgba(245,208,97,0.35)]',
+    'lg:border-[#F5D061] lg:shadow-[0_0_10px_rgba(245,208,97,0.35)]'],
+  blue: ['border-[#93C5FD] shadow-[0_0_10px_rgba(147,197,253,0.35)]',
+    'sm:border-[#93C5FD] sm:shadow-[0_0_10px_rgba(147,197,253,0.35)]',
+    'lg:border-[#93C5FD] lg:shadow-[0_0_10px_rgba(147,197,253,0.35)]'],
+};
+const tileEdge = (i) => [2, 3, 6].map((cols, bp) => {
+  const gold = (Math.floor(i / cols) + (i % cols)) % 2 === 0;
+  return TILE_EDGE[gold ? 'gold' : 'blue'][bp];
+}).join(' ');
+
 function ProductsWeInsure() {
   return (
     <section aria-labelledby="rc-products">
       <h2 id="rc-products" className={sectionTitle}><T k="rc.products.heading">Products we insure</T></h2>
       <ul className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:mt-8 lg:grid-cols-6 lg:gap-3">
-        {PRODUCTS.map(([key, Icon, name, sub]) => (
-          <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
+        {PRODUCTS.map(([key, Icon, name, sub], i) => (
+          <li key={key} className={`flex min-w-0 flex-col items-center rounded-2xl border-2 bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center ${tileEdge(i)}`}>
             <Icon className="h-6 w-6 text-[#F5D061]" aria-hidden="true" strokeWidth={1.75} />
             <p className="mt-2 max-w-full truncate whitespace-nowrap text-[15px] font-extrabold leading-5 tracking-tight text-white"><T k={`rc.products.${key}.title`}>{name}</T></p>
             <p className="mt-0.5 max-w-full truncate whitespace-nowrap text-[11px] leading-4 text-blue-100"><T k={`rc.products.${key}.line`}>{sub}</T></p>
@@ -1359,6 +1399,10 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
           <T k="rc.upload.line">PDF, photos or screenshots</T><span className="hidden lg:inline"> · or drag your PDF here</span>
         </p>
       </div>
+      <p className="mt-3 flex items-start gap-2.5 rounded-2xl bg-blue-50 px-3.5 py-3 text-left text-sm leading-snug text-[#0F2D6B]">
+        <Layers className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" />
+        <span><T k="rc.upload.multi">**Have more than one policy?** Select them all at once: auto, home, renters, umbrella. Checking them together saves the most.</T></span>
+      </p>
       <button type="button" onClick={onCamera}
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 active:bg-slate-50">
         <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T>
