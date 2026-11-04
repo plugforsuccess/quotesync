@@ -444,7 +444,6 @@ function Earnings({ token, data, onChange }) {
           </div>
         ))}
       </section>
-      {data.monthly_cap && <p className="mt-2 text-xs text-slate-500">Up to {data.monthly_cap} households are paid each month.</p>}
 
       {/* All referrals in one table: a heading row per month, then name and what they sent. */}
       <section className="mt-5 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
