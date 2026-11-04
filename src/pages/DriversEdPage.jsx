@@ -312,8 +312,8 @@ export default function GeorgiaDriverEducationPage() {
         <div className={`relative ${wrap}`}>
           <h2 className="text-[30px] font-extrabold leading-tight tracking-tight lg:text-[40px]"><T k="pages.driversedpage.35a223">Need an insurance quote?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="pages.driversedpage.021418">Snap your declarations page. Cam checks if Allstate can beat it.</T></p>
-          <Link to="/" className="mx-auto mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-lg font-bold shadow-lg shadow-emerald-500/30"
-            style={{ background: ACCENT, color: DEEP }}>
+          <Link to="/" className="mx-auto mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-lg font-bold shadow-lg shadow-amber-500/30"
+            style={{ background: GOLD, color: DEEP }}>
             <T k="pages.driversedpage.725f04">Check my rate</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         </div>

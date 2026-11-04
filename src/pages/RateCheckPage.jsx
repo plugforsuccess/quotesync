@@ -16,7 +16,7 @@ import { T, CopyImage } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
-  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem,
+  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -91,6 +91,12 @@ export default function RateCheckPage() {
   // The policy we're asking "more pages?" about, and photos picked together that
   // might be one policy or several.
   const [askingMore, setAskingMore] = useState(null);
+  // One-time nudge when someone continues with a single policy.
+  const [moreNudge, setMoreNudge] = useState(false);
+  const nudgedRef = useRef(false);
+  // One-time nudge when someone sends without text permission (it stays optional).
+  const [textNudge, setTextNudge] = useState(false);
+  const textNudgedRef = useRef(false);
   const [grouping, setGrouping] = useState(null); // File[]
   const [fields, setFields] = useState({ firstName: '', phone: '', email: '', zip: '', housing: '' });
   // Text-message verification of the mobile number. The verified number is kept for
@@ -408,11 +414,12 @@ export default function RateCheckPage() {
     return () => clearTimeout(t);
   }, [otp.status, otp.sentAt, canResend]);
 
-  const submit = () => {
+  const submit = (over = {}) => {
+    const textOk = over.consent ?? consent;
     if (!contactOk || !drafts.length) return;
     const now = new Date().toISOString();
     // The decision is made once per visit; later policies in the same visit reuse it.
-    const grant = given || { consentGivenAt: consent ? now : null, referralConsentGivenAt: referralConsent ? now : null };
+    const grant = given || { consentGivenAt: textOk ? now : null, referralConsentGivenAt: referralConsent ? now : null };
     setGiven(grant);
     const ids = drafts.map(d => d.id);
     updateItems(list => list.map(i => (ids.includes(i.id) ? { ...i, status: 'queued' } : i)));
@@ -558,13 +565,18 @@ export default function RateCheckPage() {
   // ── Step 2: contact ──
   if (step === 'you') {
     const canSend = contactOk && drafts.length > 0;
+    const send = () => {
+      if (!canSend) return;
+      if (!consent && !given && !textNudgedRef.current) { textNudgedRef.current = true; setTextNudge(true); return; }
+      submit();
+    };
     const hint = missing.length
       ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}.`
       : '';
     return (
       <Shell step={2} bar={
         <ActionBar hint={canSend ? null : hint}>
-          <button type="button" onClick={submit} disabled={!canSend} className={primaryBtn}>
+          <button type="button" onClick={send} disabled={!canSend} className={primaryBtn}>
             {drafts.length > 1 ? `Check my ${drafts.length} policies` : 'Check my rate'}
           </button>
         </ActionBar>
@@ -576,7 +588,26 @@ export default function RateCheckPage() {
         <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.contact.heading">How can Cam reach you?</T></h1>
         <p className="mt-2 text-slate-600"><T k="rc.contact.line">Cam’s team only reaches out if Allstate can beat your price. No call centers, ever.</T></p>
 
-        <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="mt-6 space-y-4" noValidate>
+        {textNudge && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F2D6B]/50 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="rc-text-title"
+            onClick={(e) => { if (e.target === e.currentTarget) setTextNudge(false); }}>
+            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><MessageSquare className="h-6 w-6" aria-hidden="true" /></span>
+              <h2 id="rc-text-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.textnudge.title">Want a text when your quote is ready?</T></h2>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.textnudge.line">You left the text box unchecked. Check it and we’ll text you the moment your quote is ready.</T></p>
+              <button type="button" onClick={() => { setTextNudge(false); setConsent(true); submit({ consent: true }); }}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+                <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textnudge.yes">Text me</T>
+              </button>
+              <button type="button" onClick={() => { setTextNudge(false); submit(); }}
+                className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+                <T k="rc.textnudge.no">No thanks, send</T>
+              </button>
+              <p className="mt-2 text-center text-[11px] leading-snug text-slate-400" data-copy="fixed">{CONSENT.fine.replace('By checking this', 'By tapping “Text me”')}</p>
+            </div>
+          </div>
+        )}
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="mt-6 space-y-4" noValidate>
           <Field label="First name" htmlFor="rc-first">
             <input id="rc-first" autoComplete="given-name" value={fields.firstName} maxLength={60} required
               onChange={e => setFields(f => ({ ...f, firstName: e.target.value }))} className={inputCls} />
@@ -660,8 +691,12 @@ export default function RateCheckPage() {
 
   // ── Step 1: policies ──
   const returning = sent.length > 0 && !!given;
-  const goNext = () => {
+  const goNext = (force) => {
     if (!drafts.length) return;
+    setMoreNudge(false);
+    if (force !== true && drafts.length === 1 && sent.length === 0 && !nudgedRef.current) {
+      nudgedRef.current = true; setMoreNudge(true); return;
+    }
     if (returning && contactOk) { submit(); return; }
     setStep('you');
     window.scrollTo(0, 0);
@@ -673,13 +708,31 @@ export default function RateCheckPage() {
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700">
           <Plus className="h-6 w-6" aria-hidden="true" />
         </button>
-        <button type="button" onClick={goNext} className={primaryBtn}>
+        <button type="button" onClick={() => goNext()} className={primaryBtn}>
           {returning ? (drafts.length === 1 ? 'Send it' : `Send all ${drafts.length}`) : 'Continue'}
           <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-sm tabular-nums">{drafts.length}</span>
         </button>
       </ActionBar>
     )}>
       {fileInputs}
+      {moreNudge && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F2D6B]/50 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="rc-more-title"
+          onClick={(e) => { if (e.target === e.currentTarget) setMoreNudge(false); }}>
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Layers className="h-6 w-6" aria-hidden="true" /></span>
+            <h2 id="rc-more-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.more.title">Only one policy?</T></h2>
+            <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.more.line">Add your home, renters or another car too. Checking them together usually finds the biggest savings.</T></p>
+            <button type="button" onClick={() => { setMoreNudge(false); setAskingMore(null); openFiles(); }}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+              <Plus className="h-5 w-5" aria-hidden="true" /> <T k="rc.more.add">Add another policy</T>
+            </button>
+            <button type="button" onClick={() => goNext(true)}
+              className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+              <T k="rc.more.skip">Continue with one</T>
+            </button>
+          </div>
+        </div>
+      )}
       {drafts.length === 0 && !returning ? notices : banner}
       {returning && (
         <p className="mb-4 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
@@ -1121,7 +1174,7 @@ function MeetCam({ onUpload }) {
         <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#F5D061]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
         <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
         <button type="button" onClick={onUpload}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#39FF88] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#2ee87a]">
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F5D061] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#E9C14A]">
           <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
         </button>
       </div>
@@ -1200,14 +1253,29 @@ const PRODUCTS = [
   ['specialty', Gem, 'Specialty', 'Hard-to-place'],
 ];
 
-// Three tiles to a row: filled brand blue with a fluorescent border.
+// Tiles: filled brand blue, borders in a gold / light-blue checkerboard. The grid is
+// 2, 3 or 6 across depending on width, so each width gets its own pattern (Tailwind
+// needs the full class names written out).
+const TILE_EDGE = {
+  gold: ['border-[#F5D061] shadow-[0_0_10px_rgba(245,208,97,0.35)]',
+    'sm:border-[#F5D061] sm:shadow-[0_0_10px_rgba(245,208,97,0.35)]',
+    'lg:border-[#F5D061] lg:shadow-[0_0_10px_rgba(245,208,97,0.35)]'],
+  blue: ['border-[#93C5FD] shadow-[0_0_10px_rgba(147,197,253,0.35)]',
+    'sm:border-[#93C5FD] sm:shadow-[0_0_10px_rgba(147,197,253,0.35)]',
+    'lg:border-[#93C5FD] lg:shadow-[0_0_10px_rgba(147,197,253,0.35)]'],
+};
+const tileEdge = (i) => [2, 3, 6].map((cols, bp) => {
+  const gold = (Math.floor(i / cols) + (i % cols)) % 2 === 0;
+  return TILE_EDGE[gold ? 'gold' : 'blue'][bp];
+}).join(' ');
+
 function ProductsWeInsure() {
   return (
     <section aria-labelledby="rc-products">
       <h2 id="rc-products" className={sectionTitle}><T k="rc.products.heading">Products we insure</T></h2>
       <ul className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:mt-8 lg:grid-cols-6 lg:gap-3">
-        {PRODUCTS.map(([key, Icon, name, sub]) => (
-          <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
+        {PRODUCTS.map(([key, Icon, name, sub], i) => (
+          <li key={key} className={`flex min-w-0 flex-col items-center rounded-2xl border-2 bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center ${tileEdge(i)}`}>
             <Icon className="h-6 w-6 text-[#F5D061]" aria-hidden="true" strokeWidth={1.75} />
             <p className="mt-2 max-w-full truncate whitespace-nowrap text-[15px] font-extrabold leading-5 tracking-tight text-white"><T k={`rc.products.${key}.title`}>{name}</T></p>
             <p className="mt-0.5 max-w-full truncate whitespace-nowrap text-[11px] leading-4 text-blue-100"><T k={`rc.products.${key}.line`}>{sub}</T></p>
@@ -1250,7 +1318,7 @@ function CarrierLogos() {
   );
   return (
     <section className="border-y border-slate-200 bg-white py-12 lg:py-16" aria-labelledby="rc-carriers">
-      <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
+      <style>{'@keyframes rc-marquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}.rc-marquee{animation:rc-marquee 36s linear infinite;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       {/* The heading sits above the strip; the strip has its own band. */}
       <div className={wrap}>
         <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
@@ -1260,8 +1328,12 @@ function CarrierLogos() {
           an empty run before the next one shows. */}
       <div className="mt-6 lg:mt-8">
         <div className={wrap}>
-          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 py-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+          {/* Edge fades are white overlays, not a mask: iPhone Safari stops painting
+              logos in a moving strip under a mask-image, leaving blank space. */}
+          <div className="rc-marquee-wrap relative -mx-4 overflow-hidden px-4 py-2">
             <div className="rc-marquee flex w-max">{row(false)}{row(true)}</div>
+            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />
           </div>
         </div>
       </div>
@@ -1355,6 +1427,10 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
           <T k="rc.upload.line">PDF, photos or screenshots</T><span className="hidden lg:inline"> · or drag your PDF here</span>
         </p>
       </div>
+      <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[13px] text-slate-500">
+        <Layers className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <T k="rc.upload.multi">Have several policies? Select them all at once.</T>
+      </p>
       <button type="button" onClick={onCamera}
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 active:bg-slate-50">
         <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T>
@@ -1466,7 +1542,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#39FF88] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-emerald-500/30 active:bg-[#2ee87a]">
+            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#F5D061] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-amber-500/30 active:bg-[#E9C14A]">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
             </button>
             <button type="button" onClick={onCamera} className="flex items-center justify-center gap-2 rounded-2xl border border-white/40 px-5 py-4 font-semibold text-white active:bg-white/10">

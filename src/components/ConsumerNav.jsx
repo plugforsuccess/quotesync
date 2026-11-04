@@ -75,7 +75,7 @@ export function ConsumerNav({ current }) {
               ))}
             </nav>
             <div className="mt-auto px-5 pb-8">
-              <Link to="/" onClick={() => setOpen(false)} className="flex h-12 items-center justify-center rounded-xl text-base font-bold" style={{ background: ACCENT, color: '#0F2D6B' }}>
+              <Link to="/" onClick={() => setOpen(false)} className="flex h-12 items-center justify-center rounded-xl text-base font-bold" style={{ background: '#F5D061', color: '#0F2D6B' }}>
                 Check my rate
               </Link>
             </div>

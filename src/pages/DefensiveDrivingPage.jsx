@@ -96,7 +96,7 @@ export default function DefensiveDrivingPage() {
                 ))}
               </ul>
               <div className="flex items-center gap-4">
-                <a href="#enroll" className="rounded-2xl px-7 py-3.5 text-base font-bold shadow-lg shadow-emerald-500/25 transition hover:brightness-95" style={{ background: ACCENT, color: DEEP }}>
+                <a href="#enroll" className="rounded-2xl px-7 py-3.5 text-base font-bold shadow-lg shadow-amber-500/25 transition hover:brightness-95" style={{ background: GOLD, color: DEEP }}>
                   <T k="pages.defensivedrivingpage.6ba3ba">Enroll for</T> {price}
                 </a>
                 <span className="text-sm text-blue-100"><T k="pages.defensivedrivingpage.47455c">One-time payment</T></span>

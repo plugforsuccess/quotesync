@@ -425,7 +425,7 @@ function Earnings({ token, data, onChange }) {
         <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}>Your link</p>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
         <div className="mt-4 flex gap-2">
-          <button type="button" onClick={copy} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-bold transition active:brightness-95" style={{ background: ACCENT, color: DEEP }}>
+          <button type="button" onClick={copy} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-bold transition active:brightness-95" style={{ background: GOLD, color: DEEP }}>
             {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> Copied</> : <><Copy className="h-4 w-4" aria-hidden="true" /> Copy link</>}
           </button>
           {typeof navigator !== 'undefined' && navigator.share && (
