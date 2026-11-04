@@ -470,7 +470,7 @@ export default function RateChecksPage() {
         <TabBar tab={tab} setTab={(v) => { setPartnerFocus(null); setTab(v); }} />
 
         {tab === 'scripts' ? <ScriptsTab />
-          : tab === 'texts' ? <TextsTab />
+          : tab === 'texts' ? <TextsTab agencyId={agencyId} />
           : tab === 'map' ? <WinMap agencyId={agencyId} />
           : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} scans={allRows} />
           : tab === 'promoters' ? <PartnersTab agencyId={agencyId} userId={user?.id} canEdit={canEditRules} focusId={partnerFocus}

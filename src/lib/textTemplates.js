@@ -96,5 +96,30 @@ export function buildText(id, vars = {}) {
     .replace(/\[carrier\]/gi, vars.carrier || 'current')
     .replace(/\[review link\]/gi, vars.reviewLink || '')
     .replace(/\[portal link\]/gi, vars.portalLink || '');
-  return t.auto && !/\bSTOP\b/.test(body) ? `${body}\n\n${STOP_LINE}` : body;
+  let out = body;
+  // A text that's meant to carry the review link always does, even if an edit dropped it.
+  if (vars.reviewLink && t.blanks.includes('[review link]') && !out.includes(vars.reviewLink)) out += `\n\n${vars.reviewLink}`;
+  if (t.auto && !/\bSTOP\b/.test(out)) out += `\n\n${STOP_LINE}`;
+  return plainQuotes(out);
+}
+
+// iPhone keyboards type curly quotes; one curly quote makes a text bill as a
+// "unicode" text (70 characters a segment instead of 160). Straight quotes read the same.
+export const plainQuotes = (s) => s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+
+/** How many SMS segments a text bills as (GSM 160/153, unicode 70/67). */
+export function segments(text) {
+  const gsm = /^[\n\r\x20-\x7E\u00A3\u00A5\u00E8\u00E9\u00F9\u00EC\u00F2\u00C7\u00D8\u00F8\u00C5\u00E5\u00C6\u00E6\u00DF\u00C9\u00C4\u00D6\u00D1\u00DC\u00A7\u00BF\u00E4\u00F6\u00F1\u00FC\u00E0]*$/.test(text);
+  const [one, many] = gsm ? [160, 153] : [70, 67];
+  return text.length <= one ? 1 : Math.ceil(text.length / many);
+}
+
+/** Saved paragraphs that dropped something the text needs. */
+export function templateWarnings(id) {
+  const t = byId[id];
+  const saved = t.paragraphs.map((p, i) => copyValue(`${t.key}.${i + 1}`, p)).join(' ');
+  const w = [];
+  if (id === 'ready' && !/\breply\s+y\b/i.test(saved)) w.push('“Reply Y” is missing: their Y is what tells you to call.');
+  for (const b of t.blanks) if (b !== '[first name]' && b !== '[carrier]' && !saved.toLowerCase().includes(b)) w.push(`${b} is missing${b === '[review link]' ? ': it’s added at the end' : ''}.`);
+  return w;
 }

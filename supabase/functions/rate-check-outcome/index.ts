@@ -91,7 +91,8 @@ async function textFor(supabase: any, key: string, vars: { name?: string | null,
     .replace(/\[review link\]/gi, vars.reviewLink || '')
   if (vars.reviewLink && !body.includes(vars.reviewLink)) body += `\n\n${vars.reviewLink}`
   if (!/\bSTOP\b/.test(body)) body += '\n\nReply STOP to opt out.'
-  return body
+  // Curly quotes (iPhone keyboards) make a text bill as unicode: 70 characters a segment, not 160.
+  return body.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"')
 }
 
 Deno.serve(async (req) => {

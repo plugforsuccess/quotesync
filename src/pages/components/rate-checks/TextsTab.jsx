@@ -2,10 +2,12 @@
 // Every text customers and partners get, in one place. The owner edits each
 // paragraph with the copy-editor pencil (principals only); whatever's saved is
 // what goes out, automatic or tapped. Blanks fill in when a text is sent.
-import { Lock } from 'lucide-react';
+import { AlertTriangle, Lock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../../lib/supabase';
 import { T } from '../../../components/SiteCopy';
 import { CopyTextButton } from './Copyable';
-import { TEXT_GROUPS, TEXT_TEMPLATES, STOP_LINE, buildText } from '../../../lib/textTemplates';
+import { TEXT_GROUPS, TEXT_TEMPLATES, STOP_LINE, buildText, segments, templateWarnings } from '../../../lib/textTemplates';
 import { REVIEW_LINK_KEY, REVIEW_LINK_FALLBACK, reviewUrl } from '../../../lib/reviews';
 
 const box = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' };
@@ -29,8 +31,13 @@ function Template({ t }) {
           </p>
         )}
       </div>
+      {templateWarnings(t.id).map(w => (
+        <p key={w} className="mt-2 flex items-start gap-1.5 text-xs" style={{ color: 'var(--qs-warning)' }}><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {w}</p>
+      ))}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Fills in: {t.blanks.join(', ')}</p>
+        <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
+          Fills in: {t.blanks.join(', ')} · {(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/partner/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}
+        </p>
         <CopyTextButton text={buildText(t.id, { ...sample, name: '', reviewLink: reviewUrl() })} className="h-8 rounded-full px-3 text-xs font-semibold text-primary-600" style={box}>
           Copy
         </CopyTextButton>
@@ -39,11 +46,28 @@ function Template({ t }) {
   );
 }
 
-export default function TextsTab() {
+export default function TextsTab({ agencyId }) {
+  const { data: agency } = useQuery({
+    queryKey: ['agency-texting', agencyId],
+    enabled: !!agencyId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('agencies').select('twilio_from_number').eq('id', agencyId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const autoOff = agency && !agency.twilio_from_number;
+  const linkUnset = reviewUrl() === REVIEW_LINK_FALLBACK;
   return (
     <div className="space-y-5">
+      {(autoOff || linkUnset) && (
+        <div className="space-y-1.5 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle, rgba(245,158,11,.1))', border: '1px solid var(--qs-warning-border, rgba(245,158,11,.35))', color: 'var(--qs-text)' }} role="status">
+          {autoOff && <p className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" /> Automatic texts are off: the agency has no texting number yet. Nothing marked Automatic goes out until one is set. You can still tap to send any of them from your phone.</p>}
+          {linkUnset && <p className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" /> Your Google review link isn’t set, so review texts link to a Google search for the agency. Paste your link below.</p>}
+        </div>
+      )}
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-        Turn on the pencil to edit any line. What you save is exactly what goes out, whether it’s sent automatically or you tap to send it.
+        The texts customers and partners get from Rate Checks. Turn on the pencil to edit any line. What you save is what goes out, whether it’s sent automatically or you tap to send it.
       </p>
 
       <section className="dark-card" style={{ padding: 16 }} aria-label="Google review link">
