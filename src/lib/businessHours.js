@@ -97,3 +97,35 @@ export function businessMsBetween(start, end) {
 
 // Convenience: full open-hours in one business day (9h), e.g. for budget math.
 export { MS_PER_BUSINESS_DAY };
+
+/**
+ * When the office next opens, for "expect a text by …" copy. Returns null while
+ * the office is open (or within `graceMin` minutes of closing, when there's
+ * still time to finish), otherwise { at: epoch ms, label: 'tomorrow at 9am' }.
+ */
+export function nextOpening(now = new Date(), graceMin = 30) {
+  const nowMs = now instanceof Date ? now.getTime() : new Date(now).getTime();
+  let { y, m, d } = easternYmd(new Date(nowMs));
+  if (isBusinessDate(y, m, d)) {
+    const open = easternWallInstant(y, m, d, OPEN_HOUR);
+    const close = easternWallInstant(y, m, d, CLOSE_HOUR);
+    if (nowMs >= open && nowMs < close - graceMin * 60000) return null;
+  }
+  for (let i = 0; i < 14; i++) {
+    if (isBusinessDate(y, m, d)) {
+      const open = easternWallInstant(y, m, d, OPEN_HOUR);
+      if (open > nowMs) {
+        const today = easternYmd(new Date(nowMs));
+        const tomorrow = nextDate(today.y, today.m, today.d);
+        const same = (a) => a.y === y && a.m === m && a.d === d;
+        const day = same(today) ? 'this morning'
+          : same(tomorrow) ? 'tomorrow'
+          : new Intl.DateTimeFormat('en-US', { timeZone: BUSINESS_TZ, weekday: 'long' }).format(new Date(open));
+        const hour = OPEN_HOUR > 12 ? `${OPEN_HOUR - 12}pm` : `${OPEN_HOUR}am`;
+        return { at: open, label: same(today) ? `${day} at ${hour}` : `${day} at ${hour}` };
+      }
+    }
+    ({ y, m, d } = nextDate(y, m, d));
+  }
+  return null;
+}

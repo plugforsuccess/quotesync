@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
+import { nextOpening } from '../lib/businessHours';
+import { DrawnCheck, CountUp, NextTimeline, CamCard, ShareLine } from './components/rate-checks/DoneExtras';
 import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
 } from '../lib/rateCheckDraft';
@@ -484,6 +486,7 @@ export default function RateCheckPage() {
     const read = sent.filter(i => i.status === 'read');
     const priced = read.filter(i => i.result?.annual_premium != null);
     const total = priced.reduce((s, i) => s + i.result.annual_premium, 0);
+    const opens = nextOpening();
     const policySlide = {
       key: 'policies',
       label: sent.length === 1 ? 'Your policy' : `Your ${sent.length} policies`,
@@ -497,17 +500,6 @@ export default function RateCheckPage() {
     };
     const slides = reading ? [policySlide] : [
       policySlide,
-      {
-        key: 'next',
-        label: 'Next steps',
-        content: (
-          <ol className="space-y-2.5 text-[15px] leading-snug text-slate-700">
-            <li className="flex gap-3"><Step n={1} /> We price the same coverage with Allstate.</li>
-            <li className="flex gap-3"><Step n={2} /> If we can save you money, Cam texts you the number.</li>
-            <li className="flex gap-3"><Step n={3} /> If we can&apos;t, we&apos;ll say so. No spam, no pressure.</li>
-          </ol>
-        ),
-      },
       {
         key: 'more',
         label: 'Add more',
@@ -529,13 +521,15 @@ export default function RateCheckPage() {
         {fileInputs}
         {banner}
         <div role="status" aria-live="polite" className="text-center">
-          {!reading && <span className="qc-badge mb-4" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>}
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]">
+          {!reading && <DrawnCheck />}
+          <h1 className={`text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] ${reading ? '' : 'qc-rise'}`} style={reading ? undefined : { animationDelay: '150ms' }}>
             {reading ? <T k="rc.results.reading">Reading your policies…</T> : <T k="rc.results.done">Got it — Cam is on it.</T>}
           </h1>
-          <p className="mx-auto mt-2 max-w-xs text-slate-600">
+          <p className={`mx-auto mt-2 max-w-xs text-slate-600 ${reading ? '' : 'qc-rise'}`} style={reading ? undefined : { animationDelay: '230ms' }}>
             {reading
               ? <T k="rc.results.reading.line">Each one takes about 10–20 seconds. Keep this screen open.</T>
+              : opens
+                ? <><T k="rc.results.closed">Our office is closed right now. Expect to hear from Cam</T> {opens.label}.</>
               : given?.consentGivenAt
                 ? <T k="rc.results.done.text">Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.</T>
                 : <T k="rc.results.done.reach">Cam’s team will reach out when your quote is ready—typically within 30 mins during business hours.</T>}
@@ -543,16 +537,21 @@ export default function RateCheckPage() {
         </div>
 
         {priced.length > 0 && (
-          <div className="mt-5 rounded-2xl px-5 py-4 text-center text-white shadow-lg shadow-blue-900/20" style={{ background: HERO_BG }}>
+          <div className="qc-rise mt-5 rounded-2xl px-5 py-4 text-center text-white shadow-lg shadow-blue-900/20" style={{ background: HERO_BG, animationDelay: '320ms' }}>
             <p className="text-sm text-blue-100">You pay today</p>
-            <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span data-testid="rc-total">{money(total)}</span><span className="text-lg font-semibold text-blue-100"> /yr</span></p>
+            <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span className="sr-only" data-testid="rc-total">{money(total)}</span><span aria-hidden="true"><CountUp value={total} format={money} /></span><span className="text-lg font-semibold text-blue-100"> /yr</span></p>
             <p className="mt-1 text-sm text-blue-100">
               across {priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''} · the price to beat
             </p>
           </div>
         )}
 
+        {!reading && <NextTimeline texting={!!given?.consentGivenAt} opensAt={opens?.label} />}
+        {!reading && <CamCard photo={AGENT.photo} />}
+
         <Carousel slides={slides} className="mt-5" />
+
+        {!reading && <ShareLine />}
 
         {!reading && (
           <p className="mt-5 text-center text-sm text-slate-500">
@@ -887,7 +886,7 @@ function Thumb({ item, scanning = false, small = false }) {
       {scanning && (
         <>
           <div className="absolute inset-0 bg-blue-600/10" />
-          <div className="rc-scan absolute inset-x-0 h-6 bg-gradient-to-b from-transparent via-blue-500/60 to-transparent" />
+          <div className="rc-scan absolute inset-x-0 h-6 bg-gradient-to-b from-transparent via-[#F5D061]/80 to-transparent" />
         </>
       )}
     </div>
@@ -1447,7 +1446,27 @@ const HOW = [
   ['3', MessageSquare, 'Get your quote', 'Usually within 30 minutes during business hours.'],
 ];
 
+// Landing sections fade up as they scroll in. Content only hides once this runs,
+// so nothing is ever stuck invisible.
+function useReveal() {
+  useEffect(() => {
+    const els = [...document.querySelectorAll('[data-reveal]')];
+    if (!els.length || typeof IntersectionObserver === 'undefined') return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const vh = window.innerHeight;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    for (const el of els) {
+      if (el.getBoundingClientRect().top < vh) continue; // already on screen: leave it
+      el.classList.add('will-reveal'); io.observe(el);
+    }
+    return () => io.disconnect();
+  }, []);
+}
+
 function Landing({ note, onUpload, onCamera, onDropFiles }) {
+  useReveal();
   const [howTo, setHowTo] = useState(false);
   return (
     <>
@@ -1479,7 +1498,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* How it works */}
-      <section className="bg-white pt-14 pb-12 lg:pt-20 lg:pb-16" aria-labelledby="rc-how">
+      <section data-reveal className="bg-white pt-14 pb-12 lg:pt-20 lg:pb-16" aria-labelledby="rc-how">
         <div className={wrap}>
           <h2 id="rc-how" className={sectionTitle}><T k="rc.how.heading">How it works</T></h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-3 lg:gap-6">
@@ -1519,7 +1538,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       <CarrierLogos />
 
       {/* Proof: the owner */}
-      <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-owner">
+      <section data-reveal className="bg-white py-14 lg:py-20" aria-labelledby="rc-owner">
         <div className={`${wrap} grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-16`}>
           <div>
             <h2 id="rc-owner" className={sectionTitle}><T k="rc.owner.heading">Meet the Owner</T></h2>
@@ -1532,12 +1551,12 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* What we insure */}
-      <section className="bg-slate-50 py-14 lg:py-20">
+      <section data-reveal className="bg-slate-50 py-14 lg:py-20">
         <div className={wrap}><ProductsWeInsure /></div>
       </section>
 
       {/* The ask, again */}
-      <section className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: HERO_BG }} aria-labelledby="rc-closing">
+      <section data-reveal className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: HERO_BG }} aria-labelledby="rc-closing">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
           style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(96,165,250,0.35), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
@@ -1586,9 +1605,9 @@ function Shell({ children, step, bar, center = false, wide = false }) {
           </ol>
         )}
       </header>
-      <main className={center
+      <main key={step} className={`qc-step ${center
         ? 'mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-md flex-col justify-center px-4 py-6'
-        : 'mx-auto max-w-md px-4 pt-6 pb-10'}>{children}</main>
+        : 'mx-auto max-w-md px-4 pt-6 pb-10'}`}>{children}</main>
       <RateCheckFooter padForBar={!!bar} />
       {bar}
     </div>

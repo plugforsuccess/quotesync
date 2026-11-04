@@ -928,3 +928,23 @@ gmp-placeautocomplete input:focus {
 @keyframes qc-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .qc-badge { animation: none; } }
 }
+
+/* Confirmation motion: drawn check, staggered rise, a soft pulse on "now". */
+@keyframes qc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.qc-check { stroke-dasharray: 1; stroke-dashoffset: 1; animation: qc-draw .45s .3s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes qc-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.qc-rise { opacity: 0; animation: qc-rise .5s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes qc-ring { 0% { box-shadow: 0 0 0 0 rgba(29,78,216,.45); } 100% { box-shadow: 0 0 0 10px rgba(29,78,216,0); } }
+.qc-pulse { animation: qc-ring 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .qc-check { stroke-dashoffset: 0; animation: none; }
+  .qc-rise { opacity: 1; animation: none; }
+  .qc-pulse { animation: none; }
+}
+
+/* Rate Check: each step slides in; landing sections fade up on scroll. */
+@keyframes qc-step { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.qc-step { animation: qc-step .35s cubic-bezier(.2,.8,.2,1); }
+.will-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1); }
+.will-reveal.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .qc-step { animation: none; } .will-reveal { opacity: 1; transform: none; } }
