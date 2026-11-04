@@ -69,7 +69,20 @@ async function fillContact(page) {
   await page.getByLabel('Where do you live?').selectOption('own');
 }
 
+// Two one-time prompts can appear in the flow: "Only one policy?" on Continue and
+// "Want a text…?" when sending with the text box unchecked. Tests that aren't about
+// them answer them the quiet way; the first test checks them directly.
+const NUDGES = new WeakMap();
+test.beforeEach(async ({ page }) => {
+  const oneMore = page.getByRole('button', { name: 'Continue with one' });
+  const noText = page.getByRole('button', { name: 'No thanks, send' });
+  await page.addLocatorHandler(oneMore, async () => { await oneMore.click(); });
+  await page.addLocatorHandler(noText, async () => { await noText.click(); });
+  NUDGES.set(page, [oneMore, noText]);
+});
+
 test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
   const photoPath = testInfo.outputPath('dec-page-photo.png');
   fs.writeFileSync(photoPath, noisePng(2400, 1800));
   const photoBytes = fs.statSync(photoPath).size;
@@ -92,6 +105,9 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   await expect(page.getByText('1 page', { exact: true })).toBeVisible();
   await expect(page.getByText('Does this policy have more pages?')).toBeVisible();
   await page.getByRole('button', { name: /Continue/ }).click();
+  // One policy: asked once whether there's another.
+  await expect(page.getByRole('heading', { name: 'Only one policy?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue with one' }).click();
 
   await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
   const submit = page.getByRole('button', { name: 'Check my rate' });
@@ -100,11 +116,13 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   // Both boxes are optional and start unchecked: automated texts first, partner referral second.
   await expect(page.getByRole('checkbox').nth(0)).not.toBeChecked();
   await expect(submit).toBeEnabled();
-  await page.getByRole('checkbox').nth(0).check();
   await expect(page.getByRole('checkbox').nth(1)).not.toBeChecked();
 
-  const started = Date.now();
+  // Sending with the text box unchecked asks once; "Text me" checks it and sends.
   await submit.click();
+  await expect(page.getByRole('heading', { name: 'Want a text when your quote is ready?' })).toBeVisible();
+  const started = Date.now();
+  await page.getByRole('button', { name: 'Text me' }).click();
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
   const elapsedMs = Date.now() - started;
   await expect(page.getByText('State Farm', { exact: true })).toBeVisible();
