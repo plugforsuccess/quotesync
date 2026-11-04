@@ -867,3 +867,52 @@ gmp-placeautocomplete input:focus {
 [data-money] { --qs-success: #10B981; }
 [data-theme="light"] .qs-app-shell .text-emerald-300[data-money],
 [data-theme="light"] .qs-app-shell .text-emerald-400[data-money] { color: #047857 !important; }
+
+/* ════════════════════════════════════════════════════════════
+   CONSUMER BUTTONS — one system for the public site, Drivers Ed,
+   the course pages, the partner portal and the menu.
+   .qb + a look (.qb-gold, .qb-blue, .qb-outline, .qb-outline-dark)
+   + a size (.qb-lg 56px main action, .qb-md 48px second choice).
+════════════════════════════════════════════════════════════ */
+@layer components {
+.qb {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border-radius: 1rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+  text-align: center; text-decoration: none; cursor: pointer; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: transform .12s ease, box-shadow .2s ease, filter .2s ease, background-color .2s ease;
+}
+.qb:active:not(:disabled) { transform: scale(.98); }
+.qb:focus-visible { outline: 3px solid #F5D061; outline-offset: 3px; }
+.qb:disabled, .qb[aria-disabled="true"] { cursor: not-allowed; opacity: .55; box-shadow: none; filter: grayscale(.35); }
+.qb-lg { min-height: 3.5rem; padding: .875rem 1.5rem; font-size: 1.0625rem; }
+.qb-md { min-height: 3rem; padding: .625rem 1.25rem; font-size: 1rem; }
+
+/* Gold: the main action on blue backgrounds. */
+.qb-gold {
+  color: #0F2D6B;
+  background: linear-gradient(180deg, #F9DD7E 0%, #F5D061 45%, #ECC046 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 8px 20px -6px rgba(180,130,10,.55);
+}
+/* Blue: the main action on white backgrounds. */
+.qb-blue {
+  color: #fff;
+  background: linear-gradient(180deg, #2B63E6 0%, #1D4ED8 55%, #1A44C2 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 8px 20px -6px rgba(29,78,216,.55);
+}
+.qb-blue:disabled { background: #CBD5E1; color: #fff; opacity: 1; }
+/* Outlines: the second choice. */
+.qb-outline { color: #0F2D6B; background: #fff; border: 1.5px solid #CBD5E1; }
+.qb-outline-dark { color: #fff; background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.45); }
+
+@media (hover: hover) {
+  .qb-gold:hover:not(:disabled), .qb-blue:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.04); }
+  .qb-gold:hover:not(:disabled) { box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 12px 26px -8px rgba(180,130,10,.6); }
+  .qb-blue:hover:not(:disabled) { box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 12px 26px -8px rgba(29,78,216,.6); }
+  .qb-outline:hover:not(:disabled) { border-color: #94A3B8; background: #F8FAFC; }
+  .qb-outline-dark:hover:not(:disabled) { background: rgba(255,255,255,.1); }
+}
+.qb-arrow { transition: transform .2s ease; }
+@media (hover: hover) { .qb:hover .qb-arrow { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .qb, .qb-arrow { transition: none; } .qb:active:not(:disabled) { transform: none; } }
+}

@@ -96,7 +96,7 @@ export default function DefensiveDrivingPage() {
                 ))}
               </ul>
               <div className="flex items-center gap-4">
-                <a href="#enroll" className="rounded-2xl px-7 py-3.5 text-base font-bold shadow-lg shadow-amber-500/25 transition hover:brightness-95" style={{ background: GOLD, color: DEEP }}>
+                <a href="#enroll" className="qb qb-gold qb-lg px-7">
                   <T k="pages.defensivedrivingpage.6ba3ba">Enroll for</T> {price}
                 </a>
                 <span className="text-sm text-blue-100"><T k="pages.defensivedrivingpage.47455c">One-time payment</T></span>
@@ -174,7 +174,7 @@ export default function DefensiveDrivingPage() {
                 </li>
               ))}
             </ul>
-            <a href="#enroll" className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white shadow-lg shadow-blue-700/25 transition">
+            <a href="#enroll" className="qb qb-blue qb-lg px-8">
               <CreditCard className="w-4 h-4" /> <T k="pages.defensivedrivingpage.e3b2ff">Enroll now</T>
             </a>
           </div>
@@ -342,7 +342,7 @@ function EnrollCard({ course, enrollment, user, profile }) {
         <div className="space-y-3">
           <p className="text-sm font-semibold text-emerald-700"><T k="pages.defensivedrivingpage.de80cb">You’re enrolled.</T></p>
           <Link to="/courses/defensive-driving/portal"
-            className="block text-center w-full rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white transition">
+            className="qb qb-blue qb-lg flex w-full">
             <T k="pages.defensivedrivingpage.21acac">Go to your course</T>
           </Link>
         </div>
@@ -391,7 +391,7 @@ function EnrollForm({ course, defaultName }) {
       </label>
       {error && <p className="flex items-start gap-2 text-xs font-medium text-red-700"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
       <button type="submit" disabled={submitting}
-        className="w-full rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white transition flex items-center justify-center gap-2">
+        className="qb qb-blue qb-lg w-full">
         {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingpage.15f045">Redirecting…</T></> : 'Enroll & Pay'}
       </button>
       <p className="text-[11px] text-slate-500 text-center"><T k="pages.defensivedrivingpage.21180b">Secure checkout with Stripe.</T></p>
@@ -504,7 +504,7 @@ function AuthPanel() {
 
       <div className="pt-2 flex justify-center">
         <button type="submit" disabled={busy}
-          className="px-8 rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white transition flex items-center justify-center gap-2">
+          className="qb qb-blue qb-lg px-8">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (isCreate ? 'Create account & start' : 'Sign in')}
         </button>
       </div>

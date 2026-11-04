@@ -16,7 +16,7 @@ import { T, CopyImage } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
-  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers,
+  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -517,7 +517,7 @@ export default function RateCheckPage() {
             <p className="font-semibold text-slate-900">Got another policy?</p>
             <p className="mt-1 text-sm text-slate-600">A second car, your home, a boat. Bundling often saves the most.</p>
             <button type="button" onClick={() => { setStep('policies'); window.scrollTo(0, 0); }}
-              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white shadow-sm active:bg-blue-800">
+              className="qb qb-blue qb-md mt-3">
               <Plus className="h-5 w-5" aria-hidden="true" /> Add more policies
             </button>
           </div>
@@ -578,6 +578,7 @@ export default function RateCheckPage() {
         <ActionBar hint={canSend ? null : hint}>
           <button type="button" onClick={send} disabled={!canSend} className={primaryBtn}>
             {drafts.length > 1 ? `Check my ${drafts.length} policies` : 'Check my rate'}
+            <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
           </button>
         </ActionBar>
       }>
@@ -596,11 +597,11 @@ export default function RateCheckPage() {
               <h2 id="rc-text-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.textnudge.title">Want a text when your quote is ready?</T></h2>
               <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.textnudge.line">You left the text box unchecked. Check it and we’ll text you the moment your quote is ready.</T></p>
               <button type="button" onClick={() => { setTextNudge(false); setConsent(true); submit({ consent: true }); }}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+                className="qb qb-blue qb-lg mt-5 w-full">
                 <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textnudge.yes">Text me</T>
               </button>
               <button type="button" onClick={() => { setTextNudge(false); submit(); }}
-                className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+                className="qb qb-md mt-2 w-full font-semibold text-slate-600 active:bg-slate-50">
                 <T k="rc.textnudge.no">No thanks, send</T>
               </button>
               <p className="mt-2 text-center text-[11px] leading-snug text-slate-400" data-copy="fixed">{CONSENT.fine.replace('By checking this', 'By tapping “Text me”')}</p>
@@ -624,7 +625,7 @@ export default function RateCheckPage() {
           ) : !otp.sentAt ? (
             <div>
               <button type="button" onClick={requestCode} disabled={otp.status === 'sending'}
-                className="h-12 w-full rounded-xl border border-blue-700 bg-white px-4 font-semibold text-blue-700 disabled:opacity-60">
+                className="qb qb-outline qb-md w-full">
                 {otp.status === 'sending' ? 'Sending…' : 'Text me a code'}
               </button>
               <p className="mt-1.5 px-1 text-xs text-slate-500">We text a 6-digit code to confirm it&apos;s you.</p>
@@ -642,7 +643,7 @@ export default function RateCheckPage() {
                     if (code.length === 6) checkCode(code);
                   }} />
                 <button type="button" onClick={() => checkCode(otp.code)} disabled={otp.code.length !== 6 || otp.status === 'verifying'}
-                  className="h-12 shrink-0 rounded-xl bg-blue-700 px-4 font-semibold text-white disabled:opacity-50">
+                  className="qb qb-blue qb-md shrink-0">
                   {otp.status === 'verifying' ? 'Checking…' : 'Verify'}
                 </button>
               </div>
@@ -705,7 +706,7 @@ export default function RateCheckPage() {
     <Shell step={1} wide={drafts.length === 0 && !returning} bar={drafts.length > 0 && (
       <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
         <button type="button" onClick={newPolicyPhoto} aria-label="Add another policy"
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700">
+          className="qb qb-outline h-14 w-14 shrink-0 p-0">
           <Plus className="h-6 w-6" aria-hidden="true" />
         </button>
         <button type="button" onClick={() => goNext()} className={primaryBtn}>
@@ -723,11 +724,11 @@ export default function RateCheckPage() {
             <h2 id="rc-more-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.more.title">Only one policy?</T></h2>
             <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.more.line">Add your home, renters or another car too. Checking them together usually finds the biggest savings.</T></p>
             <button type="button" onClick={() => { setMoreNudge(false); setAskingMore(null); openFiles(); }}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+              className="qb qb-blue qb-lg mt-5 w-full">
               <Plus className="h-5 w-5" aria-hidden="true" /> <T k="rc.more.add">Add another policy</T>
             </button>
             <button type="button" onClick={() => goNext(true)}
-              className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+              className="qb qb-md mt-2 w-full font-semibold text-slate-600 active:bg-slate-50">
               <T k="rc.more.skip">Continue with one</T>
             </button>
           </div>
@@ -747,7 +748,7 @@ export default function RateCheckPage() {
           <>
             <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add another policy</h1>
             <button type="button" onClick={() => openFiles()}
-              className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-8 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
+              className="qb qb-blue mt-6 w-full flex-col gap-3 rounded-3xl px-6 py-8">
               <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
                 <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
               </span>
@@ -755,7 +756,7 @@ export default function RateCheckPage() {
               <span className="text-sm text-blue-100"><T k="rc.upload.line">PDF, photos or screenshots</T></span>
             </button>
             <button type="button" onClick={() => openCamera()}
-              className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-700 active:bg-slate-50">
+              className="qb qb-outline qb-lg mt-3 w-full flex-col gap-0 font-normal text-slate-700">
               <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T></span>
               <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Photograph every page of the declarations</T></span>
             </button>
@@ -784,11 +785,11 @@ export default function RateCheckPage() {
             ))}
             <li className="flex gap-2">
               <button type="button" onClick={newPolicyPhoto}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50/60 px-4 py-4 font-semibold text-blue-800 active:bg-blue-100">
+                className="qb qb-lg flex-1 border-2 border-dashed border-blue-300 bg-blue-50/60 font-semibold text-blue-800 active:bg-blue-100">
                 <Camera className="h-5 w-5" aria-hidden="true" /> Add another policy
               </button>
               <button type="button" onClick={() => { setAskingMore(null); openFiles(); }} aria-label="Upload more"
-                className="flex w-16 items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700">
+                className="qb qb-outline w-16 p-0">
                 <Upload className="h-5 w-5" aria-hidden="true" />
               </button>
             </li>
@@ -1008,11 +1009,11 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
           <p className="mt-0.5 text-sm text-slate-600">Drivers, cars and coverages are often on page 2 or 3.</p>
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={onAddPage}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-700 px-3 py-3 font-semibold text-white">
+              className="qb qb-blue qb-md flex-1 px-3">
               <Camera className="h-4 w-4" aria-hidden="true" /> Add page {pages.length + 1}
             </button>
             <button type="button" onClick={onDoneAdding}
-              className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-3 font-semibold text-slate-700">
+              className="qb qb-outline qb-md flex-1 px-3">
               That&apos;s all
             </button>
           </div>
@@ -1030,15 +1031,15 @@ function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
         <p className="text-xl font-extrabold text-slate-900">You picked {count} files</p>
         <p className="mt-1 text-slate-600">Are they pages of one policy, or more than one policy?</p>
         <button type="button" onClick={onOne}
-          className="mt-5 flex w-full items-center justify-center rounded-2xl bg-blue-700 px-4 py-4 text-lg font-bold text-white">
+          className="qb qb-blue qb-lg mt-5 w-full">
           One policy, {count} pages
         </button>
         <button type="button" onClick={onSeparate}
-          className="mt-3 flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-semibold text-slate-800">
+          className="qb qb-outline qb-md mt-3 w-full">
           {count} separate policies
         </button>
         <button type="button" onClick={onMix}
-          className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-800">
+          className="qb qb-outline qb-md mt-3 w-full flex-col gap-0">
           A mix — I&apos;ll sort them
           <span className="text-xs font-normal text-slate-500">e.g. 3 pages of auto and 2 of home</span>
         </button>
@@ -1174,7 +1175,7 @@ function MeetCam({ onUpload }) {
         <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#F5D061]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
         <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
         <button type="button" onClick={onUpload}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F5D061] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#E9C14A]">
+          className="qb qb-gold qb-lg mt-6 w-full">
           <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
         </button>
       </div>
@@ -1204,7 +1205,7 @@ function ActionBar({ children, hint }) {
 }
 
 const primaryBtn =
-  'flex h-14 flex-1 items-center justify-center rounded-xl bg-blue-700 px-4 text-lg font-bold text-white shadow-sm active:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300';
+  'qb qb-blue qb-lg flex-1 text-lg';
 
 const inputCls =
   'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
@@ -1420,7 +1421,7 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
       <div className={`rounded-2xl border-2 border-dashed p-4 text-center transition-colors sm:p-5 ${dragging ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50/60'}`}>
         <button type="button" onClick={onUpload}
-          className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-blue-700 px-5 py-4 text-lg font-bold text-white shadow-lg shadow-blue-700/30 active:scale-[0.99] active:bg-blue-800">
+          className="qb qb-blue qb-lg w-full text-lg">
           <Upload className="h-5 w-5" aria-hidden="true" strokeWidth={2.25} /> <T k="rc.upload.title">Upload my policy</T>
         </button>
         <p className="mt-2.5 text-sm text-slate-500">
@@ -1432,7 +1433,7 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
         <T k="rc.upload.multi">Have several policies? Select them all at once.</T>
       </p>
       <button type="button" onClick={onCamera}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 active:bg-slate-50">
+        className="qb qb-outline qb-md mt-3 w-full">
         <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T>
       </button>
     </div>
@@ -1542,10 +1543,10 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#F5D061] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-amber-500/30 active:bg-[#E9C14A]">
+            <button type="button" onClick={onUpload} className="qb qb-gold qb-lg flex-1 text-lg">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
             </button>
-            <button type="button" onClick={onCamera} className="flex items-center justify-center gap-2 rounded-2xl border border-white/40 px-5 py-4 font-semibold text-white active:bg-white/10">
+            <button type="button" onClick={onCamera} className="qb qb-outline-dark qb-lg">
               <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.photos">Take photos</T>
             </button>
           </div>

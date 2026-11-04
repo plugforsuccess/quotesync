@@ -119,7 +119,7 @@ function SignAgreement({ token, data, onSigned }) {
       </label>
       {error && <p className="mt-3 text-sm text-red-600" role="alert">{error}</p>}
       <button type="button" onClick={sign} disabled={!ok || busy}
-        className="mt-5 flex h-14 w-full items-center justify-center rounded-xl bg-blue-700 px-4 text-lg font-bold text-white shadow-sm active:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300">
+        className="qb qb-blue qb-lg mt-5 w-full text-lg">
         {busy ? 'Signing…' : 'Sign and turn on my link'}
       </button>
     </>
@@ -271,7 +271,7 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <div className="shrink-0 border-t border-slate-200 bg-white px-4 pt-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         {error && <p className="mb-2 text-sm text-red-600" role="alert">{error}</p>}
         {tried && Object.keys(problems).length > 0 && !error && <p className="mb-2 text-sm text-red-600" role="alert">Fix the highlighted fields above.</p>}
-        <button type="submit" disabled={busy} className="h-14 w-full rounded-xl bg-blue-700 text-lg font-bold text-white disabled:bg-slate-300">{busy ? 'Sending…' : 'Sign W-9'}</button>
+        <button type="submit" disabled={busy} className="qb qb-blue qb-lg w-full text-lg">{busy ? 'Sending…' : 'Sign W-9'}</button>
       </div>
     </form>
     </W9Modal>
@@ -345,18 +345,18 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
             <span>Show this photo with my name on my link&apos;s page. I can take it off any time.</span>
           </label>
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-700">Cancel</button>
+            <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="qb qb-outline qb-md flex-1">Cancel</button>
             <button type="button" disabled={!agree || busy} onClick={() => run(() => savePartnerPhoto(token, preview))}
-              className="h-12 flex-1 rounded-xl bg-blue-700 font-semibold text-white disabled:bg-slate-300">{busy ? 'Saving…' : 'Use this photo'}</button>
+              className="qb qb-blue qb-md flex-1">{busy ? 'Saving…' : 'Use this photo'}</button>
           </div>
         </>
       ) : (
         <div className="mt-3 flex gap-2">
-          <button type="button" onClick={() => input.current?.click()} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-800">
+          <button type="button" onClick={() => input.current?.click()} className="qb qb-outline qb-md flex-1">
             {photoUrl ? 'Change photo' : 'Add a photo'}
           </button>
           {photoUrl && (
-            <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-600">
+            <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="qb qb-outline qb-md flex-1 text-slate-600">
               {busy ? 'Removing…' : 'Remove'}
             </button>
           )}
@@ -390,7 +390,7 @@ function GetSetUp({ token, data, onChange, shared }) {
         <Step n={1} done={shared} title="Share your link" line="Copy it below and send it to people you know. Say you get a referral fee." />
         <Step n={2} done={false} title="Sign your W-9 · about 30 seconds"
           line={data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign.' : 'Needed before your first payment.'}>
-          <button type="button" onClick={() => setW9Open(true)} className="mt-2.5 h-11 w-full rounded-xl bg-blue-700 font-semibold text-white active:bg-blue-800">Sign my W-9</button>
+          <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-md mt-2.5 w-full">Sign my W-9</button>
           {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
         </Step>
       </ol>
@@ -425,11 +425,11 @@ function Earnings({ token, data, onChange }) {
         <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}>Your link</p>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
         <div className="mt-4 flex gap-2">
-          <button type="button" onClick={copy} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-bold transition active:brightness-95" style={{ background: GOLD, color: DEEP }}>
+          <button type="button" onClick={copy} className="qb qb-gold qb-md flex-1">
             {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> Copied</> : <><Copy className="h-4 w-4" aria-hidden="true" /> Copy link</>}
           </button>
           {typeof navigator !== 'undefined' && navigator.share && (
-            <button type="button" onClick={share} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white/15 font-semibold text-white ring-1 ring-white/25">
+            <button type="button" onClick={share} className="qb qb-outline-dark qb-md flex-1">
               <Share2 className="h-4 w-4" aria-hidden="true" /> Share
             </button>
           )}
