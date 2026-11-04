@@ -664,12 +664,6 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               <a href={`sms:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
                 <MessageSquare className="h-4 w-4" /> <T k="pages.ratecheckspage.9dffbf">Text</T>
               </a>
-              {rc.status === 'won' && (
-                <a href={smsHref(rc.phone, customerReviewText(rc.first_name))} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}
-                  title="Opens Messages with your Google review link written in">
-                  <Star className="h-4 w-4" /> <T k="rc.desk.askreview">Ask for a review</T>
-                </a>
-              )}
               {rc.email && (
                 <a href={`mailto:${rc.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
                   <Mail className="h-4 w-4" /> <T k="pages.ratecheckspage.ce8ae9">Email</T>
@@ -793,6 +787,7 @@ function QuoteBox({ rc, onQuoted }) {
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
           <div className="text-xl font-extrabold text-green-600"><T k="pages.ratecheckspage.79ec67">Bound with</T> {boundInfo.bound_carrier || 'Allstate'}{boundInfo.bound_premium != null ? ` at ${money(boundInfo.bound_premium)}/yr` : ''}</div>
           <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
+          <ReviewAsk rc={rc} review={boundInfo.review} />
         </div>
       )}
       {!bound && <form onSubmit={submit} className="mt-7 space-y-3">
@@ -881,6 +876,23 @@ function PriceDrop({ current, price, market }) {
 }
 
 // Step 3: the policy was written. Closes the lead as won and feeds the scoreboard.
+// After binding: the thank-you + review text goes out automatically when it can
+// (texting consent, Twilio number, review link). Otherwise one tap opens Messages
+// with it written in, so every bound customer still gets asked.
+function ReviewAsk({ rc, review }) {
+  const sent = review?.ok || !!rc.review_requested_at;
+  if (sent) {
+    return <p className="mt-2 flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-text)' }}><Star className="h-4 w-4" /> <T k="rc.desk.review.sent">Thank-you and review request texted.</T></p>;
+  }
+  if (!rc.phone) return null;
+  return (
+    <a href={smsHref(rc.phone, customerReviewText(rc.first_name))}
+      className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
+      <Star className="h-4 w-4" /> <T k="rc.desk.review.ask">Text them the review request</T>
+    </a>
+  );
+}
+
 function BindForm({ rc, market, defaultPremium, onBound }) {
   const bind = useBindRateCheck();
   const [carrier, setCarrier] = useState(market);
@@ -891,7 +903,7 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
   return (
     <form className="mt-3 flex flex-wrap items-end gap-2 border-t pt-3" style={{ borderColor: 'var(--qs-border)' }}
       onSubmit={e => { e.preventDefault(); if (!chosen) return; bind.mutate({ rateCheckId: rc.id, carrier: chosen, premium: parseMoney(premium) },
-        { onSuccess: (res) => onBound?.({ status: 'bound', bound_carrier: res.bound_carrier, bound_premium: res.bound_premium, bound_at: new Date().toISOString() }) }); }}>
+        { onSuccess: (res) => onBound?.({ status: 'bound', bound_carrier: res.bound_carrier, bound_premium: res.bound_premium, bound_at: new Date().toISOString(), review: res.review }) }); }}>
       <label className="text-sm"><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.79ec67">Bound with</T></span>
         <select value={carrier} onChange={e => setCarrier(e.target.value)} className="rounded-md px-2 py-1.5" style={inputStyle}>
           {options.map(o => <option key={o} value={o}>{o}</option>)}
