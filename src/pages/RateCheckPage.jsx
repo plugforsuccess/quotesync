@@ -1121,7 +1121,7 @@ function MeetCam({ onUpload }) {
         <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#F5D061]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
         <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
         <button type="button" onClick={onUpload}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#39FF88] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#2ee87a]">
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F5D061] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#E9C14A]">
           <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
         </button>
       </div>
@@ -1470,7 +1470,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#39FF88] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-emerald-500/30 active:bg-[#2ee87a]">
+            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#F5D061] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-amber-500/30 active:bg-[#E9C14A]">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
             </button>
             <button type="button" onClick={onCamera} className="flex items-center justify-center gap-2 rounded-2xl border border-white/40 px-5 py-4 font-semibold text-white active:bg-white/10">

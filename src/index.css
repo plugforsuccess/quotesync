@@ -663,7 +663,7 @@ gmp-placeautocomplete input:focus {
   --ddc-text:#dbe5ff; --ddc-heading:#ffffff; --ddc-muted:#a9bbe6; --ddc-faint:#8ea2d4;
   --ddc-border:#2b4c93; --ddc-bar-bg:rgba(15,45,107,.96);
   --ddc-accent:#F5D061; --ddc-accent-solid:#39FF88; --ddc-track:#23448c;
-  --ddc-btn-bg:#39FF88; --ddc-btn-fg:#0F2D6B;
+  --ddc-btn-bg:#F5D061; --ddc-btn-fg:#0F2D6B;
   --law-c:#93c5fd; --law-bg:rgba(56,189,248,.12); --law-bd:rgba(56,189,248,.4);
   --key-c:#F5D061; --key-bg:rgba(16,185,129,.12); --key-bd:rgba(16,185,129,.4);
   --warn-c:#fcd34d; --warn-bg:rgba(245,158,11,.12); --warn-bd:rgba(245,158,11,.4);
