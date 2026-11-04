@@ -1250,7 +1250,7 @@ function CarrierLogos() {
   );
   return (
     <section className="border-y border-slate-200 bg-white py-12 lg:py-16" aria-labelledby="rc-carriers">
-      <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
+      <style>{'@keyframes rc-marquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}.rc-marquee{animation:rc-marquee 36s linear infinite;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       {/* The heading sits above the strip; the strip has its own band. */}
       <div className={wrap}>
         <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
@@ -1260,8 +1260,12 @@ function CarrierLogos() {
           an empty run before the next one shows. */}
       <div className="mt-6 lg:mt-8">
         <div className={wrap}>
-          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 py-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+          {/* Edge fades are white overlays, not a mask: iPhone Safari stops painting
+              logos in a moving strip under a mask-image, leaving blank space. */}
+          <div className="rc-marquee-wrap relative -mx-4 overflow-hidden px-4 py-2">
             <div className="rc-marquee flex w-max">{row(false)}{row(true)}</div>
+            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />
           </div>
         </div>
       </div>
