@@ -94,6 +94,9 @@ export default function RateCheckPage() {
   // One-time nudge when someone continues with a single policy.
   const [moreNudge, setMoreNudge] = useState(false);
   const nudgedRef = useRef(false);
+  // One-time nudge when someone sends without text permission (it stays optional).
+  const [textNudge, setTextNudge] = useState(false);
+  const textNudgedRef = useRef(false);
   const [grouping, setGrouping] = useState(null); // File[]
   const [fields, setFields] = useState({ firstName: '', phone: '', email: '', zip: '', housing: '' });
   // Text-message verification of the mobile number. The verified number is kept for
@@ -411,11 +414,12 @@ export default function RateCheckPage() {
     return () => clearTimeout(t);
   }, [otp.status, otp.sentAt, canResend]);
 
-  const submit = () => {
+  const submit = (over = {}) => {
+    const textOk = over.consent ?? consent;
     if (!contactOk || !drafts.length) return;
     const now = new Date().toISOString();
     // The decision is made once per visit; later policies in the same visit reuse it.
-    const grant = given || { consentGivenAt: consent ? now : null, referralConsentGivenAt: referralConsent ? now : null };
+    const grant = given || { consentGivenAt: textOk ? now : null, referralConsentGivenAt: referralConsent ? now : null };
     setGiven(grant);
     const ids = drafts.map(d => d.id);
     updateItems(list => list.map(i => (ids.includes(i.id) ? { ...i, status: 'queued' } : i)));
@@ -561,13 +565,18 @@ export default function RateCheckPage() {
   // ── Step 2: contact ──
   if (step === 'you') {
     const canSend = contactOk && drafts.length > 0;
+    const send = () => {
+      if (!canSend) return;
+      if (!consent && !given && !textNudgedRef.current) { textNudgedRef.current = true; setTextNudge(true); return; }
+      submit();
+    };
     const hint = missing.length
       ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}.`
       : '';
     return (
       <Shell step={2} bar={
         <ActionBar hint={canSend ? null : hint}>
-          <button type="button" onClick={submit} disabled={!canSend} className={primaryBtn}>
+          <button type="button" onClick={send} disabled={!canSend} className={primaryBtn}>
             {drafts.length > 1 ? `Check my ${drafts.length} policies` : 'Check my rate'}
           </button>
         </ActionBar>
@@ -579,7 +588,26 @@ export default function RateCheckPage() {
         <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.contact.heading">How can Cam reach you?</T></h1>
         <p className="mt-2 text-slate-600"><T k="rc.contact.line">Cam’s team only reaches out if Allstate can beat your price. No call centers, ever.</T></p>
 
-        <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="mt-6 space-y-4" noValidate>
+        {textNudge && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F2D6B]/50 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="rc-text-title"
+            onClick={(e) => { if (e.target === e.currentTarget) setTextNudge(false); }}>
+            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><MessageSquare className="h-6 w-6" aria-hidden="true" /></span>
+              <h2 id="rc-text-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.textnudge.title">Want a text when your quote is ready?</T></h2>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.textnudge.line">You left the text box unchecked. Check it and we’ll text you the moment your quote is ready.</T></p>
+              <button type="button" onClick={() => { setTextNudge(false); setConsent(true); submit({ consent: true }); }}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+                <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textnudge.yes">Text me</T>
+              </button>
+              <button type="button" onClick={() => { setTextNudge(false); submit(); }}
+                className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+                <T k="rc.textnudge.no">No thanks, send</T>
+              </button>
+              <p className="mt-2 text-center text-[11px] leading-snug text-slate-400" data-copy="fixed">{CONSENT.fine.replace('By checking this', 'By tapping “Text me”')}</p>
+            </div>
+          </div>
+        )}
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="mt-6 space-y-4" noValidate>
           <Field label="First name" htmlFor="rc-first">
             <input id="rc-first" autoComplete="given-name" value={fields.firstName} maxLength={60} required
               onChange={e => setFields(f => ({ ...f, firstName: e.target.value }))} className={inputCls} />
