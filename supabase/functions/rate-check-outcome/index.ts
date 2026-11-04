@@ -160,18 +160,35 @@ Deno.serve(async (req) => {
         b.lead_id ? supabase.from('leads').select('sms_opted_out, phone').eq('id', b.lead_id).single() : Promise.resolve({ data: null }),
         supabase.from('agencies').select('twilio_from_number, google_review_url').eq('id', b.agency_id).single(),
       ])
+      // The link: the agency's column, else the one pasted in the copy editor.
+      const { data: linkRow } = await supabase.from('site_copy').select('value').eq('key', 'link.google_review').maybeSingle()
+      const pasted = String(linkRow?.value || '').trim()
+      const reviewLink = agency?.google_review_url || (/^https:\/\/\S+$/.test(pasted) ? pasted : '')
       if (!b.lead_id) review = { attempted: false, reason: 'no lead to text' }
       else if (askedAlready && askedAlready.length > 0) review = { attempted: false, reason: 'household already asked' }
       else if (!b.consent_given_at) review = { attempted: false, reason: 'no texting consent on file' }
       else if (lead?.sms_opted_out) review = { attempted: false, reason: 'sms_opted_out' }
       else if (!agency?.twilio_from_number) review = { attempted: false, reason: 'agency has no twilio_from_number' }
-      else if (!agency?.google_review_url) review = { attempted: false, reason: 'agency has no google_review_url' }
+      else if (!reviewLink) review = { attempted: false, reason: 'no Google review link set' }
       else if (!lead?.phone) review = { attempted: false, reason: 'lead has no phone' }
       else {
-        const reviewBody =
-          `Hi ${b.first_name || 'there'}, it's Cam Wiley's office. Thank you for choosing us for your insurance! ` +
-          `If you have a minute, an honest Google review helps other Georgia families find us: ${agency.google_review_url} ` +
-          `Reply STOP to opt out.`
+        // The text is edited in the copy editor (Rate Checks → Scripts → Google reviews,
+        // keys sms.review.customer.1-3); these defaults match src/lib/reviews.js.
+        const DEFAULTS = [
+          "Hi [first name], it's Cam with Cam Wiley Agency. Thank you for trusting us with your insurance!",
+          'If you have a minute, an honest Google review helps other Georgia families find us: [review link]',
+          'Questions about your policy? Just reply here.',
+        ]
+        const keys = DEFAULTS.map((_, i) => `sms.review.customer.${i + 1}`)
+        const { data: saved } = await supabase.from('site_copy').select('key, value').in('key', keys)
+        const byKey = Object.fromEntries((saved || []).map((r: any) => [r.key, r.value]))
+        const firstName = String(b.first_name || '').trim().split(/\s+/)[0] || 'there'
+        let reviewBody = DEFAULTS.map((d, i) => (typeof byKey[keys[i]] === 'string' && byKey[keys[i]].trim()) ? byKey[keys[i]] : d)
+          .filter(t => t.trim()).join('\n\n')
+          .replace(/\[first name\]/gi, firstName)
+          .replace(/\[review link\]/gi, reviewLink)
+        if (!reviewBody.includes(reviewLink)) reviewBody += `\n\n${reviewLink}`
+        if (!/\bSTOP\b/.test(reviewBody)) reviewBody += '\n\nReply STOP to opt out.'
         try {
           const smsRes = await fetch(`${supabaseUrl}/functions/v1/send-manual-sms`, {
             method: 'POST',
