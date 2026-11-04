@@ -159,9 +159,7 @@ function PartnerProgram() {
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-7">
           {state.status === 'done' ? (
             <div className="py-6 text-center" role="status">
-              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'rgba(57,255,136,0.2)' }}>
-                <Check className="h-7 w-7 text-emerald-600" aria-hidden="true" strokeWidth={3} />
-              </span>
+              <span className="qc-badge" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>
               <p className="mt-4 text-xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.86c345">Thanks,</T> {f.first.trim()}!</p>
               <p className="mt-2 text-slate-600"><T k="de.partner.thanks">Cam’s team will text you within one business day with your partner agreement and your personal link.</T></p>
             </div>

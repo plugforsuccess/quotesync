@@ -340,7 +340,10 @@ function EnrollCard({ course, enrollment, user, profile }) {
       </div>
       {hasAccess ? (
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-emerald-700"><T k="pages.defensivedrivingpage.de80cb">You’re enrolled.</T></p>
+          <p className="flex items-center gap-2 text-sm font-semibold text-[#0F2D6B]">
+            <span className="qc-badge qc-badge-sm" aria-hidden="true"><Check className="h-4 w-4" strokeWidth={3} /></span>
+            <T k="pages.defensivedrivingpage.de80cb">You’re enrolled.</T>
+          </p>
           <Link to="/courses/defensive-driving/portal"
             className="qb qb-blue qb-lg flex w-full">
             <T k="pages.defensivedrivingpage.21acac">Go to your course</T>

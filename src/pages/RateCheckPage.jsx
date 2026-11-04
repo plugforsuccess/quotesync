@@ -529,7 +529,8 @@ export default function RateCheckPage() {
         {fileInputs}
         {banner}
         <div role="status" aria-live="polite" className="text-center">
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">
+          {!reading && <span className="qc-badge mb-4" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>}
+          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]">
             {reading ? <T k="rc.results.reading">Reading your policies…</T> : <T k="rc.results.done">Got it — Cam is on it.</T>}
           </h1>
           <p className="mx-auto mt-2 max-w-xs text-slate-600">
@@ -542,10 +543,10 @@ export default function RateCheckPage() {
         </div>
 
         {priced.length > 0 && (
-          <div className="mt-5 rounded-2xl bg-slate-900 px-5 py-4 text-center text-white">
-            <p className="text-sm text-slate-300">You pay today</p>
-            <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span data-testid="rc-total">{money(total)}</span><span className="text-lg font-semibold text-slate-300"> /yr</span></p>
-            <p className="mt-1 text-sm text-slate-300">
+          <div className="mt-5 rounded-2xl px-5 py-4 text-center text-white shadow-lg shadow-blue-900/20" style={{ background: HERO_BG }}>
+            <p className="text-sm text-blue-100">You pay today</p>
+            <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span data-testid="rc-total">{money(total)}</span><span className="text-lg font-semibold text-blue-100"> /yr</span></p>
+            <p className="mt-1 text-sm text-blue-100">
               across {priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''} · the price to beat
             </p>
           </div>
@@ -1079,8 +1080,8 @@ function ResultRow({ item, index, onRetake, onRetry }) {
         <p className="truncate text-sm">{detail}</p>
       </div>
       {item.status === 'read' && (
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700" aria-label="Received">
-          <Check className="h-4 w-4" aria-hidden="true" />
+        <span className="qc-badge qc-badge-sm shrink-0" aria-label="Received">
+          <Check className="h-4 w-4" aria-hidden="true" strokeWidth={3} />
         </span>
       )}
       {item.status === 'unreadable' && (

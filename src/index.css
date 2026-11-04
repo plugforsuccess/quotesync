@@ -915,4 +915,16 @@ gmp-placeautocomplete input:focus {
 .qb-arrow { transition: transform .2s ease; }
 @media (hover: hover) { .qb:hover .qb-arrow { transform: translateX(3px); } }
 @media (prefers-reduced-motion: reduce) { .qb, .qb-arrow { transition: none; } .qb:active:not(:disabled) { transform: none; } }
+
+/* Confirmation badge: navy circle, gold ring and check, pops in once. */
+.qc-badge {
+  display: flex; align-items: center; justify-content: center; margin: 0 auto;
+  width: 4rem; height: 4rem; border-radius: 9999px; color: #F5D061;
+  background: radial-gradient(circle at 30% 25%, #2B63E6 0%, #1D4ED8 35%, #0F2D6B 80%);
+  box-shadow: 0 0 0 4px rgba(245,208,97,.4), 0 12px 28px -10px rgba(15,45,107,.6);
+  animation: qc-pop .5s cubic-bezier(.2,1.4,.4,1) both;
+}
+.qc-badge-sm { width: 1.75rem; height: 1.75rem; margin: 0; box-shadow: 0 0 0 2px rgba(245,208,97,.45); animation: none; }
+@keyframes qc-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .qc-badge { animation: none; } }
 }
