@@ -1417,7 +1417,7 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
     if (files.length) onDropFiles(files);
   };
   return (
-    <div className="mt-7 rounded-3xl bg-white p-4 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 sm:p-5"
+    <div id="rc-upload-card" className="mt-7 rounded-3xl bg-white p-4 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 sm:p-5"
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
       <div className={`rounded-2xl border-2 border-dashed p-4 text-center transition-colors sm:p-5 ${dragging ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50/60'}`}>
         <button type="button" onClick={onUpload}
@@ -1463,6 +1463,57 @@ function useReveal() {
     }
     return () => io.disconnect();
   }, []);
+}
+
+// What people get: the kind of text Cam sends, clearly marked as an example.
+function ExampleText() {
+  return (
+    <figure className="mx-auto mt-8 max-w-md rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+      <figcaption className="flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500"><T k="rc.example.label">What you’ll get · example</T></span>
+        <span className="text-xs text-slate-400">Messages</span>
+      </figcaption>
+      <div className="mt-4 flex items-end gap-2.5">
+        <img src={AGENT.photo} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[#F5D061]" />
+        <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200">
+          <T k="rc.example.text">Hi Dana, it’s Cam. Same coverage with Allstate comes to</T>{' '}
+          <b className="font-bold text-emerald-700">$1,180/yr</b>{' '}
+          <T k="rc.example.text2">vs. your</T> <b className="font-bold text-[#0F2D6B]">$1,560/yr</b>.{' '}
+          <T k="rc.example.text3">Want me to send it over?</T>
+        </div>
+      </div>
+      <p className="mt-3 text-center text-xs text-slate-400"><T k="rc.example.fine">Example only. Your price depends on your coverage and record.</T></p>
+    </figure>
+  );
+}
+
+// Phones: once the upload card scrolls away, a slim gold upload bar stays at the
+// bottom, until the closing section (which has its own buttons) comes into view.
+function StickyUpload({ onUpload }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const card = document.getElementById('rc-upload-card');
+    const closing = document.getElementById('rc-closing')?.closest('section');
+    if (!card || typeof IntersectionObserver === 'undefined') return undefined;
+    const seen = { card: true, closing: false };
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.target === card) seen.card = e.isIntersecting || e.boundingClientRect.top > 0;
+        else seen.closing = e.isIntersecting;
+      }
+      setShow(!seen.card && !seen.closing);
+    });
+    io.observe(card); if (closing) io.observe(closing);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0F2D6B]/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur transition-transform duration-300 lg:hidden ${show ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
+      aria-hidden={!show}>
+      <button type="button" onClick={onUpload} tabIndex={show ? 0 : -1} className="qb qb-gold qb-md w-full">
+        <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.sticky.upload">Upload my policies</T>
+      </button>
+    </div>
+  );
 }
 
 function Landing({ note, onUpload, onCamera, onDropFiles }) {
@@ -1511,6 +1562,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
               </li>
             ))}
           </ol>
+          <ExampleText />
           <button type="button" onClick={() => setHowTo(v => !v)} aria-expanded={howTo}
             className="mt-6 inline-flex items-center gap-1.5 font-semibold text-blue-700">
             <T k="rc.howto.toggle">Can’t find your declarations page?</T>
@@ -1572,6 +1624,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           </div>
         </div>
       </section>
+      <StickyUpload onUpload={onUpload} />
     </>
   );
 }

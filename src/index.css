@@ -948,3 +948,9 @@ gmp-placeautocomplete input:focus {
 .will-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1); }
 .will-reveal.is-in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .qc-step { animation: none; } .will-reveal { opacity: 1; transform: none; } }
+
+/* Customer pages: a display face for headings (Inter stays for body text).
+   The staff app keeps Inter everywhere. */
+:root { --font-display: 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+h1, h2, h3 { font-family: var(--font-display); }
+.qs-app-shell h1, .qs-app-shell h2, .qs-app-shell h3 { font-family: inherit; }
