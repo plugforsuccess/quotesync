@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Pencil, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { setCopyValues } from '../lib/copyValues';
 
 const KEY = ['site_copy'];
 // Pages with editable copy; the copy loads, and the Edit copy button shows, only on these.
@@ -26,9 +27,10 @@ const KEY = ['site_copy'];
 // same way; what comes from the data isn't.
 const INTERNAL = /^\/(agency|my|admin|news\/(dashboard|editor|archived|standards|preview))(\/|$)/;
 const NEWS = /^\/news(\/[^/]+)?$/;
-const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
+const PORTAL = /^\/partner\/[^/]+$/;
+const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, PORTAL, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
 // Pages without the consumer nav (and its pencil) get a corner button.
-const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, INTERNAL];
+const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, INTERNAL, PORTAL];
 // The last copy seen on this device, so edited text shows at once instead of flashing the default.
 const CACHE = 'qs_site_copy_v1';
 const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE) || 'null') || undefined; } catch { return undefined; } };
@@ -98,6 +100,7 @@ export function SiteCopyProvider({ children }) {
     enabled: onEditablePage,
   });
   const values = useMemo(() => Object.fromEntries(rows.map(r => [r.key, r.value])), [rows]);
+  useEffect(() => { setCopyValues(values); }, [values]);
 
   const mutation = useMutation({
     mutationFn: async ({ key, value }) => {

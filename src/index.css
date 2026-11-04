@@ -867,3 +867,90 @@ gmp-placeautocomplete input:focus {
 [data-money] { --qs-success: #10B981; }
 [data-theme="light"] .qs-app-shell .text-emerald-300[data-money],
 [data-theme="light"] .qs-app-shell .text-emerald-400[data-money] { color: #047857 !important; }
+
+/* ════════════════════════════════════════════════════════════
+   CONSUMER BUTTONS — one system for the public site, Drivers Ed,
+   the course pages, the partner portal and the menu.
+   .qb + a look (.qb-gold, .qb-blue, .qb-outline, .qb-outline-dark)
+   + a size (.qb-lg 56px main action, .qb-md 48px second choice).
+════════════════════════════════════════════════════════════ */
+@layer components {
+.qb {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border-radius: 1rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+  text-align: center; text-decoration: none; cursor: pointer; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: transform .12s ease, box-shadow .2s ease, filter .2s ease, background-color .2s ease;
+}
+.qb:active:not(:disabled) { transform: scale(.98); }
+.qb:focus-visible { outline: 3px solid #F5D061; outline-offset: 3px; }
+.qb:disabled, .qb[aria-disabled="true"] { cursor: not-allowed; opacity: .55; box-shadow: none; filter: grayscale(.35); }
+.qb-lg { min-height: 3.5rem; padding: .875rem 1.5rem; font-size: 1.0625rem; }
+.qb-md { min-height: 3rem; padding: .625rem 1.25rem; font-size: 1rem; }
+
+/* Gold: the main action on blue backgrounds. */
+.qb-gold {
+  color: #0F2D6B;
+  background: linear-gradient(180deg, #F9DD7E 0%, #F5D061 45%, #ECC046 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 8px 20px -6px rgba(180,130,10,.55);
+}
+/* Blue: the main action on white backgrounds. */
+.qb-blue {
+  color: #fff;
+  background: linear-gradient(180deg, #2B63E6 0%, #1D4ED8 55%, #1A44C2 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 8px 20px -6px rgba(29,78,216,.55);
+}
+.qb-blue:disabled { background: #CBD5E1; color: #fff; opacity: 1; }
+/* Outlines: the second choice. */
+.qb-outline { color: #0F2D6B; background: #fff; border: 1.5px solid #CBD5E1; }
+.qb-outline-dark { color: #fff; background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.45); }
+
+@media (hover: hover) {
+  .qb-gold:hover:not(:disabled), .qb-blue:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.04); }
+  .qb-gold:hover:not(:disabled) { box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 12px 26px -8px rgba(180,130,10,.6); }
+  .qb-blue:hover:not(:disabled) { box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 12px 26px -8px rgba(29,78,216,.6); }
+  .qb-outline:hover:not(:disabled) { border-color: #94A3B8; background: #F8FAFC; }
+  .qb-outline-dark:hover:not(:disabled) { background: rgba(255,255,255,.1); }
+}
+.qb-arrow { transition: transform .2s ease; }
+@media (hover: hover) { .qb:hover .qb-arrow { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .qb, .qb-arrow { transition: none; } .qb:active:not(:disabled) { transform: none; } }
+
+/* Confirmation badge: navy circle, gold ring and check, pops in once. */
+.qc-badge {
+  display: flex; align-items: center; justify-content: center; margin: 0 auto;
+  width: 4rem; height: 4rem; border-radius: 9999px; color: #F5D061;
+  background: radial-gradient(circle at 30% 25%, #2B63E6 0%, #1D4ED8 35%, #0F2D6B 80%);
+  box-shadow: 0 0 0 4px rgba(245,208,97,.4), 0 12px 28px -10px rgba(15,45,107,.6);
+  animation: qc-pop .5s cubic-bezier(.2,1.4,.4,1) both;
+}
+.qc-badge-sm { width: 1.75rem; height: 1.75rem; margin: 0; box-shadow: 0 0 0 2px rgba(245,208,97,.45); animation: none; }
+@keyframes qc-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .qc-badge { animation: none; } }
+}
+
+/* Confirmation motion: drawn check, staggered rise, a soft pulse on "now". */
+@keyframes qc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.qc-check { stroke-dasharray: 1; stroke-dashoffset: 1; animation: qc-draw .45s .3s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes qc-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.qc-rise { opacity: 0; animation: qc-rise .5s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes qc-ring { 0% { box-shadow: 0 0 0 0 rgba(29,78,216,.45); } 100% { box-shadow: 0 0 0 10px rgba(29,78,216,0); } }
+.qc-pulse { animation: qc-ring 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .qc-check { stroke-dashoffset: 0; animation: none; }
+  .qc-rise { opacity: 1; animation: none; }
+  .qc-pulse { animation: none; }
+}
+
+/* Rate Check: each step slides in; landing sections fade up on scroll. */
+@keyframes qc-step { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.qc-step { animation: qc-step .35s cubic-bezier(.2,.8,.2,1); }
+.will-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1); }
+.will-reveal.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .qc-step { animation: none; } .will-reveal { opacity: 1; transform: none; } }
+
+/* Customer pages: a display face for headings (Inter stays for body text).
+   The staff app keeps Inter everywhere. */
+:root { --font-display: 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+h1, h2, h3 { font-family: var(--font-display); }
+.qs-app-shell h1, .qs-app-shell h2, .qs-app-shell h3 { font-family: inherit; }

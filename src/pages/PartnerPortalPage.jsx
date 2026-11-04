@@ -5,9 +5,11 @@
 // they've earned each month (first names and what each household sent only).
 // Standalone like the Rate Check page: no login, no site layout.
 
+import { T } from '../components/SiteCopy';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, Check, Copy, Loader2, Share2, X } from 'lucide-react';
+import { Camera, Check, Copy, ExternalLink, Loader2, Share2, Star, X } from 'lucide-react';
+import { reviewUrl } from '../lib/reviews';
 import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, squarePhoto, submitPartnerW9 } from '../lib/rateCheckApi';
 import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
@@ -62,19 +64,19 @@ export default function PartnerPortalPage() {
       <div style={{ background: HERO_BG }}>
         <div className="mx-auto max-w-md px-4 pt-5 pb-20">
           <header className="flex items-center justify-between">
-            <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: GOLD }}>by</span>cam.com</span>
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Partner portal</span>
+            <span className="text-[15px] font-extrabold tracking-tight text-white"><T k="pages.partnerportalpage.67f359">insured</T><span style={{ color: GOLD }}><T k="pages.partnerportalpage.df3f07">by</T></span><T k="pages.partnerportalpage.3704b7">cam.com</T></span>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Partner portal</T></span>
           </header>
           {data && (
             <>
               <h1 className="mt-7 text-[28px] font-extrabold leading-tight tracking-tight text-white">
-                {greet(data.first_name)}{gate && <> — sign to turn on your link</>}
+                {greet(data.first_name)}{gate && <> <T k="pages.partnerportalpage.ac7625">— sign to turn on your link</T></>}
               </h1>
               <p className="mt-1.5 flex items-center gap-1.5 text-sm text-blue-100">
-                {gate ? <>Read the agreement with {sentence(data.agency_name)} Your link starts earning as soon as you sign.</>
-                  : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: GOLD }} aria-hidden="true" /> Agreement signed {longDate(data.agreement.signed_at)}</>
-                  : data.active === false ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> Your link is paused. Contact {data.agency_name} to turn it back on.</>
-                  : <><span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" /> Your link is live</>}
+                {gate ? <><T k="pages.partnerportalpage.a689c7">Read the agreement with</T> {sentence(data.agency_name)} <T k="pages.partnerportalpage.8c18b8">Your link starts earning as soon as you sign.</T></>
+                  : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: GOLD }} aria-hidden="true" /> <T k="pages.partnerportalpage.01210e">Agreement signed</T> {longDate(data.agreement.signed_at)}</>
+                  : data.active === false ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> <T k="pages.partnerportalpage.a823cb">Your link is paused. Contact</T> {data.agency_name} <T k="pages.partnerportalpage.6e1fe7">to turn it back on.</T></>
+                  : <><span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" /> <T k="pages.partnerportalpage.95cda3">Your link is live</T></>}
               </p>
             </>
           )}
@@ -82,11 +84,30 @@ export default function PartnerPortalPage() {
       </div>
       <main className="mx-auto -mt-12 max-w-md px-4 pb-12">
         {error ? <p className="rounded-2xl bg-white p-4 text-slate-700 shadow-sm ring-1 ring-slate-200">{error}</p>
-          : !data ? <p className="flex items-center gap-2 rounded-2xl bg-white p-4 text-slate-500 shadow-sm ring-1 ring-slate-200"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading…</p>
+          : !data ? <p className="flex items-center gap-2 rounded-2xl bg-white p-4 text-slate-500 shadow-sm ring-1 ring-slate-200"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> <T k="pages.partnerportalpage.5f02f0">Loading…</T></p>
           : gate ? <SignAgreement token={token} data={data} onSigned={load} />
-          : <Earnings token={token} data={data} onChange={load} />}
+          : <><Earnings token={token} data={data} onChange={load} /><ReviewCard /></>}
       </main>
     </div>
+  );
+}
+
+// Partners who are also customers can review their own experience. Optional, no
+// reward, and they're asked to say they're a partner (the FTC expects that).
+function ReviewCard() {
+  return (
+    <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="flex items-center gap-2">
+        <span className="flex gap-0.5 text-[#F5D061]" aria-hidden="true">{[0, 1, 2, 3, 4].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}</span>
+        <p className="font-bold text-[#0F2D6B]"><T k="pages.partnerportalpage.219dc3">Also a customer?</T></p>
+      </div>
+      <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
+        <T k="pages.partnerportalpage.e7f45f">An honest Google review about your experience helps other families find Cam. Please mention you’re a referral partner. It’s optional and has nothing to do with your referral fees.</T>
+      </p>
+      <a href={reviewUrl()} target="_blank" rel="noreferrer" className="qb qb-outline qb-md mt-3 w-full">
+        <T k="pages.partnerportalpage.f82b9a">Write a Google review</T> <ExternalLink className="h-4 w-4" aria-hidden="true" />
+      </a>
+    </section>
   );
 }
 
@@ -105,21 +126,21 @@ function SignAgreement({ token, data, onSigned }) {
 
   return (
     <>
-      {!data.active && <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">This partner link is paused. Contact {sentence(data.agency_name)}</p>}
+      {!data.active && <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200"><T k="pages.partnerportalpage.e8ca8f">This partner link is paused. Contact</T> {sentence(data.agency_name)}</p>}
 
       <div className="max-h-[46vh] overflow-y-auto whitespace-pre-wrap rounded-2xl bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200"
         tabIndex={0} aria-label="Partner agreement">{data.agreement.text}</div>
 
-      <label htmlFor="pp-name" className="mt-5 block text-sm font-semibold text-slate-800">Your full legal name</label>
+      <label htmlFor="pp-name" className="mt-5 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.93ffd0">Your full legal name</T></label>
       <input id="pp-name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder="First and last name"
         className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-[#0F2D6B] focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" />
       <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-700">
         <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
-        <span>I have read this agreement and agree to it. Typing my name above is my signature.</span>
+        <span data-copy="fixed">I have read this agreement and agree to it. Typing my name above is my signature.</span>
       </label>
       {error && <p className="mt-3 text-sm text-red-600" role="alert">{error}</p>}
       <button type="button" onClick={sign} disabled={!ok || busy}
-        className="mt-5 flex h-14 w-full items-center justify-center rounded-xl bg-blue-700 px-4 text-lg font-bold text-white shadow-sm active:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300">
+        className="qb qb-blue qb-lg mt-5 w-full text-lg">
         {busy ? 'Signing…' : 'Sign and turn on my link'}
       </button>
     </>
@@ -176,10 +197,10 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
     return (
       <section className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <p className="text-sm text-slate-700">
-          <span className="flex items-center gap-1.5 font-semibold text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> W-9 on file</span>
-          Signed {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          <span className="flex items-center gap-1.5 font-semibold text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.b6f43a">W-9 on file</T></span>
+          <T k="pages.partnerportalpage.71fed0">Signed</T> {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </p>
-        <button type="button" onClick={() => setOpen(true)} className="min-h-[40px] shrink-0 text-sm font-semibold text-blue-700">Update</button>
+        <button type="button" onClick={() => setOpen(true)} className="min-h-[40px] shrink-0 text-sm font-semibold text-blue-700"><T k="pages.partnerportalpage.069330">Update</T></button>
       </section>
     );
   }
@@ -192,19 +213,19 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-3">
       <p className="text-sm text-slate-600">
         {prefilled && !w9.on_file
-          ? <>Your name and address are already filled in. Check them, add your Social Security number, and sign.{' '}</>
-          : <>This fills IRS Form W-9 for you.{' '}</>}
-        Your tax ID is sent once, kept only in the finished form, and never shown here again.
+          ? <><T k="pages.partnerportalpage.c6b656">Your name and address are already filled in. Check them, add your Social Security number, and sign.</T>{' '}</>
+          : <><T k="pages.partnerportalpage.ca5250">This fills IRS Form W-9 for you.</T>{' '}</>}
+        <T k="pages.partnerportalpage.110235">Your tax ID is sent once, kept only in the finished form, and never shown here again.</T>
       </p>
 
-      <label htmlFor="w9-name" className="mt-4 block text-sm font-semibold text-slate-800">Name on your tax return</label>
+      <label htmlFor="w9-name" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.0b8b78">Name on your tax return</T></label>
       <input id="w9-name" autoComplete="name" value={form.name} onChange={set('name')} className={INPUT} />
       {show('name')}
 
-      <label htmlFor="w9-biz" className="mt-4 block text-sm font-semibold text-slate-800">Business name <span className="font-normal text-slate-500">(if different)</span></label>
+      <label htmlFor="w9-biz" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.e806de">Business name</T> <span className="font-normal text-slate-500"><T k="pages.partnerportalpage.1522ba">(if different)</T></span></label>
       <input id="w9-biz" autoComplete="organization" value={form.business_name} onChange={set('business_name')} className={INPUT} />
 
-      <p className="mt-4 text-sm font-semibold text-slate-800">How you file</p>
+      <p className="mt-4 text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.d21979">How you file</T></p>
       <div className="mt-1.5 space-y-1.5">
         {TAX_CLASSES.map(t => (
           <label key={t.value} className={`flex items-start gap-3 rounded-xl border p-3 text-sm ${form.tax_class === t.value ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
@@ -216,7 +237,7 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       {show('tax_class')}
       {form.tax_class === 'llc' && (
         <>
-          <p className="mt-3 text-sm font-semibold text-slate-800">The LLC is taxed as</p>
+          <p className="mt-3 text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.b378ad">The LLC is taxed as</T></p>
           <div className="mt-1.5 flex gap-2">
             {LLC_CLASSES.map(([v, l]) => (
               <button key={v} type="button" onClick={() => setForm(f => ({ ...f, llc_class: v }))} aria-pressed={form.llc_class === v}
@@ -228,20 +249,20 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       )}
       {form.tax_class === 'other' && (
         <>
-          <label htmlFor="w9-other" className="mt-3 block text-sm font-semibold text-slate-800">What kind of entity</label>
+          <label htmlFor="w9-other" className="mt-3 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.235de2">What kind of entity</T></label>
           <input id="w9-other" value={form.other_text} onChange={set('other_text')} className={INPUT} />
           {show('other_text')}
         </>
       )}
 
-      <label htmlFor="w9-addr" className="mt-4 block text-sm font-semibold text-slate-800">Street address</label>
+      <label htmlFor="w9-addr" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.669a90">Street address</T></label>
       <input id="w9-addr" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="123 Peachtree St NE, Apt 4" className={INPUT} />
       {show('address')}
-      <label htmlFor="w9-csz" className="mt-4 block text-sm font-semibold text-slate-800">City, state, ZIP</label>
+      <label htmlFor="w9-csz" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.c04899">City, state, ZIP</T></label>
       <input id="w9-csz" value={form.city_state_zip} onChange={set('city_state_zip')} placeholder="Atlanta, GA 30303" className={INPUT} />
       {show('city_state_zip')}
 
-      <p className="mt-4 text-sm font-semibold text-slate-800">Taxpayer identification number</p>
+      <p className="mt-4 text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.7af993">Taxpayer identification number</T></p>
       <div className="mt-1.5 flex gap-2">
         {[['ssn', 'Social Security number'], ['ein', 'Employer ID number']].map(([v, l]) => (
           <button key={v} type="button" onClick={() => setForm(f => ({ ...f, tin_type: v, tin: '' }))} aria-pressed={form.tin_type === v}
@@ -255,23 +276,23 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       {show('tin')}
 
       <div className="mt-5 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
-        <p className="font-semibold text-slate-800">Under penalties of perjury, I certify that:</p>
+        <p className="font-semibold text-slate-800" data-copy="fixed">Under penalties of perjury, I certify that:</p>
         <ol className="mt-1 list-decimal space-y-1 pl-4">{CERT.map((c, i) => <li key={i}>{c}</li>)}</ol>
-        <p className="mt-2">The IRS does not require your consent to any provision of this document other than the certifications required to avoid backup withholding.</p>
+        <p className="mt-2" data-copy="fixed">The IRS does not require your consent to any provision of this document other than the certifications required to avoid backup withholding.</p>
       </div>
-      <label htmlFor="w9-sig" className="mt-4 block text-sm font-semibold text-slate-800">Signature <span className="font-normal text-slate-500">(type your full name)</span></label>
+      <label htmlFor="w9-sig" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.8c0900">Signature</T> <span className="font-normal text-slate-500"><T k="pages.partnerportalpage.0fe140">(type your full name)</T></span></label>
       <input id="w9-sig" value={form.signed_name} onChange={set('signed_name')} className={`${INPUT} italic`} />
       {show('signed_name')}
       <label className="mt-3 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700">
         <input type="checkbox" checked={form.accept} onChange={set('accept')} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
-        <span>I certify the statements above are true and that typing my name is my signature on Form W-9.</span>
+        <span data-copy="fixed">I certify the statements above are true and that typing my name is my signature on Form W-9.</span>
       </label>
       {show('accept')}
       </div>
       <div className="shrink-0 border-t border-slate-200 bg-white px-4 pt-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         {error && <p className="mb-2 text-sm text-red-600" role="alert">{error}</p>}
-        {tried && Object.keys(problems).length > 0 && !error && <p className="mb-2 text-sm text-red-600" role="alert">Fix the highlighted fields above.</p>}
-        <button type="submit" disabled={busy} className="h-14 w-full rounded-xl bg-blue-700 text-lg font-bold text-white disabled:bg-slate-300">{busy ? 'Sending…' : 'Sign W-9'}</button>
+        {tried && Object.keys(problems).length > 0 && !error && <p className="mb-2 text-sm text-red-600" role="alert"><T k="pages.partnerportalpage.b64e28">Fix the highlighted fields above.</T></p>}
+        <button type="submit" disabled={busy} className="qb qb-blue qb-lg w-full text-lg">{busy ? 'Sending…' : 'Sign W-9'}</button>
       </div>
     </form>
     </W9Modal>
@@ -326,7 +347,7 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
 
   return (
     <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Your photo</p>
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.be6684">Your photo</T></p>
       <div className="mt-3 flex items-center gap-4">
         <button type="button" onClick={() => input.current?.click()} aria-label={shown ? 'Choose a different photo' : 'Choose a photo'}
           className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-400 ring-1 ring-slate-200">
@@ -342,21 +363,21 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
         <>
           <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700">
             <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
-            <span>Show this photo with my name on my link&apos;s page. I can take it off any time.</span>
+            <span><T k="pages.partnerportalpage.e4652c">Show this photo with my name on my link's page. I can take it off any time.</T></span>
           </label>
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-700">Cancel</button>
+            <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="qb qb-outline qb-md flex-1"><T k="pages.partnerportalpage.ea4788">Cancel</T></button>
             <button type="button" disabled={!agree || busy} onClick={() => run(() => savePartnerPhoto(token, preview))}
-              className="h-12 flex-1 rounded-xl bg-blue-700 font-semibold text-white disabled:bg-slate-300">{busy ? 'Saving…' : 'Use this photo'}</button>
+              className="qb qb-blue qb-md flex-1">{busy ? 'Saving…' : 'Use this photo'}</button>
           </div>
         </>
       ) : (
         <div className="mt-3 flex gap-2">
-          <button type="button" onClick={() => input.current?.click()} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-800">
+          <button type="button" onClick={() => input.current?.click()} className="qb qb-outline qb-md flex-1">
             {photoUrl ? 'Change photo' : 'Add a photo'}
           </button>
           {photoUrl && (
-            <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-600">
+            <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="qb qb-outline qb-md flex-1 text-slate-600">
               {busy ? 'Removing…' : 'Remove'}
             </button>
           )}
@@ -385,12 +406,12 @@ function GetSetUp({ token, data, onChange, shared }) {
   );
   return (
     <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Get set up · 2 steps</p>
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="pages.partnerportalpage.e07ce5">Get set up · 2 steps</T></p>
       <ol className="mt-3 divide-y divide-slate-100">
         <Step n={1} done={shared} title="Share your link" line="Copy it below and send it to people you know. Say you get a referral fee." />
         <Step n={2} done={false} title="Sign your W-9 · about 30 seconds"
           line={data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign.' : 'Needed before your first payment.'}>
-          <button type="button" onClick={() => setW9Open(true)} className="mt-2.5 h-11 w-full rounded-xl bg-blue-700 font-semibold text-white active:bg-blue-800">Sign my W-9</button>
+          <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-md mt-2.5 w-full"><T k="pages.partnerportalpage.55e75f">Sign my W-9</T></button>
           {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
         </Step>
       </ol>
@@ -422,19 +443,19 @@ function Earnings({ token, data, onChange }) {
       {!data.w9?.on_file && <GetSetUp token={token} data={data} onChange={onChange} shared={shared} />}
 
       <section className={`${data.w9?.on_file ? '' : 'mt-4 '}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
-        <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}>Your link</p>
+        <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}><T k="pages.partnerportalpage.250f24">Your link</T></p>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
         <div className="mt-4 flex gap-2">
-          <button type="button" onClick={copy} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-bold transition active:brightness-95" style={{ background: GOLD, color: DEEP }}>
-            {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> Copied</> : <><Copy className="h-4 w-4" aria-hidden="true" /> Copy link</>}
+          <button type="button" onClick={copy} className="qb qb-gold qb-md flex-1">
+            {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.a588b1">Copied</T></> : <><Copy className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.b75833">Copy link</T></>}
           </button>
           {typeof navigator !== 'undefined' && navigator.share && (
-            <button type="button" onClick={share} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white/15 font-semibold text-white ring-1 ring-white/25">
-              <Share2 className="h-4 w-4" aria-hidden="true" /> Share
+            <button type="button" onClick={share} className="qb qb-outline-dark qb-md flex-1">
+              <Share2 className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.5a95a4">Share</T>
             </button>
           )}
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-blue-100">When you post or message your link, say you get a referral fee. Don&apos;t talk about coverage or prices. Just share the link.</p>
+        <p className="mt-3 text-xs leading-relaxed text-blue-100"><T k="pages.partnerportalpage.0d57c3">When you post or message your link, say you get a referral fee. Don't talk about coverage or prices. Just share the link.</T></p>
       </section>
 
       <section className="mt-4 grid grid-cols-3 gap-2">
@@ -450,11 +471,11 @@ function Earnings({ token, data, onChange }) {
       {/* All referrals in one table: a heading row per month, then name and what they sent. */}
       <section className="mt-5 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
         <table className="w-full text-sm">
-          <caption className="sr-only">Your referrals by month</caption>
+          <caption className="sr-only"><T k="pages.partnerportalpage.874598">Your referrals by month</T></caption>
           <thead>
             <tr className="text-left text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
-              <th scope="col" className="w-[40%] px-3 py-2.5">Name</th>
-              <th scope="col" className="px-3 py-2.5">Products</th>
+              <th scope="col" className="w-[40%] px-3 py-2.5"><T k="pages.partnerportalpage.49ee30">Name</T></th>
+              <th scope="col" className="px-3 py-2.5"><T k="pages.partnerportalpage.068f80">Products</T></th>
             </tr>
           </thead>
           {months.map(m => (
@@ -472,12 +493,12 @@ function Earnings({ token, data, onChange }) {
               ))}
               {m.paid && (
                 <tr className="border-t border-slate-200">
-                  <th scope="row" className="px-3 py-2.5 text-left font-bold text-[#0F2D6B]">Earnings</th>
+                  <th scope="row" className="px-3 py-2.5 text-left font-bold text-[#0F2D6B]"><T k="pages.partnerportalpage.9cf106">Earnings</T></th>
                   <td className="px-3 py-2.5 text-right text-base font-bold tabular-nums text-emerald-700">{dollars2(m.paid.amount)}</td>
                 </tr>
               )}
               {!m.rows.length && !m.pending && (
-                <tr className="border-t border-slate-100"><td colSpan={2} className="px-3 py-2.5 text-slate-500">No referrals yet this month.</td></tr>
+                <tr className="border-t border-slate-100"><td colSpan={2} className="px-3 py-2.5 text-slate-500"><T k="pages.partnerportalpage.0271ee">No referrals yet this month.</T></td></tr>
               )}
             </tbody>
           ))}
@@ -489,14 +510,14 @@ function Earnings({ token, data, onChange }) {
       <PhotoSection token={token} name={data.name || data.first_name} photoUrl={data.photo_url} onChange={onChange} />
 
       {SHOW_PAY_SCHEDULE && <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-        <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">How you&apos;re paid · per household</h2>
+        <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.867844">How you're paid · per household</T></h2>
         <dl className="mt-2 divide-y divide-slate-100 text-sm">
           {SCHEDULE_ROWS.map(([k, label]) => (
             <div key={k} className="flex justify-between py-2"><dt className="text-slate-700">{label}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(data.schedule[k])}</dd></div>
           ))}
-          <div className="flex justify-between py-2"><dt className="text-slate-700">Each extra line, up to 2</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(data.schedule.extra_line)}</dd></div>
+          <div className="flex justify-between py-2"><dt className="text-slate-700"><T k="pages.partnerportalpage.c99e34">Each extra line, up to 2</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(data.schedule.extra_line)}</dd></div>
         </dl>
-        <p className="mt-2 text-xs leading-relaxed text-slate-500">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we&apos;ve quoted it (or 7 days after their first page). Pages that can&apos;t be read, repeats, expired pages and Allstate policies don&apos;t count. Paid monthly after your W-9 is on file; months under $50 carry over.</p>
+        <p className="mt-2 text-xs leading-relaxed text-slate-500"><T k="pages.partnerportalpage.b3e79d">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we've quoted it (or 7 days after their first page). Pages that can't be read, repeats, expired pages and Allstate policies don't count. Paid monthly after your W-9 is on file; months under $50 carry over.</T></p>
       </section>}
     </>
   );

@@ -16,10 +16,12 @@ import { T, CopyImage } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
-  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers,
+  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
+import { nextOpening } from '../lib/businessHours';
+import { DrawnCheck, CountUp, NextTimeline, CamCard, ShareLine } from './components/rate-checks/DoneExtras';
 import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
 } from '../lib/rateCheckDraft';
@@ -484,6 +486,7 @@ export default function RateCheckPage() {
     const read = sent.filter(i => i.status === 'read');
     const priced = read.filter(i => i.result?.annual_premium != null);
     const total = priced.reduce((s, i) => s + i.result.annual_premium, 0);
+    const opens = nextOpening();
     const policySlide = {
       key: 'policies',
       label: sent.length === 1 ? 'Your policy' : `Your ${sent.length} policies`,
@@ -498,17 +501,6 @@ export default function RateCheckPage() {
     const slides = reading ? [policySlide] : [
       policySlide,
       {
-        key: 'next',
-        label: 'Next steps',
-        content: (
-          <ol className="space-y-2.5 text-[15px] leading-snug text-slate-700">
-            <li className="flex gap-3"><Step n={1} /> We price the same coverage with Allstate.</li>
-            <li className="flex gap-3"><Step n={2} /> If we can save you money, Cam texts you the number.</li>
-            <li className="flex gap-3"><Step n={3} /> If we can&apos;t, we&apos;ll say so. No spam, no pressure.</li>
-          </ol>
-        ),
-      },
-      {
         key: 'more',
         label: 'Add more',
         untitled: true,
@@ -517,7 +509,7 @@ export default function RateCheckPage() {
             <p className="font-semibold text-slate-900">Got another policy?</p>
             <p className="mt-1 text-sm text-slate-600">A second car, your home, a boat. Bundling often saves the most.</p>
             <button type="button" onClick={() => { setStep('policies'); window.scrollTo(0, 0); }}
-              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white shadow-sm active:bg-blue-800">
+              className="qb qb-blue qb-md mt-3">
               <Plus className="h-5 w-5" aria-hidden="true" /> Add more policies
             </button>
           </div>
@@ -529,12 +521,15 @@ export default function RateCheckPage() {
         {fileInputs}
         {banner}
         <div role="status" aria-live="polite" className="text-center">
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">
+          {!reading && <DrawnCheck />}
+          <h1 className={`text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] ${reading ? '' : 'qc-rise'}`} style={reading ? undefined : { animationDelay: '150ms' }}>
             {reading ? <T k="rc.results.reading">Reading your policies…</T> : <T k="rc.results.done">Got it — Cam is on it.</T>}
           </h1>
-          <p className="mx-auto mt-2 max-w-xs text-slate-600">
+          <p className={`mx-auto mt-2 max-w-xs text-slate-600 ${reading ? '' : 'qc-rise'}`} style={reading ? undefined : { animationDelay: '230ms' }}>
             {reading
               ? <T k="rc.results.reading.line">Each one takes about 10–20 seconds. Keep this screen open.</T>
+              : opens
+                ? <><T k="rc.results.closed">Our office is closed right now. Expect to hear from Cam</T> {opens.label}.</>
               : given?.consentGivenAt
                 ? <T k="rc.results.done.text">Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.</T>
                 : <T k="rc.results.done.reach">Cam’s team will reach out when your quote is ready—typically within 30 mins during business hours.</T>}
@@ -542,16 +537,21 @@ export default function RateCheckPage() {
         </div>
 
         {priced.length > 0 && (
-          <div className="mt-5 rounded-2xl bg-slate-900 px-5 py-4 text-center text-white">
-            <p className="text-sm text-slate-300">You pay today</p>
-            <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span data-testid="rc-total">{money(total)}</span><span className="text-lg font-semibold text-slate-300"> /yr</span></p>
-            <p className="mt-1 text-sm text-slate-300">
+          <div className="qc-rise mt-5 rounded-2xl px-5 py-4 text-center text-white shadow-lg shadow-blue-900/20" style={{ background: HERO_BG, animationDelay: '320ms' }}>
+            <p className="text-sm text-blue-100">You pay today</p>
+            <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span className="sr-only" data-testid="rc-total">{money(total)}</span><span aria-hidden="true"><CountUp value={total} format={money} /></span><span className="text-lg font-semibold text-blue-100"> /yr</span></p>
+            <p className="mt-1 text-sm text-blue-100">
               across {priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''} · the price to beat
             </p>
           </div>
         )}
 
+        {!reading && <NextTimeline texting={!!given?.consentGivenAt} opensAt={opens?.label} />}
+        {!reading && <CamCard photo={AGENT.photo} />}
+
         <Carousel slides={slides} className="mt-5" />
+
+        {!reading && <ShareLine />}
 
         {!reading && (
           <p className="mt-5 text-center text-sm text-slate-500">
@@ -578,6 +578,7 @@ export default function RateCheckPage() {
         <ActionBar hint={canSend ? null : hint}>
           <button type="button" onClick={send} disabled={!canSend} className={primaryBtn}>
             {drafts.length > 1 ? `Check my ${drafts.length} policies` : 'Check my rate'}
+            <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
           </button>
         </ActionBar>
       }>
@@ -596,11 +597,11 @@ export default function RateCheckPage() {
               <h2 id="rc-text-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.textnudge.title">Want a text when your quote is ready?</T></h2>
               <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.textnudge.line">You left the text box unchecked. Check it and we’ll text you the moment your quote is ready.</T></p>
               <button type="button" onClick={() => { setTextNudge(false); setConsent(true); submit({ consent: true }); }}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+                className="qb qb-blue qb-lg mt-5 w-full">
                 <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textnudge.yes">Text me</T>
               </button>
               <button type="button" onClick={() => { setTextNudge(false); submit(); }}
-                className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+                className="qb qb-md mt-2 w-full font-semibold text-slate-600 active:bg-slate-50">
                 <T k="rc.textnudge.no">No thanks, send</T>
               </button>
               <p className="mt-2 text-center text-[11px] leading-snug text-slate-400" data-copy="fixed">{CONSENT.fine.replace('By checking this', 'By tapping “Text me”')}</p>
@@ -624,7 +625,7 @@ export default function RateCheckPage() {
           ) : !otp.sentAt ? (
             <div>
               <button type="button" onClick={requestCode} disabled={otp.status === 'sending'}
-                className="h-12 w-full rounded-xl border border-blue-700 bg-white px-4 font-semibold text-blue-700 disabled:opacity-60">
+                className="qb qb-outline qb-md w-full">
                 {otp.status === 'sending' ? 'Sending…' : 'Text me a code'}
               </button>
               <p className="mt-1.5 px-1 text-xs text-slate-500">We text a 6-digit code to confirm it&apos;s you.</p>
@@ -642,7 +643,7 @@ export default function RateCheckPage() {
                     if (code.length === 6) checkCode(code);
                   }} />
                 <button type="button" onClick={() => checkCode(otp.code)} disabled={otp.code.length !== 6 || otp.status === 'verifying'}
-                  className="h-12 shrink-0 rounded-xl bg-blue-700 px-4 font-semibold text-white disabled:opacity-50">
+                  className="qb qb-blue qb-md shrink-0">
                   {otp.status === 'verifying' ? 'Checking…' : 'Verify'}
                 </button>
               </div>
@@ -705,7 +706,7 @@ export default function RateCheckPage() {
     <Shell step={1} wide={drafts.length === 0 && !returning} bar={drafts.length > 0 && (
       <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
         <button type="button" onClick={newPolicyPhoto} aria-label="Add another policy"
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700">
+          className="qb qb-outline h-14 w-14 shrink-0 p-0">
           <Plus className="h-6 w-6" aria-hidden="true" />
         </button>
         <button type="button" onClick={() => goNext()} className={primaryBtn}>
@@ -723,11 +724,11 @@ export default function RateCheckPage() {
             <h2 id="rc-more-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.more.title">Only one policy?</T></h2>
             <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.more.line">Add your home, renters or another car too. Checking them together usually finds the biggest savings.</T></p>
             <button type="button" onClick={() => { setMoreNudge(false); setAskingMore(null); openFiles(); }}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3.5 font-bold text-white active:bg-blue-800">
+              className="qb qb-blue qb-lg mt-5 w-full">
               <Plus className="h-5 w-5" aria-hidden="true" /> <T k="rc.more.add">Add another policy</T>
             </button>
             <button type="button" onClick={() => goNext(true)}
-              className="mt-2 w-full rounded-2xl px-5 py-3 font-semibold text-slate-600 active:bg-slate-50">
+              className="qb qb-md mt-2 w-full font-semibold text-slate-600 active:bg-slate-50">
               <T k="rc.more.skip">Continue with one</T>
             </button>
           </div>
@@ -747,7 +748,7 @@ export default function RateCheckPage() {
           <>
             <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add another policy</h1>
             <button type="button" onClick={() => openFiles()}
-              className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-8 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
+              className="qb qb-blue mt-6 w-full flex-col gap-3 rounded-3xl px-6 py-8">
               <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
                 <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
               </span>
@@ -755,7 +756,7 @@ export default function RateCheckPage() {
               <span className="text-sm text-blue-100"><T k="rc.upload.line">PDF, photos or screenshots</T></span>
             </button>
             <button type="button" onClick={() => openCamera()}
-              className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-700 active:bg-slate-50">
+              className="qb qb-outline qb-lg mt-3 w-full flex-col gap-0 font-normal text-slate-700">
               <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T></span>
               <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Photograph every page of the declarations</T></span>
             </button>
@@ -784,11 +785,11 @@ export default function RateCheckPage() {
             ))}
             <li className="flex gap-2">
               <button type="button" onClick={newPolicyPhoto}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50/60 px-4 py-4 font-semibold text-blue-800 active:bg-blue-100">
+                className="qb qb-lg flex-1 border-2 border-dashed border-blue-300 bg-blue-50/60 font-semibold text-blue-800 active:bg-blue-100">
                 <Camera className="h-5 w-5" aria-hidden="true" /> Add another policy
               </button>
               <button type="button" onClick={() => { setAskingMore(null); openFiles(); }} aria-label="Upload more"
-                className="flex w-16 items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700">
+                className="qb qb-outline w-16 p-0">
                 <Upload className="h-5 w-5" aria-hidden="true" />
               </button>
             </li>
@@ -885,7 +886,7 @@ function Thumb({ item, scanning = false, small = false }) {
       {scanning && (
         <>
           <div className="absolute inset-0 bg-blue-600/10" />
-          <div className="rc-scan absolute inset-x-0 h-6 bg-gradient-to-b from-transparent via-blue-500/60 to-transparent" />
+          <div className="rc-scan absolute inset-x-0 h-6 bg-gradient-to-b from-transparent via-[#F5D061]/80 to-transparent" />
         </>
       )}
     </div>
@@ -1008,11 +1009,11 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
           <p className="mt-0.5 text-sm text-slate-600">Drivers, cars and coverages are often on page 2 or 3.</p>
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={onAddPage}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-700 px-3 py-3 font-semibold text-white">
+              className="qb qb-blue qb-md flex-1 px-3">
               <Camera className="h-4 w-4" aria-hidden="true" /> Add page {pages.length + 1}
             </button>
             <button type="button" onClick={onDoneAdding}
-              className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-3 font-semibold text-slate-700">
+              className="qb qb-outline qb-md flex-1 px-3">
               That&apos;s all
             </button>
           </div>
@@ -1030,15 +1031,15 @@ function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
         <p className="text-xl font-extrabold text-slate-900">You picked {count} files</p>
         <p className="mt-1 text-slate-600">Are they pages of one policy, or more than one policy?</p>
         <button type="button" onClick={onOne}
-          className="mt-5 flex w-full items-center justify-center rounded-2xl bg-blue-700 px-4 py-4 text-lg font-bold text-white">
+          className="qb qb-blue qb-lg mt-5 w-full">
           One policy, {count} pages
         </button>
         <button type="button" onClick={onSeparate}
-          className="mt-3 flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-semibold text-slate-800">
+          className="qb qb-outline qb-md mt-3 w-full">
           {count} separate policies
         </button>
         <button type="button" onClick={onMix}
-          className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-800">
+          className="qb qb-outline qb-md mt-3 w-full flex-col gap-0">
           A mix — I&apos;ll sort them
           <span className="text-xs font-normal text-slate-500">e.g. 3 pages of auto and 2 of home</span>
         </button>
@@ -1078,8 +1079,8 @@ function ResultRow({ item, index, onRetake, onRetry }) {
         <p className="truncate text-sm">{detail}</p>
       </div>
       {item.status === 'read' && (
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700" aria-label="Received">
-          <Check className="h-4 w-4" aria-hidden="true" />
+        <span className="qc-badge qc-badge-sm shrink-0" aria-label="Received">
+          <Check className="h-4 w-4" aria-hidden="true" strokeWidth={3} />
         </span>
       )}
       {item.status === 'unreadable' && (
@@ -1174,7 +1175,7 @@ function MeetCam({ onUpload }) {
         <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#F5D061]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
         <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
         <button type="button" onClick={onUpload}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F5D061] px-4 py-3.5 text-base font-bold text-[#0F2D6B] active:bg-[#E9C14A]">
+          className="qb qb-gold qb-lg mt-6 w-full">
           <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
         </button>
       </div>
@@ -1204,7 +1205,7 @@ function ActionBar({ children, hint }) {
 }
 
 const primaryBtn =
-  'flex h-14 flex-1 items-center justify-center rounded-xl bg-blue-700 px-4 text-lg font-bold text-white shadow-sm active:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300';
+  'qb qb-blue qb-lg flex-1 text-lg';
 
 const inputCls =
   'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
@@ -1416,11 +1417,11 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
     if (files.length) onDropFiles(files);
   };
   return (
-    <div className="mt-7 rounded-3xl bg-white p-4 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 sm:p-5"
+    <div id="rc-upload-card" className="mt-7 rounded-3xl bg-white p-4 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 sm:p-5"
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
       <div className={`rounded-2xl border-2 border-dashed p-4 text-center transition-colors sm:p-5 ${dragging ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50/60'}`}>
         <button type="button" onClick={onUpload}
-          className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-blue-700 px-5 py-4 text-lg font-bold text-white shadow-lg shadow-blue-700/30 active:scale-[0.99] active:bg-blue-800">
+          className="qb qb-blue qb-lg w-full text-lg">
           <Upload className="h-5 w-5" aria-hidden="true" strokeWidth={2.25} /> <T k="rc.upload.title">Upload my policy</T>
         </button>
         <p className="mt-2.5 text-sm text-slate-500">
@@ -1432,7 +1433,7 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
         <T k="rc.upload.multi">Have several policies? Select them all at once.</T>
       </p>
       <button type="button" onClick={onCamera}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 active:bg-slate-50">
+        className="qb qb-outline qb-md mt-3 w-full">
         <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T>
       </button>
     </div>
@@ -1445,7 +1446,78 @@ const HOW = [
   ['3', MessageSquare, 'Get your quote', 'Usually within 30 minutes during business hours.'],
 ];
 
+// Landing sections fade up as they scroll in. Content only hides once this runs,
+// so nothing is ever stuck invisible.
+function useReveal() {
+  useEffect(() => {
+    const els = [...document.querySelectorAll('[data-reveal]')];
+    if (!els.length || typeof IntersectionObserver === 'undefined') return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const vh = window.innerHeight;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    for (const el of els) {
+      if (el.getBoundingClientRect().top < vh) continue; // already on screen: leave it
+      el.classList.add('will-reveal'); io.observe(el);
+    }
+    return () => io.disconnect();
+  }, []);
+}
+
+// What people get: the kind of text Cam sends, clearly marked as an example.
+function ExampleText() {
+  return (
+    <figure className="mx-auto mt-8 max-w-md rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+      <figcaption className="flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500"><T k="rc.example.label">What you’ll get · example</T></span>
+        <span className="text-xs text-slate-400">Messages</span>
+      </figcaption>
+      <div className="mt-4 flex items-end gap-2.5">
+        <img src={AGENT.photo} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[#F5D061]" />
+        <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200">
+          <T k="rc.example.text">Hi Dana, it’s Cam. Same coverage with Allstate comes to</T>{' '}
+          <b className="font-bold text-emerald-700">$1,180/yr</b>{' '}
+          <T k="rc.example.text2">vs. your</T> <b className="font-bold text-[#0F2D6B]">$1,560/yr</b>.{' '}
+          <T k="rc.example.text3">Want me to send it over?</T>
+        </div>
+      </div>
+      <p className="mt-3 text-center text-xs text-slate-400"><T k="rc.example.fine">Example only. Your price depends on your coverage and record.</T></p>
+    </figure>
+  );
+}
+
+// Phones: once the upload card scrolls away, a slim gold upload bar stays at the
+// bottom, until the closing section (which has its own buttons) comes into view.
+function StickyUpload({ onUpload }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const card = document.getElementById('rc-upload-card');
+    const closing = document.getElementById('rc-closing')?.closest('section');
+    if (!card || typeof IntersectionObserver === 'undefined') return undefined;
+    const seen = { card: true, closing: false };
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.target === card) seen.card = e.isIntersecting || e.boundingClientRect.top > 0;
+        else seen.closing = e.isIntersecting;
+      }
+      setShow(!seen.card && !seen.closing);
+    });
+    io.observe(card); if (closing) io.observe(closing);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0F2D6B]/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur transition-transform duration-300 lg:hidden ${show ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
+      aria-hidden={!show}>
+      <button type="button" onClick={onUpload} tabIndex={show ? 0 : -1} className="qb qb-gold qb-md w-full">
+        <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.sticky.upload">Upload my policies</T>
+      </button>
+    </div>
+  );
+}
+
 function Landing({ note, onUpload, onCamera, onDropFiles }) {
+  useReveal();
   const [howTo, setHowTo] = useState(false);
   return (
     <>
@@ -1477,7 +1549,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* How it works */}
-      <section className="bg-white pt-14 pb-12 lg:pt-20 lg:pb-16" aria-labelledby="rc-how">
+      <section data-reveal className="bg-white pt-14 pb-12 lg:pt-20 lg:pb-16" aria-labelledby="rc-how">
         <div className={wrap}>
           <h2 id="rc-how" className={sectionTitle}><T k="rc.how.heading">How it works</T></h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-3 lg:gap-6">
@@ -1490,6 +1562,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
               </li>
             ))}
           </ol>
+          <ExampleText />
           <button type="button" onClick={() => setHowTo(v => !v)} aria-expanded={howTo}
             className="mt-6 inline-flex items-center gap-1.5 font-semibold text-blue-700">
             <T k="rc.howto.toggle">Can’t find your declarations page?</T>
@@ -1517,7 +1590,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       <CarrierLogos />
 
       {/* Proof: the owner */}
-      <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-owner">
+      <section data-reveal className="bg-white py-14 lg:py-20" aria-labelledby="rc-owner">
         <div className={`${wrap} grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-16`}>
           <div>
             <h2 id="rc-owner" className={sectionTitle}><T k="rc.owner.heading">Meet the Owner</T></h2>
@@ -1530,27 +1603,28 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* What we insure */}
-      <section className="bg-slate-50 py-14 lg:py-20">
+      <section data-reveal className="bg-slate-50 py-14 lg:py-20">
         <div className={wrap}><ProductsWeInsure /></div>
       </section>
 
       {/* The ask, again */}
-      <section className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: HERO_BG }} aria-labelledby="rc-closing">
+      <section data-reveal className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: HERO_BG }} aria-labelledby="rc-closing">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
           style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(96,165,250,0.35), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
           <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#F5D061] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-amber-500/30 active:bg-[#E9C14A]">
+            <button type="button" onClick={onUpload} className="qb qb-gold qb-lg flex-1 text-lg">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
             </button>
-            <button type="button" onClick={onCamera} className="flex items-center justify-center gap-2 rounded-2xl border border-white/40 px-5 py-4 font-semibold text-white active:bg-white/10">
+            <button type="button" onClick={onCamera} className="qb qb-outline-dark qb-lg">
               <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.photos">Take photos</T>
             </button>
           </div>
         </div>
       </section>
+      <StickyUpload onUpload={onUpload} />
     </>
   );
 }
@@ -1584,9 +1658,9 @@ function Shell({ children, step, bar, center = false, wide = false }) {
           </ol>
         )}
       </header>
-      <main className={center
+      <main key={step} className={`qc-step ${center
         ? 'mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-md flex-col justify-center px-4 py-6'
-        : 'mx-auto max-w-md px-4 pt-6 pb-10'}>{children}</main>
+        : 'mx-auto max-w-md px-4 pt-6 pb-10'}`}>{children}</main>
       <RateCheckFooter padForBar={!!bar} />
       {bar}
     </div>

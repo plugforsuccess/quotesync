@@ -159,9 +159,7 @@ function PartnerProgram() {
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-7">
           {state.status === 'done' ? (
             <div className="py-6 text-center" role="status">
-              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'rgba(57,255,136,0.2)' }}>
-                <Check className="h-7 w-7 text-emerald-600" aria-hidden="true" strokeWidth={3} />
-              </span>
+              <span className="qc-badge" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>
               <p className="mt-4 text-xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.86c345">Thanks,</T> {f.first.trim()}!</p>
               <p className="mt-2 text-slate-600"><T k="de.partner.thanks">Cam’s team will text you within one business day with your partner agreement and your personal link.</T></p>
             </div>
@@ -196,7 +194,7 @@ function PartnerProgram() {
               </label>
               {state.error && <p className="mt-3 text-sm font-medium text-red-700" role="alert">{state.error}</p>}
               <button type="submit" disabled={!ok || state.status === 'sending'}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 py-4 text-base font-bold text-white shadow-lg shadow-blue-700/25 hover:bg-blue-800 disabled:bg-slate-300 disabled:shadow-none">
+                className="qb qb-blue qb-lg mt-5 w-full">
                 {state.status === 'sending' && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
                 <T k="de.partner.button">Apply to be a partner</T>
               </button>
@@ -255,7 +253,7 @@ export default function GeorgiaDriverEducationPage() {
             <div className="mt-5"><Ticks items={['6-hour online course, complete at your own pace', 'Eligible for insurance discounts with most carriers', 'Downloadable completion certificate', 'Available for all ages 18+']} /></div>
             <p className="mt-6 text-3xl font-extrabold text-[#0F2D6B]">$24.95</p>
             <Link to="/courses/defensive-driving"
-              className="mt-4 block rounded-2xl bg-blue-700 py-4 text-center text-base font-bold text-white shadow-lg shadow-blue-700/25 hover:bg-blue-800">
+              className="qb qb-blue qb-lg mt-4 flex w-full">
               <T k="pages.driversedpage.a55c51">Start Defensive Driving Course</T>
             </Link>
           </div>
@@ -267,7 +265,7 @@ export default function GeorgiaDriverEducationPage() {
             <div className="mt-5"><Ticks items={['30-hour state-approved curriculum', 'Required for Class D license (ages 15–17)', 'Certificate sent directly to DDS', 'Complete 100% online at your own pace']} /></div>
             <p className="mt-6 text-3xl font-extrabold text-[#0F2D6B]">$29.00</p>
             <a href={JOSHUAS_LAW_LINK} target="_blank" rel="noreferrer"
-              className="mt-4 block rounded-2xl border-2 border-blue-700 py-3.5 text-center text-base font-bold text-blue-700 hover:bg-blue-50">
+              className="qb qb-outline qb-lg mt-4 flex w-full border-2 border-blue-700 text-blue-700">
               <T k="pages.driversedpage.6f8ac7">Start Joshua’s Law Course</T>
             </a>
           </div>}
@@ -312,8 +310,7 @@ export default function GeorgiaDriverEducationPage() {
         <div className={`relative ${wrap}`}>
           <h2 className="text-[30px] font-extrabold leading-tight tracking-tight lg:text-[40px]"><T k="pages.driversedpage.35a223">Need an insurance quote?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="pages.driversedpage.021418">Snap your declarations page. Cam checks if Allstate can beat it.</T></p>
-          <Link to="/" className="mx-auto mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-lg font-bold shadow-lg shadow-amber-500/30"
-            style={{ background: GOLD, color: DEEP }}>
+          <Link to="/" className="qb qb-gold qb-lg mx-auto mt-7 px-8 text-lg">
             <T k="pages.driversedpage.725f04">Check my rate</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         </div>

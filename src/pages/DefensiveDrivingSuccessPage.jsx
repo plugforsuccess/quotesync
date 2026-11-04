@@ -3,7 +3,7 @@
 // from pending_payment -> active). Polls briefly while Stripe delivers.
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Loader2, Clock } from 'lucide-react';
+import { Check, Loader2, Clock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getDefensiveDrivingCourse, getMyEnrollment } from '../lib/ddApi';
 
@@ -37,12 +37,12 @@ export default function DefensiveDrivingSuccessPage() {
       <div className="max-w-lg w-full rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         {state === 'active' ? (
           <>
-            <CheckCircle className="w-14 h-14 text-emerald-500 mx-auto mb-4" />
+            <span className="qc-badge mb-4" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>
             <h1 className="text-2xl font-extrabold text-[#0F2D6B] mb-2">Payment complete — you’re enrolled!</h1>
             <p className="text-sm text-slate-600 mb-6">Your Georgia 6-Hour Defensive Driving course is ready.</p>
             <Link to="/courses/defensive-driving/portal"
-              className="inline-block rounded-2xl px-6 py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white transition">
-              Start your course
+              className="qb qb-blue qb-lg w-full sm:w-auto">
+              Start your course <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
             </Link>
           </>
         ) : state === 'checking' ? (
@@ -53,14 +53,14 @@ export default function DefensiveDrivingSuccessPage() {
           </>
         ) : (
           <>
-            <Clock className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <Clock className="w-12 h-12 text-[#B07A0E] mx-auto mb-4" />
             <h1 className="text-xl font-extrabold text-[#0F2D6B] mb-2">Almost there</h1>
             <p className="text-sm text-slate-600 mb-6">
               Your payment is processing. If you completed checkout, your access will appear shortly —
               refresh this page or head to the course page.
             </p>
             <Link to="/courses/defensive-driving"
-              className="inline-block rounded-2xl border-2 border-blue-700 px-6 py-3 text-base font-bold text-blue-700 hover:bg-blue-50 transition">
+              className="qb qb-outline qb-md border-2 border-blue-700 text-blue-700">
               Back to course
             </Link>
           </>
