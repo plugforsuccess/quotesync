@@ -121,7 +121,7 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
           style={{
             width: 28, height: 28,
             background: '#0F2D6B',
-            color: '#39FF88',
+            color: '#F5D061',
             border: '1px solid rgba(255,255,255,0.3)',
           }}
         >

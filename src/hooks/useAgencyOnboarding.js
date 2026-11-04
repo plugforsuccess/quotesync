@@ -94,7 +94,7 @@ export const DEFAULT_RENEWAL_RATES = {
 
 export const PRODUCT_META = {
   auto:           { label: 'Auto',              color: '#3B82F6', single_item: false, sort_order: 1  },
-  ho:             { label: 'Homeowners',        color: '#10B981', single_item: true,  sort_order: 2  },
+  ho:             { label: 'Homeowners',        color: '#B07A0E', single_item: true,  sort_order: 2  },
   condo:          { label: 'Condo',             color: '#34D399', single_item: true,  sort_order: 3  },
   renters:        { label: 'Renters',           color: '#F59E0B', single_item: true,  sort_order: 4  },
   landlord:       { label: 'Landlord',          color: '#06B6D4', single_item: true,  sort_order: 5  },

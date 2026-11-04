@@ -2,7 +2,13 @@
 // Illustrations for the Defensive Driving course, drawn in SVG so they're sharp at any
 // size, follow the course's light/dark theme (colors are the .ddc CSS variables), and
 // animate with CSS (index.css, "ddc-fig"), which stops for readers who ask for reduced
-// motion. Each one teaches a single idea from the lesson it sits in.
+// motion. Each one teaches a single idea from the lesson it sits in. Facts in them come
+// from the lesson text itself (src/data/ddCourseContent.js).
+import {
+  Check, X as XIcon, Hand, CloudRain, Car as CarIcon, Bike, PersonStanding,
+  Disc3, CircleGauge, Lightbulb, Droplets, Coffee, Clock, Wind,
+  Smartphone, ShieldCheck, ShieldAlert, CloudLightning, Gauge, Users, Bed, BadgeDollarSign,
+} from 'lucide-react';
 
 const C = {
   ink: 'var(--ddc-heading)',
@@ -201,6 +207,164 @@ function Steps({ steps, label }) {
   );
 }
 
+// ── Reusable parts ────────────────────────────────────────────────────────────
+
+const TONES = {
+  good: { c: 'var(--ok-c)', bg: 'var(--ok-bg)', bd: 'var(--ok-bd)' },
+  bad: { c: 'var(--no-c)', bg: 'var(--no-bg)', bd: 'var(--no-bd)' },
+  warn: { c: 'var(--warn-c)', bg: 'var(--warn-bg)', bd: 'var(--warn-bd)' },
+  info: { c: 'var(--law-c)', bg: 'var(--law-bg)', bd: 'var(--law-bd)' },
+};
+
+/** Side-by-side cards: a title, an icon, and short lines, popping in one after another. */
+function Cards({ cards, big = false }) {
+  return (
+    <div className={`grid gap-2.5 ${cards.length >= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
+      {cards.map((card, i) => {
+        const t = TONES[card.tone || 'info'];
+        const Icon = card.icon;
+        return (
+          <div key={card.title} className="ddc-fig-pop rounded-lg p-3" style={{ animationDelay: `${i * 0.35}s`, background: t.bg, border: `1px solid ${t.bd}` }}>
+            <p className="flex items-center gap-1.5 font-bold ddc-sm" style={{ color: t.c }}>
+              {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />}{card.title}
+            </p>
+            {card.value && <p className={`mt-1 font-black ddc-heading ${big ? 'ddc-h2' : 'ddc-lg'}`}>{card.value}</p>}
+            {card.items && (
+              <ul className="mt-1.5 space-y-1">
+                {card.items.map(it => (
+                  <li key={it} className="flex gap-1.5 ddc-xs ddc-text leading-snug">
+                    {card.tone === 'bad' ? <XIcon className="mt-0.5 h-3 w-3 shrink-0" style={{ color: t.c }} aria-hidden="true" />
+                      : <Check className="mt-0.5 h-3 w-3 shrink-0" style={{ color: t.c }} aria-hidden="true" />}
+                    {it}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Horizontal bars that grow in turn; each row has a label, a share of the full width, and a value. */
+function Bars({ rows, label, marker, barW = 250 }) {
+  return (
+    <svg viewBox={`0 0 320 ${rows.length * 40 + (marker ? 34 : 10)}`} role="img" aria-label={label}>
+      {rows.map(([name, share, value, color], i) => (
+        <g key={name} transform={`translate(0 ${10 + i * 40})`}>
+          <Label x={10} y={12} anchor="start" size={11}>{name}</Label>
+          <rect x="10" y="18" width={barW} height="13" rx="6.5" fill={C.road} />
+          <rect className="ddc-fig-grow" style={{ animationDelay: `${i * 0.25}s` }} x="10" y="18" width={Math.max(6, share * barW)} height="13" rx="6.5" fill={color || C.blue} />
+          <Label x={310} y={29} anchor="end" size={12} weight={800} color={C.ink}>{value}</Label>
+        </g>
+      ))}
+      {marker && <Label x={160} y={rows.length * 40 + 28} size={12} weight={800} color={C.red}>{marker}</Label>}
+    </svg>
+  );
+}
+
+// ── Custom drawings ───────────────────────────────────────────────────────────
+
+// Points add up toward the 15-point suspension line.
+function PointsMeter() {
+  const parts = [[6, 'Aggressive', C.red], [4, 'Reckless', C.amber], [3, 'Speeding', C.blue]];
+  let at = 0;
+  const unit = 280 / 15;
+  return (
+    <svg viewBox="0 0 320 130" role="img" aria-label="Six points for aggressive driving, four for reckless and three for speeding add up to 13; 15 points in 24 months suspends a Georgia license">
+      <rect x="20" y="40" width="280" height="24" rx="5" fill={C.road} />
+      {parts.map(([n, name, color], i) => {
+        const x = 20 + at * unit; at += n;
+        return (
+          <g key={name}>
+            <rect className="ddc-fig-grow" style={{ animationDelay: `${i * 0.6}s` }} x={x} y="40" width={n * unit - 2} height="24" rx="4" fill={color} />
+            <Label x={x + (n * unit) / 2} y={57} size={12} weight={800} color="#fff">{`+${n}`}</Label>
+            <Label x={x + (n * unit) / 2} y={84} size={9} color={C.muted}>{name}</Label>
+          </g>
+        );
+      })}
+      <line x1="300" y1="30" x2="300" y2="72" stroke={C.red} strokeWidth="3" />
+      <Label x={300} y={22} size={11} weight={800} color={C.red}>15</Label>
+      <Label x={160} y={114} size={12} weight={800} color={C.ink}>13 points so far. Two more in 24 months: suspended.</Label>
+    </svg>
+  );
+}
+
+// Aim far ahead; check mirrors often.
+function VisionScan() {
+  return (
+    <svg viewBox="0 0 320 170" role="img" aria-label="Look 12 to 15 seconds ahead and check your mirrors every 5 to 8 seconds">
+      <path d="M130 160 L150 10 L170 10 L190 160 Z" fill={C.road} />
+      <line x1="160" y1="150" x2="160" y2="18" stroke={C.line} strokeWidth="2" strokeDasharray="8 8" />
+      <g className="ddc-fig-sweep" style={{ transformOrigin: '160px 140px' }}>
+        <path d="M160 140 L132 20 L188 20 Z" fill={C.go} opacity=".22" />
+      </g>
+      <Car x={151} y={128} w={18} h={30} />
+      <Label x={250} y={34} size={11} weight={700} color={C.ink}>Look 12–15</Label>
+      <Label x={250} y={48} size={11} weight={700} color={C.ink}>seconds ahead</Label>
+      <Label x={70} y={140} size={11} weight={700} color={C.ink}>Mirrors every</Label>
+      <Label x={70} y={154} size={11} weight={700} color={C.ink}>5–8 seconds</Label>
+    </svg>
+  );
+}
+
+// Scan left, right, left before entering an intersection.
+function Intersection() {
+  return (
+    <svg viewBox="0 0 320 180" role="img" aria-label="At an intersection, cover the brake and scan left, right, then left again">
+      <rect x="120" y="0" width="80" height="180" fill={C.road} />
+      <rect x="0" y="60" width="320" height="60" fill={C.road} />
+      <Car x={146} y={128} w={28} h={18} />
+      <path className="ddc-fig-look1" d="M160 124 L60 90" stroke={C.go} strokeWidth="4" strokeLinecap="round" />
+      <path className="ddc-fig-look2" d="M160 124 L260 90" stroke={C.go} strokeWidth="4" strokeLinecap="round" />
+      <path className="ddc-fig-look3" d="M160 124 L60 90" stroke={C.go} strokeWidth="4" strokeLinecap="round" />
+      <Label x={50} y={78} size={13} weight={800} color={C.ink}>1 · Left</Label>
+      <Label x={270} y={78} size={13} weight={800} color={C.ink}>2 · Right</Label>
+      <Label x={60} y={146} size={13} weight={800} color={C.ink}>3 · Left again</Label>
+    </svg>
+  );
+}
+
+// Lap belt low on the hips, shoulder belt across the chest.
+function SeatBelt() {
+  return (
+    <svg viewBox="0 0 320 180" role="img" aria-label="Wear the lap belt low across your hips and the shoulder belt across your chest and collarbone">
+      <rect x="110" y="20" width="100" height="150" rx="18" fill={C.road} />
+      <circle cx="160" cy="44" r="18" fill={C.muted} />
+      <rect x="132" y="66" width="56" height="64" rx="14" fill={C.muted} />
+      <rect x="132" y="126" width="56" height="34" rx="8" fill={C.muted} />
+      <line className="ddc-fig-draw" x1="186" y1="68" x2="134" y2="128" stroke={C.go} strokeWidth="8" strokeLinecap="round" />
+      <line className="ddc-fig-draw" style={{ animationDelay: '.6s' }} x1="128" y1="134" x2="192" y2="134" stroke={C.go} strokeWidth="8" strokeLinecap="round" />
+      <Label x={250} y={84} size={11} weight={700} color={C.ink}>Shoulder belt:</Label>
+      <Label x={250} y={98} size={11} color={C.text}>across the chest</Label>
+      <Label x={60} y={130} size={11} weight={700} color={C.ink}>Lap belt:</Label>
+      <Label x={60} y={144} size={11} color={C.text}>low on the hips</Label>
+    </svg>
+  );
+}
+
+// School bus stopped with red lights and the stop arm out.
+function SchoolBus() {
+  return (
+    <svg viewBox="0 0 320 160" role="img" aria-label="When a school bus shows red flashing lights and its stop arm, stop and stay stopped until it moves on">
+      <rect x="0" y="80" width="320" height="56" fill={C.road} />
+      <rect x="150" y="52" width="130" height="62" rx="8" fill={C.amber} />
+      {[0, 1, 2, 3].map(i => <rect key={i} x={170 + i * 26} y="62" width="18" height="16" rx="2" fill={C.card} opacity=".85" />)}
+      <circle className="ddc-fig-blink" cx="158" cy="60" r="5" fill={C.red} />
+      <circle className="ddc-fig-blink-b" cx="272" cy="60" r="5" fill={C.red} />
+      <g className="ddc-fig-arm" style={{ transformOrigin: '150px 86px' }}>
+        <line x1="150" y1="86" x2="128" y2="86" stroke={C.ink} strokeWidth="3" />
+        <polygon points="104,76 114,66 128,66 138,76 138,90 128,100 114,100 104,90" fill={C.red} />
+        <Label x={121} y={87} size={8} weight={800} color="#fff">STOP</Label>
+      </g>
+      <Car x={30} y={100} />
+      <Label x={47} y={150} size={11} weight={800} color={C.ink}>stopped</Label>
+      <Label x={160} y={30} size={12} weight={800} color={C.ink}>Red lights + stop arm: stay stopped</Label>
+    </svg>
+  );
+}
+
 const FIGURES = {
   sipde: Sipde,
   distraction: Distraction,
@@ -211,6 +375,74 @@ const FIGURES = {
   wet: Wet,
   moveover: MoveOver,
   crashsteps: () => <Steps label="After a crash: stop, check for injuries and call 911, make the scene safe, exchange information, document, report" steps={['Stop', 'Call 911 if hurt', 'Make it safe', 'Swap info', 'Take photos', 'Report it']} />,
+  chain: () => <Steps label="Better knowledge leads to a better attitude, better behavior, fewer crashes and lower insurance costs" steps={['Knowledge', 'Attitude', 'Behavior', 'Fewer crashes', 'Lower costs']} />,
+  control: () => <Cards cards={[
+    { title: 'You control', tone: 'good', icon: ShieldCheck, items: ['Your preparation', 'Your attention', 'Your response'] },
+    { title: 'You can’t control', tone: 'bad', icon: ShieldAlert, items: ['Other drivers', 'The road', 'The weather'] },
+  ]} />,
+  points: () => <Bars label="Points in Georgia: aggressive driving 6, reckless driving 4, speeding 19 to 23 over 3, failing to obey a traffic-control device 3. Fifteen in 24 months suspends your license."
+    rows={[['Aggressive driving', 6 / 15, '6', C.red], ['Reckless driving', 4 / 15, '4', C.amber], ['Speeding 19–23 over', 3 / 15, '3', C.blue], ['Ignoring a traffic device', 3 / 15, '3', C.blue]]}
+    marker="15 points in 24 months = suspension" />,
+  pointsmeter: PointsMeter,
+  vision: VisionScan,
+  fatigue: () => <Cards cards={[
+    { title: 'Warning signs', tone: 'warn', icon: Bed, items: ['Yawning', 'Heavy eyelids', 'Drifting', 'Missing exits'] },
+    { title: 'What works', tone: 'good', icon: Clock, items: ['Enough sleep', 'Real breaks', 'Share the driving', 'Pull over and nap'] },
+    { title: 'Doesn’t work', tone: 'bad', icon: XIcon, items: ['Loud music', 'An open window', 'Caffeine instead of sleep'] },
+  ]} />,
+  roadrage: () => <Steps label="If a driver is aggressive: don't make eye contact, don't respond, create space, let them go" steps={['No eye contact', 'Don’t respond', 'Make space', 'Let them go']} />,
+  soberup: () => <Cards cards={[
+    { title: 'Doesn’t lower BAC', tone: 'bad', icon: Coffee, items: ['Coffee', 'A cold shower', 'Fresh air', 'Exercise'] },
+    { title: 'Lowers BAC', tone: 'good', icon: Clock, value: 'Only time' },
+  ]} />,
+  medlabel: () => <Cards cards={[
+    { title: 'On the label', tone: 'warn', icon: ShieldAlert, items: ['“May cause drowsiness”', '“Do not operate heavy machinery”'] },
+    { title: 'Means', tone: 'bad', icon: CarIcon, value: 'Don’t drive' },
+  ]} />,
+  soberplan: () => <Steps label="Decide before you go out: a sober driver, a rideshare or transit, or staying over" steps={['Sober driver', 'Rideshare or transit', 'Stay over', 'Take the keys']} />,
+  superspeeder: () => <Cards big cards={[
+    { title: 'Anywhere', tone: 'warn', icon: Gauge, value: '85+ mph' },
+    { title: 'Two-lane road', tone: 'warn', icon: Gauge, value: '75+ mph' },
+    { title: 'Super Speeder fee', tone: 'bad', icon: BadgeDollarSign, value: '+$200' },
+  ]} />,
+  intersection: Intersection,
+  seatbelt: SeatBelt,
+  vulnerable: () => <Cards cards={[
+    { title: 'Pedestrians', tone: 'info', icon: PersonStanding, items: ['Yield at crosswalks', 'Slow near schools and stops'] },
+    { title: 'Cyclists', tone: 'info', icon: Bike, items: ['Treat as vehicles', 'Pass with a safe buffer'] },
+    { title: 'Motorcyclists', tone: 'info', icon: Bike, items: ['Give a full lane', 'Double-check blind spots'] },
+  ]} />,
+  schoolbus: SchoolBus,
+  maintenance: () => <Cards cards={[
+    { title: 'Tires', tone: 'good', icon: Disc3, items: ['Pressure', 'Tread'] },
+    { title: 'Brakes', tone: 'good', icon: CircleGauge, items: ['Noise, pulling or a soft pedal: fix now'] },
+    { title: 'Lights, wipers, fluids', tone: 'good', icon: Lightbulb, items: ['See, be seen, signal'] },
+  ]} />,
+  skidblowout: () => <Cards cards={[
+    { title: 'Skid', tone: 'warn', icon: Droplets, items: ['Ease off the gas', 'Steer where you want to go', 'Don’t slam the brakes'] },
+    { title: 'Tire blowout', tone: 'warn', icon: Wind, items: ['Grip the wheel', 'Don’t brake hard', 'Ease off, hold straight, slow down'] },
+  ]} />,
+  handsfree: () => <Cards cards={[
+    { title: 'Allowed', tone: 'good', icon: Smartphone, items: ['Phone in a mount', 'Voice or a single touch'] },
+    { title: 'Not allowed', tone: 'bad', icon: Hand, items: ['Holding the phone', 'Texts or email', 'Watching or recording video'] },
+  ]} />,
+  impliedconsent: () => <Steps label="Lawfully arrested for DUI, you are asked to take a chemical test; refusing brings its own automatic license suspension" steps={['DUI arrest', 'Asked to test', 'Refuse: license suspended']} />,
+  reasonable: () => <Cards cards={[
+    { title: 'Clear and dry', tone: 'good', icon: CarIcon, value: 'Up to the limit' },
+    { title: 'Rain, fog, traffic', tone: 'warn', icon: CloudRain, value: 'Slower than the limit' },
+  ]} />,
+  premium: () => <Bars barW={190} label="What raises your rate: a ticket, more for an at-fault crash, and a DUI most of all"
+    rows={[['Speeding ticket', 0.33, 'raises it', C.blue], ['At-fault crash', 0.62, 'raises it more', C.amber], ['DUI', 1, 'raises it most', C.red]]} />,
+  minimums: () => <Cards big cards={[
+    { title: 'Injury, per person', tone: 'info', icon: Users, value: '$25,000' },
+    { title: 'Injury, per accident', tone: 'info', icon: Users, value: '$50,000' },
+    { title: 'Property damage', tone: 'info', icon: CarIcon, value: '$25,000' },
+  ]} />,
+  coverages: () => <Cards cards={[
+    { title: 'Collision', tone: 'info', icon: CarIcon, items: ['Your car after a crash, whoever is at fault'] },
+    { title: 'Comprehensive', tone: 'info', icon: CloudLightning, items: ['Theft, hail, flood, fire, trees, deer'] },
+    { title: 'Uninsured motorist', tone: 'good', icon: ShieldCheck, items: ['Pays you when the other driver can’t'] },
+  ]} />,
   claimsteps: () => <Steps label="Making a claim: report it, the adjuster reviews, get estimates, repair, then settle" steps={['Report it', 'Adjuster reviews', 'Get estimate', 'Repair', 'Settle']} />,
 };
 

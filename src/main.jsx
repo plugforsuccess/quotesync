@@ -5,6 +5,9 @@ import './index.css'
 import './styles/animations.css'
 import { logWebVitals } from './lib/performance'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { startMoneyText } from './lib/moneyText'
+
+startMoneyText()
 
 // Initialize performance monitoring
 if (typeof window !== 'undefined') {

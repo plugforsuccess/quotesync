@@ -294,7 +294,7 @@ export default function WorkloadDistribution({ agencyId }) {
         </div>
 
         {err && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 12, marginBottom: 0 }}>{err}</p>}
-        {msg && <p style={{ fontSize: 13, color: '#10B981', marginTop: 12, marginBottom: 0 }}>{msg}</p>}
+        {msg && <p style={{ fontSize: 13, color: '#B07A0E', marginTop: 12, marginBottom: 0 }}>{msg}</p>}
 
         <div style={{ marginTop: 16 }}>
           <button className="btn-primary" onClick={handleApply}

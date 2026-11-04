@@ -7,7 +7,7 @@ import { Bell, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 const STATUS_CONFIG = {
-  current:  { color: '#10B981', bg: '#10B98111', border: '#10B98133', icon: CheckCircle, label: 'Uploaded' },
+  current:  { color: '#B07A0E', bg: '#10B98111', border: '#10B98133', icon: CheckCircle, label: 'Uploaded' },
   due:      { color: '#F59E0B', bg: '#F59E0B11', border: '#F59E0B33', icon: Clock,       label: 'Due Now' },
   overdue:  { color: '#EF4444', bg: '#EF444411', border: '#EF444433', icon: AlertTriangle, label: 'Overdue' },
 };

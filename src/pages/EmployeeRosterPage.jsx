@@ -232,7 +232,7 @@ const EmployeeRosterPage = () => {
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="dark-card-elevated">
-            <div className="text-2xl font-bold" style={{ color: '#10B981' }}>{activeCount}</div>
+            <div className="text-2xl font-bold" style={{ color: '#B07A0E' }}>{activeCount}</div>
             <div className="text-sm text-emerald-400"><T k="pages.employeerosterpage.40cb64">Active Employees</T></div>
           </div>
           <div className="dark-card-elevated">

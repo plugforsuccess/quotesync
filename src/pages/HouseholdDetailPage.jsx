@@ -21,7 +21,7 @@ const PRODUCT_LABELS = {
   manufactured: 'Manufactured',
 };
 const SOURCE_CONFIG = {
-  new_business: { label: 'New Business', color: '#10B981' },
+  new_business: { label: 'New Business', color: '#B07A0E' },
   renewal:      { label: 'Renewal',      color: '#3B82F6' },
   cancel:       { label: 'Cancel',       color: '#EF4444' },
   termination:  { label: 'Termination',  color: '#94A3B8' },
@@ -29,7 +29,7 @@ const SOURCE_CONFIG = {
 const TOUCH_CONFIG = {
   cancel:     { label: 'Cancel save',  color: '#EF4444' },
   renewal:    { label: 'Renewal call', color: '#3B82F6' },
-  cross_sell: { label: 'Cross-sell',   color: '#10B981' },
+  cross_sell: { label: 'Cross-sell',   color: '#B07A0E' },
   lead:       { label: 'Lead dial',    color: '#F59E0B' },
   service:    { label: 'Service task', color: '#22D3EE' },
 };

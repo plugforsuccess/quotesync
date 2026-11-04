@@ -16,6 +16,8 @@ const SHOW_JOSHUAS_LAW = false;
 const RETURNING_CUSTOMER_LINK = 'https://insuredbycam.nationaldrivered.com/login?returnUrl=/CourseInfo';
 
 const ACCENT = '#39FF88';
+// Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
+const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const wrap = 'mx-auto max-w-6xl px-4 lg:px-8';
@@ -139,7 +141,7 @@ function PartnerProgram() {
           <ol className="mt-8 space-y-4">
             {PARTNER_STEPS.map(([n, Icon, title, line]) => (
               <li key={n} className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: DEEP, color: ACCENT }}>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: DEEP, color: GOLD }}>
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div>
@@ -219,7 +221,7 @@ export default function GeorgiaDriverEducationPage() {
         <div className={`relative ${wrap}`}>
           <ConsumerNav current="drivers" />
           <div className="pb-10 pt-8 lg:pb-20 lg:pt-14">
-            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="pages.driversedpage.1bac96">Driver Education · Georgia</T></p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: GOLD }}><T k="pages.driversedpage.1bac96">Driver Education · Georgia</T></p>
             <h1 className="mt-3 max-w-3xl text-[36px] font-extrabold leading-[1.08] tracking-tight lg:text-[52px]">
               <T k="de.headline">Georgia Driver Education & Insurance Discounts</T>
             </h1>
@@ -234,7 +236,7 @@ export default function GeorgiaDriverEducationPage() {
                 <T k="pages.driversedpage.e432d4">Already enrolled? Continue your course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
               {/* Same side padding as the pill above, so its text lines up with the pill's text. */}
-              <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: ACCENT }}>
+              <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: GOLD }}>
                 <T k="de.partner.herolink">Become a referral partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>

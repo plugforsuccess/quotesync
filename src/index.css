@@ -36,7 +36,7 @@
   --qs-bright:   rgb(var(--qs-bright-rgb));
 
   --qs-danger:   #EF4444;
-  --qs-success:  #10B981;
+  --qs-success:  #F5D061; /* gold: the platform has no green text */
   --qs-warning:  #F59E0B;
   --qs-info:     #3B82F6;
   --qs-purple:   #8B5CF6;
@@ -48,8 +48,8 @@
   --qs-danger-border:  rgb(239 68 68 / 0.20);
   --qs-warning-subtle: rgb(245 158 11 / 0.07);
   --qs-warning-border: rgb(245 158 11 / 0.20);
-  --qs-success-subtle: rgb(16 185 129 / 0.07);
-  --qs-success-border: rgb(16 185 129 / 0.20);
+  --qs-success-subtle: rgb(245 208 97 / 0.10);
+  --qs-success-border: rgb(245 208 97 / 0.30);
   --qs-info-subtle:    rgb(59 130 246 / 0.07);
   --qs-info-border:    rgb(59 130 246 / 0.20);
 }
@@ -138,8 +138,9 @@
   --qs-danger-border:  rgb(239 68 68 / 0.25);
   --qs-warning-subtle: rgb(245 158 11 / 0.08);
   --qs-warning-border: rgb(245 158 11 / 0.25);
-  --qs-success-subtle: rgb(16 185 129 / 0.08);
-  --qs-success-border: rgb(16 185 129 / 0.25);
+  --qs-success: #A16207;
+  --qs-success-subtle: rgb(202 138 4 / 0.10);
+  --qs-success-border: rgb(202 138 4 / 0.30);
   --qs-info-subtle:    rgb(59 130 246 / 0.08);
   --qs-info-border:    rgb(59 130 246 / 0.25);
 
@@ -308,8 +309,8 @@
    low-contrast, so darken them for light theme. */
 [data-theme="light"] .qs-app-shell .text-red-300,
 [data-theme="light"] .qs-app-shell .text-red-400     { color: #B91C1C !important; }
-[data-theme="light"] .qs-app-shell .text-emerald-300,
-[data-theme="light"] .qs-app-shell .text-emerald-400 { color: #047857 !important; }
+[data-theme="light"] .qs-app-shell .text-emerald-300:not([data-money]),
+[data-theme="light"] .qs-app-shell .text-emerald-400:not([data-money]) { color: #A16207 !important; }
 [data-theme="light"] .qs-app-shell .text-amber-300,
 [data-theme="light"] .qs-app-shell .text-amber-400   { color: #B45309 !important; }
 [data-theme="light"] .qs-app-shell .text-blue-300,
@@ -372,8 +373,8 @@
   --qs-danger-border:  rgb(248 113 113 / 0.40);
   --qs-warning-subtle: rgb(252 211 77  / 0.12);
   --qs-warning-border: rgb(252 211 77  / 0.35);
-  --qs-success-subtle: rgb(52  211 153 / 0.15);
-  --qs-success-border: rgb(52  211 153 / 0.40);
+  --qs-success-subtle: rgb(245 208 97 / 0.15);
+  --qs-success-border: rgb(245 208 97 / 0.40);
   --qs-info-subtle:    rgb(96  165 250 / 0.15);
   --qs-info-border:    rgb(96  165 250 / 0.40);
 
@@ -650,10 +651,10 @@ gmp-placeautocomplete input:focus {
   --ddc-accent:#1D4ED8; --ddc-accent-solid:#16a34a; --ddc-track:#e2e8f5;
   --ddc-btn-bg:#1D4ED8; --ddc-btn-fg:#ffffff;
   --law-c:#1D4ED8; --law-bg:#eef3ff; --law-bd:#c3d3fb;
-  --key-c:#15803d; --key-bg:#ecfdf3; --key-bd:#a6e9c0;
+  --key-c:#A16207; --key-bg:#ecfdf3; --key-bd:#a6e9c0;
   --warn-c:#a85a07; --warn-bg:#fdf6e9; --warn-bd:#f5dca0;
-  --tip-c:#0e7468; --tip-bg:#ecfbf7; --tip-bd:#9be8da;
-  --ok-c:#15803d; --ok-bg:#ecfdf3; --ok-bd:#4ade80;
+  --tip-c:#A16207; --tip-bg:#ecfbf7; --tip-bd:#9be8da;
+  --ok-c:#A16207; --ok-bg:#ecfdf3; --ok-bd:#4ade80;
   --no-c:#b3261e; --no-bg:#fdf0ef; --no-bd:#f3a8a3;
   font-size: var(--ddc-fs);
 }
@@ -661,13 +662,13 @@ gmp-placeautocomplete input:focus {
   --ddc-bg:#0F2D6B; --ddc-surface:rgba(255,255,255,.06); --ddc-surface-2:#16397f;
   --ddc-text:#dbe5ff; --ddc-heading:#ffffff; --ddc-muted:#a9bbe6; --ddc-faint:#8ea2d4;
   --ddc-border:#2b4c93; --ddc-bar-bg:rgba(15,45,107,.96);
-  --ddc-accent:#39FF88; --ddc-accent-solid:#39FF88; --ddc-track:#23448c;
+  --ddc-accent:#F5D061; --ddc-accent-solid:#39FF88; --ddc-track:#23448c;
   --ddc-btn-bg:#39FF88; --ddc-btn-fg:#0F2D6B;
   --law-c:#93c5fd; --law-bg:rgba(56,189,248,.12); --law-bd:rgba(56,189,248,.4);
-  --key-c:#6ee7b7; --key-bg:rgba(16,185,129,.12); --key-bd:rgba(16,185,129,.4);
+  --key-c:#F5D061; --key-bg:rgba(16,185,129,.12); --key-bd:rgba(16,185,129,.4);
   --warn-c:#fcd34d; --warn-bg:rgba(245,158,11,.12); --warn-bd:rgba(245,158,11,.4);
-  --tip-c:#5eead4; --tip-bg:rgba(20,184,166,.12); --tip-bd:rgba(20,184,166,.4);
-  --ok-c:#39FF88; --ok-bg:rgba(57,255,136,.12); --ok-bd:rgba(57,255,136,.5);
+  --tip-c:#F5D061; --tip-bg:rgba(20,184,166,.12); --tip-bd:rgba(20,184,166,.4);
+  --ok-c:#F5D061; --ok-bg:rgba(57,255,136,.12); --ok-bd:rgba(57,255,136,.5);
   --no-c:#fca5a5; --no-bg:rgba(248,113,113,.12); --no-bd:rgba(248,113,113,.5);
 }
 .ddc[data-size="large"]  { --ddc-fs: 18.5px; }
@@ -684,7 +685,10 @@ gmp-placeautocomplete input:focus {
 .ddc-faint { color: var(--ddc-faint); }
 .ddc-bd { border-color: var(--ddc-border); }
 .ddc-track { background: var(--ddc-track); }
-.ddc-fill  { background: var(--ddc-accent-solid); }
+/* The course's lines (progress bars, list dots, the rule beside summaries) are gold. */
+.ddc { --ddc-gold: linear-gradient(90deg, #B8860B 0%, #F5D061 50%, #C9971C 100%); }
+.ddc-fill  { background: var(--ddc-gold); }
+.ddc-goldline { border-left: 3px solid #D4A017; border-image: linear-gradient(180deg, #F5D061, #B8860B) 1; }
 
 .ddc-eyebrow { font-size:.72em; letter-spacing:.18em; text-transform:uppercase; color:var(--ddc-accent); font-weight:600; }
 .ddc-xs { font-size:.8em; } .ddc-sm { font-size:.92em; } .ddc-base { font-size:1em; }
@@ -716,7 +720,7 @@ gmp-placeautocomplete input:focus {
 
 /* Course figures (components/dd/DDFigures.jsx). Loops are slow and calm; all motion
    stops for readers who ask for reduced motion. */
-.ddc-fig svg { width: 100%; height: auto; display: block; overflow: visible; }
+.ddc-fig svg[role="img"] { width: 100%; height: auto; display: block; overflow: visible; }
 .ddc-fig-spin { animation: ddc-spin 6s linear infinite; }
 @keyframes ddc-spin { to { transform: rotate(360deg); } }
 .ddc-fig-cross { animation: ddc-cross 5s linear infinite; }
@@ -737,8 +741,22 @@ gmp-placeautocomplete input:focus {
 @keyframes ddc-moveover { 0% { transform: translate(-10px, 98px); } 35% { transform: translate(110px, 98px); } 55% { transform: translate(190px, 50px); } 100% { transform: translate(330px, 50px); } }
 .ddc-fig-step { opacity: 0; animation-name: ddc-step; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
 @keyframes ddc-step { 0% { opacity: 0; } 8% { opacity: 1; } 30% { opacity: 1; } 40% { opacity: 0; } }
+.ddc-fig-pop { animation: ddc-pop .5s ease-out both; }
+@keyframes ddc-pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ddc-fig-sweep { animation: ddc-sweep 4s ease-in-out infinite; }
+@keyframes ddc-sweep { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
+.ddc-fig-look1, .ddc-fig-look2, .ddc-fig-look3 { opacity: 0; animation: ddc-look 4.5s ease-in-out infinite; }
+.ddc-fig-look2 { animation-delay: 1.5s; }
+.ddc-fig-look3 { animation-delay: 3s; }
+@keyframes ddc-look { 0% { opacity: 0; } 8%, 28% { opacity: 1; } 36%, 100% { opacity: 0; } }
+.ddc-fig-draw { stroke-dasharray: 100; stroke-dashoffset: 100; animation: ddc-draw 1.2s ease-out forwards; }
+@keyframes ddc-draw { to { stroke-dashoffset: 0; } }
+.ddc-fig-arm { animation: ddc-arm 4s ease-in-out infinite; }
+@keyframes ddc-arm { 0%, 15% { transform: scaleX(0); } 30%, 90% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) {
   .ddc-fig * { animation: none !important; }
+  .ddc-fig-look1, .ddc-fig-look2 { opacity: 1; }
+  .ddc-fig-draw { stroke-dashoffset: 0; }
   .ddc-fig-step { opacity: 1; }
 }
 
@@ -768,3 +786,84 @@ gmp-placeautocomplete input:focus {
   background: rgb(255 255 255 / 0.12) !important;
   border-color: rgb(255 255 255 / 0.25) !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   NO GREEN TEXT — anywhere on the platform. Green-family text
+   utilities read as gold: light shades (used on navy/blue) as light
+   gold, darker shades as deep gold. Backgrounds and borders keep
+   their colors; only text changes.
+════════════════════════════════════════════════════════════ */
+[class*="text-green-50"]:not([data-money]),
+[class*="text-green-100"]:not([data-money]),
+[class*="text-green-200"]:not([data-money]),
+[class*="text-green-300"]:not([data-money]),
+[class*="text-green-400"]:not([data-money]),
+[class*="text-emerald-50"]:not([data-money]),
+[class*="text-emerald-100"]:not([data-money]),
+[class*="text-emerald-200"]:not([data-money]),
+[class*="text-emerald-300"]:not([data-money]),
+[class*="text-emerald-400"]:not([data-money]),
+[class*="text-teal-50"]:not([data-money]),
+[class*="text-teal-100"]:not([data-money]),
+[class*="text-teal-200"]:not([data-money]),
+[class*="text-teal-300"]:not([data-money]),
+[class*="text-teal-400"]:not([data-money]),
+[class*="text-lime-50"]:not([data-money]),
+[class*="text-lime-100"]:not([data-money]),
+[class*="text-lime-200"]:not([data-money]),
+[class*="text-lime-300"]:not([data-money]),
+[class*="text-lime-400"]:not([data-money]) { color: #F5D061 !important; }
+[class*="text-green-500"]:not([data-money]),
+[class*="text-green-600"]:not([data-money]),
+[class*="text-green-700"]:not([data-money]),
+[class*="text-green-800"]:not([data-money]),
+[class*="text-green-900"]:not([data-money]),
+[class*="text-green-950"]:not([data-money]),
+[class*="text-emerald-500"]:not([data-money]),
+[class*="text-emerald-600"]:not([data-money]),
+[class*="text-emerald-700"]:not([data-money]),
+[class*="text-emerald-800"]:not([data-money]),
+[class*="text-emerald-900"]:not([data-money]),
+[class*="text-emerald-950"]:not([data-money]),
+[class*="text-teal-500"]:not([data-money]),
+[class*="text-teal-600"]:not([data-money]),
+[class*="text-teal-700"]:not([data-money]),
+[class*="text-teal-800"]:not([data-money]),
+[class*="text-teal-900"]:not([data-money]),
+[class*="text-teal-950"]:not([data-money]),
+[class*="text-lime-500"]:not([data-money]),
+[class*="text-lime-600"]:not([data-money]),
+[class*="text-lime-700"]:not([data-money]),
+[class*="text-lime-800"]:not([data-money]),
+[class*="text-lime-900"]:not([data-money]),
+[class*="text-lime-950"]:not([data-money]) { color: #A16207 !important; }
+[data-theme="light"] .qs-app-shell [class*="text-green-200"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-green-300"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-green-400"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-emerald-200"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-emerald-300"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-emerald-400"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-teal-200"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-teal-300"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-teal-400"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-lime-200"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-lime-300"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-lime-400"]:not([data-money]) { color: #A16207 !important; }
+[class*="text-success-200"]:not([data-money]),
+[class*="text-success-300"]:not([data-money]),
+[class*="text-success-400"]:not([data-money]) { color: #F5D061 !important; }
+[class*="text-success-500"]:not([data-money]),
+[class*="text-success-600"]:not([data-money]),
+[class*="text-success-700"]:not([data-money]),
+[class*="text-success-800"]:not([data-money]),
+[class*="text-success-900"]:not([data-money]) { color: #A16207 !important; }
+[data-theme="light"] .qs-app-shell [class*="text-success-200"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-success-300"]:not([data-money]),
+[data-theme="light"] .qs-app-shell [class*="text-success-400"]:not([data-money]) { color: #A16207 !important; }
+
+/* Dollar amounts stay green (src/lib/moneyText.js tags them with
+   data-money): the gold rules above skip them, and the success token
+   resolves to green on them. */
+[data-money] { --qs-success: #10B981; }
+[data-theme="light"] .qs-app-shell .text-emerald-300[data-money],
+[data-theme="light"] .qs-app-shell .text-emerald-400[data-money] { color: #047857 !important; }

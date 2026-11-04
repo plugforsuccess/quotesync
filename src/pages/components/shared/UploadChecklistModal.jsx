@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertTriangle, Clock, ChevronRight, X } from 'lucide-react';
 
 const STATUS_CONFIG = {
-  current:  { color: '#10B981', bg: '#10B98111', icon: CheckCircle, label: 'Done' },
+  current:  { color: '#B07A0E', bg: '#10B98111', icon: CheckCircle, label: 'Done' },
   due:      { color: '#F59E0B', bg: '#F59E0B11', icon: Clock,        label: 'Due' },
   overdue:  { color: '#EF4444', bg: '#EF444411', icon: AlertTriangle, label: 'Overdue' },
   upcoming: { color: 'var(--qs-subtle)', bg: 'transparent', icon: null,        label: 'Upcoming' },
@@ -304,7 +304,7 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, ag
                     fontSize: 11, fontWeight: 700, padding: '3px 10px',
                     borderRadius: 5, cursor: 'pointer', flexShrink: 0,
                     background: '#10B98122', border: '1px solid #10B98133',
-                    color: '#10B981',
+                    color: '#B07A0E',
                   }}
                 >
                   <T k="pages.components.shared.uploadchecklistmodal.69ec3f">✓ Mark Done</T>

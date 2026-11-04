@@ -44,7 +44,7 @@ export const OUTBOUND_CATEGORIES = [
   { key: 'renewal', label: 'Renewal Review', color: '#3b82f6' },
   { key: 'cross_sell', label: 'Cross-Sell', color: '#8b5cf6' },
   { key: 'billing', label: 'Billing Follow-Up', color: '#f59e0b' },
-  { key: 'save_attempt', label: 'Save Attempt', color: '#10b981' },
+  { key: 'save_attempt', label: 'Save Attempt', color: '#B07A0E' },
   { key: 'winback', label: 'Winback', color: '#ef4444' },
   { key: 'other', label: 'Other', color: '#6b7280' },
 ];

@@ -13,6 +13,8 @@ import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './co
 import { inviteUrl } from './components/rate-checks/invite';
 
 const ACCENT = '#39FF88';
+// Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
+const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -60,7 +62,7 @@ export default function PartnerPortalPage() {
       <div style={{ background: HERO_BG }}>
         <div className="mx-auto max-w-md px-4 pt-5 pb-20">
           <header className="flex items-center justify-between">
-            <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam.com</span>
+            <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: GOLD }}>by</span>cam.com</span>
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Partner portal</span>
           </header>
           {data && (
@@ -70,7 +72,7 @@ export default function PartnerPortalPage() {
               </h1>
               <p className="mt-1.5 flex items-center gap-1.5 text-sm text-blue-100">
                 {gate ? <>Read the agreement with {sentence(data.agency_name)} Your link starts earning as soon as you sign.</>
-                  : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: ACCENT }} aria-hidden="true" /> Agreement signed {longDate(data.agreement.signed_at)}</>
+                  : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: GOLD }} aria-hidden="true" /> Agreement signed {longDate(data.agreement.signed_at)}</>
                   : data.active === false ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> Your link is paused. Contact {data.agency_name} to turn it back on.</>
                   : <><span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" /> Your link is live</>}
               </p>
@@ -420,7 +422,7 @@ function Earnings({ token, data, onChange }) {
       {!data.w9?.on_file && <GetSetUp token={token} data={data} onChange={onChange} shared={shared} />}
 
       <section className={`${data.w9?.on_file ? '' : 'mt-4 '}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
-        <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: ACCENT }}>Your link</p>
+        <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}>Your link</p>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
         <div className="mt-4 flex gap-2">
           <button type="button" onClick={copy} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-bold transition active:brightness-95" style={{ background: ACCENT, color: DEEP }}>
@@ -444,7 +446,6 @@ function Earnings({ token, data, onChange }) {
           </div>
         ))}
       </section>
-      {data.monthly_cap && <p className="mt-2 text-xs text-slate-500">Up to {data.monthly_cap} households are paid each month.</p>}
 
       {/* All referrals in one table: a heading row per month, then name and what they sent. */}
       <section className="mt-5 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">

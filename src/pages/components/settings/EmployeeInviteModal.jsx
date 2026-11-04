@@ -127,7 +127,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
 
         {result === 'sent' && (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <CheckCircle size={40} style={{ color: '#10B981', marginBottom: 12 }} />
+            <CheckCircle size={40} style={{ color: '#B07A0E', marginBottom: 12 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)',
               margin: '0 0 8px' }}>
               <T k="pages.components.settings.employeeinvitemodal.0ff5fe">Invite sent to</T> {email}
@@ -137,7 +137,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
             </p>
             <button onClick={onClose}
               style={{ padding: '10px 24px', borderRadius: 8, background: '#10B98122',
-                border: '1px solid #10B98133', color: '#10B981',
+                border: '1px solid #10B98133', color: '#B07A0E',
                 cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
               <T k="pages.components.settings.employeeinvitemodal.f92965">Done</T>
             </button>

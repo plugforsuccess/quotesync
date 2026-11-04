@@ -89,7 +89,7 @@ const PUNCH_STATUS_LABELS = {
 
 const PUNCH_STATUS_COLORS = {
   not_clocked_in: { color: '#EF4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)' },
-  clocked_in:     { color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
+  clocked_in:     { color: '#B07A0E', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
   on_lunch:       { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
   back_from_lunch:{ color: '#60A5FA', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.25)' },
   clocked_out:    { color: '#64748B', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.25)' },

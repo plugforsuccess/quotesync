@@ -19,6 +19,7 @@ export const ddModuleContent = {
         heading: 'Why defensive driving matters',
         blocks: [
           { type: 'p', text: 'A motor-vehicle crash is one of the most likely ways an average person will be seriously injured or killed. Crashes also carry staggering cost: medical bills, lost wages, vehicle repair, higher premiums, and personal liability that can follow you for years.' },
+          { type: 'figure', name: 'chain', caption: 'Every link in the chain builds on the one before it.' },
           { type: 'p', text: 'The most important fact in this course is that the large majority of crashes are preventable. They are not bad luck — they are the predictable result of a few high-risk behaviors: speeding, following too closely, distraction, impairment, and failure to yield. Remove those behaviors and you remove most of your risk.' },
           { type: 'callout', variant: 'key', title: 'The defensive-driving chain', text: 'Better knowledge → a better attitude behind the wheel → better behavior → fewer crashes → lower insurance costs. Everything in this course is a link in that chain.' },
         ],
@@ -34,6 +35,7 @@ export const ddModuleContent = {
         heading: 'Responsibility: a privilege, not a right',
         blocks: [
           { type: 'p', text: 'Driving is a privilege granted by the state and governed by law — not an absolute right. With it comes a duty of care to everyone else: other drivers, passengers, pedestrians, cyclists, and motorcyclists.' },
+          { type: 'figure', name: 'control', caption: 'Plan for what you can’t control by managing what you can.' },
           { type: 'p', text: 'You cannot control what other drivers do. You can only control your own preparation, attention, and response. A defensive driver plans for other people’s mistakes in advance instead of reacting with surprise and anger.' },
           { type: 'callout', variant: 'warn', title: 'The hidden hazard: complacency', text: 'Experience can make you safer — or more dangerous. The veteran who stops actively scanning and drifts into "autopilot" is exposed to the same crash as the nervous newcomer. Treat every drive as if something could go wrong.' },
         ],
@@ -76,6 +78,7 @@ export const ddModuleContent = {
         heading: "Georgia's points system and your license",
         blocks: [
           { type: 'p', text: "Georgia's Department of Driver Services (DDS) assigns points to your record when you are convicted of a moving violation. Accumulating 15 points within any 24-month period results in a license suspension." },
+          { type: 'figure', name: 'points', caption: 'A few violations add up fast toward the 15-point limit.' },
           { type: 'ul', items: [
             'Aggressive driving — 6 points',
             'Reckless driving — 4 points',
@@ -110,6 +113,7 @@ export const ddModuleContent = {
         heading: 'Vision: your primary driving sense',
         blocks: [
           { type: 'p', text: 'Roughly 90% of driving decisions are based on what you see. Central vision sees sharp detail; peripheral vision detects movement. At higher speeds your field of view narrows ("tunnel vision"), so you must work harder to keep scanning.' },
+          { type: 'figure', name: 'vision', caption: 'Keep your eyes moving: far ahead, then the mirrors, then back.' },
           { type: 'ul', items: [
             'Aim high and scan far ahead so hazards are problems you plan for, not emergencies.',
             'Check mirrors every 5–8 seconds for a live picture behind and beside you.',
@@ -150,6 +154,7 @@ export const ddModuleContent = {
         heading: 'Fatigue and drowsy driving',
         blocks: [
           { type: 'p', text: 'Drowsiness impairs reaction time, attention, and judgment much like alcohol — and a "micro-sleep" of a few seconds at highway speed can be fatal.' },
+          { type: 'figure', name: 'fatigue', caption: 'Only rest fixes drowsiness.' },
           { type: 'ul', items: [
             'Warning signs: repeated yawning, heavy eyelids, drifting, missing exits, not remembering the last few miles.',
             'What works: adequate sleep, real breaks, sharing the driving, pulling over to nap.',
@@ -168,6 +173,7 @@ export const ddModuleContent = {
         heading: 'Emotions and aggressive driving',
         blocks: [
           { type: 'p', text: 'Anger, stress, and time pressure push drivers toward deliberate risk-taking: tailgating, weaving, racing lights, and "punishing" others. Georgia carries elevated penalties for aggressive driving.' },
+          { type: 'figure', name: 'roadrage', caption: 'You don’t have to win. Let them go.' },
           { type: 'callout', variant: 'warn', title: 'Do not engage road rage', text: 'If another driver is aggressive, don’t make eye contact, don’t respond, and don’t try to "win." Create space, let them go, and if threatened, drive to a populated place or call 911.' },
           { type: 'p', text: 'Manage yourself first: leave a few minutes early, build in extra following distance, breathe, and depersonalize other drivers’ mistakes.' },
         ],
@@ -197,6 +203,7 @@ export const ddModuleContent = {
         heading: 'How alcohol impairs driving',
         blocks: [
           { type: 'p', text: 'Alcohol is a central-nervous-system depressant. It slows reaction time, blurs and narrows vision, hurts coordination, and impairs judgment — so the impaired driver feels more capable exactly as they become less capable.' },
+          { type: 'figure', name: 'soberup', caption: 'Your body clears alcohol at its own pace; nothing speeds it up.' },
           { type: 'p', text: 'Judgment and divided attention go first, well before a person feels "drunk." That is why a driver can be genuinely impaired and still believe they are fine.' },
           { type: 'callout', variant: 'key', title: 'Only time lowers BAC', text: 'Coffee, a cold shower, fresh air, and exercise do not sober you up. The only thing that lowers blood alcohol concentration is time.' },
         ],
@@ -235,6 +242,7 @@ export const ddModuleContent = {
         heading: 'Drugs and medications',
         blocks: [
           { type: 'p', text: '"Legal" does not mean "safe to drive." Cannabis, prescription medications, and even over-the-counter antihistamines can slow reactions and cause drowsiness. Combining any of them — or combining them with alcohol — multiplies impairment.' },
+          { type: 'figure', name: 'medlabel', caption: 'If the label warns about drowsiness or machinery, that includes your car.' },
           { type: 'callout', variant: 'warn', title: 'Read the label', text: 'If a medication warns "may cause drowsiness" or "do not operate heavy machinery," that includes your car. Georgia’s DUI law covers driving while "less safe" due to any drug or combination.' },
         ],
         quiz: [
@@ -253,6 +261,7 @@ export const ddModuleContent = {
             'Intervene — take the keys or call a ride rather than let a friend drive impaired.',
             'Do the math: a single DUI costs many thousands of dollars; a ride costs a few.',
           ] },
+          { type: 'figure', name: 'soberplan', caption: 'Decide how you’re getting home before the first drink.' },
         ],
         quiz: [
           { q: 'The most reliable way to avoid impaired driving is to:', choices: [
@@ -320,6 +329,7 @@ export const ddModuleContent = {
         heading: "Georgia speed law",
         blocks: [
           { type: 'callout', variant: 'law', title: 'Basic speed rule + Super Speeder', text: 'Never drive faster than is reasonable for conditions, regardless of the posted limit. The Super Speeder law adds a $200 state fee — on top of local fines — for 75+ mph on a two-lane road or 85+ mph anywhere in Georgia.' },
+          { type: 'figure', name: 'superspeeder', caption: 'The $200 Super Speeder fee comes on top of the local fine.' },
           { type: 'p', text: 'School and work zones carry reduced limits and enhanced penalties. Slow down and expect children, stopped buses, and workers near traffic.' },
         ],
         quiz: [
@@ -334,6 +344,7 @@ export const ddModuleContent = {
         heading: 'Intersections, passing, and lane changes',
         blocks: [
           { type: 'p', text: 'Intersections are the single highest-conflict location on the road — a large share of crashes happen there.' },
+          { type: 'figure', name: 'intersection', caption: 'A green light is permission, not a guarantee: look left, right, then left again.' },
           { type: 'ul', items: [
             'Approaching, cover the brake and scan left–right–left. A green light is permission, not a guarantee — watch for red-light runners.',
             'Pass only where legal with clear sight distance; return only when you can see the passed vehicle in your mirror.',
@@ -385,6 +396,7 @@ export const ddModuleContent = {
         heading: 'Occupant protection',
         blocks: [
           { type: 'p', text: 'Seat belts are the single most effective way to survive a crash, and Georgia law requires them. The lap belt rides low across the hips and the shoulder belt crosses the chest.' },
+          { type: 'figure', name: 'seatbelt', caption: 'Belts and airbags work together; airbags don’t replace belts.' },
           { type: 'callout', variant: 'key', title: 'Belts and airbags work together', text: 'Airbags supplement seat belts — they do not replace them. An unbelted occupant can be injured by the airbag or thrown from the vehicle.' },
           { type: 'callout', variant: 'law', title: 'Children in Georgia', text: 'Children must be restrained for age and size — car seat, then booster until an adult belt fits. Children under 13 are safest in the back seat.' },
         ],
@@ -400,6 +412,7 @@ export const ddModuleContent = {
         heading: 'Vulnerable road users',
         blocks: [
           { type: 'p', text: 'Pedestrians, cyclists, and motorcyclists have little protection, are harder to see, and their speed is harder to judge — give them extra margin.' },
+          { type: 'figure', name: 'vulnerable', caption: 'They’re harder to see and have little protection: give extra room.' },
           { type: 'ul', items: [
             'Pedestrians: yield in crosswalks; slow near schools, transit stops, and at night.',
             'Cyclists: treat as vehicles; pass with a safe buffer; check before turning right.',
@@ -419,6 +432,7 @@ export const ddModuleContent = {
         heading: 'Georgia’s special-vehicle laws',
         blocks: [
           { type: 'callout', variant: 'law', title: 'Move Over law', text: 'When passing a stationary emergency, law-enforcement, utility, or recovery vehicle with flashing lights, move over one lane if you safely can. If you can’t, slow below the speed limit and be ready to stop.' },
+          { type: 'figure', name: 'schoolbus', caption: 'Stay stopped until the lights stop flashing and the arm folds back.' },
           { type: 'ul', items: [
             'Emergency vehicles in motion with lights/siren: yield and pull to the right, then stop.',
             'School bus with red flashing lights and stop arm: stop and stay stopped until it withdraws.',
@@ -472,6 +486,7 @@ export const ddModuleContent = {
         heading: 'Keep your vehicle road-ready',
         blocks: [
           { type: 'p', text: 'Maintenance is crash prevention. A quick habit of checks prevents the failures that cause emergencies.' },
+          { type: 'figure', name: 'maintenance', caption: 'A few minutes of checks prevent most breakdown emergencies.' },
           { type: 'ul', items: [
             'Tires: correct pressure and adequate tread — they drive traction and blowout risk.',
             'Brakes: address new noise, pulling, or a soft pedal immediately.',
@@ -495,6 +510,7 @@ export const ddModuleContent = {
             'Tire blowout: grip the wheel, do NOT brake hard, ease off the gas, hold straight, then slow gradually and pull off.',
             'Brake failure: pump the pedal, downshift, apply the parking brake gradually, and steer toward a safe runoff.',
           ] },
+          { type: 'figure', name: 'skidblowout', caption: 'In both cases: no sudden moves, and steer where you want to go.' },
           { type: 'callout', variant: 'key', title: 'Sometimes steering beats braking', text: 'At higher speeds you can often steer around a hazard in less distance than you could stop — which is why keeping an "out" matters.' },
         ],
         quiz: [
@@ -543,6 +559,7 @@ export const ddModuleContent = {
         heading: 'Points & your driving record',
         blocks: [
           { type: 'p', text: 'The Georgia Department of Driver Services (DDS) adds points to your record when you are convicted of a moving violation. The points are a running total over time, and too many in a short window costs you your license.' },
+          { type: 'figure', name: 'pointsmeter', caption: 'Points are a running total; watch how close you are to 15.' },
           { type: 'callout', variant: 'law', title: 'The 15-point rule', text: 'Accumulating 15 points within any 24-month period results in a license suspension. Only a DDS-certified defensive driving course can remove points (up to 7, once every 5 years); this course is not one. Drivers under 18 and 21 face stricter thresholds.' },
         ],
         quiz: [
@@ -555,6 +572,7 @@ export const ddModuleContent = {
         heading: 'The Hands-Free Act',
         blocks: [
           { type: 'callout', variant: 'law', title: 'Phones while driving', text: 'You may not hold or support a phone with any part of your body while driving. No writing, sending, or reading texts/emails; no watching or recording video. Voice or a single touch, hands-free only — with stricter rules in work and school zones.' },
+          { type: 'figure', name: 'handsfree', caption: 'The law applies at red lights too. To use the phone, pull over and park.' },
           { type: 'p', text: 'The law applies whenever you are operating in traffic, including while stopped at a red light. If you must handle your phone, pull over and park first.' },
         ],
         quiz: [
@@ -573,6 +591,7 @@ export const ddModuleContent = {
             '0.04% — commercial drivers',
             '0.02% — drivers under 21',
           ] },
+          { type: 'figure', name: 'impliedconsent', caption: 'Driving in Georgia means you’ve already agreed to testing if lawfully arrested.' },
           { type: 'p', text: 'By driving in Georgia you give implied consent to chemical testing if lawfully arrested for DUI; refusing the test carries its own automatic license suspension. Georgia’s DUI law also covers being "less safe" due to drugs or any combination of substances — legal or not.' },
         ],
         quiz: [
@@ -585,6 +604,7 @@ export const ddModuleContent = {
         heading: 'Speed law & Super Speeder',
         blocks: [
           { type: 'callout', variant: 'law', title: 'Reasonable speed + Super Speeder', text: 'Never drive faster than is reasonable and prudent for conditions, regardless of the posted limit. The Super Speeder law adds a $200 state fee — on top of local fines — for driving 75+ mph on a two-lane road or 85+ mph anywhere in Georgia. Failing to pay it leads to suspension and a reinstatement fee.' },
+          { type: 'figure', name: 'reasonable', caption: 'The posted limit is the most you may drive in ideal conditions, not a target.' },
         ],
         quiz: [
           { q: 'Georgia’s Super Speeder fee applies to driving:', choices: [
@@ -617,6 +637,7 @@ export const ddModuleContent = {
         heading: 'After a crash: your legal duties',
         blocks: [
           { type: 'p', text: 'Georgia law imposes specific duties after a crash. Leaving the scene of a crash involving injury is a serious crime.' },
+          { type: 'figure', name: 'crashsteps', caption: 'Leaving the scene of a crash involving injury is a serious crime.' },
           { type: 'ol', items: [
             'Stop and secure the scene; turn on hazards.',
             'Render aid and call 911 for any injury.',
@@ -648,6 +669,7 @@ export const ddModuleContent = {
         heading: 'How your driving shapes your premium',
         blocks: [
           { type: 'p', text: 'Insurers price your policy on risk, and your own driving record is one of the strongest signals they have. When a policy is written or renewed, the insurer can review your motor vehicle record (MVR) and claims history.' },
+          { type: 'figure', name: 'premium', caption: 'Your record is one of the strongest signals insurers use when they price you.' },
           { type: 'ul', items: [
             'Speeding tickets and other moving violations can raise your rate, typically for about three years.',
             'At-fault crashes usually raise your rate more than a ticket, and can also cost you a claim-free discount.',
@@ -671,6 +693,7 @@ export const ddModuleContent = {
             '$50,000 — bodily injury per accident',
             '$25,000 — property damage per accident',
           ] },
+          { type: 'figure', name: 'minimums', caption: 'Georgia’s minimums are a floor, not a target.' },
           { type: 'p', text: 'Georgia is an at-fault state: the driver who causes a crash is responsible for the damage, and their liability insurance pays the other people involved. Insurers report coverage to the state electronically, so a lapse can be flagged even if you never get pulled over. Driving uninsured can lead to fines and suspension of your registration and license.' },
           { type: 'callout', variant: 'warn', title: 'Minimums are a floor, not a target', text: 'A single serious crash can easily cost more than $25,000. If damages exceed your limits, you can be held personally responsible for the rest. Many drivers choose higher limits to protect their savings and income.' },
         ],
@@ -686,6 +709,7 @@ export const ddModuleContent = {
         heading: 'Coverage that protects you',
         blocks: [
           { type: 'p', text: 'Liability covers what you do to others. These coverages protect you, your passengers, and your car:' },
+          { type: 'figure', name: 'coverages', caption: 'Liability covers others. These cover you, your passengers and your car.' },
           { type: 'ul', items: [
             'Collision: repairs your car after a crash with another vehicle or object, whoever is at fault.',
             'Comprehensive: theft, hail, flood, fire, falling trees, and hitting a deer.',

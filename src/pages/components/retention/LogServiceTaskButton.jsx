@@ -98,7 +98,7 @@ export default function LogServiceTaskButton({
 
       {done ? (
         <div>
-          <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, padding: '6px 0' }}>
+          <div style={{ fontSize: 13, color: '#B07A0E', fontWeight: 600, padding: '6px 0' }}>
             {onCall ? '✓ Handled on this call' : '✓ Queued to Service Batch'}
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>

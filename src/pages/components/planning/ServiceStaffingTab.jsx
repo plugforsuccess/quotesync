@@ -344,7 +344,7 @@ export default function ServiceStaffingTab({ agencyId }) {
   return (
     <div>
       {liveData && (
-        <div style={{ fontSize: 12, color: '#10B981', marginBottom: 16,
+        <div style={{ fontSize: 12, color: '#B07A0E', marginBottom: 16,
           background: 'rgb(16 185 129 / 0.07)', borderRadius: 6, padding: '6px 12px', display: 'inline-block' }}>
           <T k="pages.components.planning.servicestaffingtab.a30306">✓ Using live book data —</T> {monthlyPolicies} <T k="pages.components.planning.servicestaffingtab.f2d828">renewals +</T> {pendingCancelPerMonth} <T k="pages.components.planning.servicestaffingtab.ab3920">pending cancels/mo ·</T> {commissionRate}<T k="pages.components.planning.servicestaffingtab.faef11">% blended commission</T>{dualRiskMonthly > 0 && ` · ${dualRiskMonthly} dual-risk deduped`}
         </div>

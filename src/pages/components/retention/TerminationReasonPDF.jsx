@@ -184,7 +184,7 @@ export default function TerminationReasonPDF({
                 <Text style={[
                   styles.tableCell, { flex: 1, textAlign: 'right' },
                   c.deltaPct != null && c.deltaPct > 0 && { color: '#dc2626', fontFamily: 'Helvetica-Bold' },
-                  c.deltaPct != null && c.deltaPct < 0 && { color: '#059669', fontFamily: 'Helvetica-Bold' },
+                  c.deltaPct != null && c.deltaPct < 0 && { color: '#A16207', fontFamily: 'Helvetica-Bold' },
                 ]}>
                   {c.deltaPct == null ? '—' : `${c.deltaPct >= 0 ? '+' : ''}${c.deltaPct.toFixed(0)}%`}
                 </Text>

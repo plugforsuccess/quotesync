@@ -95,7 +95,7 @@ export default function SaveVelocityPanel({ agencyId }) {
             <T k="pages.components.retention.savevelocitypanel.09e7cb">Save velocity — last 8 weeks</T>
           </h3>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
-            <strong style={{ color: '#10B981' }}>{totalSaves}</strong> <T k="pages.components.retention.savevelocitypanel.c94a10">saves ·</T>{' '}
+            <strong style={{ color: '#B07A0E' }}>{totalSaves}</strong> <T k="pages.components.retention.savevelocitypanel.c94a10">saves ·</T>{' '}
             <strong style={{ color: '#10B981' }}>{fmt$(totalPremium)}</strong> <T k="pages.components.retention.savevelocitypanel.3d5f9e">premium preserved</T>
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function SaveVelocityPanel({ agencyId }) {
                 return (
                   <tr key={r.empId || 'unassigned'}>
                     <td style={{ fontWeight: 600 }}>{empMap[r.empId] || 'Unattributed'}</td>
-                    <td style={{ fontWeight: 700, color: '#10B981' }}>{total}</td>
+                    <td style={{ fontWeight: 700, color: '#B07A0E' }}>{total}</td>
                     <td>{r.cancelSaves}</td>
                     <td>{r.renewalSaves}</td>
                     <td>{fmt$(r.premium)}</td>

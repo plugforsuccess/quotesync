@@ -411,7 +411,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 {[
-                  { value: 'auto_resolved', label: 'Paid ✓', color: '#10B981' },
+                  { value: 'auto_resolved', label: 'Paid ✓', color: '#B07A0E' },
                   { value: 'lost',          label: 'Lost',   color: '#EF4444' },
                   { value: 'keep',          label: 'Keep in Queue', color: '#3B82F6' },
                 ].map(opt => (
@@ -434,7 +434,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
 
       {Object.keys(decisions).length > 0 && (
         <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
-          {counts.paid > 0 && <span style={{ color: '#10B981', marginRight: 12 }}>✓ {counts.paid} <T k="pages.components.retention.retentionimport.0a7436">marked paid</T></span>}
+          {counts.paid > 0 && <span style={{ color: '#B07A0E', marginRight: 12 }}>✓ {counts.paid} <T k="pages.components.retention.retentionimport.0a7436">marked paid</T></span>}
           {counts.lost > 0 && <span style={{ color: '#EF4444', marginRight: 12 }}>✗ {counts.lost} <T k="pages.components.retention.retentionimport.d1d655">marked lost</T></span>}
           {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} <T k="pages.components.retention.retentionimport.924f81">kept in queue</T></span>}
         </div>
@@ -490,11 +490,11 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           {/* Detail grid — color values used as inline style props */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 20 }}>
             {[
-              { label: 'New Policies',    value: diffResult.toAdd.length,    color: '#10B981' },
+              { label: 'New Policies',    value: diffResult.toAdd.length,    color: '#B07A0E' },
               { label: 'Updated',         value: diffResult.toUpdate.length,  color: '#3B82F6' },
               { label: 'Confirmed Lost',  value: diffResult.autoLost.length,  color: '#EF4444' },
               { label: 'Rewritten',       value: diffResult.autoRewritten?.length ?? 0, color: '#34D399' },
-              { label: 'Cleared (Paid)',  value: diffResult.autoPaid?.length ?? 0, color: '#10B981' },
+              { label: 'Cleared (Paid)',  value: diffResult.autoPaid?.length ?? 0, color: '#B07A0E' },
               { label: 'Needs Review',    value: diffResult.toReview.length,  color: '#F59E0B' },
             ].filter(item => item.value > 0).map(({ label, value, color }) => (
               <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
@@ -554,7 +554,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           {diffResult.autoPaid?.length > 0 && (
             <div style={{ fontSize: 12, background: '#10B98111', border: '1px solid #10B98133',
               borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
-              <span style={{ color: '#10B981', fontWeight: 600 }}>
+              <span style={{ color: '#B07A0E', fontWeight: 600 }}>
                 ✓ {diffResult.autoPaid.length} <T k="pages.components.retention.retentionimport.8e79ef">cleared as paid</T>
               </span>
               {' '}<T k="pages.components.retention.retentionimport.16f0ff">— absent from this snapshot and not on the committed termination report covering their cancel month. Closed automatically.</T>
@@ -1552,7 +1552,7 @@ function ImportTab({
             { step: '\u2461', label: 'Cancellation Audit', color: '#F59E0B', sublabel: 'advances staged cases' },
             { step: '\u2462', label: 'Pending Cancel',     color: '#F59E0B', sublabel: 'adds at-risk cases' },
             { step: '\u2463', label: 'Renewal',            color: '#3B82F6', sublabel: 'adds renewal queue' },
-            { step: '\u2464', label: 'Cross-Sell',         color: '#10B981', sublabel: 'pitch opportunities' },
+            { step: '\u2464', label: 'Cross-Sell',         color: '#B07A0E', sublabel: 'pitch opportunities' },
           ].map((s, i, arr) => (
             <div key={s.step} style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ textAlign: 'center', padding: '0 12px' }}>
@@ -1675,7 +1675,7 @@ function CrossSellUploadCard({ agencyId, currentUserId }) {
       borderRadius: 12, padding: 20,
     }}>
       <div style={{
-        fontSize: 12, fontWeight: 600, color: '#10B981',
+        fontSize: 12, fontWeight: 600, color: '#B07A0E',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16,
       }}>
         {'⑤'} <T k="pages.components.retention.retentionimport.9de67d">Cross-Sell Audit</T>
