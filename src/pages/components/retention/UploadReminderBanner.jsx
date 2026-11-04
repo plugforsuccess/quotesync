@@ -4,7 +4,7 @@
 
 import { T } from '../../../components/SiteCopy';
 import { Bell, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
-import { useState } from 'react';
+import Dismissible from '../../../components/Dismissible';
 
 const STATUS_CONFIG = {
   current:  { color: '#B07A0E', bg: '#10B98111', border: '#10B98133', icon: CheckCircle, label: 'Uploaded' },
@@ -13,9 +13,7 @@ const STATUS_CONFIG = {
 };
 
 export default function UploadReminderBanner({ reminders }) {
-  const [dismissed, setDismissed] = useState(false);
-
-  if (!reminders || reminders.length === 0 || dismissed) return null;
+  if (!reminders || reminders.length === 0) return null;
 
   const actionable = reminders.filter(r => r.status === 'due' || r.status === 'overdue');
   const current    = reminders.filter(r => r.status === 'current');
@@ -26,6 +24,7 @@ export default function UploadReminderBanner({ reminders }) {
   const hasOverdue = actionable.some(r => r.status === 'overdue');
 
   return (
+    <Dismissible id="retention.upload-reminder" version={actionable.map(r => `${r.key ?? r.label ?? r.uploadOrder}:${r.status}`).join('|')}>
     <div style={{
       background: hasOverdue ? '#EF444408' : '#F59E0B08',
       border: `1px solid ${hasOverdue ? '#EF444433' : '#F59E0B33'}`,
@@ -45,12 +44,6 @@ export default function UploadReminderBanner({ reminders }) {
             </span>
           </span>
         </div>
-        <button
-          onClick={() => setDismissed(true)}
-          style={{ fontSize: 11, color: 'var(--qs-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-        >
-          <T k="pages.components.retention.uploadreminderbanner.c8a59e">Dismiss</T>
-        </button>
       </div>
 
       {/* Actionable reminders — sorted by upload order */}
@@ -108,5 +101,6 @@ export default function UploadReminderBanner({ reminders }) {
         <T k="pages.components.retention.uploadreminderbanner.e1df04">Correct upload order: ① Termination → ② Cancellation Audit → ③ Pending Cancel → ④ Renewal</T>
       </div>
     </div>
+    </Dismissible>
   );
 }

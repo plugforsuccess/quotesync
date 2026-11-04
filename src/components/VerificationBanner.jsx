@@ -4,6 +4,7 @@
 
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import Dismissible from './Dismissible';
 import { useAuth } from '../contexts/AuthContext';
 import { useVerificationDue } from '../hooks/useEmployees';
 
@@ -32,6 +33,7 @@ export default function VerificationBanner() {
       : `${overdue.length} employee records are overdue for verification.`;
 
   return (
+    <Dismissible id="admin.verification-due" version={overdue.map(e => e.id).join(',')} light>
     <div className="bg-yellow-50 border-b border-yellow-200">
       <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-yellow-800">
@@ -46,5 +48,6 @@ export default function VerificationBanner() {
         </Link>
       </div>
     </div>
+    </Dismissible>
   );
 }

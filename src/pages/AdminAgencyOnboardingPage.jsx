@@ -2,6 +2,7 @@
 // Multi-step agency onboarding wizard for platform_master_admin
 
 import { T } from '../components/SiteCopy';
+import Dismissible from '../components/Dismissible';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -719,11 +720,13 @@ function StepPrincipal({
         </Field>
       </div>
 
-      <div className="mt-5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-        <p className="text-sm text-amber-800">
-          <T k="pages.adminagencyonboardingpage.66d77b">The agent will be prompted to change their password on first login.</T>
-        </p>
-      </div>
+      <Dismissible id="admin.onboarding.password-note" light className="mt-5">
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-sm text-amber-800">
+            <T k="pages.adminagencyonboardingpage.66d77b">The agent will be prompted to change their password on first login.</T>
+          </p>
+        </div>
+      </Dismissible>
     </div>
   );
 }

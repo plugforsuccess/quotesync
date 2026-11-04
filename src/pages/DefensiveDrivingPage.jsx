@@ -4,6 +4,7 @@
 // headings, the brand green as the accent; no black). The enrollment card (magic-link sign-in / checkout) lives
 // in the hero (#enroll); CTAs throughout scroll to it.
 import { T } from '../components/SiteCopy';
+import Dismissible from '../components/Dismissible';
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -105,9 +106,11 @@ export default function DefensiveDrivingPage() {
 
             <div id="enroll" className="scroll-mt-24">
               {canceled && (
-                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  <T k="pages.defensivedrivingpage.dbb35d">Checkout was canceled. You can start again whenever you’re ready.</T>
-                </div>
+                <Dismissible id="dd.checkout-canceled" version={String(Date.now())} light className="mb-4">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    <T k="pages.defensivedrivingpage.dbb35d">Checkout was canceled. You can start again whenever you’re ready.</T>
+                  </div>
+                </Dismissible>
               )}
               <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} />
             </div>

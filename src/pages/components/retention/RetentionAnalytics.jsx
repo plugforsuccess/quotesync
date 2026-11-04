@@ -2,6 +2,7 @@
 // Extracted from BookHealthPage.jsx — analytics/reporting tabs.
 
 import { T } from '../../../components/SiteCopy';
+import Dismissible from '../../../components/Dismissible';
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LineChart, ReferenceLine, Cell } from "recharts";
 import { useQuery } from "@tanstack/react-query";
@@ -307,6 +308,7 @@ function AttritionTab({ agencyId, currentUserId }) {
     <div>
       {/* Gap Alert Banner */}
       {gapAnalysis && (
+        <Dismissible id="retention.gap-alert" version={`${gapAnalysis.currentMonth}:${gapAnalysis.pointsDelta}`}>
         <div style={{ background: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-subtle)" : "var(--qs-success-subtle)", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-border)" : "var(--qs-success-border)"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger)" : "var(--qs-success)", marginBottom: 4 }}>
             {gapAnalysis.pointsDelta > 0
@@ -318,6 +320,7 @@ function AttritionTab({ agencyId, currentUserId }) {
             {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} <T k="pages.components.retention.retentionanalytics.4e7804">items ·</T> {gapAnalysis.currentPoints} <T k="pages.components.retention.retentionanalytics.168543">pts lost  (</T>{gapAnalysis.pointsDelta >= 0 ? "+" : ""}{gapAnalysis.pointsDelta} <T k="pages.components.retention.retentionanalytics.7c4cea">pts)</T>
           </div>
         </div>
+        </Dismissible>
       )}
       {gapAnalysis?.isPartialMonth && (
         <div style={{

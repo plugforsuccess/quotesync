@@ -5,6 +5,7 @@
 
 import { T } from '../components/SiteCopy';
 import { customerReviewText, smsHref } from '../lib/reviews';
+import { buildText } from '../lib/textTemplates';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -32,6 +33,7 @@ import CompetitorAgents from './components/rate-checks/CompetitorAgents';
 import ReferralPartners from './components/rate-checks/ReferralPartners';
 import PartnersTab from './components/rate-checks/PartnersTab';
 import ScriptsTab from './components/rate-checks/ScriptsTab';
+import TextsTab from './components/rate-checks/TextsTab';
 import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
@@ -220,7 +222,8 @@ const WORK_TABS = [
 ];
 const MORE_GROUPS = [
   { title: 'Selling', tabs: [
-    { v: 'scripts', label: 'Scripts', hint: 'What to say and text to get dec pages', Icon: MessageSquare },
+    { v: 'scripts', label: 'Scripts', hint: 'What to send people you’d like as partners', Icon: MessageSquare },
+    { v: 'texts', label: 'Texts', hint: 'Every text customers and partners get', Icon: MessageSquare },
   ] },
   { title: 'Insights', tabs: [
     { v: 'map', label: 'Where we win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
@@ -284,7 +287,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
   const open = OPEN_STATUSES.includes(h.status);
   const late = isOverdue(h, now);
   const first = h.lead.first_name || 'there';
-  const holdText = `Hi ${first}, it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly.`;
+  const holdText = buildText('hold', { name: first });
   const renewal = open ? renewalSoon(h.policies, now) : null;
   const bundle = new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1;
   return (
@@ -467,6 +470,7 @@ export default function RateChecksPage() {
         <TabBar tab={tab} setTab={(v) => { setPartnerFocus(null); setTab(v); }} />
 
         {tab === 'scripts' ? <ScriptsTab />
+          : tab === 'texts' ? <TextsTab agencyId={agencyId} />
           : tab === 'map' ? <WinMap agencyId={agencyId} />
           : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} scans={allRows} />
           : tab === 'promoters' ? <PartnersTab agencyId={agencyId} userId={user?.id} canEdit={canEditRules} focusId={partnerFocus}
@@ -763,7 +767,7 @@ function QuoteBox({ rc, onQuoted }) {
     );
   };
 
-  const script = `Hi ${rc.first_name || 'there'}, it's Cam with Allstate. You sent your ${rc.carrier || 'current'} policy over — ` +
+  const script = `Hi ${rc.first_name || 'there'}, it's Cam with Cam Wiley Agency. You sent your ${rc.carrier || 'current'} policy over — ` +
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (

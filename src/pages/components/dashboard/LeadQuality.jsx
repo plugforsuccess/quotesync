@@ -1,6 +1,7 @@
 // src/pages/components/dashboard/LeadQuality.jsx
 // Section 3: Lead Quality & Scoring — histogram, splits, channel table
 
+import Dismissible from '../../../components/Dismissible';
 import { T } from '../../../components/SiteCopy';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
@@ -274,6 +275,7 @@ function NoPriorInsuranceCallout({ noPriorInsurance, totalCompleted }) {
   if (autoPct <= 15 && homePct <= 15) return null;
 
   return (
+    <Dismissible id="dashboard.no-prior-insurance" version={`${autoPct}:${homePct}`}>
     <div className="rounded-lg p-4" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
       {autoPct > 15 && (
         <p className="text-xs" style={{ color: 'var(--qs-warning)' }}>
@@ -286,6 +288,7 @@ function NoPriorInsuranceCallout({ noPriorInsurance, totalCompleted }) {
         </p>
       )}
     </div>
+    </Dismissible>
   );
 }
 
