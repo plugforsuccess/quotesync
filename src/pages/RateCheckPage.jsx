@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
+import Dismissible from '../components/Dismissible';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
@@ -468,7 +469,9 @@ export default function RateCheckPage() {
   const notices = (
     <>
       {inviteExpired && (
-        <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">That link has expired, but you can still check your rate below.</p>
+        <Dismissible id="rc.invite-expired" light className="mb-4">
+          <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">That link has expired, but you can still check your rate below.</p>
+        </Dismissible>
       )}
       {resumed && step === 'policies' && (
         <p className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">

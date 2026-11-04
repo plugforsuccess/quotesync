@@ -767,7 +767,7 @@ function QuoteBox({ rc, onQuoted }) {
     );
   };
 
-  const script = `Hi ${rc.first_name || 'there'}, it's Cam with Allstate. You sent your ${rc.carrier || 'current'} policy over — ` +
+  const script = `Hi ${rc.first_name || 'there'}, it's Cam with Cam Wiley Agency. You sent your ${rc.carrier || 'current'} policy over — ` +
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (

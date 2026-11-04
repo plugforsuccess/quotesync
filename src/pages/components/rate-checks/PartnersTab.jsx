@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus, Star } from 'lucide-react';
 import { partnerReviewText, smsHref } from '../../../lib/reviews';
 import { buildText } from '../../../lib/textTemplates';
+import Dismissible from '../../../components/Dismissible';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
@@ -101,10 +102,12 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
     <div className="space-y-4">
       <Applications agencyId={agencyId} userId={userId} canEdit={canEdit} savePromoter={savePromoter} />
 
-      <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
-        <span><T k="pages.components.ratechecks.partnerstab.15dc1f">Partners are paid per qualified household they send, never per sale, and they don't discuss coverage or price. Confirm the program with Allstate compliance and your attorney before the first payment, and get a W-9 on file.</T></span>
-      </p>
+      <Dismissible id="partners.program-rules">
+        <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
+          <span><T k="pages.components.ratechecks.partnerstab.15dc1f">Partners are paid per qualified household they send, never per sale, and they don't discuss coverage or price. Confirm the program with Allstate compliance and your attorney before the first payment, and get a W-9 on file.</T></span>
+        </p>
+      </Dismissible>
 
       {promoters.length === 0 ? (
         /* No partners yet: one card, one button. */
@@ -184,9 +187,11 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </span>
             </div>
             {PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at && (
-              <p className="mt-3 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
-                <T k="pages.components.ratechecks.partnerstab.89a58f">Their link doesn't earn anything until they sign. Send them their portal link: they sign there, then see their link and earnings.</T>
-              </p>
+              <Dismissible id={`partners.unsigned.${p.id}`}>
+                <p className="mt-3 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
+                  <T k="pages.components.ratechecks.partnerstab.89a58f">Their link doesn't earn anything until they sign. Send them their portal link: they sign there, then see their link and earnings.</T>
+                </p>
+              </Dismissible>
             )}
 
             <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy"
@@ -585,9 +590,11 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
         </RuleRow>
       </div>
       {v.requireCallConfirm && (
-        <p className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
-          <T k="pages.components.ratechecks.partnerstab.30f8f7">Needs texting set up: until the agency has a Twilio number, the quote-ready text can't go out, so no one can reply Y and partners aren't paid.</T>
-        </p>
+        <Dismissible id="partners.needs-texting">
+          <p className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
+            <T k="pages.components.ratechecks.partnerstab.30f8f7">Needs texting set up: until the agency has a Twilio number, the quote-ready text can't go out, so no one can reply Y and partners aren't paid.</T>
+          </p>
+        </Dismissible>
       )}
       <ul className="mt-3 list-disc space-y-1 pl-4 text-xs leading-snug" style={{ color: 'var(--qs-subtle)' }}>
         <li><T k="pages.components.ratechecks.partnerstab.5b1959">A household is one phone number, address or policy, paid once, in the month its first page arrives.</T></li>

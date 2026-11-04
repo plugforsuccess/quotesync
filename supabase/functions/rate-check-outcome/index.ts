@@ -63,11 +63,11 @@ async function audit(supabase: any, row: Record<string, unknown>) {
 // `${key}.1`, `${key}.2`, …). These defaults match src/lib/textTemplates.js.
 const TEXTS: Record<string, string[]> = {
   'sms.quote.ready': [
-    "Hi [first name], it's Cam Wiley's office. Your Allstate quote is ready and it looks like we can save you money.",
+    "Hi [first name], it's Cam Wiley Agency. Your Allstate quote is ready and it looks like we can save you money.",
     "Reply Y and we'll call you to go over it.",
   ],
   'sms.quote.lost': [
-    "Hi [first name], this is Cam Wiley's office. We checked your [carrier] policy and you're in good shape: we couldn't beat it today.",
+    "Hi [first name], it's Cam Wiley Agency. We checked your [carrier] policy and you're in good shape: we couldn't beat it today.",
     "We'll reach out if that changes.",
   ],
   'sms.review.customer': [

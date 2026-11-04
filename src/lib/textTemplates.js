@@ -19,7 +19,7 @@ export const TEXT_TEMPLATES = [
     name: 'Working on it',
     when: 'When you tap “Text now” on an inbox card.',
     blanks: ['[first name]'],
-    paragraphs: ["Hi [first name], it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly."],
+    paragraphs: ["Hi [first name], it's Cam with Cam Wiley Agency. I'm working on your quote now and I'll have it to you shortly."],
   },
   {
     id: 'ready', group: 'After a quote', key: 'sms.quote.ready', auto: true,
@@ -27,7 +27,7 @@ export const TEXT_TEMPLATES = [
     when: 'Sent automatically when your quote beats their price. Keep “Reply Y”: their Y is what tells you to call.',
     blanks: ['[first name]'],
     paragraphs: [
-      "Hi [first name], it's Cam Wiley's office. Your Allstate quote is ready and it looks like we can save you money.",
+      "Hi [first name], it's Cam Wiley Agency. Your Allstate quote is ready and it looks like we can save you money.",
       "Reply Y and we'll call you to go over it.",
     ],
   },
@@ -37,7 +37,7 @@ export const TEXT_TEMPLATES = [
     when: 'Sent automatically when your quote comes in higher than what they pay.',
     blanks: ['[first name]', '[carrier]'],
     paragraphs: [
-      "Hi [first name], this is Cam Wiley's office. We checked your [carrier] policy and you're in good shape: we couldn't beat it today.",
+      "Hi [first name], it's Cam Wiley Agency. We checked your [carrier] policy and you're in good shape: we couldn't beat it today.",
       "We'll reach out if that changes.",
     ],
   },
@@ -72,7 +72,7 @@ export const TEXT_TEMPLATES = [
     when: 'When you tap “Ask for a Google review” on a partner. Optional for them; nothing is offered.',
     blanks: ['[first name]', '[review link]'],
     paragraphs: [
-      "Hi [first name], it's Cam. Thank you for being a customer and a referral partner!",
+      "Hi [first name], it's Cam with Cam Wiley Agency. Thank you for being a customer and a referral partner!",
       "If you'd like to, an honest Google review about your experience as a customer would mean a lot: [review link]",
       "Please mention that you're also one of our referral partners. Totally optional, and it has nothing to do with your referral fees.",
     ],

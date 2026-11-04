@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { T } from '../../../components/SiteCopy';
 import { CopyTextButton } from './Copyable';
+import Dismissible from '../../../components/Dismissible';
 import { TEXT_GROUPS, TEXT_TEMPLATES, STOP_LINE, buildText, segments, templateWarnings } from '../../../lib/textTemplates';
 import { REVIEW_LINK_KEY, REVIEW_LINK_FALLBACK, reviewUrl } from '../../../lib/reviews';
 
@@ -60,11 +61,21 @@ export default function TextsTab({ agencyId }) {
   const linkUnset = reviewUrl() === REVIEW_LINK_FALLBACK;
   return (
     <div className="space-y-5">
-      {(autoOff || linkUnset) && (
-        <div className="space-y-1.5 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle, rgba(245,158,11,.1))', border: '1px solid var(--qs-warning-border, rgba(245,158,11,.35))', color: 'var(--qs-text)' }} role="status">
-          {autoOff && <p className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" /> Automatic texts are off: the agency has no texting number yet. Nothing marked Automatic goes out until one is set. You can still tap to send any of them from your phone.</p>}
-          {linkUnset && <p className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" /> Your Google review link isn’t set, so review texts link to a Google search for the agency. Paste your link below.</p>}
-        </div>
+      {autoOff && (
+        <Dismissible id="texts.auto-off">
+          <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle, rgba(245,158,11,.1))', border: '1px solid var(--qs-warning-border, rgba(245,158,11,.35))', color: 'var(--qs-text)' }} role="status">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
+            <span>Automatic texts are off: the agency has no texting number yet. Nothing marked Automatic goes out until one is set. You can still tap to send any of them from your phone.</span>
+          </p>
+        </Dismissible>
+      )}
+      {linkUnset && (
+        <Dismissible id="texts.link-unset">
+          <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle, rgba(245,158,11,.1))', border: '1px solid var(--qs-warning-border, rgba(245,158,11,.35))', color: 'var(--qs-text)' }} role="status">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
+            <span>Your Google review link isn’t set, so review texts link to a Google search for the agency. Paste your link below.</span>
+          </p>
+        </Dismissible>
       )}
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
         The texts customers and partners get from Rate Checks. Turn on the pencil to edit any line. What you save is what goes out, whether it’s sent automatically or you tap to send it.
