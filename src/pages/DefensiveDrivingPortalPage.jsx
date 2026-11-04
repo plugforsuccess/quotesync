@@ -290,7 +290,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
         {kind === 'intro' && (
           <div>
             {content?.summary && (
-              <p className={`ddc-lg ddc-text leading-relaxed border-l-2 pl-4 ${read.at === 1 ? 'ddc-reading' : ''}`} style={{ borderColor: 'var(--ddc-accent-solid)' }}>{content.summary}</p>
+              <p className={`ddc-lg ddc-text leading-relaxed ddc-goldline pl-4 ${read.at === 1 ? 'ddc-reading' : ''}`}>{content.summary}</p>
             )}
             {sections.length > 0 && (
               <div className={`mt-6 rounded-xl border ddc-bd ddc-soft p-5 ${read.at === 2 ? 'ddc-reading' : ''}`}>
@@ -529,7 +529,7 @@ function SectionQuiz({ quiz, defaultPassed, onPass }) {
               })}
             </div>
             {(checked || passed) && answers[qi] != null && qq.explain && (
-              <p className="mt-2 ddc-sm ddc-muted leading-relaxed border-l-2 pl-3" style={{ borderColor: 'var(--ddc-accent-solid)' }}>{qq.explain}</p>
+              <p className="mt-2 ddc-sm ddc-muted leading-relaxed ddc-goldline pl-3">{qq.explain}</p>
             )}
           </div>
         ))}

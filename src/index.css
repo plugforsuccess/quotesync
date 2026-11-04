@@ -684,7 +684,10 @@ gmp-placeautocomplete input:focus {
 .ddc-faint { color: var(--ddc-faint); }
 .ddc-bd { border-color: var(--ddc-border); }
 .ddc-track { background: var(--ddc-track); }
-.ddc-fill  { background: var(--ddc-accent-solid); }
+/* The course's lines (progress bars, list dots, the rule beside summaries) are gold. */
+.ddc { --ddc-gold: linear-gradient(90deg, #B8860B 0%, #F5D061 50%, #C9971C 100%); }
+.ddc-fill  { background: var(--ddc-gold); }
+.ddc-goldline { border-left: 3px solid #D4A017; border-image: linear-gradient(180deg, #F5D061, #B8860B) 1; }
 
 .ddc-eyebrow { font-size:.72em; letter-spacing:.18em; text-transform:uppercase; color:var(--ddc-accent); font-weight:600; }
 .ddc-xs { font-size:.8em; } .ddc-sm { font-size:.92em; } .ddc-base { font-size:1em; }
