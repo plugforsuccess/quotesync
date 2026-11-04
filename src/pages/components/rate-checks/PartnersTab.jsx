@@ -7,7 +7,8 @@
 
 import { T } from '../../../components/SiteCopy';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus, Star } from 'lucide-react';
+import { partnerReviewText, smsHref } from '../../../lib/reviews';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
@@ -195,6 +196,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 </a>
               )} />
             <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at} />
+
+            {p.phone && (
+              <a href={smsHref(p.phone, partnerReviewText(p.name))} title="Opens Messages with your Google review link written in"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:underline">
+                <Star className="h-3.5 w-3.5" aria-hidden="true" /> <T k="rc.partners.askreview">Ask for a review (if they’re a customer)</T>
+              </a>
+            )}
 
             <div className="mt-4 grid grid-cols-3 gap-3">
               <Stat label="Households" value={s.month.households} />

@@ -4,11 +4,12 @@
 // the outcome (won → call, lost → polite auto-text) is handled by rate-check-outcome.
 
 import { T } from '../components/SiteCopy';
+import { customerReviewText, smsHref } from '../lib/reviews';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
-  MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Upload, Users, X,
+  MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
@@ -663,6 +664,12 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               <a href={`sms:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
                 <MessageSquare className="h-4 w-4" /> <T k="pages.ratecheckspage.9dffbf">Text</T>
               </a>
+              {rc.status === 'won' && (
+                <a href={smsHref(rc.phone, customerReviewText(rc.first_name))} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}
+                  title="Opens Messages with your Google review link written in">
+                  <Star className="h-4 w-4" /> <T k="rc.desk.askreview">Ask for a review</T>
+                </a>
+              )}
               {rc.email && (
                 <a href={`mailto:${rc.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
                   <Mail className="h-4 w-4" /> <T k="pages.ratecheckspage.ce8ae9">Email</T>

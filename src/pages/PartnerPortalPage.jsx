@@ -7,7 +7,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, Check, Copy, Loader2, Share2, X } from 'lucide-react';
+import { Camera, Check, Copy, ExternalLink, Loader2, Share2, Star, X } from 'lucide-react';
+import { GOOGLE_REVIEW_URL } from '../lib/reviews';
 import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, squarePhoto, submitPartnerW9 } from '../lib/rateCheckApi';
 import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
@@ -84,9 +85,28 @@ export default function PartnerPortalPage() {
         {error ? <p className="rounded-2xl bg-white p-4 text-slate-700 shadow-sm ring-1 ring-slate-200">{error}</p>
           : !data ? <p className="flex items-center gap-2 rounded-2xl bg-white p-4 text-slate-500 shadow-sm ring-1 ring-slate-200"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading…</p>
           : gate ? <SignAgreement token={token} data={data} onSigned={load} />
-          : <Earnings token={token} data={data} onChange={load} />}
+          : <><Earnings token={token} data={data} onChange={load} /><ReviewCard /></>}
       </main>
     </div>
+  );
+}
+
+// Partners who are also customers can review their own experience. Optional, no
+// reward, and they're asked to say they're a partner (the FTC expects that).
+function ReviewCard() {
+  return (
+    <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="flex items-center gap-2">
+        <span className="flex gap-0.5 text-[#F5D061]" aria-hidden="true">{[0, 1, 2, 3, 4].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}</span>
+        <p className="font-bold text-[#0F2D6B]">Also a customer?</p>
+      </div>
+      <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
+        An honest Google review about your experience helps other families find Cam. Please mention you’re a referral partner. It’s optional and has nothing to do with your referral fees.
+      </p>
+      <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noreferrer" className="qb qb-outline qb-md mt-3 w-full">
+        Write a review <ExternalLink className="h-4 w-4" aria-hidden="true" />
+      </a>
+    </section>
   );
 }
 
