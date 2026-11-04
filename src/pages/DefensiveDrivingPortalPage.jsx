@@ -56,7 +56,7 @@ export default function DefensiveDrivingPortalPage() {
   const navigate = useNavigate();
 
   const [theme, setTheme] = useState(() => localStorage.getItem('dd-theme') || 'light');
-  const [size, setSize] = useState(() => localStorage.getItem('dd-size') || 'larger');
+  const [size, setSize] = useState(() => localStorage.getItem('dd-size') || 'large');
   useEffect(() => { localStorage.setItem('dd-theme', theme); }, [theme]);
   useEffect(() => { localStorage.setItem('dd-size', size); }, [size]);
   const a11y = useMemo(() => ({ theme, setTheme, size, setSize }), [theme, size]);
@@ -125,7 +125,6 @@ export default function DefensiveDrivingPortalPage() {
         key={vm.id}
         module={vm}
         total={vms.length}
-        onExit={() => navigate('/')}
         onBack={async () => { await reload(enrollment); setActiveId(null); }}
         onNext={async () => {
           await reload(enrollment);
@@ -191,6 +190,16 @@ export default function DefensiveDrivingPortalPage() {
   );
 }
 
+// Reading at about 180 words a minute, plus a minute per section check and two for the quiz,
+// rounded up to the next 5.
+function minutesFor(ref) {
+  const c = getModuleContent(ref);
+  if (!c) return null;
+  const words = JSON.stringify(c).replace(/["{}[\],:]/g, ' ').split(/\s+/).filter(Boolean).length;
+  const mins = words / 180 + (c.sections?.length || 0) + 2;
+  return Math.max(5, Math.ceil(mins / 5) * 5);
+}
+
 function ModuleRow({ vm, onOpen }) {
   return (
     <div className={`rounded-xl border p-4 flex items-center gap-4 ddc-card ${vm.unlocked ? 'ddc-bd' : 'ddc-bd opacity-70'}`}>
@@ -203,6 +212,7 @@ function ModuleRow({ vm, onOpen }) {
         <p className="font-semibold ddc-heading ddc-base leading-snug break-words">Module {vm.ordinal}: {vm.title}</p>
         <p className="ddc-xs ddc-muted mt-0.5">
           {vm.completed ? 'Completed' : vm.unlocked ? 'Ready' : 'Complete the previous module to unlock'}
+          {minutesFor(vm.content_ref) ? ` · About ${minutesFor(vm.content_ref)} min` : ''}
         </p>
       </div>
       <button onClick={onOpen} disabled={!vm.unlocked}
@@ -216,7 +226,7 @@ function ModuleRow({ vm, onOpen }) {
 // ---------------------------------------------------------------------------
 // Lesson reader (paginated: intro -> sections w/ checks -> module quiz)
 // ---------------------------------------------------------------------------
-function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
+function ModulePlayer({ module: mod, total, onBack, onNext }) {
   const content = getModuleContent(mod.content_ref);
   const [kcPassed, setKcPassed] = useState(!!mod.kc_passed);
   const [completed, setCompleted] = useState(!!mod.completed);
@@ -253,7 +263,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
           <span className="ddc-xs ddc-faint">Module {mod.ordinal} of {total}</span>
           <div className="flex items-center gap-3">
             <AccessibilityControls />
-            <button onClick={onExit} className="flex items-center gap-1 ddc-xs ddc-link">
+            <button onClick={onBack} className="flex items-center gap-1 ddc-xs ddc-link" aria-label="Exit to all modules">
               Exit <X className="w-4 h-4" />
             </button>
           </div>
@@ -266,14 +276,16 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <p className="ddc-eyebrow mb-2">
-          Module {mod.ordinal}
-          {kind === 'section' && ` · Section ${sectionIdx + 1} of ${sections.length}`}
-          {kind === 'quiz' && ' · Module quiz'}
-          {kind === 'intro' && ' · Introduction'}
-        </p>
-        <h1 className={`ddc-h1 font-black ddc-heading mb-4 ${kind === 'intro' && read.at === 0 ? 'ddc-reading' : ''}`}>{mod.title}</h1>
-        <ReadAlongButton read={read} />
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <p className="ddc-eyebrow">
+            Module {mod.ordinal}
+            {kind === 'section' && ` · Section ${sectionIdx + 1} of ${sections.length}`}
+            {kind === 'quiz' && ' · Module quiz'}
+            {kind === 'intro' && ' · Introduction'}
+          </p>
+          <ReadAlongButton read={read} />
+        </div>
+        {kind === 'intro' && <h1 className={`ddc-h1 font-black ddc-heading mb-6 ${read.at === 0 ? 'ddc-reading' : ''}`}>{mod.title}</h1>}
 
         {kind === 'intro' && (
           <div>
@@ -300,7 +312,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
         {kind === 'section' && section && (
           <div>
             <article className="space-y-5">
-              {section.heading && <h2 className={`ddc-h2 font-bold ddc-heading ${read.at === 0 ? 'ddc-reading' : ''}`}>{section.heading}</h2>}
+              {section.heading && <h1 className={`ddc-h2 font-black ddc-heading ${read.at === 0 ? 'ddc-reading' : ''}`}>{section.heading}</h1>}
               {section.blocks.map((b, i) => <div key={i} className={read.at === i + 1 ? 'ddc-reading' : undefined}><Block b={b} /></div>)}
             </article>
             {section.quiz?.length > 0 && (
@@ -403,21 +415,20 @@ function useReadAlong(items) {
   return { supported, at, playing: at >= 0, start, stop, rate, setRate };
 }
 
+// One small row: Read along / Stop, and the speed, which steps through slower, normal, faster.
 function ReadAlongButton({ read }) {
   if (!read.supported) return null;
+  const i = Math.max(0, RATES.findIndex(([v]) => v === read.rate));
+  const next = RATES[(i + 1) % RATES.length];
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-2">
+    <div className="inline-flex items-center gap-1.5">
       <button type="button" onClick={read.playing ? read.stop : read.start}
-        className="inline-flex items-center gap-2 rounded-full border ddc-bd ddc-card px-4 py-2 ddc-sm font-semibold ddc-heading">
-        {read.playing ? <><Square className="h-4 w-4" aria-hidden="true" /> Stop reading</> : <><Volume2 className="h-4 w-4 ddc-accent" aria-hidden="true" /> Read along</>}
+        className="inline-flex items-center gap-1.5 rounded-full border ddc-bd ddc-card px-3 py-1.5 ddc-xs font-semibold ddc-heading">
+        {read.playing ? <><Square className="h-3.5 w-3.5" aria-hidden="true" /> Stop</> : <><Volume2 className="h-3.5 w-3.5 ddc-accent" aria-hidden="true" /> Read along</>}
       </button>
-      <div className="inline-flex rounded-full border ddc-bd p-0.5" role="group" aria-label="Reading speed">
-        {RATES.map(([v, label]) => (
-          <button key={v} type="button" aria-pressed={read.rate === v}
-            onClick={() => { read.setRate(v); if (read.playing) read.stop(); }}
-            className={`rounded-full px-3 py-1 ddc-xs font-semibold ${read.rate === v ? 'ddc-btn' : 'ddc-muted'}`}>{label}</button>
-        ))}
-      </div>
+      <button type="button" onClick={() => { read.setRate(next[0]); if (read.playing) read.stop(); }}
+        aria-label={`Reading speed: ${RATES[i][1]}. Tap for ${next[1].toLowerCase()}.`}
+        className="rounded-full border ddc-bd px-2.5 py-1.5 ddc-xs font-semibold ddc-muted">{RATES[i][1]}</button>
     </div>
   );
 }
