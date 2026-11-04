@@ -96,7 +96,7 @@ export default function SaveVelocityPanel({ agencyId }) {
           </h3>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
             <strong style={{ color: '#B07A0E' }}>{totalSaves}</strong> <T k="pages.components.retention.savevelocitypanel.c94a10">saves ·</T>{' '}
-            <strong style={{ color: '#B07A0E' }}>{fmt$(totalPremium)}</strong> <T k="pages.components.retention.savevelocitypanel.3d5f9e">premium preserved</T>
+            <strong style={{ color: '#10B981' }}>{fmt$(totalPremium)}</strong> <T k="pages.components.retention.savevelocitypanel.3d5f9e">premium preserved</T>
           </div>
         </div>
 

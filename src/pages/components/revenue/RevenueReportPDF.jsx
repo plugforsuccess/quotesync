@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     flex: 2,
     fontSize: 9,
     textAlign: "right",
-    color: "#A16207",
+    color: "#059669",
   },
   productHeader: {
     flex: 2,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   colProduct:   { width: "13%", fontSize: 8 },
   colTier:      { width: "11%", fontSize: 8 },
   colPremium:   { width: "13%", fontSize: 8, textAlign: "right" },
-  colComm:      { width: "13%", fontSize: 8, textAlign: "right", color: "#A16207" },
+  colComm:      { width: "13%", fontSize: 8, textAlign: "right", color: "#059669" },
   colCount:     { width: "6%",  fontSize: 8, textAlign: "center" },
   colSource:    { width: "9%",  fontSize: 8, color: "#6b7280" },
   colNote:      { flex: 1,      fontSize: 8, color: "#6b7280" },
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     textAlign: "right",
     fontFamily: "Helvetica-Bold",
-    color: "#A16207",
+    color: "#059669",
   },
   totalSpacer: { flex: 1 },
 });
@@ -304,7 +304,7 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
           </View>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiLabel}>Commission Earned</Text>
-            <Text style={[styles.kpiValue, { color: "#A16207" }]}>{fmt$(totals.totalCommission)}</Text>
+            <Text style={[styles.kpiValue, { color: "#059669" }]}>{fmt$(totals.totalCommission)}</Text>
             <Text style={styles.kpiSub}>Blended rate: {blendedRate}</Text>
           </View>
           <View style={styles.kpiCard}>
@@ -376,7 +376,7 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiLabel}>Commission Earned</Text>
-            <Text style={[styles.kpiValue, { color: "#A16207" }]}>{fmt$(totals.totalCommission)}</Text>
+            <Text style={[styles.kpiValue, { color: "#059669" }]}>{fmt$(totals.totalCommission)}</Text>
             <Text style={styles.kpiSub}>of {fmt$(GOAL)} goal</Text>
           </View>
           <View style={styles.kpiCard}>

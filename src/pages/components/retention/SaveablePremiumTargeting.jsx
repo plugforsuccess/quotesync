@@ -85,7 +85,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
         <div className="card" style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}><T k="pages.components.retention.saveablepremiumtargeting.7428e1">Saveable premium in queue</T></div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#B07A0E' }}>{money(totalSaveable)}</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#10B981' }}>{money(totalSaveable)}</div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>{ranked.length} <T k="pages.components.retention.saveablepremiumtargeting.af6f34">active renewals</T></div>
         </div>
         <div className="card" style={{ flex: 1, minWidth: 200 }}>
@@ -129,7 +129,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
                     {c.premium_change_pct != null ? `${c.premium_change_pct > 0 ? '+' : ''}${Number(c.premium_change_pct).toFixed(1)}%` : '—'}
                   </td>
                   <td style={{ textAlign: 'right', color: 'var(--qs-dim)' }}>{Math.round(c.churn * 100)}%</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, color: '#B07A0E', fontFamily: "'DM Mono', monospace" }}>{money(c.saveable)}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 700, color: '#10B981', fontFamily: "'DM Mono', monospace" }}>{money(c.saveable)}</td>
                   <td style={{ textAlign: 'right' }}>
                     <Link to={`/agency/renewals/${c.id}`} style={{ fontSize: 12, color: 'var(--qs-info, #3B82F6)', textDecoration: 'none' }}><T k="pages.components.retention.saveablepremiumtargeting.a96b08">Open →</T></Link>
                   </td>

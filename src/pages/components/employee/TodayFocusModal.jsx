@@ -145,7 +145,7 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose, onOpenC
           <>
             <Section title="🎉 Saved" color="#10B981" items={data.saved} onOpen={onOpenCase}
               renderRight={(it) => (
-                <span style={{ color: '#B07A0E', fontWeight: 700, fontSize: 12 }}>{fmt$(it.premium)} <T k="pages.components.employee.todayfocusmodal.4d8b60">kept</T></span>
+                <span style={{ color: '#10B981', fontWeight: 700, fontSize: 12 }}>{fmt$(it.premium)} <T k="pages.components.employee.todayfocusmodal.4d8b60">kept</T></span>
               )} />
             <Section title="✅ Reached (proactive)" color="#10B981" items={data.reached} onOpen={onOpenCase} />
             <Section title="📲 Inbound — they called us" color="#60A5FA" items={data.inbound} onOpen={onOpenCase} />

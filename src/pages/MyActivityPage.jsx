@@ -242,7 +242,7 @@ export default function MyActivityPage() {
           {data && (
             <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
               <strong style={{ color: '#B07A0E' }}>{data.totals.saves}</strong> <T k="pages.myactivitypage.c94a10">saves ·</T>{' '}
-              <strong style={{ color: '#B07A0E' }}>{fmt$(data.totals.premium)}</strong> ·{' '}
+              <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> ·{' '}
               {data.totals.attempts} <T k="pages.myactivitypage.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.myactivitypage.2cb1ad">tasks</T>
             </div>
           )}
