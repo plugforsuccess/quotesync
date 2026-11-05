@@ -67,10 +67,10 @@ export function cancelCallScript({ firstName, agentName = 'your agent', product,
 export function CallScriptBox({ label = 'Call script', children }) {
   return (
     <div style={{
-      background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
+      background: 'var(--qs-info-subtle)', border: '1px solid var(--qs-info-border)',
       borderRadius: 6, padding: '7px 10px', marginBottom: 8,
     }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#60A5FA',
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--qs-info)',
         textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
         {children}
@@ -83,10 +83,10 @@ export function VoicemailScriptBox({ firstName, agentName, product }) {
   const text = voicemailText({ firstName, agentName, product });
   return (
     <div style={{
-      background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
+      background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
       borderRadius: 6, padding: '7px 10px', marginBottom: 8,
     }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#F59E0B',
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--qs-dim)',
         textTransform: 'uppercase', marginBottom: 4 }}>
         📞 Voicemail — if no answer (read aloud)
       </div>

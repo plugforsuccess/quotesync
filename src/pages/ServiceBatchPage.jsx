@@ -25,6 +25,7 @@ import { titleCaseName } from '../lib/names';
 import CopyButton from '../components/CopyButton';
 import ServiceTaskDetailModal from '../components/ServiceTaskDetailModal';
 import { formatTaskForAllstate } from '../lib/allstateClipboard';
+import { NEUTRAL_CHIP, DANGER_CHIP } from '../lib/statusChips';
 
 const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
 
@@ -44,11 +45,12 @@ function fmtAgo(iso) {
 // the agency cares about most — so a completion note is required.
 const NOTE_REQUIRED_TYPES = new Set(['billing', 'coverage', 'premium', 'insurance_review', 'reinstatement', 'terminate', 'claim', 'payment']);
 
+// Only URGENT is red; HIGH/LOW are neutral chips (see lib/statusChips).
 const PRIORITY_BADGE = {
-  urgent: { label: 'URGENT', bg: '#EF444433', color: '#FCA5A5' },
-  high:   { label: 'HIGH',   bg: '#F59E0B33', color: '#FCD34D' },
+  urgent: { label: 'URGENT', ...DANGER_CHIP },
+  high:   { label: 'HIGH',   ...NEUTRAL_CHIP, color: 'var(--qs-text)' },
   normal: null,
-  low:    { label: 'LOW',    bg: '#33415533', color: '#94A3B8' },
+  low:    { label: 'LOW',    ...NEUTRAL_CHIP },
 };
 
 // Break a millisecond span into h/m/s parts for the live readout.
@@ -65,23 +67,26 @@ function fmtDur(ms) {
 }
 
 // SLA countdown in business hours — the goal is to clear every service task
-// within one open day, faster when possible. Tiers carry a real color at every
-// stage (no dead grey): healthy emerald → blue → amber as it ages → rose in the
-// final hour → red past breach. Thresholds are scaled to the 9h business-day
-// budget (≈ first/middle/last third). `frac` is the share already consumed.
+// within one open day, faster when possible. The ring fills as the budget is
+// consumed; it turns red only in the final hour and past breach, so the one
+// red thing on the page is the task that needs attention now. `frac` is the
+// share already consumed.
 function slaState(createdAt) {
   const ms = slaMsLeft(createdAt);
   if (ms == null) return null;
   const total = SLA_HOURS * 3600000;
   const frac = Math.min(1, Math.max(0, (total - ms) / total));
   const hrs = ms / 3600000;
-  let color, label;
-  if (ms < 0)        { color = '#F87171'; label = `Overdue ${fmtDur(-ms)}`; }
-  else if (hrs < 1)  { color = '#FB7185'; label = `${fmtDur(ms)} left`; }
-  else if (hrs < 3)  { color = '#FBBF24'; label = `${fmtDur(ms)} left`; }
-  else if (hrs < 6)  { color = '#38BDF8'; label = `${fmtDur(ms)} left`; }
-  else               { color = '#34D399'; label = `${fmtDur(ms)} left`; }
-  return { ms, frac, color, label, overdue: ms < 0 };
+  const overdue = ms < 0;
+  const label = overdue ? `Overdue ${fmtDur(-ms)}` : `${fmtDur(ms)} left`;
+  const hot = overdue || hrs < 1;
+  return {
+    ms, frac, label, overdue,
+    color:  hot ? 'var(--qs-danger)' : 'var(--qs-text)',
+    tint:   hot ? 'var(--qs-danger-subtle)' : 'var(--qs-elevated)',
+    border: hot ? 'var(--qs-danger-border)' : 'var(--qs-border)',
+    track:  'var(--qs-border)',
+  };
 }
 
 // Shared 1s heartbeat so every live timer on the page ticks in lockstep with a
@@ -229,7 +234,7 @@ export default function ServiceBatchPage() {
           onClick={() => setShowAdd(v => !v)}
           style={{
             flexShrink: 0, cursor: 'pointer', border: '1px solid var(--qs-border)',
-            background: showAdd ? 'var(--qs-card)' : '#3B82F6', color: showAdd ? 'var(--qs-text)' : '#fff',
+            background: showAdd ? 'var(--qs-card)' : 'var(--qs-info)', color: showAdd ? 'var(--qs-text)' : '#fff',
             borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
           }}
         >
@@ -256,8 +261,8 @@ export default function ServiceBatchPage() {
           <button key={s.value} onClick={() => setScope(s.value)} style={{
             cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
             borderRadius: 999, padding: '5px 14px', border: '1px solid',
-            borderColor: scope === s.value ? '#3B82F6' : 'var(--qs-border)',
-            background: scope === s.value ? '#3B82F6' : 'var(--qs-card)',
+            borderColor: scope === s.value ? 'var(--qs-info)' : 'var(--qs-border)',
+            background: scope === s.value ? 'var(--qs-info)' : 'var(--qs-card)',
             color: scope === s.value ? '#fff' : 'var(--qs-muted)',
           }}>{s.label}</button>
         ))}
@@ -280,16 +285,16 @@ export default function ServiceBatchPage() {
         <button onClick={() => { setOverdueOnly(v => !v); setShowDone(false); }} style={{
           cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
           borderRadius: 999, padding: '5px 14px', border: '1px solid', marginLeft: 'auto',
-          borderColor: overdueOnly ? '#EF4444' : (overdue > 0 ? '#EF444466' : 'var(--qs-border)'),
-          background: overdueOnly ? '#EF4444' : 'var(--qs-card)',
-          color: overdueOnly ? '#fff' : (overdue > 0 ? '#F87171' : 'var(--qs-muted)'),
+          borderColor: overdueOnly ? 'var(--qs-danger)' : (overdue > 0 ? 'var(--qs-danger-border)' : 'var(--qs-border)'),
+          background: overdueOnly ? 'var(--qs-danger)' : 'var(--qs-card)',
+          color: overdueOnly ? '#fff' : (overdue > 0 ? 'var(--qs-danger)' : 'var(--qs-muted)'),
         }}><T k="pages.servicebatchpage.748b5d">⚠ Overdue (</T>{overdue})</button>
         {/* Done — recently completed tasks (last 14 days) */}
         <button onClick={() => { setShowDone(v => !v); setOverdueOnly(false); }} style={{
           cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
           borderRadius: 999, padding: '5px 14px', border: '1px solid',
-          borderColor: showDone ? '#10B981' : 'var(--qs-border)',
-          background: showDone ? '#10B981' : 'var(--qs-card)',
+          borderColor: showDone ? 'var(--qs-info)' : 'var(--qs-border)',
+          background: showDone ? 'var(--qs-info)' : 'var(--qs-card)',
           color: showDone ? '#fff' : 'var(--qs-muted)',
         }}><T k="pages.servicebatchpage.2f68af">✓ Done</T></button>
       </div>
@@ -313,8 +318,8 @@ export default function ServiceBatchPage() {
 
       {overdue > 0 && (
         <div style={{
-          background: '#EF444411', border: '1px solid #EF444433', borderRadius: 10,
-          padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#FCA5A5', fontWeight: 600,
+          background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)', borderRadius: 10,
+          padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--qs-danger)', fontWeight: 600,
         }}>
           ⏰ {overdue} {overdue === 1 ? 'task has' : 'tasks have'} <T k="pages.servicebatchpage.eccf1b">been waiting more than a day — let's clear</T> {overdue === 1 ? 'it' : 'them'} <T k="pages.servicebatchpage.1b242e">first.</T>
         </div>
@@ -336,14 +341,14 @@ export default function ServiceBatchPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 2 }}>{doneTasks.length} <T k="pages.servicebatchpage.4388d5">completed · last 14 days</T></div>
             {doneTasks.map(task => {
-              const cfg = TASK_TYPE_MAP[task.task_type] || { label: task.task_type, icon: '📌', color: '#94A3B8' };
+              const cfg = TASK_TYPE_MAP[task.task_type] || { label: task.task_type, icon: '📌' };
               return (
                 <div key={task.id} style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
-                  borderLeft: '3px solid #10B981', borderRadius: 8, padding: '10px 14px' }}>
+                  borderLeft: '3px solid var(--qs-success)', borderRadius: 8, padding: '10px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span>{cfg.icon}</span>
                     <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                      background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color }}>{cfg.label}</span>
+                      ...NEUTRAL_CHIP }}>{cfg.label}</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', textDecoration: 'line-through', opacity: 0.85 }}>{task.title}</span>
                     <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--qs-dim)' }}>
                       ✓ {empName[task.completed_by_id] || 'Unknown'} · {fmtShortDate(task.completed_at)}
@@ -427,7 +432,7 @@ export default function ServiceBatchPage() {
                 <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>· {group.tasks.length}</span>
                 {LANE_MAP[group.lane]?.licensed && (
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                    background: '#8B5CF622', color: '#C4B5FD', letterSpacing: '0.05em' }}><T k="pages.servicebatchpage.565523">LICENSED</T></span>
+                    ...NEUTRAL_CHIP, letterSpacing: '0.05em' }}><T k="pages.servicebatchpage.565523">LICENSED</T></span>
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -554,8 +559,8 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
 
   return (
     <div style={{
-      background: inProgress ? 'rgba(59,130,246,0.06)' : 'var(--qs-elevated)',
-      border: '1px solid', borderColor: inProgress ? '#3B82F633' : 'var(--qs-border)',
+      background: inProgress ? 'var(--qs-info-subtle)' : 'var(--qs-elevated)',
+      border: '1px solid', borderColor: inProgress ? 'var(--qs-info-border)' : 'var(--qs-border)',
       borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'stretch',
     }}>
       {/* Content — click anywhere (outside the controls below) to open the
@@ -565,11 +570,11 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
           {prio && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-              background: prio.bg, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
+              background: prio.background, border: prio.border, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
           )}
           {product && (
             <span title="Line of business" style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px',
-              borderRadius: 4, background: '#22D3EE1f', border: '1px solid #22D3EE40', color: '#67E8F9',
+              borderRadius: 4, ...NEUTRAL_CHIP, color: 'var(--qs-text)',
               letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace" }}>{product}</span>
           )}
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)' }}>{task.title}</span>
@@ -582,7 +587,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
           {hardToReach && (
             <span title="3+ attempts, never reached — try another channel or escalate"
               style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                background: '#F59E0B22', border: '1px solid #F59E0B55', color: '#FBBF24' }}>
+                ...NEUTRAL_CHIP, color: 'var(--qs-text)' }}>
               <T k="pages.servicebatchpage.d40404">⚠ HARD TO REACH</T>
             </span>
           )}
@@ -593,7 +598,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
             {task.customer_name && (
               <button onClick={e => { e.stopPropagation(); onCustomer?.(task); }} title="Open customer"
                 style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                  fontFamily: 'inherit', fontSize: 12.5, color: '#60A5FA', fontWeight: 600 }}>
+                  fontFamily: 'inherit', fontSize: 12.5, color: 'var(--qs-info)', fontWeight: 600 }}>
                 {task.customer_name}{task.household_id ? ' ↗' : ''}
               </button>
             )}
@@ -643,7 +648,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
         {/* Next follow-up — set after a voicemail so it resurfaces when due */}
         {task.follow_up_at && (
           <div style={{ marginTop: 6, fontSize: 11.5, fontWeight: 700,
-            color: new Date(task.follow_up_at) <= new Date() ? '#FBBF24' : 'var(--qs-dim)',
+            color: new Date(task.follow_up_at) <= new Date() ? 'var(--qs-danger)' : 'var(--qs-dim)',
             display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span><T k="pages.servicebatchpage.1a534c">⏰ Follow up</T> {new Date(task.follow_up_at) <= new Date() ? 'due ·' : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
             <button onClick={e => { e.stopPropagation(); setFollowUp.mutate({ id: task.id, followUpAt: null }); }}
@@ -656,14 +661,14 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
           <button onClick={() => setLogging(v => !v)} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}><T k="pages.servicebatchpage.492b72">📞 Log call</T></button>
           {waiting
-            ? <button onClick={() => setWaiting.mutate({ id: task.id, waiting: false, task })} style={btnStyle('var(--qs-card)', '#34D399')}><T k="pages.servicebatchpage.d4529a">▶ Resume</T></button>
+            ? <button onClick={() => setWaiting.mutate({ id: task.id, waiting: false, task })} style={btnStyle('var(--qs-card)', 'var(--qs-text)')}><T k="pages.servicebatchpage.d4529a">▶ Resume</T></button>
             : <button onClick={() => setWaiting.mutate({ id: task.id, waiting: true, task })} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}><T k="pages.servicebatchpage.08ecb1">⏸ Wait on customer</T></button>}
           {hardToReach && (
             <button onClick={handleFinalNotice}
               title={`Sent the final email after ${ATTEMPT_CAP}+ tries? Close it out as unreachable.`}
-              style={btnStyle('var(--qs-card)', '#FBBF24')}><T k="pages.servicebatchpage.cc7aac">✉ Final notice → close</T></button>
+              style={btnStyle('var(--qs-card)', 'var(--qs-text)')}><T k="pages.servicebatchpage.cc7aac">✉ Final notice → close</T></button>
           )}
-          <button onClick={handleDone} style={btnStyle('#10B981', '#fff')}><T k="pages.servicebatchpage.f92965">Done</T></button>
+          <button onClick={handleDone} style={btnStyle('var(--qs-info)', '#fff')}><T k="pages.servicebatchpage.f92965">Done</T></button>
         </div>
 
         {logging && (
@@ -699,7 +704,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
               <input type="checkbox" checked={att.waiting} onChange={e => setAtt(a => ({ ...a, waiting: e.target.checked }))} />
               <T k="pages.servicebatchpage.ed68d8">Waiting on customer</T>
             </label>
-            <button onClick={submitAttempt} disabled={logAttempt.isPending} style={btnStyle('#3B82F6', '#fff')}>
+            <button onClick={submitAttempt} disabled={logAttempt.isPending} style={btnStyle('var(--qs-info)', '#fff')}>
               {logAttempt.isPending ? 'Logging…' : 'Log'}
             </button>
             <button onClick={() => setLogging(false)} style={btnStyle('var(--qs-card)', 'var(--qs-muted)')}><T k="pages.servicebatchpage.ea4788">Cancel</T></button>
@@ -714,7 +719,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
               style={{ flex: 1, minWidth: 200, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                 borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
             <button onClick={() => note.trim() && onDone(note.trim())} disabled={!note.trim()}
-              style={btnStyle(note.trim() ? '#10B981' : 'var(--qs-card)', note.trim() ? '#fff' : 'var(--qs-muted)')}>
+              style={btnStyle(note.trim() ? 'var(--qs-info)' : 'var(--qs-card)', note.trim() ? '#fff' : 'var(--qs-muted)')}>
               <T k="pages.servicebatchpage.70d9be">Confirm</T>
             </button>
             <button onClick={() => { setConfirming(false); setNote(''); }} style={btnStyle('var(--qs-card)', 'var(--qs-muted)')}>
@@ -767,13 +772,12 @@ function SlaTimer({ task }) {
     <div style={{
       position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center', gap: 8, minWidth: 132, padding: '0 16px', textAlign: 'center',
-      background: `${sla.color}14`, borderLeft: `1px solid ${sla.color}55`, color: sla.color,
+      background: sla.tint, borderLeft: `1px solid ${sla.border}`, color: sla.color,
     }}>
       <div style={{
         position: 'relative', width: 56, height: 56, borderRadius: '50%',
-        background: `conic-gradient(${sla.color} ${pct}%, ${sla.color}22 ${pct}% 100%)`,
+        background: `conic-gradient(${sla.color} ${pct}%, ${sla.track} ${pct}% 100%)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: sla.overdue ? `0 0 0 1px ${sla.color}, 0 0 14px ${sla.color}66` : `0 0 10px ${sla.color}33`,
         animation: sla.overdue ? 'qs-pulse 1.4s ease-in-out infinite' : 'none',
       }}>
         <div style={{
@@ -808,10 +812,10 @@ function ExpectedCallbacks({ agencyId }) {
 
   return (
     <div style={{
-      marginTop: 16, border: '1px solid #F59E0B33', borderRadius: 10,
-      background: '#F59E0B0D', padding: 14,
+      marginTop: 16, border: '1px solid var(--qs-border)', borderRadius: 10,
+      background: 'var(--qs-card)', padding: 14,
     }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#FBBF24', marginBottom: 4 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
         <T k="pages.servicebatchpage.34e119">📞 If one of these customers calls in ·</T> {callbacks.length}
       </div>
       <div style={{ fontSize: 12, fontWeight: 400, color: 'var(--qs-muted)', marginBottom: 10 }}>
@@ -849,7 +853,7 @@ function ExpectedCallbacks({ agencyId }) {
             <button
               onClick={() => logCallback.mutate({ caseType: cb.case_type, caseId: cb.case_id })}
               disabled={logCallback.isPending}
-              style={btnStyle('#3B82F6', '#fff')}
+              style={btnStyle('var(--qs-info)', '#fff')}
             >
               {cb.rep_name ? `📞 On the line → ${cb.rep_name.split(' ')[0]}` : '📞 They called — log it'}
             </button>
@@ -927,12 +931,12 @@ function CompletionPace({ agencyId, days = 14 }) {
 
   // Down is good (we got faster): green. Up is slower: amber.
   const trendGood = stats.trend == null ? null : stats.trend <= 0;
-  const trendColor = trendGood == null ? 'var(--qs-muted)' : trendGood ? '#34D399' : '#FBBF24';
+  const trendColor = trendGood == null ? 'var(--qs-muted)' : trendGood ? 'var(--qs-success)' : 'var(--qs-text)';
 
   return (
     <div style={{
       marginTop: 16, borderRadius: 12, padding: '14px 16px',
-      background: 'linear-gradient(135deg, rgba(34,211,238,0.08), rgba(52,211,153,0.05))',
+      background: 'var(--qs-card)',
       border: '1px solid var(--qs-border)', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
     }}>
       <div style={{ minWidth: 0 }}>
@@ -950,14 +954,14 @@ function CompletionPace({ agencyId, days = 14 }) {
           style={{ width: '100%', height: 44, display: 'block' }}>
           <defs>
             <linearGradient id="qs-pace-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#34D399" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#34D399" stopOpacity="0" />
+              <stop offset="0%" stopColor="var(--qs-info)" stopOpacity="0.30" />
+              <stop offset="100%" stopColor="var(--qs-info)" stopOpacity="0" />
             </linearGradient>
           </defs>
           {area && <path d={area} fill="url(#qs-pace-fill)" />}
-          {line && <path d={line} fill="none" stroke="#34D399" strokeWidth="2"
+          {line && <path d={line} fill="none" stroke="var(--qs-info)" strokeWidth="2"
             strokeLinejoin="round" strokeLinecap="round" />}
-          {pts.length === 1 && <circle cx={X(pts[0].x)} cy={Y(pts[0].median)} r="3" fill="#34D399" />}
+          {pts.length === 1 && <circle cx={X(pts[0].x)} cy={Y(pts[0].median)} r="3" fill="var(--qs-info)" />}
         </svg>
       </div>
 
@@ -1068,14 +1072,14 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
           to fill the name) from the directory. */}
       <div style={{ position: 'relative', marginBottom: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <label style={lbl}><span><T k="pages.servicebatchpage.ce2660">Customer</T> <span style={{ color: '#F87171' }}>*</span></span>
+          <label style={lbl}><span><T k="pages.servicebatchpage.ce2660">Customer</T> <span style={{ color: 'var(--qs-danger)' }}>*</span></span>
             <input value={customerName} autoComplete="off"
               onChange={e => { setCustomerName(e.target.value); setFocused('customer'); }}
               onFocus={() => setFocused('customer')}
               onBlur={() => setTimeout(() => setFocused(f => (f === 'customer' ? null : f)), 150)}
               style={input} placeholder="Start typing a name…" />
           </label>
-          <label style={lbl}><span><T k="pages.servicebatchpage.c70c2b">Policy #</T> <span style={{ color: '#F87171' }}>*</span></span>
+          <label style={lbl}><span><T k="pages.servicebatchpage.c70c2b">Policy #</T> <span style={{ color: 'var(--qs-danger)' }}>*</span></span>
             <input value={policyNo} autoComplete="off"
               onChange={e => { setPolicyNo(e.target.value); setFocused('policy'); }}
               onFocus={() => setFocused('policy')}
@@ -1159,7 +1163,7 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
                 ) : addablePolicies.map(p => (
                   <button key={p.policy_no} type="button" onClick={() => addExtraPolicy(p)}
                     style={{ padding: '4px 8px', borderRadius: 14, border: '1px solid var(--qs-info)',
-                      background: 'rgba(59,130,246,0.12)', color: 'var(--qs-info)', fontSize: 12, cursor: 'pointer',
+                      background: 'var(--qs-info-subtle)', color: 'var(--qs-info)', fontSize: 12, cursor: 'pointer',
                       fontFamily: 'inherit' }}>
                     + {p.policy_no}{p.product ? ` · ${productShort(p.product)}` : ''}
                   </button>
@@ -1192,7 +1196,7 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
             <option value="low">Low</option>
           </select>
         </label>
-        <label style={{ ...lbl, gridColumn: '1 / -1' }}><span><T k="pages.servicebatchpage.2b679f">What's needed</T> <span style={{ color: '#F87171' }}>*</span></span>
+        <label style={{ ...lbl, gridColumn: '1 / -1' }}><span><T k="pages.servicebatchpage.2b679f">What's needed</T> <span style={{ color: 'var(--qs-danger)' }}>*</span></span>
           <input value={title} onChange={e => setTitle(e.target.value)} style={input}
             placeholder="e.g. Update mortgagee to ABC Bank" />
         </label>
@@ -1203,13 +1207,13 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
       <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
         <button onClick={submit} disabled={!canSubmit} style={{
           cursor: canSubmit ? 'pointer' : 'not-allowed', border: 'none',
-          background: canSubmit ? '#3B82F6' : 'var(--qs-card)', color: canSubmit ? '#fff' : 'var(--qs-muted)',
+          background: canSubmit ? 'var(--qs-info)' : 'var(--qs-card)', color: canSubmit ? '#fff' : 'var(--qs-muted)',
           borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
         }}>{busy ? 'Saving…' : 'Add to batch'}</button>
       </div>
       {error && (
-        <div style={{ marginTop: 10, fontSize: 12, color: '#F87171', background: 'rgba(239,68,68,0.08)',
-          border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 10px' }}>
+        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)',
+          border: '1px solid var(--qs-danger-border)', borderRadius: 8, padding: '8px 10px' }}>
           <T k="pages.servicebatchpage.da1a84">Couldn't save:</T> {error}
         </div>
       )}

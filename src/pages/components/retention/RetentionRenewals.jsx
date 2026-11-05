@@ -14,6 +14,7 @@ import { useRenewalStats, filterByBucket } from '../../../hooks/useRenewalStats'
 import { useActiveEmployees } from '../../../hooks/useEmployees';
 import ContactLogModal from '../renewals/ContactLogModal';
 import FinalOutcomeModal from '../renewals/FinalOutcomeModal';
+import { NEUTRAL_CHIP, DANGER_CHIP, SUCCESS_CHIP } from '../../../lib/statusChips';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -31,11 +32,12 @@ const POLICY_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
+// Only a critical tier is red; the rest read as neutral chips (lib/statusChips).
 const PRIORITY_STYLES = {
-  critical: { background: 'rgba(239,68,68,0.15)',  color: '#F87171' },
-  high:     { background: 'rgba(249,115,22,0.15)', color: '#FB923C' },
-  medium:   { background: 'rgba(245,158,11,0.15)', color: '#FBBF24' },
-  standard: { background: 'var(--qs-elevated)',    color: 'var(--qs-dim)' },
+  critical: DANGER_CHIP,
+  high:     { ...NEUTRAL_CHIP, color: 'var(--qs-text)' },
+  medium:   { ...NEUTRAL_CHIP, color: 'var(--qs-text)' },
+  standard: NEUTRAL_CHIP,
 };
 
 const OUTCOME_LABELS = {
@@ -115,8 +117,8 @@ function getFollowupDueBadge(followupDueBy) {
   const now = new Date();
   const due = new Date(followupDueBy);
   const hoursUntil = (due - now) / (1000 * 60 * 60);
-  if (hoursUntil < 0) return { label: 'OVERDUE', style: { background: 'rgba(239,68,68,0.15)', color: '#F87171' } };
-  if (hoursUntil < 4) return { label: 'DUE SOON', style: { background: 'rgba(245,158,11,0.15)', color: '#FBBF24' } };
+  if (hoursUntil < 0) return { label: 'OVERDUE', style: DANGER_CHIP };
+  if (hoursUntil < 4) return { label: 'DUE SOON', style: { ...NEUTRAL_CHIP, color: 'var(--qs-text)' } };
   return null;
 }
 
@@ -133,7 +135,6 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
   const daysUntil = getDaysUntil(policy.renewal_date);
   const pctChange = policy.premium_change_pct;
   const isIncrease = pctChange != null && pctChange > 0;
-  const isDecrease = pctChange != null && pctChange < 0;
   const dueBadge = getFollowupDueBadge(policy.followup_due_by);
   const tenureHint = getTenureHint(policy.customer_tenure_years);
   const coachingNote = policy.human_followup_required && policy.followup_reason
@@ -141,8 +142,8 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
     : null;
 
   const consentStyle = policy.consent?.autodial_consent
-    ? { background: 'rgba(52,211,153,0.15)', color: '#34D399' }
-    : { background: 'var(--qs-elevated)', color: 'var(--qs-muted)' };
+    ? { ...NEUTRAL_CHIP, color: 'var(--qs-text)' }
+    : { ...NEUTRAL_CHIP, color: 'var(--qs-muted)' };
 
   return (
     <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 16, marginBottom: 8 }}>
@@ -157,7 +158,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
               {policy.customer_name}
             </Link>
             <span style={{ fontSize: 12, color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace" }}>{policy.policy_no}</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: 'rgba(59,130,246,0.15)', color: '#60A5FA', textTransform: 'capitalize' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, ...NEUTRAL_CHIP, textTransform: 'capitalize' }}>
               {policy.policy_type}
             </span>
           </div>
@@ -167,7 +168,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
               <Clock className="w-3.5 h-3.5" />
               {formatDate(policy.renewal_date)}
               {daysUntil != null && (
-                <span style={{ fontWeight: 600, color: daysUntil < 21 ? '#F87171' : daysUntil <= 45 ? '#FBBF24' : 'var(--qs-dim)' }} title={daysUntil < 21 ? 'Bill is out — human save window' : daysUntil <= 45 ? 'Proactive window — call before the bill' : 'Not yet posted'}>
+                <span style={{ fontWeight: 600, color: daysUntil <= 14 ? 'var(--qs-danger)' : 'var(--qs-text)' }} title={daysUntil < 21 ? 'Bill is out — human save window' : daysUntil <= 45 ? 'Proactive window — call before the bill' : 'Not yet posted'}>
                   ({daysUntil} <T k="pages.components.retention.retentionrenewals.e6d2be">days)</T>
                 </span>
               )}
@@ -175,7 +176,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
             <span>
               {formatCurrency(policy.current_premium)} → {formatCurrency(policy.premium)}
               {pctChange != null && (
-                <span style={{ fontWeight: 700, fontSize: 11, color: isIncrease ? '#F87171' : isDecrease ? '#34D399' : 'var(--qs-dim)', marginLeft: 4 }}>
+                <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--qs-text)', marginLeft: 4 }}>
                   {isIncrease ? '+' : ''}{pctChange}%
                 </span>
               )}
@@ -202,7 +203,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
           )}
 
           {policy.last_contact_channel === 'ai_voice' && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(99,102,241,0.15)', color: '#818CF8' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, ...NEUTRAL_CHIP }}>
               <Bot className="w-3 h-3" />
               <T k="pages.components.retention.retentionrenewals.d3f361">AI Call</T>
             </span>
@@ -214,25 +215,25 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
           </span>
 
           {policy.human_only && policy.human_only_reason && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(249,115,22,0.15)', color: '#FB923C' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, ...NEUTRAL_CHIP, color: 'var(--qs-text)' }}>
               {HUMAN_ONLY_REASON_LABELS[policy.human_only_reason] || policy.human_only_reason}
             </span>
           )}
 
           {policy.human_followup_required && policy.followup_reason && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(245,158,11,0.15)', color: '#FBBF24' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, ...NEUTRAL_CHIP, color: 'var(--qs-text)' }}>
               {FOLLOWUP_LABELS[policy.followup_reason] || policy.followup_reason}
             </span>
           )}
 
           {policy.amount_due > 0 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 700, background: 'rgba(239,68,68,0.15)', color: '#F87171' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 700, ...NEUTRAL_CHIP, color: 'var(--qs-text)' }}>
               ${policy.amount_due} <T k="pages.components.retention.retentionrenewals.d6692d">due</T>
             </span>
           )}
 
           {policy.customer_tenure_years != null && policy.customer_tenure_years > 0 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(168,85,247,0.15)', color: '#C084FC' }} title={tenureHint || 'Customer tenure'}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, ...NEUTRAL_CHIP }} title={tenureHint || 'Customer tenure'}>
               {policy.customer_tenure_years}<T k="pages.components.retention.retentionrenewals.48ecdd">yr tenure</T>
             </span>
           )}
@@ -247,7 +248,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
           {policy.human_followup_required && !policy.followup_completed_at && onMarkComplete && (
             <button
               onClick={() => onMarkComplete(policy)}
-              style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'rgba(52,211,153,0.15)', color: '#34D399', fontWeight: 600 }}
+              style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'var(--qs-info)', color: '#fff', fontWeight: 600 }}
             >
               <T k="pages.components.retention.retentionrenewals.7b9e53">Mark Complete</T>
             </button>
@@ -263,13 +264,13 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
       </div>
 
       {coachingNote && !policy.followup_completed_at && (
-        <div style={{ marginTop: 8, padding: '6px 10px', borderRadius: 6, fontSize: 12, background: 'rgba(59,130,246,0.1)', color: 'var(--qs-info)', border: '1px solid rgba(59,130,246,0.2)' }}>
+        <div style={{ marginTop: 8, padding: '6px 10px', borderRadius: 6, fontSize: 12, background: 'var(--qs-info-subtle)', color: 'var(--qs-info)', border: '1px solid var(--qs-info-border)' }}>
           {coachingNote}
         </div>
       )}
 
       {tenureHint && policy.human_followup_required && !policy.followup_completed_at && (
-        <div style={{ marginTop: 4, fontSize: 12, color: '#C084FC', fontStyle: 'italic' }}>
+        <div style={{ marginTop: 4, fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic' }}>
           {tenureHint}
         </div>
       )}
@@ -279,18 +280,23 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
 
 // ── Collapsible Section ─────────────────────────────────────────────────────
 
+// Section accents: red for escalated, gold for cleared, neutral in between.
+// Each entry carries its own chip style so nothing derives alpha from a hex.
 const SECTION_COLORS = {
-  red:    '#EF4444',
-  orange: '#F97316',
-  yellow: '#F59E0B',
-  green:  '#10B981',
+  red:    { color: 'var(--qs-danger)',  chip: DANGER_CHIP },
+  orange: { color: 'var(--qs-text)',    chip: { ...NEUTRAL_CHIP, color: 'var(--qs-text)' } },
+  yellow: { color: 'var(--qs-text)',    chip: { ...NEUTRAL_CHIP, color: 'var(--qs-text)' } },
+  green:  { color: 'var(--qs-success)', chip: SUCCESS_CHIP },
 };
 
 function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen = true, onLogContact, onMarkComplete }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const sc = SECTION_COLORS[color];
+  // Only red/gold sections get a colored left edge; neutral ones use the hairline.
+  const edge = sc && color !== 'orange' && color !== 'yellow' ? sc.color : 'var(--qs-border)';
 
   return (
-    <div style={{ border: '1px solid var(--qs-border)', borderLeft: `4px solid ${SECTION_COLORS[color] || 'var(--qs-border)'}`, borderRadius: 8, marginBottom: 8 }}>
+    <div style={{ border: '1px solid var(--qs-border)', borderLeft: `4px solid ${edge}`, borderRadius: 8, marginBottom: 8 }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 8 }}
@@ -298,13 +304,12 @@ function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen 
         onMouseLeave={e => e.currentTarget.style.background = 'none'}
       >
         <div className="flex items-center gap-2">
-          <Icon size={18} style={{ color: SECTION_COLORS[color] || 'var(--qs-dim)' }} />
+          <Icon size={18} style={{ color: sc?.color || 'var(--qs-dim)' }} />
           <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>{title}</h3>
           <span style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 22, height: 22, borderRadius: '50%', fontSize: 11, fontWeight: 700,
-            background: `${SECTION_COLORS[color] || 'var(--qs-border)'}22`,
-            color: SECTION_COLORS[color] || 'var(--qs-dim)',
+            ...(sc?.chip || NEUTRAL_CHIP),
           }}>
             {count}
           </span>
@@ -326,19 +331,21 @@ function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen 
 
 // ── Stat Card ───────────────────────────────────────────────────────────────
 
+// Stat tiles: neutral cards; the escalated count is the one red value, the
+// cleared count the one gold value.
 const STAT_COLORS = {
-  blue:   { bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.2)',  text: '#60A5FA' },
-  red:    { bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)',   text: '#F87171' },
-  orange: { bg: 'rgba(249,115,22,0.1)',  border: 'rgba(249,115,22,0.2)',  text: '#FB923C' },
-  yellow: { bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)',  text: '#FBBF24' },
-  green:  { bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.2)',  text: '#34D399' },
+  blue:   { bg: 'var(--qs-card)', border: 'var(--qs-border)', text: 'var(--qs-bright)' },
+  red:    { bg: 'var(--qs-card)', border: 'var(--qs-border)', text: 'var(--qs-danger)' },
+  orange: { bg: 'var(--qs-card)', border: 'var(--qs-border)', text: 'var(--qs-bright)' },
+  yellow: { bg: 'var(--qs-card)', border: 'var(--qs-border)', text: 'var(--qs-bright)' },
+  green:  { bg: 'var(--qs-card)', border: 'var(--qs-border)', text: 'var(--qs-success)' },
 };
 
 function StatCard({ label, value, color }) {
   const c = STAT_COLORS[color] || STAT_COLORS.blue;
   return (
     <div style={{ borderRadius: 8, border: `1px solid ${c.border}`, padding: 16, background: c.bg }}>
-      <p style={{ fontSize: 13, fontWeight: 500, color: c.text, marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--qs-subtle)', marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 24, fontWeight: 700, color: c.text }}>{value}</p>
     </div>
   );

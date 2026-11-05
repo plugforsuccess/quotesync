@@ -19,6 +19,15 @@ import { SAVE_METHOD_LABEL } from '../../../lib/saveMethods';
 // "84.38%" lives as 84.38, not 0.8438.
 const NET_RETENTION_TARGET = 85;
 
+// The one place a three-state status light is warranted: the principal's
+// headline. Red / amber / gold (no green text), all on theme tokens so the
+// banner's tint and hairline don't derive alpha from a hex.
+const LIGHT = {
+  red:   { color: 'var(--qs-danger)',  bg: 'var(--qs-danger-subtle)',  border: 'var(--qs-danger-border)' },
+  amber: { color: 'var(--qs-warning)', bg: 'var(--qs-warning-subtle)', border: 'var(--qs-warning-border)' },
+  green: { color: 'var(--qs-success)', bg: 'var(--qs-success-subtle)', border: 'var(--qs-success-border)' },
+};
+
 function fmt$(n) {
   if (!n) return '$0';
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
@@ -90,25 +99,25 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
   // matter how the book looks. Missing book data → can't be green either.
   const status = (() => {
     // A preventable-lapse leak is a process failure — it outranks a clean book.
-    if (preventable >= 5) return { key: 'red', color: '#EF4444', label: 'Workflow leaking',
+    if (preventable >= 5) return { key: 'red', ...LIGHT.red, label: 'Workflow leaking',
       note: `${preventable} cases lapsed without ever being called — work the leak, not just the book.` };
 
     let s;
-    if (netRet == null) s = { key: 'amber', color: '#F59E0B', label: 'Book data pending',
+    if (netRet == null) s = { key: 'amber', ...LIGHT.amber, label: 'Book data pending',
       note: 'Upload a book-health report to score net retention.' };
     else {
       const belowTarget = netRet < NET_RETENTION_TARGET;
       const shrinking = pifVar != null && pifVar < 0;
-      if (belowTarget && shrinking) s = { key: 'red', color: '#EF4444', label: 'Needs attention',
+      if (belowTarget && shrinking) s = { key: 'red', ...LIGHT.red, label: 'Needs attention',
         note: 'Net retention is below target and the book is shrinking.' };
-      else if (belowTarget || shrinking) s = { key: 'amber', color: '#F59E0B', label: 'Watch',
+      else if (belowTarget || shrinking) s = { key: 'amber', ...LIGHT.amber, label: 'Watch',
         note: belowTarget ? 'Net retention is below target.' : 'The book is shrinking month-over-month.' };
-      else s = { key: 'green', color: '#B07A0E', label: 'Healthy',
+      else s = { key: 'green', ...LIGHT.green, label: 'Healthy',
         note: 'Net retention is on target and the book is holding or growing.' };
     }
     // Any preventable lapse keeps it off green.
     if (preventable > 0 && s.key === 'green') {
-      s = { key: 'amber', color: '#F59E0B', label: 'Watch',
+      s = { key: 'amber', ...LIGHT.amber, label: 'Watch',
         note: `${preventable} case${preventable === 1 ? '' : 's'} lapsed without ever being called.` };
     }
     return s;
@@ -123,8 +132,8 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Status banner */}
-      <div style={{ borderRadius: 12, padding: 18, border: `1px solid ${status.color}55`,
-        background: `${status.color}11`, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+      <div style={{ borderRadius: 12, padding: 18, border: `1px solid ${status.border}`,
+        background: status.bg, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ width: 14, height: 14, borderRadius: 7, background: status.color, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: status.color }}>
@@ -148,14 +157,13 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           <StatCard label="Preventable lapses"
             value={hygiene?.lapsedUnworked ?? '—'}
             sub="past deadline · never called"
-            color={(hygiene?.lapsedUnworked ?? 0) > 0 ? '#EF4444' : '#10B981'}
-            accent={(hygiene?.lapsedUnworked ?? 0) > 0 ? '#EF4444' : undefined}
+            color={(hygiene?.lapsedUnworked ?? 0) > 0 ? 'var(--qs-danger)' : 'var(--qs-dim)'}
+            accent={(hygiene?.lapsedUnworked ?? 0) > 0 ? 'var(--qs-danger)' : undefined}
             onClick={() => onNavigate?.('at_risk')} />
           <StatCard label="About to lapse, untouched"
             value={hygiene?.untouchedDueSoon ?? '—'}
             sub="due ≤7 days · never called"
-            color={(hygiene?.untouchedDueSoon ?? 0) > 0 ? '#F59E0B' : '#10B981'}
-            accent={(hygiene?.untouchedDueSoon ?? 0) > 0 ? '#F59E0B' : undefined}
+            color={(hygiene?.untouchedDueSoon ?? 0) > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)'}
             onClick={() => onNavigate?.('at_risk')} />
           <StatCard label="Lapsed — win-back open"
             value={hygiene?.lapsedTotal ?? '—'}
@@ -164,7 +172,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           <StatCard label="Unassigned at-risk"
             value={hygiene?.unassignedAtRisk ?? '—'}
             sub="no owner"
-            color={(hygiene?.unassignedAtRisk ?? 0) > 0 ? '#F59E0B' : 'var(--qs-dim)'}
+            color={(hygiene?.unassignedAtRisk ?? 0) > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)'}
             onClick={() => onNavigate?.('at_risk')} />
         </div>
         {(hygiene?.lapsedUnworked ?? 0) > 0 && (
@@ -185,12 +193,12 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
                 {hygiene.lapseTrend.map(t => (
                   <div key={t.week} title={`Week of ${t.week}: ${t.count} preventable`}
                     style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: t.count ? '#F87171' : 'var(--qs-muted)' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: t.count ? 'var(--qs-danger)' : 'var(--qs-muted)' }}>
                       {t.count || ''}
                     </div>
                     <div style={{ width: '100%', maxWidth: 26,
                       height: Math.max(2, (t.count / maxLapse) * 40),
-                      background: t.count ? '#EF4444' : 'var(--qs-elevated)', borderRadius: 3 }} />
+                      background: t.count ? 'var(--qs-danger)' : 'var(--qs-elevated)', borderRadius: 3 }} />
                     <div style={{ fontSize: 9, color: 'var(--qs-muted)', fontFamily: "'DM Mono', monospace" }}>
                       {t.week.slice(5)}
                     </div>
@@ -208,14 +216,14 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.a10b6e">Book health</T> {book?.latestMonth ? `· as of ${book.latestMonth}` : ''}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
           <StatCard label="Net Retention" value={fmtBookPct(netRet)}
-            sub="rewrites counted as kept" color={netRet != null && netRet >= NET_RETENTION_TARGET ? '#10B981' : '#F59E0B'}
+            sub="rewrites counted as kept" color={netRet != null && netRet >= NET_RETENTION_TARGET ? 'var(--qs-success)' : 'var(--qs-warning)'}
             accent={status.color} onClick={() => onNavigate?.('book')} />
           <StatCard label="Policy Retention" value={fmtBookPct(totals?.blendedRetention)}
             sub="excludes rewrites" onClick={() => onNavigate?.('book')} />
           <StatCard label="Policies in Force"
             value={totals?.pifCurrent != null ? totals.pifCurrent.toLocaleString() : '—'}
             sub={pifVar != null ? `${pifVar >= 0 ? '▲' : '▼'} ${Math.abs(pifVar).toLocaleString()} vs prior YE` : 'vs prior year-end'}
-            color={pifVar == null ? undefined : pifVar >= 0 ? '#10B981' : '#F87171'}
+            color={pifVar == null ? undefined : pifVar >= 0 ? 'var(--qs-success)' : 'var(--qs-danger)'}
             onClick={() => onNavigate?.('growth')} />
           <StatCard label="Net Retention trend"
             value={trend.length > 1 ? `${trend.length} mo` : '—'}
@@ -232,7 +240,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
                   style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: '100%', maxWidth: 30,
                     height: Math.max(2, ((t.netRetention || 0) / maxNet) * 54),
-                    background: (t.netRetention ?? 0) >= NET_RETENTION_TARGET ? '#10B981' : '#F59E0B',
+                    background: (t.netRetention ?? 0) >= NET_RETENTION_TARGET ? 'var(--qs-success)' : 'var(--qs-warning)',
                     borderRadius: 3 }} />
                   <div style={{ fontSize: 9, color: 'var(--qs-muted)' }}>{(t.month || '').slice(5)}</div>
                 </div>
@@ -248,9 +256,9 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.245b88">This period — outreach & saves</T></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
           <StatCard label="Save Rate" value={k.saveRate != null ? fmtPct(k.saveRate) : '—'}
-            sub="saved / worked" color="#10B981" onClick={() => onNavigate?.('at_risk')} />
+            sub="saved / worked" color="var(--qs-success)" onClick={() => onNavigate?.('at_risk')} />
           <StatCard label="Premium Saved" value={fmt$(k.premiumSaved)}
-            sub={`vs ${fmt$(k.premiumAtRisk)} still at risk`} color="#10B981"
+            sub={`vs ${fmt$(k.premiumAtRisk)} still at risk`} color="var(--qs-success)"
             onClick={() => onNavigate?.('at_risk')} />
           <StatCard label="Save Velocity" value={velocity ? `${velocity.totalSaves}` : '—'}
             sub={(() => {
@@ -260,22 +268,21 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
               const pct = Math.round((top.count / velocity.totalSaves) * 100);
               return `top: ${SAVE_METHOD_LABEL[top.method] || top.method} ${pct}%`;
             })()}
-            color="#3B82F6" onClick={() => onNavigate?.('velocity')} />
+            color="var(--qs-bright)" onClick={() => onNavigate?.('velocity')} />
           <StatCard label="Terminations" value={k.terminations ?? '—'}
             sub="requested cancel" onClick={() => onNavigate?.('attrition')} />
           <StatCard label="Open Escalations" value={escalations.length}
             sub="awaiting your decision"
-            color={escalations.length > 0 ? '#F87171' : 'var(--qs-dim)'} />
+            color={escalations.length > 0 ? 'var(--qs-danger)' : 'var(--qs-dim)'} />
           <StatCard label="Parked (snoozed)" value={parked.total}
             sub={parked.reSnoozed > 0 ? `${parked.reSnoozed} re-snoozed ≥2×` : 'deferred cases'}
-            color={parked.reSnoozed > 0 ? '#F59E0B' : 'var(--qs-dim)'} />
+            color={parked.reSnoozed > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)'} />
           <StatCard label="Tactic Capture"
             value={capture?.captureRate == null ? '—' : `${Math.round(capture.captureRate * 100)}%`}
             sub={capture?.total ? `${capture.withTactic}/${capture.total} reached calls logged a tactic` : 'no reached calls yet'}
             color={capture?.captureRate == null ? 'var(--qs-dim)'
-              : capture.captureRate >= 0.8 ? '#10B981'
-              : capture.captureRate >= 0.5 ? '#F59E0B' : '#EF4444'}
-            accent={capture?.captureRate != null && capture.captureRate < 0.8 ? '#F59E0B' : undefined}
+              : capture.captureRate >= 0.8 ? 'var(--qs-success)'
+              : capture.captureRate >= 0.5 ? 'var(--qs-bright)' : 'var(--qs-danger)'}
             onClick={() => onNavigate?.('lift')} />
         </div>
       </div>
