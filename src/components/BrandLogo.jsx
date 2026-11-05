@@ -1,6 +1,6 @@
 // src/components/BrandLogo.jsx
 // The brand: the Cam Wiley Agency seal (small form), "Cam Wiley Agency", and a line
-// under it ("Allstate agent · Conyers, GA", editable in the copy editor).
+// under it ("Allstate Agent · Serving all of Georgia", editable in the copy editor).
 // `tone`: 'dark' on the blue header, 'light' on white. One size everywhere, so it always
 // reads as the same logo. `tagline` adds the line; only the main site header uses it
 // (the menu, Rate Check steps, partner portal and agency app show seal and name only).
@@ -45,7 +45,7 @@ export default function BrandLogo({ tone = 'dark', tagline = false, className = 
           style={{ fontFamily: "var(--font-display, 'Plus Jakarta Sans', Inter, sans-serif)" }}>Cam Wiley Agency</span>
         {tagline && (
           <span className={`mt-1 whitespace-nowrap text-[11.5px] font-medium ${dark ? 'text-blue-200' : 'text-slate-500'}`}>
-            <T k="brand.tagline">Allstate agent · Conyers, GA</T>
+            <T k="brand.tagline">Allstate Agent · Serving all of Georgia</T>
           </span>
         )}
       </span>
