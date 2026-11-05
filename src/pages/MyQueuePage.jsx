@@ -122,8 +122,9 @@ function groupRenewalsByHousehold(cases) {
   return groups;
 }
 
-// Color discipline for the queue: red (--qs-danger) is reserved for "coverage
-// is at risk today" — lapsed, ≤3 days to cancel, an overdue pay promise. Every
+// Color discipline for the queue: red (--qs-danger) is reserved for "must act
+// today" — lapsed, ≤3 days to cancel, a renewal inside its 14-day save window,
+// an overdue pay promise, an overdue callback. Every
 // other tier/flag reads as neutral text so the one red thing on screen is the
 // thing to act on. Bucket order carries the priority; color doesn't repeat it.
 const PRIORITY_BUCKETS = [
@@ -792,7 +793,7 @@ export default function MyQueuePage() {
       return Math.ceil((date - today) / 86400000);
     })();
     const statusText = isNaN(d) ? '—' : d === 0 ? 'Today' : d < 0 ? 'Overdue' : `${d}d`;
-    const statusColor = d <= 7 ? 'var(--qs-danger)' : 'var(--qs-text)';
+    const statusColor = d <= 14 ? 'var(--qs-danger)' : 'var(--qs-text)';
     const changePct = parseFloat(event.premium_change_pct) || 0;
     const saveable = expectedSaveablePremium(event, churnModel, effectiveSaveLift);
     const sub = [
@@ -814,7 +815,7 @@ export default function MyQueuePage() {
           background: active ? 'var(--qs-info-subtle)' : undefined,
           border: '1px solid',
           borderColor: active ? 'var(--qs-info-border)' : 'transparent',
-          borderLeft: `3px solid ${active ? 'var(--qs-info)' : d <= 7 ? 'var(--qs-danger)' : 'transparent'}`,
+          borderLeft: `3px solid ${active ? 'var(--qs-info)' : d <= 14 ? 'var(--qs-danger)' : 'transparent'}`,
           borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 2,
         }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -857,7 +858,7 @@ export default function MyQueuePage() {
           const today = new Date(); today.setHours(0, 0, 0, 0);
           const d = Math.ceil((date - today) / 86400000);
           const statusText = isNaN(d) ? '—' : d === 0 ? 'Today' : d < 0 ? 'Overdue' : `${d}d`;
-          const statusColor = d <= 7 ? 'var(--qs-danger)' : 'var(--qs-text)';
+          const statusColor = d <= 14 ? 'var(--qs-danger)' : 'var(--qs-text)';
           const changePct = parseFloat(ev.premium_change_pct) || 0;
           const active = selectedId === ev.id;
           return (
@@ -872,7 +873,7 @@ export default function MyQueuePage() {
                 display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center',
                 gap: 8, textAlign: 'left', cursor: 'pointer', border: 'none',
                 background: active ? 'var(--qs-info-subtle)' : 'transparent',
-                borderLeft: `3px solid ${active ? 'var(--qs-info)' : d <= 7 ? 'var(--qs-danger)' : 'transparent'}`,
+                borderLeft: `3px solid ${active ? 'var(--qs-info)' : d <= 14 ? 'var(--qs-danger)' : 'transparent'}`,
                 padding: '0.45rem 0.75rem',
               }}>
               <span style={{ fontSize: '0.8125rem', color: 'var(--qs-dim)',
@@ -1101,7 +1102,7 @@ export default function MyQueuePage() {
               </span>
             )}
             {event.callback_at && new Date(event.callback_at) <= new Date() && (
-              <span style={{ ...chip, ...NEUTRAL_CHIP, fontSize: '0.8125rem', color: 'var(--qs-text)' }}>
+              <span style={{ ...chip, ...DANGER_CHIP, fontSize: '0.8125rem', fontWeight: 700 }}>
                 <T k="pages.myqueuepage.a465c6">⏰ Callback overdue</T>
               </span>
             )}
@@ -1221,8 +1222,8 @@ export default function MyQueuePage() {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       return Math.ceil((d - today) / 86400000);
     })();
-    // Red only inside the last week — the same threshold the list rows use.
-    const urgent    = daysUntil <= 7;
+    // Red once the renewal is inside the 14-day save window — same threshold the list rows use.
+    const urgent    = daysUntil <= 14;
     const changePct = parseFloat(event.premium_change_pct) || 0;
     const rateShock = event.rate_shock_flag || changePct >= 15;
     const phone     = event.phone || event.customer_phone;
@@ -1403,7 +1404,7 @@ export default function MyQueuePage() {
           )}
           {event.callback_at && new Date(event.callback_at) <= new Date() && (
             <span style={{
-              ...NEUTRAL_CHIP, fontSize: 11, fontWeight: 700, color: 'var(--qs-text)',
+              ...DANGER_CHIP, fontSize: 11, fontWeight: 700,
               borderRadius: 4, padding: '1px 7px', flexShrink: 0,
             }}>
               <T k="pages.myqueuepage.a465c6">⏰ Callback overdue</T>
