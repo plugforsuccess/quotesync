@@ -65,7 +65,7 @@ export default function PartnerPortalPage() {
       <div style={{ background: HERO_BG }}>
         <div className="mx-auto max-w-md px-4 pt-5 pb-20">
           <header className="flex items-center justify-between">
-            <BrandLogo size="sm" compact />
+            <BrandLogo />
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Partner portal</T></span>
           </header>
           {data && (

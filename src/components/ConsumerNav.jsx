@@ -60,7 +60,7 @@ export function ConsumerNav({ current }) {
           <div className="absolute inset-0" style={{ background: 'rgba(15,45,107,0.55)' }} onClick={() => setOpen(false)} aria-hidden="true" />
           <div className="absolute inset-y-0 right-0 flex w-[82%] max-w-xs flex-col shadow-2xl" style={{ background: HERO_BG }}>
             <div className="flex items-center justify-between px-5 pt-5">
-              <BrandLogo size="sm" compact />
+              <BrandLogo />
               <button type="button" onClick={() => setOpen(false)} aria-label="Close menu"
                 className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10">
                 <X className="h-6 w-6" aria-hidden="true" />

@@ -290,7 +290,7 @@ function Layout({ forcePlane = null }) {
           <div className="flex items-center justify-between">
             {/* The insuredbycam.com wordmark, as on the public site; the agency's own name underneath when it differs. */}
             <NavLink to="/" className="flex flex-col leading-tight">
-              <BrandLogo compact={scrolled} />
+              <BrandLogo />
             </NavLink>
 
             {/* Bland AI Inbound Phone CTA — "Call for a Quote" */}

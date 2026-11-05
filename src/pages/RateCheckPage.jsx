@@ -1653,7 +1653,7 @@ function Shell({ children, step, bar, center = false, wide = false }) {
     <div className="min-h-screen bg-slate-50">
       {styles}
       <header className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 pt-5">
-        <BrandLogo tone="light" size="sm" compact className="shrink-0" />
+        <BrandLogo tone="light" className="shrink-0" />
         {step && (
           <ol className="flex items-center gap-1.5" aria-label={`Step ${step} of 3: ${STEPS[step - 1]}`}>
             {STEPS.map((st, i) => (

@@ -1,7 +1,8 @@
 // src/components/BrandLogo.jsx
 // The brand: a gold-edged navy shield with "CW", "Cam Wiley Agency", and a line
 // under it ("Allstate agent · Conyers, GA", editable in the copy editor).
-// `tone`: 'dark' on the blue header, 'light' on white. `compact` drops the line.
+// `tone`: 'dark' on the blue header, 'light' on white. The same lockup everywhere:
+// one size, mark beside both lines, so it always reads as the same logo.
 import { useId } from 'react';
 import { T } from './SiteCopy';
 
@@ -21,21 +22,19 @@ export function ShieldMark({ className = 'h-8 w-8' }) {
   );
 }
 
-export default function BrandLogo({ tone = 'dark', compact = false, size = 'md', className = '' }) {
+export default function BrandLogo({ tone = 'dark', className = '' }) {
   const dark = tone === 'dark';
-  const name = size === 'lg' ? 'text-[20px] sm:text-[22px]' : size === 'sm' ? 'text-[15px]' : 'text-[18px]';
-  const mark = size === 'lg' ? 'h-10 w-10' : size === 'sm' ? 'h-7 w-7' : 'h-9 w-9';
+  const name = 'text-[18px]';
+  const mark = 'h-9 w-9';
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <ShieldMark className={`${mark} shrink-0`} />
       <span className="flex min-w-0 flex-col leading-none">
         <span className={`whitespace-nowrap font-extrabold tracking-tight ${name} ${dark ? 'text-white' : 'text-[#0F2D6B]'}`}
           style={{ fontFamily: "var(--font-display, 'Plus Jakarta Sans', Inter, sans-serif)" }}>Cam Wiley Agency</span>
-        {!compact && (
-          <span className={`mt-1 whitespace-nowrap text-[11.5px] font-medium ${dark ? 'text-blue-200' : 'text-slate-500'}`}>
-            <T k="brand.tagline">Allstate agent · Conyers, GA</T>
-          </span>
-        )}
+        <span className={`mt-1 whitespace-nowrap text-[11.5px] font-medium ${dark ? 'text-blue-200' : 'text-slate-500'}`}>
+          <T k="brand.tagline">Allstate agent · Conyers, GA</T>
+        </span>
       </span>
     </span>
   );
