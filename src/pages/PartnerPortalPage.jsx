@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, Check, Copy, ExternalLink, Loader2, Share2, Star, X } from 'lucide-react';
 import { reviewUrl } from '../lib/reviews';
+import BrandLogo from '../components/BrandLogo';
 import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, squarePhoto, submitPartnerW9 } from '../lib/rateCheckApi';
 import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
@@ -54,7 +55,7 @@ export default function PartnerPortalPage() {
     loadPartnerPortal(token).then(setData).catch(err => setError(err.message));
   }, [token]);
   useEffect(() => {
-    document.title = 'Partner portal | insuredbycam';
+    document.title = 'Partner portal | Cam Wiley Agency';
     load();
   }, [load]);
 
@@ -64,7 +65,7 @@ export default function PartnerPortalPage() {
       <div style={{ background: HERO_BG }}>
         <div className="mx-auto max-w-md px-4 pt-5 pb-20">
           <header className="flex items-center justify-between">
-            <span className="text-[15px] font-extrabold tracking-tight text-white"><T k="pages.partnerportalpage.67f359">insured</T><span style={{ color: GOLD }}><T k="pages.partnerportalpage.df3f07">by</T></span><T k="pages.partnerportalpage.3704b7">cam.com</T></span>
+            <BrandLogo size="sm" compact />
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Partner portal</T></span>
           </header>
           {data && (

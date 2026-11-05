@@ -210,7 +210,7 @@ function PartnerProgram() {
 export default function GeorgiaDriverEducationPage() {
   return (
     <div className="min-h-screen bg-white">
-      <title>Georgia Driver Education &amp; Insurance Discounts | insuredbycam</title>
+      <title>Georgia Driver Education &amp; Insurance Discounts | Cam Wiley Agency</title>
 
       {/* Hero */}
       <section className="relative overflow-hidden text-white" style={{ background: HERO_BG }}>

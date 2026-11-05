@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon, Bell, LogOut, Pencil } from 'lucide-react';
 import { signOutAndExit } from '../lib/signOut';
 import Footer from './Footer';
+import BrandLogo from './BrandLogo';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
 import BottomTabBar from './BottomTabBar';
@@ -34,7 +35,7 @@ function Layout({ forcePlane = null }) {
   const {
     user, profile, isPlatformUser, platformRole,
     activePlane: authPlane, currentAgencyRole, currentAgencyId,
-    agencyMemberships, signOut,
+    signOut,
   } = useAuth();
 
   // Upload/cadence checklist — principals only. useUploadChecklist already
@@ -124,12 +125,6 @@ function Layout({ forcePlane = null }) {
     ? roleDisplayNames[currentAgencyRole]
     : null;
 
-  // Agency brand name for header (when in agency plane)
-  const agencyBrandName = activePlane === PLANES.AGENCY
-    ? agencyMemberships.find(m => m.status === 'active')?.agencies?.brand_name
-      || agencyMemberships.find(m => m.status === 'active')?.agencies?.name
-      || null
-    : null;
 
   // Minimal funnel nav on /save routes
   const isFunnelRoute = location.pathname === '/save' || location.pathname.startsWith('/save/');
@@ -295,12 +290,7 @@ function Layout({ forcePlane = null }) {
           <div className="flex items-center justify-between">
             {/* The insuredbycam.com wordmark, as on the public site; the agency's own name underneath when it differs. */}
             <NavLink to="/" className="flex flex-col leading-tight">
-              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
-                insured<span style={{ color: '#F5D061' }}>by</span>cam.com
-              </span>
-              {!scrolled && agencyBrandName && !/^insuredbycam(\.com)?$/i.test(agencyBrandName.trim()) && (
-                <span className="text-xs text-blue-100">{agencyBrandName}</span>
-              )}
+              <BrandLogo compact={scrolled} />
             </NavLink>
 
             {/* Bland AI Inbound Phone CTA — "Call for a Quote" */}
