@@ -122,32 +122,51 @@ function groupRenewalsByHousehold(cases) {
   return groups;
 }
 
+// Color discipline for the queue: red (--qs-danger) is reserved for "coverage
+// is at risk today" — lapsed, ≤3 days to cancel, an overdue pay promise. Every
+// other tier/flag reads as neutral text so the one red thing on screen is the
+// thing to act on. Bucket order carries the priority; color doesn't repeat it.
 const PRIORITY_BUCKETS = [
   {
     key: 'P0',
-    label: '🔴 LAPSED — Coverage Gone',
+    label: 'Lapsed — coverage gone',
     sublabel: 'Policy terminated. Reinstatement call required.',
-    color: '#EF4444',
+    color: 'var(--qs-danger)',
   },
   {
     key: 'P1',
-    label: '🟠 HIGH PRIORITY',
+    label: 'High priority',
     sublabel: 'Past due or <7 days · Premium ≥$2,000',
-    color: '#F59E0B',
+    color: 'var(--qs-text)',
   },
   {
     key: 'P2',
-    label: '🟡 STANDARD',
+    label: 'Standard',
     sublabel: 'Past due or <7 days · Premium <$2,000',
-    color: '#64748B',
+    color: 'var(--qs-dim)',
   },
   {
     key: 'P3',
-    label: '⚪ UPCOMING',
+    label: 'Upcoming',
     sublabel: 'More than 7 days until cancel date',
-    color: '#334155',
+    color: 'var(--qs-dim)',
   },
 ];
+
+// Neutral chip: an icon + label on an elevated surface. Flags that are
+// informational (bundle, renewing, autopay, AI spoke…) all use this so they
+// don't compete with the urgency signal.
+const NEUTRAL_CHIP = {
+  background: 'var(--qs-elevated)',
+  border: '1px solid var(--qs-border)',
+  color: 'var(--qs-dim)',
+};
+// Danger chip: the one red flag style (overdue promise, active cancel).
+const DANGER_CHIP = {
+  background: 'var(--qs-danger-subtle)',
+  border: '1px solid var(--qs-danger-border)',
+  color: 'var(--qs-danger)',
+};
 
 // Last attempt one-liner
 function lastAttemptSummary(result, attemptedAt) {
@@ -573,8 +592,8 @@ export default function MyQueuePage() {
   // In the Callbacks / Promises views, skip priority bucketing — show one flat
   // group in strict due order so reps work them in sequence.
   const FLAT_CANCEL_VIEWS = {
-    callbacks: { label: '📅 CALLBACKS · soonest first',    color: '#60A5FA' },
-    promises:  { label: '⚠ PAY PROMISES · most overdue first', color: '#F87171' },
+    callbacks: { label: '📅 Callbacks · soonest first',    color: 'var(--qs-text)' },
+    promises:  { label: '⚠ Pay promises · most overdue first', color: 'var(--qs-danger)' },
   };
   const BUCKETS = FLAT_CANCEL_VIEWS[cancelFilter]
     ? (displayCancelCases.length
@@ -724,9 +743,9 @@ export default function MyQueuePage() {
       : days === 0 ? 'Today'
       : days < 0 ? `${Math.abs(days)}d ago`
       : `${days}d`;
-    const statusColor = (isLapsed || urgent) ? '#F87171'
-      : (days !== null && days <= 7) ? '#FBBF24'
-      : 'var(--qs-dim)';
+    // Red only when coverage is at risk today; otherwise the day count is just
+    // a number the rep reads, not a color they react to.
+    const statusColor = (isLapsed || urgent) ? 'var(--qs-danger)' : 'var(--qs-text)';
     const sub = [
       productLabel(event.product),
       event.amount_due > 0 ? `${fmt$(event.amount_due)} due` : null,
@@ -742,10 +761,10 @@ export default function MyQueuePage() {
         aria-current={active ? 'true' : undefined}
         style={{
           display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
-          background: active ? 'rgba(59,130,246,0.14)' : undefined,
+          background: active ? 'var(--qs-info-subtle)' : undefined,
           border: '1px solid',
-          borderColor: active ? 'rgba(59,130,246,0.45)' : 'transparent',
-          borderLeft: `3px solid ${active ? '#3B82F6' : isLapsed ? '#EF4444' : urgent ? '#F87171' : 'transparent'}`,
+          borderColor: active ? 'var(--qs-info-border)' : 'transparent',
+          borderLeft: `3px solid ${active ? 'var(--qs-info)' : (isLapsed || urgent) ? 'var(--qs-danger)' : 'transparent'}`,
           borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 2,
         }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -773,7 +792,7 @@ export default function MyQueuePage() {
       return Math.ceil((date - today) / 86400000);
     })();
     const statusText = isNaN(d) ? '—' : d === 0 ? 'Today' : d < 0 ? 'Overdue' : `${d}d`;
-    const statusColor = d <= 7 ? '#F87171' : d <= 14 ? '#FBBF24' : d >= 21 ? '#34D399' : 'var(--qs-dim)';
+    const statusColor = d <= 7 ? 'var(--qs-danger)' : 'var(--qs-text)';
     const changePct = parseFloat(event.premium_change_pct) || 0;
     const saveable = expectedSaveablePremium(event, churnModel, effectiveSaveLift);
     const sub = [
@@ -792,10 +811,10 @@ export default function MyQueuePage() {
         aria-current={active ? 'true' : undefined}
         style={{
           display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
-          background: active ? 'rgba(59,130,246,0.14)' : undefined,
+          background: active ? 'var(--qs-info-subtle)' : undefined,
           border: '1px solid',
-          borderColor: active ? 'rgba(59,130,246,0.45)' : 'transparent',
-          borderLeft: `3px solid ${active ? '#3B82F6' : changePct >= 15 ? '#F87171' : 'transparent'}`,
+          borderColor: active ? 'var(--qs-info-border)' : 'transparent',
+          borderLeft: `3px solid ${active ? 'var(--qs-info)' : d <= 7 ? 'var(--qs-danger)' : 'transparent'}`,
           borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 2,
         }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -838,7 +857,7 @@ export default function MyQueuePage() {
           const today = new Date(); today.setHours(0, 0, 0, 0);
           const d = Math.ceil((date - today) / 86400000);
           const statusText = isNaN(d) ? '—' : d === 0 ? 'Today' : d < 0 ? 'Overdue' : `${d}d`;
-          const statusColor = d <= 7 ? '#F87171' : d <= 14 ? '#FBBF24' : d >= 21 ? '#34D399' : 'var(--qs-dim)';
+          const statusColor = d <= 7 ? 'var(--qs-danger)' : 'var(--qs-text)';
           const changePct = parseFloat(ev.premium_change_pct) || 0;
           const active = selectedId === ev.id;
           return (
@@ -852,8 +871,8 @@ export default function MyQueuePage() {
               style={{
                 display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center',
                 gap: 8, textAlign: 'left', cursor: 'pointer', border: 'none',
-                background: active ? 'rgba(59,130,246,0.14)' : 'transparent',
-                borderLeft: `3px solid ${active ? '#3B82F6' : changePct >= 15 ? '#F87171' : 'transparent'}`,
+                background: active ? 'var(--qs-info-subtle)' : 'transparent',
+                borderLeft: `3px solid ${active ? 'var(--qs-info)' : d <= 7 ? 'var(--qs-danger)' : 'transparent'}`,
                 padding: '0.45rem 0.75rem',
               }}>
               <span style={{ fontSize: '0.8125rem', color: 'var(--qs-dim)',
@@ -894,8 +913,9 @@ export default function MyQueuePage() {
       amountDue: event.amount_due, effectiveDate: event.cancel_effective_date,
     });
 
-    // Color-coded urgency for the "days until cancel" key fact.
-    const daysColor = urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)';
+    // The "days until cancel" key fact goes red only when it's the thing to act
+    // on today (lapsed / ≤3 days); otherwise it reads as a plain headline number.
+    const daysColor = (isLapsed || urgent) ? 'var(--qs-danger)' : 'var(--qs-bright)';
     const daysLabel = days === null ? '—'
       : days === 0 ? 'TODAY'
       : days < 0 ? `${Math.abs(days)}d ago`
@@ -933,22 +953,8 @@ export default function MyQueuePage() {
     return (
       <article style={{
         background:  'var(--qs-card)',
-        border: `1px solid ${
-          isLapsed
-            ? 'rgba(239,68,68,0.4)'
-            : urgent
-            ? 'rgba(239,68,68,0.3)'
-            : 'var(--qs-border)'
-        }`,
-        borderLeft: `4px solid ${
-          isLapsed
-            ? '#EF4444'
-            : urgent
-            ? '#F87171'
-            : days <= 7
-            ? '#FBBF24'
-            : 'var(--qs-border)'
-        }`,
+        border: '1px solid var(--qs-border)',
+        borderLeft: `4px solid ${(isLapsed || urgent) ? 'var(--qs-danger)' : 'var(--qs-border)'}`,
         borderRadius: 12,
         padding: '1.5rem',
         display: 'flex', flexDirection: 'column', gap: '1rem',
@@ -974,23 +980,17 @@ export default function MyQueuePage() {
           )}
 
           {policyCount > 1 && (
-            <span style={{ ...chip, background: 'rgba(245,158,11,0.15)', color: '#FBBF24' }}>
-              ⚠ {policyCount} <T k="pages.myqueuepage.94422f">policies</T>
+            <span style={{ ...chip, ...NEUTRAL_CHIP }}>
+              {policyCount} <T k="pages.myqueuepage.94422f">policies</T>
             </span>
           )}
           {event.has_active_renewal && (
-            <span style={{
-              ...chip, background: 'rgba(59,130,246,0.12)',
-              border: '1px solid rgba(59,130,246,0.25)', color: '#60A5FA',
-            }}>
+            <span style={{ ...chip, ...NEUTRAL_CHIP }}>
               <T k="pages.myqueuepage.9ac08a">🔄 Also renewing</T>
             </span>
           )}
           {event.cross_sell_opportunity && event.cross_sell_product && (
-            <span style={{
-              ...chip, background: 'rgba(16,185,129,0.10)',
-              border: '1px solid rgba(16,185,129,0.25)', color: '#34D399',
-            }}
+            <span style={{ ...chip, ...NEUTRAL_CHIP }}
             title="Quoting this line adds a multi-policy discount that lowers their current premium — a save lever, not just an upsell.">
               <T k="pages.myqueuepage.ac0892">💡 Bundle</T> {productLabel(event.cross_sell_product)} <T k="pages.myqueuepage.2961fa">→ lower premium</T>
             </span>
@@ -999,8 +999,7 @@ export default function MyQueuePage() {
             <button
               className="qs-focusable"
               onClick={() => setExpandedTranscript(prev => prev === event.id ? null : event.id)}
-              style={{ ...chip, background: 'rgba(99,102,241,0.15)', color: '#818CF8',
-                border: 'none', cursor: 'pointer' }}>
+              style={{ ...chip, ...NEUTRAL_CHIP, cursor: 'pointer' }}>
               <T k="pages.myqueuepage.45882e">🤖 AI spoke</T>
             </button>
           )}
@@ -1012,7 +1011,7 @@ export default function MyQueuePage() {
             <div style={factTile}>
               <div style={factLabel}><T k="pages.myqueuepage.ab9d12">Amount due</T></div>
               <div style={{
-                fontSize: factValueSize, fontWeight: 800, color: '#F87171',
+                fontSize: factValueSize, fontWeight: 800, color: 'var(--qs-bright)',
                 fontFamily: "'DM Mono', monospace", lineHeight: 1.1,
               }}>
                 ${Number(event.amount_due).toLocaleString()}
@@ -1026,7 +1025,7 @@ export default function MyQueuePage() {
             </div>
             <div style={{
               fontSize: factValueSize, fontWeight: 800,
-              color: isLapsed ? '#F87171' : daysColor,
+              color: daysColor,
               fontFamily: "'DM Mono', monospace", lineHeight: 1.1,
             }}>
               {isLapsed ? '⚠ LAPSED' : daysLabel}
@@ -1047,8 +1046,8 @@ export default function MyQueuePage() {
 
         {/* 4 ── Call script — 16px, comfortable measure & line-height ── */}
         <div style={{
-          background: 'rgba(59,130,246,0.06)',
-          border: '1px solid rgba(59,130,246,0.20)',
+          background: 'var(--qs-info-subtle)',
+          border: '1px solid var(--qs-info-border)',
           borderRadius: 8,
           padding: '1rem',
         }}>
@@ -1072,14 +1071,12 @@ export default function MyQueuePage() {
         {/* Status line: promise / last attempt / callback ────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             {promisePast && (
-              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 700, color: '#FCA5A5',
-                background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.4)' }}>
+              <span style={{ ...chip, ...DANGER_CHIP, fontSize: '0.8125rem', fontWeight: 700 }}>
                 <T k="pages.myqueuepage.4a1490">⚠ Pay promise overdue ·</T> {new Date(event.promise_date).toLocaleDateString()}
               </span>
             )}
             {promiseSoon && (
-              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 600, color: '#FBBF24',
-                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <span style={{ ...chip, ...NEUTRAL_CHIP, fontSize: '0.8125rem', fontWeight: 600 }}>
                 <T k="pages.myqueuepage.69d16e">📌 Pay promise</T> {new Date(event.promise_date).toLocaleDateString()}
               </span>
             )}
@@ -1096,8 +1093,7 @@ export default function MyQueuePage() {
 
             {/* Scheduled callback */}
             {event.callback_at && new Date(event.callback_at) > new Date() && (
-              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 600, color: '#60A5FA',
-                background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.25)' }}>
+              <span style={{ ...chip, ...NEUTRAL_CHIP, fontSize: '0.8125rem', fontWeight: 600 }}>
                 <T k="pages.myqueuepage.9aef40">📅 Call back</T> {new Date(event.callback_at).toLocaleString('en-US', {
                   month: 'short', day: 'numeric',
                   hour: 'numeric', minute: '2-digit',
@@ -1105,16 +1101,14 @@ export default function MyQueuePage() {
               </span>
             )}
             {event.callback_at && new Date(event.callback_at) <= new Date() && (
-              <span style={{ ...chip, fontSize: '0.8125rem', color: '#FBBF24',
-                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <span style={{ ...chip, ...NEUTRAL_CHIP, fontSize: '0.8125rem', color: 'var(--qs-text)' }}>
                 <T k="pages.myqueuepage.a465c6">⏰ Callback overdue</T>
               </span>
             )}
 
             {/* Snoozed indicator */}
             {event.snoozed_until && new Date(event.snoozed_until) > new Date() && (
-              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 600, color: 'var(--qs-dim)',
-                background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+              <span style={{ ...chip, ...NEUTRAL_CHIP, fontSize: '0.8125rem', fontWeight: 600 }}>
                 <T k="pages.myqueuepage.77b44f">⏸ Snoozed until</T> {new Date(event.snoozed_until).toLocaleDateString()}
                 {event.snooze_count > 1 ? ` · ${event.snooze_count}×` : ''}
               </span>
@@ -1125,11 +1119,11 @@ export default function MyQueuePage() {
         {expandedTranscript === event.id && event.ai_transcript && (
           <div style={{
             padding: '0.75rem 1rem', borderRadius: 8,
-            background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
+            background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
             fontSize: '1rem', color: 'var(--qs-text)', lineHeight: 1.6,
             maxHeight: 200, overflowY: 'auto',
           }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818CF8',
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--qs-dim)',
               textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
               <T k="pages.myqueuepage.ef283f">AI Transcript</T>
             </span>
@@ -1145,8 +1139,8 @@ export default function MyQueuePage() {
               style={{
                 ...btnBase, minHeight: '3rem', width: '100%',
                 fontSize: 'clamp(1rem, 0.95rem + 0.3vw, 1.125rem)',
-                background: 'rgba(52,211,153,0.14)', color: '#34D399',
-                border: '1px solid rgba(52,211,153,0.3)', textDecoration: 'none',
+                background: 'var(--qs-info)', color: '#FFFFFF', fontWeight: 700,
+                border: '1px solid var(--qs-info)', textDecoration: 'none',
               }}>
               <T k="pages.myqueuepage.72f662">📞 Call</T> {fmtPhone(phone)}
             </a>
@@ -1204,8 +1198,8 @@ export default function MyQueuePage() {
               onClick={() => setSelectedEvent(event)}
               style={{
                 ...btnBase,
-                border: '1px solid #3B82F6', background: '#3B82F6',
-                color: '#fff', fontWeight: 700,
+                border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
+                color: 'var(--qs-text)', fontWeight: 600,
                 marginLeft: 'auto',
               }}>
               <T k="pages.myqueuepage.33c277">Open case →</T>
@@ -1227,18 +1221,24 @@ export default function MyQueuePage() {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       return Math.ceil((d - today) / 86400000);
     })();
-    const urgent    = daysUntil <= 14;
+    // Red only inside the last week — the same threshold the list rows use.
+    const urgent    = daysUntil <= 7;
     const changePct = parseFloat(event.premium_change_pct) || 0;
     const rateShock = event.rate_shock_flag || changePct >= 15;
     const phone     = event.phone || event.customer_phone;
     const lastAtt   = lastAttemptSummary(event.last_attempt_result, event.last_attempt_at);
     const winback   = winbackFor(winbackMap, event.customer_name, event.zip, event.product);
+    // Small inline flag chips on the renewal card (neutral by default).
+    const flag = {
+      ...NEUTRAL_CHIP, fontSize: 13, borderRadius: 4, padding: '2px 8px',
+      fontWeight: 600, flexShrink: 0,
+    };
 
     return (
       <div style={{
         background:   'var(--qs-card)',
-        border:       `1px solid ${urgent ? 'rgba(245,158,11,0.3)' : 'var(--qs-border)'}`,
-        borderLeft:   `3px solid ${urgent ? '#FBBF24' : 'var(--qs-border)'}`,
+        border:       '1px solid var(--qs-border)',
+        borderLeft:   `3px solid ${urgent ? 'var(--qs-danger)' : 'var(--qs-border)'}`,
         borderRadius: 10,
         padding:      '18px 20px',
       }}>
@@ -1257,23 +1257,19 @@ export default function MyQueuePage() {
               {winback && (
                 <span
                   title={`Lost their ${productLabel(winback.product)} ${winback.months}mo ago${winback.reason ? ` (${winback.reason})` : ''}. While you have them on the renewal, pitch adding it back — the bundle discount lowers this premium too.`}
-                  style={{ fontSize: 13, background: 'rgba(16,185,129,0.14)', color: '#34D399',
-                    border: '1px solid rgba(16,185,129,0.35)',
-                    borderRadius: 4, padding: '2px 8px', fontWeight: 700, flexShrink: 0, cursor: 'help' }}>
+                  style={{ ...flag, cursor: 'help' }}>
                   <T k="pages.myqueuepage.0a06b1">♻ Win back</T> {productLabel(winback.product)} <T k="pages.myqueuepage.b606d3">· lost</T> {winback.months}<T k="pages.myqueuepage.27c9d5">mo</T>
                 </span>
               )}
 
               {rateShock && (
-                <span style={{ fontSize: 13, background: 'rgba(239,68,68,0.15)', color: '#F87171',
-                  borderRadius: 4, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
+                <span style={{ ...flag, color: 'var(--qs-text)', fontWeight: 700 }}>
                   <T k="pages.myqueuepage.9f0d6e">⚠ Rate Shock</T>
                 </span>
               )}
 
               {event.multi_line === 'Yes' && (
-                <span style={{ fontSize: 13, background: 'rgba(59,130,246,0.12)', color: '#60A5FA',
-                  borderRadius: 4, padding: '2px 8px', fontWeight: 600, flexShrink: 0 }}>
+                <span style={flag}>
                   <T k="pages.myqueuepage.59ff79">Bundle 🔗</T>
                 </span>
               )}
@@ -1282,24 +1278,19 @@ export default function MyQueuePage() {
                 <span title={rateShock
                   ? 'Monoline + rate shock — elevated churn risk with no bundle anchor, and a bundle-back opportunity. Boosted in your focus queue.'
                   : 'Monoline (single line) — bundle-pitch target.'}
-                  style={{ fontSize: 13, color: '#A78BFA', borderRadius: 4, padding: '2px 8px',
-                    background: rateShock ? 'rgba(167,139,250,0.22)' : 'rgba(167,139,250,0.12)',
-                    border: rateShock ? '1px solid rgba(167,139,250,0.5)' : 'none',
-                    fontWeight: rateShock ? 700 : 600, flexShrink: 0, cursor: 'help' }}>
+                  style={{ ...flag, cursor: 'help', fontWeight: rateShock ? 700 : 600 }}>
                   <T k="pages.myqueuepage.8bac95">Monoline</T>{rateShock ? ' ⚡' : ''}
                 </span>
               )}
 
               {event.easy_pay && (
-                <span style={{ fontSize: 13, background: 'rgba(52,211,153,0.12)', color: '#34D399',
-                  borderRadius: 4, padding: '2px 8px', fontWeight: 600, flexShrink: 0 }}>
+                <span style={flag}>
                   <T k="pages.myqueuepage.8121e6">AutoPay ✓</T>
                 </span>
               )}
 
               {event.claim_flag && event.claim_flag !== 'none' && (
-                <span style={{ fontSize: 13, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
-                  borderRadius: 4, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
+                <span style={{ ...flag, fontWeight: 700 }}>
                   ⚠ {event.claim_flag === 'open' ? 'Open Claim' : 'Recent Claim'}
                 </span>
               )}
@@ -1307,39 +1298,24 @@ export default function MyQueuePage() {
               {event.ai_transcript && (
                 <button
                   onClick={() => setExpandedTranscript(prev => prev === event.id ? null : event.id)}
-                  style={{ fontSize: 13, background: 'rgba(99,102,241,0.15)', color: '#818CF8',
-                    border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer',
-                    fontWeight: 600, flexShrink: 0 }}>
+                  style={{ ...flag, cursor: 'pointer' }}>
                   <T k="pages.myqueuepage.45882e">🤖 AI spoke</T>
                 </button>
               )}
 
               {policyCount > 1 && (
-                <span style={{
-                  fontSize: 10, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
-                  borderRadius: 4, padding: '1px 6px', fontWeight: 700, flexShrink: 0,
-                }}>
-                  ⚠ {policyCount} <T k="pages.myqueuepage.94422f">policies</T>
+                <span style={flag}>
+                  {policyCount} <T k="pages.myqueuepage.94422f">policies</T>
                 </span>
               )}
 
               {event.has_active_cancel && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                  background: 'rgba(239,68,68,0.10)',
-                  border: '1px solid rgba(239,68,68,0.25)',
-                  color: '#F87171', flexShrink: 0,
-                }}>
+                <span style={{ ...flag, ...DANGER_CHIP, fontWeight: 700 }}>
                   <T k="pages.myqueuepage.e287f9">⚠ Cancel active</T>
                 </span>
               )}
               {event.cross_sell_opportunity && event.cross_sell_product && !event.has_active_cancel && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                  background: 'rgba(16,185,129,0.10)',
-                  border: '1px solid rgba(16,185,129,0.25)',
-                  color: '#34D399', flexShrink: 0,
-                }}>
+                <span style={flag}>
                   <T k="pages.myqueuepage.0a5e37">💡 X-sell:</T> {productLabel(event.cross_sell_product)}
                 </span>
               )}
@@ -1350,14 +1326,11 @@ export default function MyQueuePage() {
             </div>
           </div>
 
-          {/* Days — green ≥21d (ideal proactive-contact window), amber/red as
-              renewal nears and the save window closes. */}
+          {/* Days — red once the save window is closing (≤7d); otherwise a
+              plain number. */}
           <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
             <div style={{ fontSize: 18, fontWeight: 700,
-              color: daysUntil <= 7 ? '#F87171'
-                : daysUntil <= 14 ? '#FBBF24'
-                : daysUntil >= 21 ? '#34D399'
-                : 'var(--qs-dim)' }}>
+              color: urgent ? 'var(--qs-danger)' : 'var(--qs-bright)' }}>
               {daysUntil === 0 ? 'Today' : daysUntil < 0 ? 'Overdue' : `${daysUntil}d`}
             </div>
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}><T k="pages.myqueuepage.4b537a">renewal</T></div>
@@ -1396,7 +1369,7 @@ export default function MyQueuePage() {
             </span>
           )}
           {changePct !== 0 && (
-            <span style={{ fontSize: 14, fontWeight: 700, color: changePct > 0 ? '#F87171' : '#34D399' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-text)' }}>
               {changePct > 0 ? '+' : ''}{changePct.toFixed(1)}%
             </span>
           )}
@@ -1419,9 +1392,7 @@ export default function MyQueuePage() {
           {/* Scheduled callback */}
           {event.callback_at && new Date(event.callback_at) > new Date() && (
             <span style={{
-              fontSize: 11, color: '#3B82F6', fontWeight: 600,
-              background: 'rgba(59,130,246,0.10)',
-              border: '1px solid rgba(59,130,246,0.25)',
+              ...NEUTRAL_CHIP, fontSize: 11, fontWeight: 600,
               borderRadius: 4, padding: '1px 7px', flexShrink: 0,
             }}>
               <T k="pages.myqueuepage.9aef40">📅 Call back</T> {new Date(event.callback_at).toLocaleString('en-US', {
@@ -1432,9 +1403,7 @@ export default function MyQueuePage() {
           )}
           {event.callback_at && new Date(event.callback_at) <= new Date() && (
             <span style={{
-              fontSize: 11, color: '#F59E0B', fontWeight: 700,
-              background: 'rgba(245,158,11,0.12)',
-              border: '1px solid rgba(245,158,11,0.3)',
+              ...NEUTRAL_CHIP, fontSize: 11, fontWeight: 700, color: 'var(--qs-text)',
               borderRadius: 4, padding: '1px 7px', flexShrink: 0,
             }}>
               <T k="pages.myqueuepage.a465c6">⏰ Callback overdue</T>
@@ -1459,11 +1428,11 @@ export default function MyQueuePage() {
         {expandedTranscript === event.id && event.ai_transcript && (
           <div style={{
             marginBottom: 10, padding: '10px 12px', borderRadius: 6,
-            background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
+            background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
             fontSize: 14, color: 'var(--qs-dim)', lineHeight: 1.5,
             maxHeight: 160, overflowY: 'auto',
           }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#818CF8',
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-dim)',
               textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>
               <T k="pages.myqueuepage.ef283f">AI Transcript</T>
             </span>
@@ -1477,9 +1446,9 @@ export default function MyQueuePage() {
             <a href={`tel:${phone}`}
               style={{
                 fontSize: 13, padding: '7px 12px', borderRadius: 7,
-                background: 'rgba(52,211,153,0.12)', color: '#34D399',
-                border: '1px solid rgba(52,211,153,0.25)', textDecoration: 'none',
-                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+                background: 'var(--qs-info)', color: '#FFFFFF',
+                border: '1px solid var(--qs-info)', textDecoration: 'none',
+                fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5,
               }}>
               📞 {fmtPhone(phone)}
             </a>
@@ -1535,8 +1504,8 @@ export default function MyQueuePage() {
             onClick={() => setSelectedRenewal(event)}
             style={{
               fontSize: 13, padding: '7px 14px', borderRadius: 7,
-              border: '1px solid #3B82F6', background: '#3B82F6',
-              color: '#fff', cursor: 'pointer', fontWeight: 700,
+              border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
+              color: 'var(--qs-text)', cursor: 'pointer', fontWeight: 600,
               marginLeft: 'auto',
             }}>
             <T k="pages.myqueuepage.33c277">Open case →</T>
@@ -1592,7 +1561,7 @@ export default function MyQueuePage() {
           {
             label: 'Critical',
             value: focusStats.criticalCount,
-            color: focusStats.criticalCount > 0 ? '#F87171' : '#34D399',
+            color: focusStats.criticalCount > 0 ? 'var(--qs-danger)' : 'var(--qs-dim)',
             sub:   '≤ 3 days',
             filter: 'critical', isOn: cancelFilter === 'critical',
             apply: () => setCancelFilter(f => f === 'critical' ? 'all' : 'critical'),
@@ -1606,13 +1575,13 @@ export default function MyQueuePage() {
           {
             label: 'Contacts',
             value: focusStats.attemptedToday,
-            color: focusStats.attemptedToday > 0 ? '#34D399' : 'var(--qs-dim)',
+            color: focusStats.attemptedToday > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   'logged today',
           },
           {
             label: 'Untouched',
             value: focusStats.untouched,
-            color: focusStats.untouched > 5 ? '#FBBF24' : 'var(--qs-dim)',
+            color: focusStats.untouched > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   'never called',
             filter: 'never_called', isOn: cancelFilter === 'never_called',
             apply: () => setCancelFilter(f => f === 'never_called' ? 'all' : 'never_called'),
@@ -1621,7 +1590,7 @@ export default function MyQueuePage() {
           {
             label: closingMode === 'proactive' ? 'Proactive Window' : 'Closing Window',
             value: renewalStats.closingCount,
-            color: renewalStats.closingCount > 0 ? '#FBBF24' : '#34D399',
+            color: renewalStats.closingCount > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   closingMode === 'proactive'
               ? '≥ 21 days out · dbl-click for ≤14'
               : '≤ 14 days · dbl-click for ≥21',
@@ -1633,7 +1602,7 @@ export default function MyQueuePage() {
           {
             label: 'Rate Shocks',
             value: renewalStats.rateShockCount,
-            color: renewalStats.rateShockCount > 0 ? '#F87171' : 'var(--qs-dim)',
+            color: renewalStats.rateShockCount > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   '+15% or more',
             filter: 'rate_shock', isOn: renewalFilter === 'rate_shock',
             apply: () => setRenewalFilter(f => f === 'rate_shock' ? 'all' : 'rate_shock'),
@@ -1647,7 +1616,7 @@ export default function MyQueuePage() {
           {
             label: 'Untouched',
             value: renewalStats.untouched,
-            color: renewalStats.untouched > 5 ? '#FBBF24' : 'var(--qs-dim)',
+            color: renewalStats.untouched > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   'never called',
             filter: 'untouched', isOn: renewalFilter === 'untouched',
             apply: () => setRenewalFilter(f => f === 'untouched' ? 'all' : 'untouched'),
@@ -1655,7 +1624,7 @@ export default function MyQueuePage() {
           {
             label: '📅 Callbacks',
             value: renewalCases.filter(r => r.callback_at).length,
-            color: renewalCases.some(r => r.callback_at) ? '#60A5FA' : 'var(--qs-dim)',
+            color: renewalCases.some(r => r.callback_at) ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   'scheduled',
             filter: 'callbacks', isOn: renewalFilter === 'callbacks',
             apply: () => setRenewalFilter(f => f === 'callbacks' ? 'all' : 'callbacks'),
@@ -1663,7 +1632,9 @@ export default function MyQueuePage() {
           {
             label: '⏳ Crossing 21d',
             value: renewalStats.crossingCount,
-            color: renewalStats.crossingCount > 0 ? '#F87171' : '#34D399',
+            // Today's must-calls (untouched, about to hit the bill) — the one
+            // red tile on the renewal side.
+            color: renewalStats.crossingCount > 0 ? 'var(--qs-danger)' : 'var(--qs-dim)',
             sub:   'untouched · call before the bill',
             filter: 'crossing', isOn: renewalFilter === 'crossing',
             apply: () => setRenewalFilter(f => f === 'crossing' ? 'all' : 'crossing'),
@@ -1671,7 +1642,7 @@ export default function MyQueuePage() {
           {
             label: '💡 Bundle pitch',
             value: renewalCases.filter(isBundleTarget).length,
-            color: renewalCases.some(isBundleTarget) ? '#A78BFA' : 'var(--qs-dim)',
+            color: renewalCases.some(isBundleTarget) ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   'monoline · cross-sell gap',
             filter: 'bundle', isOn: renewalFilter === 'bundle',
             apply: () => setRenewalFilter(f => f === 'bundle' ? 'all' : 'bundle'),
@@ -1698,8 +1669,8 @@ export default function MyQueuePage() {
               className={clickable ? 'qs-focusable' : undefined}
               title={clickable ? (stat.applyDouble ? 'Click to filter · double-click to switch window' : (stat.isOn ? 'Clear filter' : `Filter the list to ${stat.label.toLowerCase()}`)) : undefined}
               style={{
-                textAlign: 'center', background: stat.isOn ? 'rgba(59,130,246,0.10)' : 'transparent',
-                border: '1px solid', borderColor: stat.isOn ? 'rgba(59,130,246,0.45)' : 'transparent',
+                textAlign: 'center', background: stat.isOn ? 'var(--qs-info-subtle)' : 'transparent',
+                border: '1px solid', borderColor: stat.isOn ? 'var(--qs-info)' : 'transparent',
                 borderRadius: 10, padding: '6px 4px',
                 cursor: clickable ? 'pointer' : 'default',
               }}>
@@ -1762,7 +1733,7 @@ export default function MyQueuePage() {
               <div style={{
                 fontSize: 16, fontWeight: 800,
                 fontFamily: "'DM Mono', monospace",
-                color: targetHit ? '#10B981' : 'var(--qs-bright)',
+                color: targetHit ? 'var(--qs-success)' : 'var(--qs-bright)',
               }}>
                 {callsToday}
                 <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--qs-muted)', marginLeft: 2 }}>
@@ -1779,14 +1750,12 @@ export default function MyQueuePage() {
                 height: '100%',
                 width: `${progressPct}%`,
                 borderRadius: 3,
-                background: targetHit ? '#10B981'
-                  : progressPct >= 50 ? '#3B82F6'
-                  : '#F59E0B',
+                background: targetHit ? 'var(--qs-success)' : 'var(--qs-info)',
                 transition: 'width 0.4s ease',
               }} />
             </div>
             {targetHit && (
-              <div style={{ fontSize: 11, color: '#B07A0E', marginTop: 4, fontWeight: 600 }}>
+              <div style={{ fontSize: 11, color: 'var(--qs-success)', marginTop: 4, fontWeight: 600 }}>
                 <T k="pages.myqueuepage.7556d5">✓ Daily target reached</T>
               </div>
             )}
@@ -1808,9 +1777,9 @@ export default function MyQueuePage() {
               style={{
                 padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600,
                 cursor: 'pointer', border: '1px solid',
-                borderColor: focusMode ? '#3B82F6' : 'var(--qs-border)',
-                background: focusMode ? 'rgba(59,130,246,0.12)' : 'var(--qs-card)',
-                color: focusMode ? '#3B82F6' : 'var(--qs-subtle)',
+                borderColor: focusMode ? 'var(--qs-info)' : 'var(--qs-border)',
+                background: focusMode ? 'var(--qs-info-subtle)' : 'var(--qs-card)',
+                color: focusMode ? 'var(--qs-info)' : 'var(--qs-subtle)',
                 transition: 'all 0.15s',
               }}
             >
@@ -1869,9 +1838,9 @@ export default function MyQueuePage() {
                       style={{
                         fontSize: 12, padding: '4px 10px', borderRadius: 20,
                         border: '1px solid',
-                        borderColor: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-border)',
-                        background: cancelFilter === f.key ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
-                        color: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-dim)',
+                        borderColor: cancelFilter === f.key ? 'var(--qs-info)' : 'var(--qs-border)',
+                        background: cancelFilter === f.key ? 'var(--qs-info-subtle)' : 'var(--qs-elevated)',
+                        color: cancelFilter === f.key ? 'var(--qs-info)' : 'var(--qs-dim)',
                         cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s',
                       }}
                     >
@@ -1930,7 +1899,7 @@ export default function MyQueuePage() {
                       className="qs-focusable"
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer',
-                        color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
+                        color: 'var(--qs-info)', fontSize: 13, fontWeight: 600, padding: 0,
                       }}
                     >
                       <T k="pages.myqueuepage.0b4db2">View all</T>
@@ -2030,7 +1999,7 @@ export default function MyQueuePage() {
                       className="qs-focusable"
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer',
-                        color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
+                        color: 'var(--qs-info)', fontSize: 13, fontWeight: 600, padding: 0,
                       }}
                     >
                       <T k="pages.myqueuepage.0b4db2">View all</T>
