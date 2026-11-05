@@ -2,8 +2,8 @@
 // The brand: the Cam Wiley Agency seal (small form), "Cam Wiley Agency", and a line
 // under it ("Allstate Agent · Serving all of Georgia", editable in the copy editor).
 // `tone`: 'dark' on the blue header, 'light' on white. One size everywhere, so it always
-// reads as the same logo. `tagline` adds the line; only the main site header uses it
-// (the menu, Rate Check steps, partner portal and agency app show seal and name only).
+// reads as the same logo. `tagline` adds the line under the name (unused for now: the
+// seal and name stand alone everywhere).
 import { useId } from 'react';
 import { T } from './SiteCopy';
 
