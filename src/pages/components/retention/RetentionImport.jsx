@@ -15,6 +15,7 @@ import CrossSellUploadModal from "../cross-sell/CrossSellUploadModal";
 // reassignment + workload-rebalance paths so all of them agree on what a
 // household is.
 import { householdKey } from "../../../lib/householdAssign";
+import { NEUTRAL_CHIP, DANGER_CHIP, SUCCESS_CHIP } from "../../../lib/statusChips";
 
 
 async function syncRetentionQueue(supabase) {
@@ -382,9 +383,9 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
             <div key={c.id} style={{
               background: 'var(--qs-elevated)',
               border: `1px solid ${
-                decision === 'auto_resolved' ? '#10B98133'
-                : decision === 'lost' ? '#EF444433'
-                : decision === 'keep' ? '#3B82F633'
+                decision === 'auto_resolved' ? 'var(--qs-success-border)'
+                : decision === 'lost' ? 'var(--qs-danger-border)'
+                : decision === 'keep' ? 'var(--qs-info-border)'
                 : 'var(--qs-border)'
               }`,
               borderRadius: 8, padding: '10px 14px',
@@ -411,17 +412,18 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 {[
-                  { value: 'auto_resolved', label: 'Paid ✓', color: '#B07A0E' },
-                  { value: 'lost',          label: 'Lost',   color: '#EF4444' },
-                  { value: 'keep',          label: 'Keep in Queue', color: '#3B82F6' },
+                  { value: 'auto_resolved', label: 'Paid ✓', on: SUCCESS_CHIP },
+                  { value: 'lost',          label: 'Lost',   on: DANGER_CHIP },
+                  { value: 'keep',          label: 'Keep in Queue',
+                    on: { background: 'var(--qs-info-subtle)', border: '1px solid var(--qs-info-border)', color: 'var(--qs-info)' } },
                 ].map(opt => (
                   <button key={opt.value} onClick={() => onDecide(c.id, opt.value)}
                     style={{
-                      fontSize: 11, fontWeight: 600, padding: '4px 10px',
-                      borderRadius: 6, border: `1px solid ${opt.color}33`,
-                      background: decision === opt.value ? `${opt.color}22` : 'transparent',
-                      color: decision === opt.value ? opt.color : 'var(--qs-subtle)',
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6,
                       cursor: 'pointer', transition: 'all 0.15s',
+                      ...(decision === opt.value
+                        ? opt.on
+                        : { background: 'transparent', border: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }),
                     }}>
                     {opt.label}
                   </button>
@@ -434,16 +436,16 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
 
       {Object.keys(decisions).length > 0 && (
         <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
-          {counts.paid > 0 && <span style={{ color: '#B07A0E', marginRight: 12 }}>✓ {counts.paid} <T k="pages.components.retention.retentionimport.0a7436">marked paid</T></span>}
-          {counts.lost > 0 && <span style={{ color: '#EF4444', marginRight: 12 }}>✗ {counts.lost} <T k="pages.components.retention.retentionimport.d1d655">marked lost</T></span>}
-          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} <T k="pages.components.retention.retentionimport.924f81">kept in queue</T></span>}
+          {counts.paid > 0 && <span style={{ color: 'var(--qs-success)', marginRight: 12 }}>✓ {counts.paid} <T k="pages.components.retention.retentionimport.0a7436">marked paid</T></span>}
+          {counts.lost > 0 && <span style={{ color: 'var(--qs-danger)', marginRight: 12 }}>✗ {counts.lost} <T k="pages.components.retention.retentionimport.d1d655">marked lost</T></span>}
+          {counts.keep > 0 && <span style={{ color: 'var(--qs-info)' }}>↺ {counts.keep} <T k="pages.components.retention.retentionimport.924f81">kept in queue</T></span>}
         </div>
       )}
 
       <button className="btn-ghost" disabled={!allDecided} onClick={onConfirmAll}
         style={{
           opacity: allDecided ? 1 : 0.4,
-          color: '#3B82F6', borderColor: '#3B82F655', fontWeight: 600,
+          color: 'var(--qs-info)', borderColor: 'var(--qs-info)', fontWeight: 600,
         }}>
         <T k="pages.components.retention.retentionimport.c9cc8c">Save</T> {cases.length} <T k="pages.components.retention.retentionimport.549cc2">review decision</T>{cases.length !== 1 ? 's' : ''}
       </button>
@@ -490,12 +492,12 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           {/* Detail grid — color values used as inline style props */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 20 }}>
             {[
-              { label: 'New Policies',    value: diffResult.toAdd.length,    color: '#B07A0E' },
-              { label: 'Updated',         value: diffResult.toUpdate.length,  color: '#3B82F6' },
-              { label: 'Confirmed Lost',  value: diffResult.autoLost.length,  color: '#EF4444' },
-              { label: 'Rewritten',       value: diffResult.autoRewritten?.length ?? 0, color: '#34D399' },
-              { label: 'Cleared (Paid)',  value: diffResult.autoPaid?.length ?? 0, color: '#B07A0E' },
-              { label: 'Needs Review',    value: diffResult.toReview.length,  color: '#F59E0B' },
+              { label: 'New Policies',    value: diffResult.toAdd.length,    color: 'var(--qs-bright)' },
+              { label: 'Updated',         value: diffResult.toUpdate.length,  color: 'var(--qs-bright)' },
+              { label: 'Confirmed Lost',  value: diffResult.autoLost.length,  color: 'var(--qs-danger)' },
+              { label: 'Rewritten',       value: diffResult.autoRewritten?.length ?? 0, color: 'var(--qs-success)' },
+              { label: 'Cleared (Paid)',  value: diffResult.autoPaid?.length ?? 0, color: 'var(--qs-success)' },
+              { label: 'Needs Review',    value: diffResult.toReview.length,  color: 'var(--qs-bright)' },
             ].filter(item => item.value > 0).map(({ label, value, color }) => (
               <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
                 <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4 }}>{label}</div>
@@ -514,9 +516,9 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           )}
 
           {diffResult.autoLost.length > 0 && (
-            <div style={{ fontSize: 12, background: '#EF444411', border: '1px solid #EF444433',
+            <div style={{ fontSize: 12, background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)',
               borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
-              <span style={{ color: '#EF4444', fontWeight: 600 }}>
+              <span style={{ color: 'var(--qs-danger)', fontWeight: 600 }}>
                 ✗ {diffResult.autoLost.length} <T k="pages.components.retention.retentionimport.6a8dd5">confirmed lost</T>
               </span>
               {' '}<T k="pages.components.retention.retentionimport.35e2df">— matched termination report. Marked lost automatically.</T>
@@ -533,9 +535,9 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           )}
 
           {diffResult.autoRewritten?.length > 0 && (
-            <div style={{ fontSize: 12, background: '#34D39911', border: '1px solid #34D39933',
+            <div style={{ fontSize: 12, background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)',
               borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
-              <span style={{ color: '#34D399', fontWeight: 600 }}>
+              <span style={{ color: 'var(--qs-success)', fontWeight: 600 }}>
                 ✓ {diffResult.autoRewritten.length} <T k="pages.components.retention.retentionimport.487c15">rewritten / transferred</T>
               </span>
               {' '}<T k="pages.components.retention.retentionimport.ca20ba">— cancelled only to move to a new policy. Counted as retained, not lost.</T>
@@ -552,9 +554,9 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           )}
 
           {diffResult.autoPaid?.length > 0 && (
-            <div style={{ fontSize: 12, background: '#10B98111', border: '1px solid #10B98133',
+            <div style={{ fontSize: 12, background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)',
               borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
-              <span style={{ color: '#B07A0E', fontWeight: 600 }}>
+              <span style={{ color: 'var(--qs-success)', fontWeight: 600 }}>
                 ✓ {diffResult.autoPaid.length} <T k="pages.components.retention.retentionimport.8e79ef">cleared as paid</T>
               </span>
               {' '}<T k="pages.components.retention.retentionimport.16f0ff">— absent from this snapshot and not on the committed termination report covering their cancel month. Closed automatically.</T>
@@ -1548,15 +1550,15 @@ function ImportTab({
           border: '1px solid var(--qs-border)', borderRadius: 10, padding: '10px 20px',
         }}>
           {[
-            { step: '\u2460', label: 'Termination',       color: '#EF4444', sublabel: 'closes lost cases' },
-            { step: '\u2461', label: 'Cancellation Audit', color: '#F59E0B', sublabel: 'advances staged cases' },
-            { step: '\u2462', label: 'Pending Cancel',     color: '#F59E0B', sublabel: 'adds at-risk cases' },
-            { step: '\u2463', label: 'Renewal',            color: '#3B82F6', sublabel: 'adds renewal queue' },
-            { step: '\u2464', label: 'Cross-Sell',         color: '#B07A0E', sublabel: 'pitch opportunities' },
+            { step: '\u2460', label: 'Termination',       sublabel: 'closes lost cases' },
+            { step: '\u2461', label: 'Cancellation Audit', sublabel: 'advances staged cases' },
+            { step: '\u2462', label: 'Pending Cancel',     sublabel: 'adds at-risk cases' },
+            { step: '\u2463', label: 'Renewal',            sublabel: 'adds renewal queue' },
+            { step: '\u2464', label: 'Cross-Sell',         sublabel: 'pitch opportunities' },
           ].map((s, i, arr) => (
             <div key={s.step} style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ textAlign: 'center', padding: '0 12px' }}>
-                <div style={{ fontSize: 16, color: s.color }}>{s.step}</div>
+                <div style={{ fontSize: 16, color: 'var(--qs-dim)' }}>{s.step}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-text)', marginTop: 2 }}>{s.label}</div>
                 <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>{s.sublabel}</div>
               </div>
@@ -1576,11 +1578,11 @@ function ImportTab({
       <div style={{
         marginTop: 16,
         background: 'var(--qs-card)',
-        border: '1px solid #EF444433',
+        border: '1px solid var(--qs-border)',
         borderRadius: 12, padding: 20
       }}>
         <div style={{
-          fontSize: 12, fontWeight: 600, color: '#EF4444',
+          fontSize: 12, fontWeight: 600, color: 'var(--qs-text)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16
         }}>
           {'\u2460'} <T k="pages.components.retention.retentionimport.b079de">Termination Report</T>
@@ -1594,7 +1596,7 @@ function ImportTab({
       {/* ② Cancellation Audit — full width */}
       <div style={{ marginTop: 16, background: 'var(--qs-card)', border: '1px solid var(--qs-danger-border)',
         borderRadius: 12, padding: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-danger)',
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-text)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           {'\u2461'} <T k="pages.components.retention.retentionimport.e9c280">Cancellation Audit</T>
         </div>
@@ -1623,8 +1625,8 @@ function ImportTab({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 128, alignItems: 'stretch', marginTop: 16 }}>
 
         {/* ③ Pending Cancellation */}
-        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-warning-border)', borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-warning)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-text)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
             {'\u2462'} <T k="pages.components.retention.retentionimport.b2423b">Pending Cancellation Report</T>
           </div>
           <UploadTab
@@ -1645,8 +1647,8 @@ function ImportTab({
         </div>
 
         {/* ④ Renewal Audit */}
-        <div style={{ background: 'var(--qs-card)', border: '1px solid #3B82F633', borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-info)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-text)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
             {'\u2463'} <T k="pages.components.retention.retentionimport.68865f">Renewal Audit Report</T>
           </div>
           <RenewalUploadZone
@@ -1671,11 +1673,11 @@ function CrossSellUploadCard({ agencyId, currentUserId }) {
     <div style={{
       marginTop: 16,
       background: 'var(--qs-card)',
-      border: '1px solid #10B98133',
+      border: '1px solid var(--qs-border)',
       borderRadius: 12, padding: 20,
     }}>
       <div style={{
-        fontSize: 12, fontWeight: 600, color: '#B07A0E',
+        fontSize: 12, fontWeight: 600, color: 'var(--qs-text)',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16,
       }}>
         {'⑤'} <T k="pages.components.retention.retentionimport.9de67d">Cross-Sell Audit</T>
@@ -1688,7 +1690,7 @@ function CrossSellUploadCard({ agencyId, currentUserId }) {
         onClick={() => setOpen(true)}
         style={{
           padding: '10px 18px', borderRadius: 8, border: 'none',
-          background: '#10B981', color: '#fff',
+          background: 'var(--qs-info)', color: '#fff',
           fontSize: 14, fontWeight: 600, cursor: 'pointer',
         }}
       >

@@ -305,9 +305,9 @@ export default function ServiceStaffingTab({ agencyId }) {
   // ── Helpers ─────────────────────────────────────────────────────────────
   const fmt$ = n => `$${Math.round(n).toLocaleString()}`;
   const fmtK = n => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : fmt$(n);
-  // Component API color values — passed as style props to Stat component
-  const roiColor = calc.netROI > 500 ? '#10B981'
-    : calc.netROI > -500 ? '#F59E0B' : '#EF4444';
+  // Net ROI reads gold when clearly positive, red when clearly negative.
+  const roiColor = calc.netROI > 500 ? 'var(--qs-success)'
+    : calc.netROI > -500 ? 'var(--qs-text)' : 'var(--qs-danger)';
 
   function Field({ label, value, onChange, prefix = '', suffix = '', min = 0, max = 10000, step = 1, disabled = false }) {
     return (
@@ -328,7 +328,6 @@ export default function ServiceStaffingTab({ agencyId }) {
     );
   }
 
-  // Stat color prop — hex intentionally (rendered via style={{ color }})
   function Stat({ label, value, sub, color = 'var(--qs-text)', large = false }) {
     return (
       <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--qs-border)' }}>
@@ -344,8 +343,8 @@ export default function ServiceStaffingTab({ agencyId }) {
   return (
     <div>
       {liveData && (
-        <div style={{ fontSize: 12, color: '#B07A0E', marginBottom: 16,
-          background: 'rgb(16 185 129 / 0.07)', borderRadius: 6, padding: '6px 12px', display: 'inline-block' }}>
+        <div style={{ fontSize: 12, color: 'var(--qs-success)', marginBottom: 16,
+          background: 'var(--qs-success-subtle)', borderRadius: 6, padding: '6px 12px', display: 'inline-block' }}>
           <T k="pages.components.planning.servicestaffingtab.a30306">✓ Using live book data —</T> {monthlyPolicies} <T k="pages.components.planning.servicestaffingtab.f2d828">renewals +</T> {pendingCancelPerMonth} <T k="pages.components.planning.servicestaffingtab.ab3920">pending cancels/mo ·</T> {commissionRate}<T k="pages.components.planning.servicestaffingtab.faef11">% blended commission</T>{dualRiskMonthly > 0 && ` · ${dualRiskMonthly} dual-risk deduped`}
         </div>
       )}
@@ -480,18 +479,16 @@ export default function ServiceStaffingTab({ agencyId }) {
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)',
               textTransform: 'uppercase', marginBottom: 16 }}><T k="pages.components.planning.servicestaffingtab.bf090f">ROI Summary</T></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-              {/* Stat color prop — hex intentionally */}
-              <Stat label="Commission Saved/mo" value={fmtK(calc.commSaved)} color="#10B981" />
+              <Stat label="Commission Saved/mo" value={fmtK(calc.commSaved)} color="var(--qs-success)" />
               <Stat label="New Hire Cost/mo"    value={fmtK(monthlyCost)}    color="var(--qs-dim)" />
               <Stat label="Net ROI/mo"          value={fmt$(calc.netROI)}    color={roiColor} large />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              {/* Stat color prop — hex intentionally */}
               <Stat label="Annual Net ROI"  value={fmtK(calc.annualNetROI)}          color={roiColor} />
               <Stat label="ROI %"           value={`${Math.round(calc.roiPct)}%`}    color={roiColor} />
               <Stat label="Payback Period"
                 value={calc.paybackMonths === Infinity ? '∞' : `${calc.paybackMonths.toFixed(1)} mo`}
-                color={calc.paybackMonths <= 12 ? '#10B981' : '#F59E0B'} />
+                color={calc.paybackMonths <= 12 ? 'var(--qs-success)' : 'var(--qs-text)'} />
             </div>
             <div style={{ marginTop: 14, background: 'var(--qs-elevated)', borderRadius: 8,
               padding: '10px 14px', fontSize: 13, color: 'var(--qs-dim)' }}>
@@ -504,7 +501,7 @@ export default function ServiceStaffingTab({ agencyId }) {
           </div>
 
           {/* Part-Time vs Full-Time Comparison */}
-          <div style={{ background: 'var(--qs-card)', border: '1px solid rgb(59 130 246 / 0.2)', borderRadius: 12, padding: 20 }}>
+          <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-info)',
               textTransform: 'uppercase', marginBottom: 16 }}><T k="pages.components.planning.servicestaffingtab.6ffdfc">Part-Time vs Full-Time</T></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -519,7 +516,6 @@ export default function ServiceStaffingTab({ agencyId }) {
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 10 }}><T k="pages.components.planning.servicestaffingtab.c2d0ff">65 hrs/mo · 3 hrs/day</T></div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {/* Array color values rendered via style={{ color }} — hex intentionally */}
                   {[
                     ['Monthly cost',       fmtK(calc.ftVsPt.ptMonthlyCost)],
                     ['Commission saved',   fmtK(calc.ftVsPt.ptCommSaved)],
@@ -529,7 +525,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                       <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
                       <span style={{ fontSize: 12, fontWeight: 600,
                         color: label === 'Net ROI/mo'
-                          ? (calc.ftVsPt.ptNetROI > 0 ? '#10B981' : '#EF4444')
+                          ? (calc.ftVsPt.ptNetROI > 0 ? 'var(--qs-success)' : 'var(--qs-danger)')
                           : 'var(--qs-text)' }}>{val}</span>
                     </div>
                   ))}
@@ -546,7 +542,6 @@ export default function ServiceStaffingTab({ agencyId }) {
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 10 }}><T k="pages.components.planning.servicestaffingtab.ba2020">160 hrs/mo</T></div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {/* Array color values rendered via style={{ color }} — hex intentionally */}
                   {[
                     ['Monthly cost',     fmtK(calc.ftVsPt.ftMonthlyCost)],
                     ['Commission saved', fmtK(calc.ftVsPt.ftCommSaved)],
@@ -556,7 +551,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                       <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
                       <span style={{ fontSize: 12, fontWeight: 600,
                         color: label === 'Net ROI/mo'
-                          ? (calc.ftVsPt.ftNetROI > 0 ? '#10B981' : '#EF4444')
+                          ? (calc.ftVsPt.ftNetROI > 0 ? 'var(--qs-success)' : 'var(--qs-danger)')
                           : 'var(--qs-text)' }}>{val}</span>
                     </div>
                   ))}
@@ -575,14 +570,13 @@ export default function ServiceStaffingTab({ agencyId }) {
                 <Stat label="New hire cases/mo"      value={calc.hireWorkableCases} />
                 <Stat label="Existing rep cases"   value={calc.existingRepCases}
                   sub={existingRepHours === 0 ? 'Currently 0 — set above to model' : undefined} />
-                {/* Stat color prop — hex intentionally */}
-                <Stat label="Total team cases/mo"    value={calc.totalWorkableCases} color="#3B82F6" />
+                  <Stat label="Total team cases/mo"    value={calc.totalWorkableCases} color="var(--qs-bright)" />
                 <Stat label="Renewal queue/mo"     value={monthlyPolicies} />
                 <Stat label="Pending cancel/mo"    value={pendingCancelPerMonth} />
-                <Stat label="Total queue/mo"       value={calc.totalQueue} color="#3B82F6" />
+                <Stat label="Total queue/mo"       value={calc.totalQueue} color="var(--qs-bright)" />
                 <Stat label="Utilization"
                   value={`${Math.round(calc.utilization)}%`}
-                  color={calc.utilization > 100 ? '#EF4444' : calc.utilization > 85 ? '#F59E0B' : '#10B981'}
+                  color={calc.utilization > 100 ? 'var(--qs-danger)' : calc.utilization > 85 ? 'var(--qs-text)' : 'var(--qs-success)'}
                   sub={calc.utilization > 100 ? '⚠ Queue exceeds capacity' : 'Queue covered'} />
               </div>
             </div>
@@ -592,24 +586,22 @@ export default function ServiceStaffingTab({ agencyId }) {
                 textTransform: 'uppercase', marginBottom: 12 }}><T k="pages.components.planning.servicestaffingtab.f07974">Revenue Impact</T></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Stat label="Cases contacted/mo"  value={calc.contacted} />
-                {/* Stat color prop — hex intentionally */}
-                <Stat label="Cases saved/mo"      value={calc.saved}            color="#10B981" />
-                <Stat label="Premium retained/mo" value={fmtK(calc.premiumRetained)} color="#10B981" />
-                <Stat label="Commission saved/mo" value={fmtK(calc.commSaved)}  color="#10B981" />
+                  <Stat label="Cases saved/mo"      value={calc.saved}            color="var(--qs-success)" />
+                <Stat label="Premium retained/mo" value={fmtK(calc.premiumRetained)} color="var(--qs-success)" />
+                <Stat label="Commission saved/mo" value={fmtK(calc.commSaved)}  color="var(--qs-success)" />
               </div>
             </div>
           </div>
 
           {/* Multi-line hidden exposure */}
-          <div style={{ background: 'var(--qs-card)', border: '1px solid rgb(245 158 11 / 0.2)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B',
+          <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)',
               textTransform: 'uppercase', marginBottom: 12 }}><T k="pages.components.planning.servicestaffingtab.27788a">⚡ Multi-Line Hidden Exposure</T></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
               <Stat label="Bundled at risk/mo"        value={calc.bundledAtRisk} />
-              {/* Stat color prop — hex intentionally */}
-              <Stat label="Property policies at risk"  value={calc.propertyAtRisk}      color="#F59E0B" />
-              <Stat label="Hidden commission/mo"       value={fmtK(calc.hiddenComm)}    color="#F59E0B" />
-              <Stat label="True exposure/mo"           value={fmtK(calc.trueCommAtRisk)} color="#EF4444"
+              <Stat label="Property policies at risk"  value={calc.propertyAtRisk}      color="var(--qs-bright)" />
+              <Stat label="Hidden commission/mo"       value={fmtK(calc.hiddenComm)}    color="var(--qs-bright)" />
+              <Stat label="True exposure/mo"           value={fmtK(calc.trueCommAtRisk)} color="var(--qs-danger)"
                 sub="direct + hidden" />
             </div>
           </div>
@@ -644,9 +636,9 @@ export default function ServiceStaffingTab({ agencyId }) {
                     {s.isPrincipal
                       ? [
                           ['Saves/mo',          s.saved,                          'var(--qs-text)'],
-                          ['Commission saved',  `${fmtK(s.commission)}/mo`,       '#10B981'],
+                          ['Commission saved',  `${fmtK(s.commission)}/mo`,       'var(--qs-success)'],
                           ['Marginal cost',     '$0',                              'var(--qs-dim)'],
-                          ['Net value',         `${fmt$(s.netROI)}/mo`,           '#10B981'],
+                          ['Net value',         `${fmt$(s.netROI)}/mo`,           'var(--qs-success)'],
                         ].map(([label, val, color]) => (
                           <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
@@ -655,8 +647,8 @@ export default function ServiceStaffingTab({ agencyId }) {
                         ))
                       : [
                           ['Saved/mo',    s.saved,                        'var(--qs-text)'],
-                          ['Commission',  `${fmtK(s.commission)}/mo`,     '#10B981'],
-                          ['Net ROI',     `${fmt$(s.netROI)}/mo`,         s.netROI > 0 ? '#10B981' : s.netROI > -500 ? '#F59E0B' : '#EF4444'],
+                          ['Commission',  `${fmtK(s.commission)}/mo`,     'var(--qs-success)'],
+                          ['Net ROI',     `${fmt$(s.netROI)}/mo`,         s.netROI > 0 ? 'var(--qs-success)' : s.netROI > -500 ? 'var(--qs-text)' : 'var(--qs-danger)'],
                           ['Payback',     s.payback === Infinity ? '∞' : `${s.payback.toFixed(1)} mo`, 'var(--qs-dim)'],
                         ].map(([label, val, color]) => (
                           <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>

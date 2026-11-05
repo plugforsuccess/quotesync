@@ -12,6 +12,7 @@ import { useRepActivity } from '../../../hooks/useRepActivity';
 import { useDailyTeamActivity } from '../../../hooks/useDailyTeamActivity';
 import { useQueueCoverage } from '../../../hooks/useQueueCoverage';
 import { titleCaseName, displayName } from '../../../lib/names';
+import { NEUTRAL_CHIP, SUCCESS_CHIP } from '../../../lib/statusChips';
 
 // Live: when a rep logs a call, saves a case, or completes a task, refresh the
 // activity views within seconds — a live action feed, not a manual refresh.
@@ -38,13 +39,12 @@ function fmt$(n) {
 }
 // Right-aligned tabular figures so numeric columns line up down the table.
 const NUM = { textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontFamily: "'DM Mono', monospace" };
-// Call-outcome color: blue = reached, amber = tried but missed / deferred,
-// red = negative, muted = neutral/unknown. (Saves render separately in green.)
+// Call-outcome color: red = negative, plain text = reached, dim = tried but
+// missed / deferred / unknown. (Saves render separately in gold.)
 function outcomeColor(result) {
   const r = String(result || '').toLowerCase();
-  if (/(lost|wrong|disconnect|declin|refus|dead)/.test(r)) return '#F87171';
-  if (/(no[_ ]?answer|voicemail|\bvm\b|left|busy|callback|call[_ ]?back|scheduled|snooz)/.test(r)) return '#FBBF24';
-  if (/(reach|answered|spoke|contacted|connected)/.test(r)) return '#60A5FA';
+  if (/(lost|wrong|disconnect|declin|refus|dead)/.test(r)) return 'var(--qs-danger)';
+  if (/(reach|answered|spoke|contacted|connected)/.test(r)) return 'var(--qs-text)';
   return 'var(--qs-dim)';
 }
 function localDay(d = new Date()) { return d.toLocaleDateString('en-CA'); }
@@ -64,20 +64,19 @@ function WorkedRows({ worked, k, onCustomer }) {
     <tr key={`${k}-${i}`} style={{ background: 'var(--qs-elevated)' }}>
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
-          background: w.kind === 'cancel' ? '#EF444422' : '#3B82F622',
-          color: w.kind === 'cancel' ? '#F87171' : '#60A5FA' }}>
+          ...NEUTRAL_CHIP, color: w.kind === 'cancel' ? 'var(--qs-text)' : 'var(--qs-dim)' }}>
           {w.kind === 'cancel' ? 'CANCEL' : 'RENEWAL'}
         </span>
         {nm
           ? <button type="button" onClick={() => onCustomer?.(w.name)} title="Open customer"
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
-                fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
+                fontSize: 12, color: 'var(--qs-info)', fontWeight: 600 }}>
               {nm} ↗
             </button>
           : <span style={{ color: 'var(--qs-muted)' }} title="No customer name on this case">—</span>}
         {' · '}
         {w.saved
-          ? <span style={{ color: '#34D399', fontWeight: 600 }}><T k="pages.components.retention.repactivitypanel.a02001">✓ saved</T>{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
+          ? <span style={{ color: 'var(--qs-success)', fontWeight: 600 }}><T k="pages.components.retention.repactivitypanel.a02001">✓ saved</T>{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
           : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
         {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
       </td>
@@ -103,7 +102,7 @@ function TaskDoneRows({ tasks, k }) {
     <tr key={`${k}-task-${i}`} style={{ background: 'var(--qs-elevated)' }}>
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
-          background: '#10B98122', color: '#34D399' }}><T k="pages.components.retention.repactivitypanel.1e9906">TASK ✓</T></span>
+          ...SUCCESS_CHIP }}><T k="pages.components.retention.repactivitypanel.1e9906">TASK ✓</T></span>
         <span style={{ color: 'var(--qs-text)' }}>{t.title}</span>
         {t.customer_name ? ` · ${titleCaseName(t.customer_name)}` : ''}
       </td>
@@ -136,8 +135,8 @@ function RepTimeline({ agencyId, employees }) {
         </select>
         {data && (
           <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-            <T k="pages.components.retention.repactivitypanel.d6928a">last 14 days ·</T> <strong style={{ color: '#B07A0E' }}>{data.totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T>{' '}
-            <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
+            <T k="pages.components.retention.repactivitypanel.d6928a">last 14 days ·</T> <strong style={{ color: 'var(--qs-success)' }}>{data.totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T>{' '}
+            <strong style={{ color: 'var(--qs-success)' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
           </div>
         )}
       </div>
@@ -160,10 +159,10 @@ function RepTimeline({ agencyId, employees }) {
                     <td style={{ fontWeight: 600 }}>{dayLabel(d.date)} {expandable ? (openDay === d.date ? '▾' : '▸') : ''}</td>
                     <td style={NUM}>{d.attempts || '—'}</td>
                     <td style={NUM}>{d.reached || '—'}</td>
-                    <td style={{ ...NUM, fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-muted)' }}>
+                    <td style={{ ...NUM, fontWeight: 700, color: saves ? 'var(--qs-success)' : 'var(--qs-muted)' }}>
                       {saves ? `${saves} (${d.cancelSaves}c/${d.renewalSaves}r)` : '—'}
                     </td>
-                    <td style={{ ...NUM, color: d.premium ? '#10B981' : 'var(--qs-muted)' }}>{d.premium ? fmt$(d.premium) : '—'}</td>
+                    <td style={{ ...NUM, color: d.premium ? 'var(--qs-success)' : 'var(--qs-muted)' }}>{d.premium ? fmt$(d.premium) : '—'}</td>
                     <td style={NUM}>{d.tasksDone || '—'}</td>
                   </tr>
                   {openDay === d.date && <WorkedRows worked={d.worked} k={d.date} onCustomer={onCustomer} />}
@@ -207,7 +206,7 @@ function DailyTeam({ agencyId, employees }) {
         <button onClick={() => shiftDay(1)} disabled={date >= localDay()} className="btn-ghost" style={{ padding: '6px 10px' }}>›</button>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}>{dayLabel(date)}</span>
         <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-          <T k="pages.components.retention.repactivitypanel.617d1d">team:</T> <strong style={{ color: '#B07A0E' }}>{totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T> <strong style={{ color: '#10B981' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{totals.attempts ? ` (${Math.round((totals.reached / totals.attempts) * 100)}% reached)` : ''} · {totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
+          <T k="pages.components.retention.repactivitypanel.617d1d">team:</T> <strong style={{ color: 'var(--qs-success)' }}>{totals.saves}</strong> <T k="pages.components.retention.repactivitypanel.c94a10">saves ·</T> <strong style={{ color: 'var(--qs-success)' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} <T k="pages.components.retention.repactivitypanel.f2bb91">calls</T>{totals.attempts ? ` (${Math.round((totals.reached / totals.attempts) * 100)}% reached)` : ''} · {totals.tasksDone} <T k="pages.components.retention.repactivitypanel.2cb1ad">tasks</T>
         </div>
       </div>
       {isLoading ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}><T k="pages.components.retention.repactivitypanel.5f02f0">Loading…</T></div>
@@ -229,10 +228,10 @@ function DailyTeam({ agencyId, employees }) {
                     <td style={{ fontWeight: 600 }}>{empName(e)} {expandable ? (openRep === e.id ? '▾' : '▸') : ''}</td>
                     <td style={NUM}>{a.attempts || '—'}</td>
                     <td style={NUM}>{a.reached || '—'}</td>
-                    <td style={{ ...NUM, fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-muted)' }}>
+                    <td style={{ ...NUM, fontWeight: 700, color: saves ? 'var(--qs-success)' : 'var(--qs-muted)' }}>
                       {saves ? `${saves} (${a.cancelSaves}c/${a.renewalSaves}r)` : '—'}
                     </td>
-                    <td style={{ ...NUM, color: a.premium ? '#10B981' : 'var(--qs-muted)' }}>{a.premium ? fmt$(a.premium) : '—'}</td>
+                    <td style={{ ...NUM, color: a.premium ? 'var(--qs-success)' : 'var(--qs-muted)' }}>{a.premium ? fmt$(a.premium) : '—'}</td>
                     <td style={NUM}>{a.tasksDone || '—'}</td>
                   </tr>
                   {openRep === e.id && <WorkedRows worked={a.worked} k={e.id} onCustomer={onCustomer} />}
@@ -275,20 +274,20 @@ function QueueCoverage({ agencyId }) {
               <tr key={r.empId}>
                 <td style={{ fontWeight: 600 }}>{r.name}</td>
                 <td style={{ fontWeight: 700 }}>{r.queue}</td>
-                <td style={{ color: r.untouched ? '#FBBF24' : 'var(--qs-muted)', fontWeight: r.untouched ? 700 : 400 }}>
+                <td style={{ color: r.untouched ? 'var(--qs-text)' : 'var(--qs-muted)', fontWeight: r.untouched ? 700 : 400 }}>
                   {r.untouched || '—'}{r.overdue ? ` · ${r.overdue} overdue` : ''}
                 </td>
-                <td style={{ color: r.touchedToday ? '#10B981' : 'var(--qs-muted)', fontWeight: 700 }}>{r.touchedToday || '—'}</td>
+                <td style={{ color: r.touchedToday ? 'var(--qs-text)' : 'var(--qs-muted)', fontWeight: 700 }}>{r.touchedToday || '—'}</td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ minWidth: 44, color: hit ? '#10B981' : 'var(--qs-text)', fontWeight: 600 }}>{r.callsToday}/{r.target}</span>
-                    <Bar pct={targetPct} color={hit ? '#10B981' : targetPct >= 50 ? '#3B82F6' : '#F59E0B'} />
+                    <span style={{ minWidth: 44, color: hit ? 'var(--qs-success)' : 'var(--qs-text)', fontWeight: 600 }}>{r.callsToday}/{r.target}</span>
+                    <Bar pct={targetPct} color={hit ? 'var(--qs-success)' : 'var(--qs-info)'} />
                   </div>
                 </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ minWidth: 36, color: 'var(--qs-dim)' }}>{cover}%</span>
-                    <Bar pct={cover} color={cover >= 80 ? '#10B981' : cover >= 40 ? '#3B82F6' : '#F59E0B'} />
+                    <Bar pct={cover} color={cover >= 80 ? 'var(--qs-success)' : 'var(--qs-info)'} />
                   </div>
                 </td>
               </tr>
@@ -311,7 +310,7 @@ export default function RepActivityPanel({ agencyId }) {
   const tab = (active) => ({
     padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
     border: '1px solid', borderColor: active ? 'var(--qs-info)' : 'var(--qs-border)',
-    background: active ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
+    background: active ? 'var(--qs-info-subtle)' : 'var(--qs-elevated)',
     color: active ? 'var(--qs-info)' : 'var(--qs-dim)', fontFamily: 'inherit',
   });
 
@@ -320,12 +319,10 @@ export default function RepActivityPanel({ agencyId }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.components.retention.repactivitypanel.ecfc2d">Activity</T></h3>
         <span title="Updates live as reps work" style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
-          fontSize: 11, fontWeight: 700, color: '#34D399' }}>
-          <span style={{ width: 7, height: 7, borderRadius: 4, background: '#34D399',
-            boxShadow: '0 0 0 0 rgba(52,211,153,0.6)', animation: 'pulse 2s infinite' }} />
+          fontSize: 11, fontWeight: 700, color: 'var(--qs-success)' }}>
+          <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--qs-success)' }} />
           <T k="pages.components.retention.repactivitypanel.f35d25">LIVE</T>
         </span>
-        <style>{`@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,0.5)}70%{box-shadow:0 0 0 6px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}`}</style>
         <div style={{ display: 'flex', gap: 6, marginLeft: 6 }}>
           <button style={tab(mode === 'queue')} onClick={() => setMode('queue')}><T k="pages.components.retention.repactivitypanel.1d55af">Queue — today</T></button>
           <button style={tab(mode === 'daily')} onClick={() => setMode('daily')}><T k="pages.components.retention.repactivitypanel.296863">Daily — team</T></button>

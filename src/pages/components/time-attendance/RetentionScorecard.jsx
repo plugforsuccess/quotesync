@@ -41,20 +41,20 @@ export default function RetentionScorecard({ metrics, isLoading }) {
   const fmtPct = (r) => r !== null && r !== undefined ? `${Math.round(r * 100)}%` : '—';
 
   const saveRateColor = metrics.cancelSaveRate === null ? 'var(--qs-dim)'
-    : metrics.cancelSaveRate >= 0.7 ? '#10B981'
-    : metrics.cancelSaveRate >= 0.5 ? '#F59E0B'
-    : '#EF4444';
+    : metrics.cancelSaveRate >= 0.7 ? 'var(--qs-success)'
+    : metrics.cancelSaveRate >= 0.5 ? 'var(--qs-text)'
+    : 'var(--qs-danger)';
 
   const promiseColor = metrics.promiseFollowThrough === null ? 'var(--qs-dim)'
-    : metrics.promiseFollowThrough >= 0.8 ? '#10B981'
-    : metrics.promiseFollowThrough >= 0.6 ? '#F59E0B'
-    : '#EF4444';
+    : metrics.promiseFollowThrough >= 0.8 ? 'var(--qs-success)'
+    : metrics.promiseFollowThrough >= 0.6 ? 'var(--qs-text)'
+    : 'var(--qs-danger)';
 
-  // Days-before-renewal color: green >=21 days (in window), amber 7-20, red <7
+  // Days-before-renewal color: gold >=21 days (in window), plain 7-20, red <7
   const daysColor = metrics.avgDaysBeforeRenewal === null ? 'var(--qs-dim)'
-    : metrics.avgDaysBeforeRenewal >= 21 ? '#10B981'
-    : metrics.avgDaysBeforeRenewal >= 7  ? '#F59E0B'
-    : '#EF4444';
+    : metrics.avgDaysBeforeRenewal >= 21 ? 'var(--qs-success)'
+    : metrics.avgDaysBeforeRenewal >= 7  ? 'var(--qs-text)'
+    : 'var(--qs-danger)';
 
   const isOutbound = metrics.scoreType === 'outbound' || metrics.scoreType === 'both';
   const isInbound  = metrics.scoreType === 'inbound'  || metrics.scoreType === 'both';
@@ -79,13 +79,13 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             label="Outreach Rate"
             value={fmtPct(metrics.cancelContactRate)}
             sub={`${metrics.totalCancelAttempts} total attempts`}
-            color={metrics.cancelContactRate >= 0.8 ? '#10B981' : '#F59E0B'}
+            color={metrics.cancelContactRate >= 0.8 ? 'var(--qs-success)' : 'var(--qs-text)'}
           />
           <MetricRow
             label="Reach Rate"
             value={fmtPct(metrics.cancelReachRate)}
             sub="cases where customer answered"
-            color={metrics.cancelReachRate >= 0.5 ? '#10B981' : '#F59E0B'}
+            color={metrics.cancelReachRate >= 0.5 ? 'var(--qs-success)' : 'var(--qs-text)'}
           />
           <MetricRow
             label="Save Rate"
@@ -96,12 +96,12 @@ export default function RetentionScorecard({ metrics, isLoading }) {
           <MetricRow
             label="Premium Saved"
             value={fmt$(metrics.premiumSaved)}
-            color="#10B981"
+            color="var(--qs-success)"
           />
           <MetricRow
             label="Premium Still at Risk"
             value={fmt$(metrics.premiumAtRisk)}
-            color={metrics.premiumAtRisk > 0 ? '#F59E0B' : 'var(--qs-dim)'}
+            color={metrics.premiumAtRisk > 0 ? 'var(--qs-bright)' : 'var(--qs-dim)'}
           />
           {metrics.promisesDue > 0 && (
             <MetricRow
@@ -135,37 +135,37 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             label="Outreach Rate"
             value={fmtPct(metrics.renewalContactRate)}
             sub={`${metrics.totalRenewalAttempts} total attempts`}
-            color={metrics.renewalContactRate >= 0.8 ? '#10B981' : '#F59E0B'}
+            color={metrics.renewalContactRate >= 0.8 ? 'var(--qs-success)' : 'var(--qs-text)'}
           />
           <MetricRow
             label="Reach Rate"
             value={fmtPct(metrics.renewalReachRate)}
             sub="cases where customer answered"
-            color={metrics.renewalReachRate >= 0.5 ? '#10B981' : '#F59E0B'}
+            color={metrics.renewalReachRate >= 0.5 ? 'var(--qs-success)' : 'var(--qs-text)'}
           />
           <MetricRow
             label="Retention Rate"
             value={fmtPct(metrics.renewalRetainRate)}
             sub={`${metrics.renewalsConfirmed} confirmed · ${metrics.renewalsLost} lost`}
-            color={metrics.renewalRetainRate >= 0.8 ? '#10B981' : '#F59E0B'}
+            color={metrics.renewalRetainRate >= 0.8 ? 'var(--qs-success)' : 'var(--qs-text)'}
           />
           <MetricRow
             label="Premium Retained"
             value={fmt$(metrics.renewalPremiumRetained)}
-            color="#10B981"
+            color="var(--qs-success)"
           />
           <MetricRow
             label="Premium Saved"
             value={fmt$(metrics.renewalPremiumReduced)}
             sub="reduced off renewal offers"
-            color="#34D399"
+            color="var(--qs-success)"
           />
           {metrics.renewalsShopping > 0 && (
             <MetricRow
               label="Shopping (Escalated)"
               value={`${metrics.renewalsShopping} policies`}
               sub={metrics.renewalsEscalated > 0 ? `${metrics.renewalsEscalated} escalated to agent` : 'awaiting escalation'}
-              color="#F59E0B"
+              color="var(--qs-text)"
               warn={metrics.renewalsShopping > 0 && metrics.renewalsEscalated === 0}
             />
           )}
@@ -195,12 +195,12 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             label="Callbacks Closed"
             value={metrics.inboundClosures}
             sub="cases opened by outbound rep, closed by you"
-            color="#60A5FA"
+            color="var(--qs-bright)"
           />
           <MetricRow
             label="Premium Closed"
             value={fmt$(metrics.inboundPremiumClosed)}
-            color="#10B981"
+            color="var(--qs-success)"
           />
           <p className="text-xs text-qs-muted mt-3">
             <T k="pages.components.timeattendance.retentionscorecard.e32566">These cases are credited to the outbound rep who originated them. This section reflects your service volume only.</T>
