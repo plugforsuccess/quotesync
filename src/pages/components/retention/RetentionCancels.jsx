@@ -27,20 +27,23 @@ import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 import { EscalateCaseBox, LinkedServiceTasks, ReferToSalesBox } from './CaseHandoffExtras';
 import { saveMethodFromCodes } from '../../../lib/saveMethods';
+import { NEUTRAL_CHIP, SUCCESS_CHIP } from '../../../lib/statusChips';
 
+// Status text colors: gold for a positive close, red for a broken promise or
+// a customer leaving, plain text for everything in progress.
 const STATUS_CONFIG = {
-  pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
-  attempting:             { label: "Attempting",         color: "#F59E0B", bg: "#F59E0B22" },
-  left_voicemail:         { label: "Left Voicemail",    color: "#F59E0B", bg: "#F59E0B22" },
-  contacted:              { label: "Contacted",         color: "#3B82F6", bg: "#3B82F622" }, // legacy
-  payment_plan_requested: { label: "Payment Plan",      color: "#8B5CF6", bg: "#8B5CF622" },
-  promise_to_pay:         { label: "Promise to Pay",    color: "#8B5CF6", bg: "#8B5CF622" },
-  saved:                  { label: "Saved ✓",      color: "#B07A0E", bg: "#10B98122" },
-  rewritten:              { label: "Rewritten ✓",  color: "#34D399", bg: "#34D39922" },
-  promise_broken:         { label: "Promise Broken",    color: "#EF4444", bg: "#EF444422" },
-  requested_cancellation: { label: "Wants to Cancel",   color: "#EF4444", bg: "#EF444422" },
-  lost:                   { label: "Lost",              color: "var(--qs-subtle)", bg: "#64748B22" },
-  auto_resolved:          { label: "Auto-Resolved",     color: "var(--qs-subtle)", bg: "#47556922" },
+  pending:                { label: "Pending",           color: "var(--qs-dim)" },
+  attempting:             { label: "Attempting",        color: "var(--qs-text)" },
+  left_voicemail:         { label: "Left Voicemail",    color: "var(--qs-text)" },
+  contacted:              { label: "Contacted",         color: "var(--qs-text)" }, // legacy
+  payment_plan_requested: { label: "Payment Plan",      color: "var(--qs-text)" },
+  promise_to_pay:         { label: "Promise to Pay",    color: "var(--qs-text)" },
+  saved:                  { label: "Saved ✓",           color: "var(--qs-success)" },
+  rewritten:              { label: "Rewritten ✓",       color: "var(--qs-success)" },
+  promise_broken:         { label: "Promise Broken",    color: "var(--qs-danger)" },
+  requested_cancellation: { label: "Wants to Cancel",   color: "var(--qs-danger)" },
+  lost:                   { label: "Lost",              color: "var(--qs-subtle)" },
+  auto_resolved:          { label: "Auto-Resolved",     color: "var(--qs-subtle)" },
 };
 
 const TERMINATION_REASONS = ["Price", "Service", "Claims", "Moving", "Coverage no longer needed", "Other"];
@@ -82,10 +85,10 @@ function daysUntilCancel(dateStr) {
 }
 
 // Dynamic color — used as style prop
+// Red only when the cancel is the thing to act on today (≤3 days / past
+// due); otherwise the date reads as plain text. See lib/statusChips.js.
 function urgencyColor(days) {
-  if (days <= 3) return "#EF4444";
-  if (days <= 7) return "#F59E0B";
-  return "#10B981";
+  return days <= 3 ? "var(--qs-danger)" : "var(--qs-text)";
 }
 
 // ─── Module-Level Sub-Components ───────────────────────────────────────────────
@@ -178,7 +181,7 @@ function CustomerDrilldownModal({ event, onClose }) {
             {
               label: "Premium Change",
               value: premiumChangePct !== null ? `${premiumChangePct >= 0 ? "+" : ""}${premiumChangePct.toFixed(1)}%` : "\u2014",
-              color: premiumChangePct === null ? "var(--qs-muted)" : premiumChangePct > 0 ? "#EF4444" : "#10B981",
+              color: premiumChangePct === null ? "var(--qs-muted)" : "var(--qs-text)",
             },
             { label: "Items at Risk",    value: event.item_count != null ? String(event.item_count) : "\u2014",        color: "var(--qs-text)" },
             { label: "Status",           value: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).label,     color: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).color },
@@ -220,9 +223,11 @@ function CustomerDrilldownModal({ event, onClose }) {
 // (a customer's auto renewal + home pending-cancel work on one call). Cancel
 // tabs render amber, renewals blue; clicking any sibling opens it in its own
 // modal (the parent routes on `type`). Cancels sort first (more urgent).
+// Both case types share the neutral active-tab style; the glyph (⚠/🚫/🔄)
+// says which is which.
 const TAB_TYPE = {
-  cancel:  { color: '#F59E0B', bg: 'rgba(245,158,11,0.14)' },
-  renewal: { color: '#3B82F6', bg: 'rgba(59,130,246,0.14)' },
+  cancel:  { color: 'var(--qs-info)', bg: 'var(--qs-info-subtle)' },
+  renewal: { color: 'var(--qs-info)', bg: 'var(--qs-info-subtle)' },
 };
 function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
   if (!siblings?.length) return null;
@@ -256,7 +261,7 @@ function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
           <span>{glyph(c)}</span>
           {productLabel(c.product) || c.product} · {c.policy_no}
           {daysChip(c) && <span style={{ fontWeight: 600, opacity: 0.75 }}>· {daysChip(c)}</span>}
-          {done(c) && <span style={{ color: '#34D399' }}>✓</span>}
+          {done(c) && <span style={{ color: 'var(--qs-success)' }}>✓</span>}
         </>;
         return c.active ? (
           <span key={c.id} aria-current="true" style={{ ...tab, cursor: 'default',
@@ -302,8 +307,7 @@ function OtherCasesWarning({ cases }) {
             <span style={{
               display: 'inline-block', padding: '1px 6px', borderRadius: 3,
               fontSize: 10, fontWeight: 700,
-              background: c.type === 'cancel' ? 'var(--qs-warning-subtle)' : 'var(--qs-info-subtle)',
-              color: c.type === 'cancel' ? '#F59E0B' : '#3B82F6', // Component color prop — hex intentionally
+              ...NEUTRAL_CHIP, color: 'var(--qs-text)',
             }}>
               {c.type === 'cancel'
                 ? (c.stage === 'cancelled' ? '🚫 Lapsed' : '⚠ Pending Cancel')
@@ -347,7 +351,7 @@ function AlreadyPaidAction({ onConfirm, busy }) {
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button type="button" disabled={busy} onClick={() => { setConfirming(false); onConfirm(); }} style={{
-          flex: 1, padding: "8px", borderRadius: 8, border: "none", background: busy ? "var(--qs-card)" : "#10B981",
+          flex: 1, padding: "8px", borderRadius: 8, border: "none", background: busy ? "var(--qs-card)" : "var(--qs-info)",
           color: busy ? "var(--qs-muted)" : "#fff", fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit",
         }}>
           {busy ? "Clearing…" : "Yes, mark paid"}
@@ -848,7 +852,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               {
                 label: "Attempts",
                 value: String(event.attempt_count || 0),
-                color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "var(--qs-dim)",
+                color: "var(--qs-dim)",
               },
             ].map(({ label, value, color }) => (
               <div key={label} style={{
@@ -875,12 +879,12 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           {/* ── Active renewal warning — customer also has an active renewal ── */}
           {event.has_active_renewal && event.active_renewal_id && (
             <div style={{
-              background: 'rgba(59,130,246,0.07)',
-              border: '1px solid rgba(59,130,246,0.25)',
+              background: 'var(--qs-info-subtle)',
+              border: '1px solid var(--qs-info-border)',
               borderRadius: 10, padding: '12px 16px', marginBottom: 16,
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#3B82F6',
+                fontSize: 11, fontWeight: 700, color: 'var(--qs-info)',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
               }}>
                 <T k="pages.components.retention.retentioncancels.cd94b0">ℹ This customer also has an active renewal</T>
@@ -894,12 +898,12 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           {/* ── Cross-sell opportunity ── */}
           {event.cross_sell_opportunity && event.cross_sell_product && (
             <div style={{
-              background: 'rgba(16,185,129,0.06)',
-              border: '1px solid rgba(16,185,129,0.2)',
+              background: 'var(--qs-elevated)',
+              border: '1px solid var(--qs-border)',
               borderRadius: 10, padding: '12px 16px', marginBottom: 16,
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#B07A0E',
+                fontSize: 11, fontWeight: 700, color: 'var(--qs-text)',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
                 <T k="pages.components.retention.retentioncancels.dfdf03">💡 Bundle to save —</T> {productLabel(event.cross_sell_product)}
@@ -931,7 +935,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               <a href={`tel:${event.phone}`} style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 marginTop: 12, width: "100%", boxSizing: "border-box",
-                padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                padding: "11px 16px", borderRadius: 8, background: "var(--qs-info)", color: "#fff",
                 fontSize: 15, fontWeight: 700, textDecoration: "none",
               }}>{"📞"} <T k="pages.components.retention.retentioncancels.c3755e">Call</T> {event.phone}</a>
             )}
@@ -956,13 +960,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 onChange={e => setCbNote(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
               <button onClick={scheduleCallback} disabled={!cbTime || cbSaving} style={{
                 fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none",
-                background: "#3B82F6", color: "#fff", fontWeight: 700,
+                background: "var(--qs-info)", color: "#fff", fontWeight: 700,
                 cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
                 opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
               }}>{cbSaving ? "Scheduling…" : "📅 Schedule"}</button>
             </div>
             {event.callback_at && (
-              <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 6 }}>
                 <T k="pages.components.retention.retentioncancels.83a3be">Current:</T> {new Date(event.callback_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </div>
             )}
@@ -1002,9 +1006,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                     onClick={() => setAttemptForm(p => ({ ...p, direction: opt.v }))}
                     style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: "7px 8px", borderRadius: 7,
                       cursor: "pointer", border: "1px solid",
-                      borderColor: on ? "#3B82F6" : "var(--qs-border)",
-                      background: on ? "rgba(59,130,246,0.14)" : "var(--qs-elevated)",
-                      color: on ? "#60A5FA" : "var(--qs-dim)", fontFamily: "inherit" }}>
+                      borderColor: on ? "var(--qs-info)" : "var(--qs-border)",
+                      background: on ? "var(--qs-info-subtle)" : "var(--qs-elevated)",
+                      color: on ? "var(--qs-info)" : "var(--qs-dim)", fontFamily: "inherit" }}>
                     {opt.label}
                   </button>
                 );
@@ -1066,7 +1070,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
             {attemptError && (
               <div style={{
-                fontSize: 12, fontWeight: 600, color: "var(--qs-warn, #F59E0B)",
+                fontSize: 12, fontWeight: 600, color: "var(--qs-warning)",
                 marginBottom: 10,
               }}>
                 {attemptError}
@@ -1080,7 +1084,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               style={{
                 width: "100%", padding: "10px",
                 borderRadius: 8, border: "none",
-                background: (loggingAttempt || !currentEmployeeId) ? "var(--qs-elevated)" : "#3B82F6",
+                background: (loggingAttempt || !currentEmployeeId) ? "var(--qs-elevated)" : "var(--qs-info)",
                 color: (loggingAttempt || !currentEmployeeId) ? "var(--qs-muted)" : "#fff",
                 fontSize: 14, fontWeight: 600,
                 cursor: (loggingAttempt || !currentEmployeeId) ? "not-allowed" : "pointer",
@@ -1099,9 +1103,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
                   : "Unknown";
                 const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
-                const resultColor = a.result === "reached" ? "#10B981"
-                  : a.result === "left_voicemail" ? "#F59E0B"
-                  : "var(--qs-dim)";
+                const resultColor = a.result === "reached" ? "var(--qs-success)" : "var(--qs-dim)";
                 return (
                   <div key={a.id} style={{
                     background: "var(--qs-elevated)",
@@ -1119,7 +1121,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       {a.direction === "inbound" && (
                         <span title="Customer called the agency — not an outbound dial" style={{
                           fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 4, marginLeft: 8,
-                          background: "rgba(96,165,250,0.14)", border: "1px solid rgba(96,165,250,0.45)", color: "#60A5FA",
+                          ...NEUTRAL_CHIP,
                         }}><T k="pages.components.retention.retentioncancels.d2c16c">↙ CALLED IN</T></span>
                       )}
                       {(a.interventions || []).length > 0 && (
@@ -1127,7 +1129,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                           {a.interventions.map(code => (
                             <span key={code} style={{
                               fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 4,
-                              background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.35)", color: "#A78BFA",
+                              ...NEUTRAL_CHIP,
                             }}>🏷 {String(code).replace(/_/g, " ")}</span>
                           ))}
                         </div>
@@ -1200,14 +1202,14 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Rewrite detail fields — only when Rewritten is selected */}
             {form.status === "rewritten" && (
               <div style={{
-                background: "rgba(52,211,153,0.06)",
-                border: "1px solid rgba(52,211,153,0.2)",
+                background: "var(--qs-elevated)",
+                border: "1px solid var(--qs-border)",
                 borderRadius: 10,
                 padding: "14px 16px",
                 marginTop: 4,
               }}>
                 <div style={{
-                  fontSize: 11, fontWeight: 700, color: "#34D399",
+                  fontSize: 11, fontWeight: 700, color: "var(--qs-text)",
                   textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12,
                 }}>
                   <T k="pages.components.retention.retentioncancels.eb883a">Rewrite Details</T>
@@ -1217,7 +1219,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   <div>
                     <label className="dark-label">
                       <T k="pages.components.retention.retentioncancels.e8cd0b">New Premium</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span>
-                      <span style={{ color: "#F87171", marginLeft: 2 }}>*</span>
+                      <span style={{ color: "var(--qs-danger)", marginLeft: 2 }}>*</span>
                     </label>
                     {dollarInput(
                       <input
@@ -1232,7 +1234,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       />
                     )}
                     {form.rewrite_new_premium && event.premium_at_risk && (
-                      <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
+                      <div style={{ fontSize: 11, color: "var(--qs-success)", marginTop: 4 }}>
                         {(() => {
                           const orig = parseFloat(event.premium_at_risk);
                           const newPrem = parseFloat(form.rewrite_new_premium);
@@ -1275,7 +1277,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Saved premium — only on a straight save (reinstatement) */}
             {form.status === "saved" && (
               <div>
-                <label className="dark-label"><T k="pages.components.retention.retentioncancels.c31724">Premium saved</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.c31724">Premium saved</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "var(--qs-danger)", marginLeft: 2 }}>*</span></label>
                 {dollarInput(
                   <input
                     className="dark-input"
@@ -1287,7 +1289,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   />
                 )}
                 {prefilledFromCall != null && !premiumTouched && (
-                  <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: "var(--qs-success)", marginTop: 4 }}>
                     <T k="pages.components.retention.retentioncancels.1a7790">Pre-filled from the</T> {fmtFull$(prefilledFromCall)} <T k="pages.components.retention.retentioncancels.f7408e">you quoted on the call — edit if they committed at a different amount.</T>
                   </div>
                 )}
@@ -1297,7 +1299,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                     <button type="button"
                       onClick={() => { setPremiumTouched(true); setSavedPremium(String(event.premium_at_risk)); }}
                       style={{ marginLeft: 6, background: "none", border: "none", padding: 0,
-                        color: "#34D399", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
+                        color: "var(--qs-info)", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
                       <T k="pages.components.retention.retentioncancels.7fd782">premium unchanged — use at-risk</T>
                     </button>
                   ) : null}
@@ -1315,7 +1317,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   return (
                     <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
                       <T k="pages.components.retention.retentioncancels.62b5b3">vs at-risk:</T>{" "}
-                      <strong style={{ color: diff < 0 ? "#FBBF24" : diff > 0 ? "#34D399" : "var(--qs-dim)" }}>
+                      <strong style={{ color: "var(--qs-text)" }}>
                         {diff === 0
                           ? "unchanged"
                           : `${diff > 0 ? "+" : "−"}${fmtFull$(Math.abs(diff))} (${pct.toFixed(0)}%) ${diff < 0 ? "concession" : "above"}`}
@@ -1439,7 +1441,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 style={{
                   width: "100%", padding: "12px",
                   borderRadius: 10, border: "none",
-                  background: (saving || premiumMissing) ? "var(--qs-elevated)" : "#10B981",
+                  background: (saving || premiumMissing) ? "var(--qs-elevated)" : "var(--qs-info)",
                   color: (saving || premiumMissing) ? "var(--qs-muted)" : "#fff",
                   fontSize: 15, fontWeight: 700,
                   cursor: (saving || premiumMissing) ? "not-allowed" : "pointer",
@@ -1450,13 +1452,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 {saving ? "Saving\u2026" : resolveLabel}
               </button>
               {premiumMissing && (
-                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center" }}>
                   <T k="pages.components.retention.retentioncancels.0775c0">Enter the premium amount above to close this case.</T>
                 </div>
               )}
               {saveError && (
-                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
-                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center",
+                  background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)",
                   borderRadius: 8, padding: "8px 10px" }}>
                   {saveError}
                 </div>
@@ -1473,17 +1475,17 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
 // Status badge colors — used as style props
 const RENEWAL_STATUS_CONFIG = {
-  pending:          { label: "Pending",          color: "var(--qs-dim)", bg: "#F1F5F9" },
-  attempting:       { label: "Attempting",       color: "#F59E0B", bg: "#FEF3C7" },
-  left_voicemail:   { label: "Left Voicemail",   color: "#F59E0B", bg: "#FEF3C7" },
-  review_requested: { label: "Review Requested", color: "#3B82F6", bg: "#DBEAFE" },
-  shopping:         { label: "Shopping",         color: "#EF4444", bg: "#FEE2E2" },
-  confirmed:        { label: "Confirmed ✓", color: "#B07A0E", bg: "#D1FAE5" },
-  at_risk:          { label: "At Risk",          color: "#EF4444", bg: "#FEE2E2" },
-  escalated:        { label: "Escalated",        color: "#8B5CF6", bg: "#EDE9FE" },
-  lost:             { label: "Lost",             color: "#6B7280", bg: "#F3F4F6" },
-  unreachable:      { label: "Unreachable",      color: "var(--qs-subtle)", bg: "#F1F5F9" },
-  auto_resolved:    { label: "Auto-Resolved",    color: "var(--qs-dim)", bg: "#F1F5F9" },
+  pending:          { label: "Pending",          color: "var(--qs-dim)" },
+  attempting:       { label: "Attempting",       color: "var(--qs-text)" },
+  left_voicemail:   { label: "Left Voicemail",   color: "var(--qs-text)" },
+  review_requested: { label: "Review Requested", color: "var(--qs-text)" },
+  shopping:         { label: "Shopping",         color: "var(--qs-danger)" },
+  confirmed:        { label: "Confirmed ✓",      color: "var(--qs-success)" },
+  at_risk:          { label: "At Risk",          color: "var(--qs-danger)" },
+  escalated:        { label: "Escalated",        color: "var(--qs-text)" },
+  lost:             { label: "Lost",             color: "var(--qs-subtle)" },
+  unreachable:      { label: "Unreachable",      color: "var(--qs-subtle)" },
+  auto_resolved:    { label: "Auto-Resolved",    color: "var(--qs-dim)" },
 };
 
 // Resolved-state banner copy for a renewal. `auto_resolved` is overloaded: the
@@ -1494,15 +1496,15 @@ const RENEWAL_STATUS_CONFIG = {
 // it" when a rep actually confirmed it, or vice-versa.
 function renewalResolutionBanner(status, outcomeSource) {
   if (status === "confirmed")
-    return { label: "Renewed — saved", sub: "rep-confirmed", color: "#B07A0E", bg: "#D1FAE5" };
+    return { label: "Renewed — saved", sub: "rep-confirmed", ...SUCCESS_CHIP };
   if (status === "lost")
-    return { label: "Lost — did not renew", sub: null, color: "#6B7280", bg: "#F3F4F6" };
+    return { label: "Lost — did not renew", sub: null, ...NEUTRAL_CHIP };
   if (status === "unreachable")
-    return { label: "Unreachable", sub: "no contact made", color: "var(--qs-subtle)", bg: "#F1F5F9" };
+    return { label: "Unreachable", sub: "no contact made", ...NEUTRAL_CHIP };
   if (status === "auto_resolved") {
     return (outcomeSource === "observed" || outcomeSource === "rep")
-      ? { label: "Renewed — confirmed by rep", sub: "not credited as a save", color: "#B07A0E", bg: "#D1FAE5" }
-      : { label: "Auto-resolved — system-inferred", sub: "no call logged", color: "var(--qs-dim)", bg: "#F1F5F9" };
+      ? { label: "Renewed — confirmed by rep", sub: "not credited as a save", ...SUCCESS_CHIP }
+      : { label: "Auto-resolved — system-inferred", sub: "no call logged", ...NEUTRAL_CHIP };
   }
   return null;
 }
@@ -1517,10 +1519,9 @@ function daysUntilRenewal(dateStr) {
 }
 
 // Dynamic color — used as style prop
+// Red once the renewal is inside its 14-day save window; plain otherwise.
 function renewalUrgencyColor(days) {
-  if (days < 7) return "#EF4444";
-  if (days <= 21) return "#F59E0B";
-  return "#10B981";
+  return days <= 14 ? "var(--qs-danger)" : "var(--qs-text)";
 }
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
@@ -2059,7 +2060,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             return (
               <div style={{
                 display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap",
-                background: banner.bg, border: `1px solid ${banner.color}33`,
+                background: banner.background, border: banner.border,
                 color: banner.color, borderRadius: 10, padding: "10px 14px", marginBottom: 16,
                 fontSize: 13, fontWeight: 700,
               }}>
@@ -2091,16 +2092,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               { label: "Premium \u0394",     value: event.premium_change != null
                   ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
                   : "\u2014",
-                color: event.premium_change == null ? "var(--qs-dim)"
-                  : event.premium_change > 0 ? "#EF4444" : "#10B981" },
+                color: event.premium_change == null ? "var(--qs-dim)" : "var(--qs-text)" },
               { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
               { label: "Multiline",
                 value: event.multi_line === 'Yes' ? 'Bundled'
                      : event.multi_line === 'No'  ? 'Monoline'
                      : '—',
-                color: event.multi_line === 'Yes' ? '#10B981'
-                     : event.multi_line === 'No'  ? '#60A5FA'
-                     : 'var(--qs-subtle)' },
+                color: event.multi_line ? 'var(--qs-text)' : 'var(--qs-subtle)' },
               { label: "Tenure",        value: event.original_year
                   ? `${CURRENT_YEAR - event.original_year} yrs (${event.original_year})`
                   : "\u2014" },
@@ -2130,12 +2128,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           {/* ── Active cancel warning — customer has an active pending cancel ── */}
           {event.has_active_cancel && event.active_cancel_id && (
             <div style={{
-              background: 'rgba(239,68,68,0.07)',
-              border: '1px solid rgba(239,68,68,0.25)',
+              background: 'var(--qs-danger-subtle)',
+              border: '1px solid var(--qs-danger-border)',
               borderRadius: 10, padding: '12px 16px', marginBottom: 16,
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#EF4444',
+                fontSize: 11, fontWeight: 700, color: 'var(--qs-danger)',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
               }}>
                 <T k="pages.components.retention.retentioncancels.7d92d4">⚠ This customer has an active pending cancel</T>
@@ -2150,19 +2148,19 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           {/* ── Cross-sell prompt — only when no active cancel ── */}
           {event.cross_sell_opportunity && event.cross_sell_product && !event.has_active_cancel && (
             <div style={{
-              background: 'rgba(16,185,129,0.06)',
-              border: '1px solid rgba(16,185,129,0.2)',
+              background: 'var(--qs-elevated)',
+              border: '1px solid var(--qs-border)',
               borderRadius: 10, padding: '12px 16px', marginBottom: 16,
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#B07A0E',
+                fontSize: 11, fontWeight: 700, color: 'var(--qs-text)',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
                 <T k="pages.components.retention.retentioncancels.043480">💡 Cross-sell opportunity</T>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
                 <T k="pages.components.retention.retentioncancels.687b5b">Allstate flagged this customer for</T>{' '}
-                <strong style={{ color: '#B07A0E' }}>
+                <strong>
                   {productLabel(event.cross_sell_product)}
                 </strong>.
                 {' '}<T k="pages.components.retention.retentioncancels.7aecd6">After confirming the renewal, ask:</T>
@@ -2205,7 +2203,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   marginTop: 12, width: "100%", boxSizing: "border-box",
-                  padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                  padding: "11px 16px", borderRadius: 8, background: "var(--qs-info)", color: "#fff",
                   fontSize: 15, fontWeight: 700, textDecoration: "none",
                 }}>
                 {"\ud83d\udcde"} <T k="pages.components.retention.retentioncancels.c3755e">Call</T> {event.phone}
@@ -2233,7 +2231,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               <button onClick={scheduleCallback} disabled={!cbTime || cbSaving}
                 style={{
                   fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none",
-                  background: "#3B82F6", color: "#fff", fontWeight: 700,
+                  background: "var(--qs-info)", color: "#fff", fontWeight: 700,
                   cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
                   opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
                 }}>
@@ -2241,7 +2239,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </button>
             </div>
             {event.callback_at && (
-              <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 6 }}>
                 <T k="pages.components.retention.retentioncancels.83a3be">Current:</T> {new Date(event.callback_at).toLocaleString("en-US", {
                   month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
                 })}
@@ -2283,9 +2281,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     onClick={() => setAttemptForm(p => ({ ...p, direction: opt.v }))}
                     style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: "7px 8px", borderRadius: 7,
                       cursor: "pointer", border: "1px solid",
-                      borderColor: on ? "#3B82F6" : "var(--qs-border)",
-                      background: on ? "rgba(59,130,246,0.14)" : "var(--qs-elevated)",
-                      color: on ? "#60A5FA" : "var(--qs-dim)", fontFamily: "inherit" }}>
+                      borderColor: on ? "var(--qs-info)" : "var(--qs-border)",
+                      background: on ? "var(--qs-info-subtle)" : "var(--qs-elevated)",
+                      color: on ? "var(--qs-info)" : "var(--qs-dim)", fontFamily: "inherit" }}>
                     {opt.label}
                   </button>
                 );
@@ -2347,7 +2345,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
             {attemptError && (
               <div style={{
-                fontSize: 12, fontWeight: 600, color: "var(--qs-warn, #F59E0B)",
+                fontSize: 12, fontWeight: 600, color: "var(--qs-warning)",
                 marginBottom: 10,
               }}>
                 {attemptError}
@@ -2361,7 +2359,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               style={{
                 width: "100%", padding: "10px",
                 borderRadius: 8, border: "none",
-                background: (loggingAttempt || !currentEmployeeId) ? "var(--qs-elevated)" : "#3B82F6",
+                background: (loggingAttempt || !currentEmployeeId) ? "var(--qs-elevated)" : "var(--qs-info)",
                 color: (loggingAttempt || !currentEmployeeId) ? "var(--qs-muted)" : "#fff",
                 fontSize: 14, fontWeight: 600,
                 cursor: (loggingAttempt || !currentEmployeeId) ? "not-allowed" : "pointer",
@@ -2380,9 +2378,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
                   : "Unknown";
                 const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
-                const resultColor = a.result === "reached" ? "#10B981"
-                  : a.result === "left_voicemail" ? "#F59E0B"
-                  : "var(--qs-dim)";
+                const resultColor = a.result === "reached" ? "var(--qs-success)" : "var(--qs-dim)";
                 return (
                   <div key={a.id} style={{
                     background: "var(--qs-elevated)",
@@ -2400,7 +2396,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       {a.direction === "inbound" && (
                         <span title="Customer called the agency — not an outbound dial" style={{
                           fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 4, marginLeft: 8,
-                          background: "rgba(96,165,250,0.14)", border: "1px solid rgba(96,165,250,0.45)", color: "#60A5FA",
+                          ...NEUTRAL_CHIP,
                         }}><T k="pages.components.retention.retentioncancels.d2c16c">↙ CALLED IN</T></span>
                       )}
                       {(a.interventions || []).length > 0 && (
@@ -2408,7 +2404,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                           {a.interventions.map(code => (
                             <span key={code} style={{
                               fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 4,
-                              background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.35)", color: "#A78BFA",
+                              ...NEUTRAL_CHIP,
                             }}>🏷 {String(code).replace(/_/g, " ")}</span>
                           ))}
                         </div>
@@ -2488,7 +2484,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     </div>
                   </div>
                   <div>
-                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.f8987c">Renewal paid</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
+                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.f8987c">Renewal paid</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "var(--qs-danger)", marginLeft: 2 }}>*</span></label>
                     {dollarInput(
                       <input
                         className="dark-input"
@@ -2500,7 +2496,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       />
                     )}
                     {prefilledFromCall != null && !premiumTouched && (
-                      <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
+                      <div style={{ fontSize: 11, color: "var(--qs-success)", marginTop: 4 }}>
                         <T k="pages.components.retention.retentioncancels.1a7790">Pre-filled from the</T> {fmtFull$(prefilledFromCall)} <T k="pages.components.retention.retentioncancels.fcbd29">you quoted on the call.</T>
                       </div>
                     )}
@@ -2514,7 +2510,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   return (
                     <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
                       <T k="pages.components.retention.retentioncancels.69377d">Premium difference:</T>{" "}
-                      <strong style={{ color: diff < 0 ? "#34D399" : diff > 0 ? "#FBBF24" : "var(--qs-dim)" }}>
+                      <strong style={{ color: "var(--qs-text)" }}>
                         {diff > 0 ? "+" : diff < 0 ? "−" : ""}{fmtFull$(Math.abs(diff))}
                         {pct ? ` (${pct.toFixed(0)}%)` : ""}
                       </strong>
@@ -2628,7 +2624,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 style={{
                   width: "100%", padding: "12px",
                   borderRadius: 10, border: "none",
-                  background: (saving || premiumMissing) ? "var(--qs-elevated)" : "#10B981",
+                  background: (saving || premiumMissing) ? "var(--qs-elevated)" : "var(--qs-info)",
                   color: (saving || premiumMissing) ? "var(--qs-muted)" : "#fff",
                   fontSize: 15, fontWeight: 700,
                   cursor: (saving || premiumMissing) ? "not-allowed" : "pointer",
@@ -2639,13 +2635,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 {saving ? "Saving\u2026" : resolveLabel}
               </button>
               {premiumMissing && (
-                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center" }}>
                   <T k="pages.components.retention.retentioncancels.0775c0">Enter the premium amount above to close this case.</T>
                 </div>
               )}
               {saveError && (
-                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
-                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center",
+                  background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)",
                   borderRadius: 8, padding: "8px 10px" }}>
                   {saveError}
                 </div>
@@ -2768,7 +2764,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   color: (() => {
                     if (!r.promise_date) return 'var(--qs-subtle)';
                     const d = Math.ceil((new Date(r.promise_date) - new Date()) / 86400000);
-                    return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : 'var(--qs-dim)';
+                    return d <= 1 ? 'var(--qs-danger)' : 'var(--qs-text)';
                   })() },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
@@ -2783,9 +2779,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
               {[
                 { label: 'Premium at Risk', value: r.premium_at_risk ? fmtFull$(r.premium_at_risk) : '—' },
                 { label: 'Cycle', value: `#${r.cycle || 1}`,
-                  color: (r.cycle || 1) >= 3 ? '#EF4444' : (r.cycle || 1) === 2 ? '#F59E0B' : 'var(--qs-dim)' },
+                  color: 'var(--qs-dim)' },
                 { label: 'Attempts', value: r.cancel_attempts || 0,
-                  color: (r.cancel_attempts || 0) >= 3 ? '#EF4444' : 'var(--qs-dim)' },
+                  color: 'var(--qs-dim)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
                   <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
@@ -2854,14 +2850,12 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   value: r.premium_change != null
                     ? `${r.premium_change > 0 ? '+' : ''}${fmtFull$(r.premium_change)}`
                     : '—',
-                  color: r.premium_change == null ? 'var(--qs-dim)'
-                       : r.premium_change > 0 ? '#EF4444' : '#10B981' },
+                  color: r.premium_change == null ? 'var(--qs-dim)' : 'var(--qs-text)' },
                 { label: 'Δ%',
                   value: r.premium_change_pct != null
                     ? `${r.premium_change_pct > 0 ? '+' : ''}${r.premium_change_pct.toFixed(1)}%`
                     : '—',
-                  color: r.premium_change_pct == null ? 'var(--qs-dim)'
-                       : r.premium_change_pct > 0 ? '#EF4444' : '#10B981' },
+                  color: r.premium_change_pct == null ? 'var(--qs-dim)' : 'var(--qs-text)' },
                 { label: 'Tenure',
                   value: r.original_year
                     ? `${new Date().getFullYear() - r.original_year} yrs (${r.original_year})`
@@ -2872,14 +2866,12 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   value: r.multi_line === 'Yes' ? 'Bundled'
                        : r.multi_line === 'No'  ? 'Monoline'
                        : '—',
-                  color: r.multi_line === 'Yes' ? '#10B981'
-                       : r.multi_line === 'No'  ? '#60A5FA'
-                       : 'var(--qs-subtle)' },
+                  color: r.multi_line ? 'var(--qs-text)' : 'var(--qs-subtle)' },
                 { label: 'Items',
                   value: r.renewal_item_count || 1 },
                 { label: 'Points',
                   value: `${((productConfig.portfolioPoints[r.product] ?? 0) * (r.renewal_item_count || 1)).toLocaleString()} pts`,
-                  color: '#8B5CF6' },
+                  color: 'var(--qs-text)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
                   <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
@@ -3402,7 +3394,6 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             ? Math.round(((inside21.length - uncovered21) / inside21.length) * 100)
             : 100;
 
-          // KpiCard color prop — hex intentionally
           const kpis = [
             {
               key:        'coverage21',
@@ -3412,7 +3403,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               sub:        uncovered21
                 ? `${uncovered21} untouched inside 21d`
                 : 'all inside-21d renewals touched',
-              color:      uncovered21 ? '#EF4444' : '#10B981',
+              color:      uncovered21 ? 'var(--qs-danger)' : 'var(--qs-bright)',
               filterKey:  uncovered21 ? 'uncovered21' : null,
             },
             {
@@ -3421,7 +3412,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               rawValue:   totalPremium,
               display:    fmt$(totalPremium),
               sub:        'total at risk',
-              color:      '#EC4899',
+              color:      'var(--qs-bright)',
               filterKey:  null,
             },
             {
@@ -3430,7 +3421,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               rawValue:   totalPoints,
               display:    totalPoints.toLocaleString(),
               sub:        'portfolio impact',
-              color:      '#8B5CF6',
+              color:      'var(--qs-bright)',
               filterKey:  null,
             },
             {
@@ -3439,7 +3430,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               rawValue:   totalItems,
               display:    totalItems.toLocaleString(),
               sub:        'total policy items',
-              color:      '#06B6D4',
+              color:      'var(--qs-bright)',
               filterKey:  null,
             },
             {
@@ -3448,7 +3439,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               rawValue:   countRenewals,
               display:    countRenewals,
               sub:        'shopping risk',
-              color:      '#3B82F6',
+              color:      'var(--qs-bright)',
               filterKey:  'renewal',
             },
             {
@@ -3457,7 +3448,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               rawValue:   countMultiLine,
               display:    countMultiLine,
               sub:        'bundled customers',
-              color:      '#10B981',
+              color:      'var(--qs-bright)',
               filterKey:  'multi_line',
             },
             {
@@ -3466,7 +3457,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               rawValue:   countPendingCancel,
               display:    countPendingCancel,
               sub:        'payment risk',
-              color:      '#F59E0B',
+              color:      'var(--qs-bright)',
               filterKey:  'pending_cancel',
             },
             {
@@ -3475,7 +3466,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               rawValue:   countDualRisk,
               display:    countDualRisk,
               sub:        'cancel + renewal',
-              color:      '#EF4444',
+              color:      'var(--qs-danger)',
               filterKey:  'dual_risk',
             },
           ];
@@ -3500,7 +3491,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {[
           { key: 'all',            label: `All (${rows.length})` },
-          { key: 'dual_risk',      label: `🔴 Dual Risk (${rows.filter(r => r.risk_type === 'dual_risk').length})` },
+          { key: 'dual_risk',      label: `Dual Risk (${rows.filter(r => r.risk_type === 'dual_risk').length})` },
           { key: 'pending_cancel', label: 'Pending Cancel' },
           { key: 'renewal',        label: 'Renewals' },
         ].map(f => (
@@ -3538,10 +3529,10 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       {urgentFilter && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: '#EF444411', border: '1px solid #EF444433',
+          background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)',
           borderRadius: 8, padding: '8px 14px', marginBottom: 12,
         }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#EF4444' }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-danger)' }}>
             <T k="pages.components.retention.retentioncancels.69a045">🚨 Showing urgent cases only — cancel date within 3 days</T>
           </span>
           <button
@@ -3736,8 +3727,8 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                               {l.pos ? (
                                 <span title={`#${l.pos.n} of ${l.pos.total} in ${l.name}'s ${l.side} queue (priority order)`}
                                   style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700,
-                                    color: l.pos.n <= 3 ? '#F59E0B' : 'var(--qs-dim)',
-                                    background: l.pos.n <= 3 ? 'rgba(245,158,11,0.12)' : 'var(--qs-elevated)',
+                                    color: l.pos.n <= 3 ? 'var(--qs-text)' : 'var(--qs-dim)',
+                                    background: 'var(--qs-elevated)',
                                     border: '1px solid var(--qs-border)', borderRadius: 4, padding: '0 5px', whiteSpace: 'nowrap' }}>
                                   {lines.length > 1 ? (l.side === 'cancel' ? 'C ' : 'R ') : ''}#{l.pos.n}/{l.pos.total}
                                 </span>

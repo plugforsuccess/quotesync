@@ -22,6 +22,7 @@ import { TIER_ORDER, isCancelPastDue, calcRenewalPriority } from '../lib/retenti
 import { buildChurnModel } from '../lib/retentionElasticity';
 import { useBookSnapshots } from '../hooks/useBookMetrics';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
+import { NEUTRAL_CHIP, DANGER_CHIP, SUCCESS_CHIP } from '../lib/statusChips';
 
 function fmt$(n) {
   if (n == null || isNaN(n)) return '—';
@@ -68,16 +69,18 @@ function rankOf(item, churnModel) {
   return natural;
 }
 
+// Type / tier badges are neutral text labels; only a lapsed tier (P0) is red.
+// See lib/statusChips.js for the color discipline.
 const TYPE_BADGE = {
-  cancel:  { label: 'CANCEL',  bg: '#EF444422', color: '#F87171' },
-  renewal: { label: 'RENEWAL', bg: '#3B82F622', color: '#60A5FA' },
+  cancel:  { label: 'CANCEL',  ...NEUTRAL_CHIP, color: 'var(--qs-text)' },
+  renewal: { label: 'RENEWAL', ...NEUTRAL_CHIP },
 };
 
 const TIER_BADGE = {
-  P0: { label: 'LAPSED', bg: '#EF444433', color: '#FCA5A5' },
-  P1: { label: 'P1',     bg: '#F59E0B33', color: '#FCD34D' },
-  P2: { label: 'P2',     bg: '#64748B33', color: '#CBD5E1' },
-  P3: { label: 'P3',     bg: '#33415533', color: '#94A3B8' },
+  P0: { label: 'LAPSED', ...DANGER_CHIP },
+  P1: { label: 'P1',     ...NEUTRAL_CHIP, color: 'var(--qs-text)' },
+  P2: { label: 'P2',     ...NEUTRAL_CHIP },
+  P3: { label: 'P3',     ...NEUTRAL_CHIP },
 };
 
 export default function TodayPage() {
@@ -585,7 +588,7 @@ export default function TodayPage() {
           </div>
           <div style={{
             fontSize: 18, fontWeight: 800, fontFamily: "'DM Mono', monospace",
-            color: targetHit ? '#10B981' : 'var(--qs-bright)',
+            color: targetHit ? 'var(--qs-success)' : 'var(--qs-bright)',
           }}>
             {focusHandled}
             <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--qs-muted)', marginLeft: 3 }}>
@@ -597,26 +600,26 @@ export default function TodayPage() {
         <div style={{ height: 6, borderRadius: 3, background: 'var(--qs-card)', overflow: 'hidden' }}>
           <div style={{
             height: '100%', width: `${progressPct}%`, borderRadius: 3,
-            background: targetHit ? '#10B981' : progressPct >= 50 ? '#3B82F6' : '#F59E0B',
+            background: targetHit ? 'var(--qs-success)' : 'var(--qs-info)',
             transition: 'width 0.4s ease',
           }} />
         </div>
         <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-          {callsToday} <T k="pages.todaypage.cbad40">worked ·</T> <span style={{ color: '#B07A0E', fontWeight: 600 }}>{reachedToday} <T k="pages.todaypage.f910ff">reached</T></span>
-          {inboundToday > 0 && <> · <span style={{ color: '#60A5FA', fontWeight: 600 }}>{inboundToday} <T k="pages.todaypage.a8e6fe">inbound</T></span></>} <T k="pages.todaypage.c5e7df">today</T>
+          {callsToday} <T k="pages.todaypage.cbad40">worked ·</T> <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>{reachedToday} <T k="pages.todaypage.f910ff">reached</T></span>
+          {inboundToday > 0 && <> · <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>{inboundToday} <T k="pages.todaypage.a8e6fe">inbound</T></span></>} <T k="pages.todaypage.c5e7df">today</T>
         </div>
         {savedToday.count > 0 && (
-          <div style={{ fontSize: 12, color: '#B07A0E', fontWeight: 700, marginTop: 6 }}>
+          <div style={{ fontSize: 12, color: 'var(--qs-success)', fontWeight: 700, marginTop: 6 }}>
             🎉 {savedToday.count} <T k="pages.todaypage.cad264">saved ·</T> {savedPremiumLabel} <T k="pages.todaypage.6dd0b7">kept today</T>
           </div>
         )}
         {savedToday.inboundCount > 0 && (
-          <div style={{ fontSize: 11, color: '#60A5FA', fontWeight: 600, marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--qs-dim)', fontWeight: 600, marginTop: 4 }}>
             📲 {savedToday.inboundCount} <T k="pages.todaypage.c2be2f">inbound save</T>{savedToday.inboundCount === 1 ? '' : 's'} · {inboundSavedLabel} <T k="pages.todaypage.675f22">kept (customer called in)</T>
           </div>
         )}
         {targetHit && (
-          <div style={{ fontSize: 11, color: '#B07A0E', marginTop: 6, fontWeight: 600 }}>
+          <div style={{ fontSize: 11, color: 'var(--qs-success)', marginTop: 6, fontWeight: 600 }}>
             <T k="pages.todaypage.44d406">✓ Priority list cleared — you can stop here or work ahead.</T>
           </div>
         )}
@@ -634,23 +637,25 @@ export default function TodayPage() {
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>
               {serviceTasks.length} <T k="pages.todaypage.aaabf0">service</T> {serviceTasks.length === 1 ? 'task' : 'tasks'} <T k="pages.todaypage.a232bb">to batch</T>
             </div>
-            <div style={{ fontSize: 12, color: serviceOverdue > 0 ? '#F87171' : 'var(--qs-muted)' }}>
+            <div style={{ fontSize: 12, color: serviceOverdue > 0 ? 'var(--qs-danger)' : 'var(--qs-muted)' }}>
               {serviceOverdue > 0 ? `${serviceOverdue} past due · ` : ''}<T k="pages.todaypage.024d27">clear in one block, grouped by type</T>
             </div>
           </div>
-          <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, flexShrink: 0 }}><T k="pages.todaypage.17ce5f">Open Service Batch →</T></span>
+          <span style={{ fontSize: 12, color: 'var(--qs-info)', fontWeight: 600, flexShrink: 0 }}><T k="pages.todaypage.17ce5f">Open Service Batch →</T></span>
         </a>
       )}
 
       {/* Never-worked alarm — call these before they lapse */}
+      {/* Red only when someone has already lapsed; "due this week" is a
+          plain callout — the ranked list below carries the urgency. */}
       {(untouched.dueSoon > 0 || untouched.lapsed > 0) && (
         <div style={{
-          background: untouched.lapsed > 0 ? 'rgba(239,68,68,0.10)' : 'rgba(245,158,11,0.10)',
-          border: `1px solid ${untouched.lapsed > 0 ? 'rgba(239,68,68,0.4)' : 'rgba(245,158,11,0.4)'}`,
+          background: untouched.lapsed > 0 ? 'var(--qs-danger-subtle)' : 'var(--qs-elevated)',
+          border: `1px solid ${untouched.lapsed > 0 ? 'var(--qs-danger-border)' : 'var(--qs-border)'}`,
           borderRadius: 10, padding: '12px 16px', marginBottom: 18,
         }}>
           <div style={{ fontSize: 13, fontWeight: 700,
-            color: untouched.lapsed > 0 ? '#F87171' : '#FBBF24' }}>
+            color: untouched.lapsed > 0 ? 'var(--qs-danger)' : 'var(--qs-bright)' }}>
             <T k="pages.todaypage.371acd">⚠ Call these before they lapse</T>
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>
@@ -658,7 +663,7 @@ export default function TodayPage() {
               <span><strong>{untouched.dueSoon}</strong> <T k="pages.todaypage.8f58e8">due this week you haven't called yet.</T> </span>
             )}
             {untouched.lapsed > 0 && (
-              <span><strong style={{ color: '#F87171' }}>{untouched.lapsed}</strong> <T k="pages.todaypage.ac77c5">already past due, never called — try a reinstatement/rewrite now.</T> </span>
+              <span><strong style={{ color: 'var(--qs-danger)' }}>{untouched.lapsed}</strong> <T k="pages.todaypage.ac77c5">already past due, never called — try a reinstatement/rewrite now.</T> </span>
             )}
             <T k="pages.todaypage.6dfb6a">They're in your ranked list below — work them first.</T>
           </div>
@@ -694,8 +699,7 @@ export default function TodayPage() {
                   }}
                 >
                   <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                    background: TYPE_BADGE[item._kind].bg, color: TYPE_BADGE[item._kind].color,
+                    ...TYPE_BADGE[item._kind], fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                     letterSpacing: '0.05em', flexShrink: 0,
                   }}>{TYPE_BADGE[item._kind].label}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
@@ -703,7 +707,7 @@ export default function TodayPage() {
                     {titleCaseName(item.customer_name) || '—'}
                   </span>
                   <span style={{ marginLeft: 'auto', fontSize: 12, flexShrink: 0,
-                    color: overdue ? '#F87171' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
+                    color: overdue ? 'var(--qs-danger)' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
                     {label}
                   </span>
                 </button>
@@ -740,8 +744,7 @@ export default function TodayPage() {
                   }}
                 >
                   <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                    background: TYPE_BADGE.cancel.bg, color: TYPE_BADGE.cancel.color,
+                    ...TYPE_BADGE.cancel, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                     letterSpacing: '0.05em', flexShrink: 0,
                   }}>{TYPE_BADGE.cancel.label}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
@@ -749,7 +752,7 @@ export default function TodayPage() {
                     {titleCaseName(item.customer_name) || '—'}
                   </span>
                   <span style={{ marginLeft: 'auto', fontSize: 12, flexShrink: 0,
-                    color: overdue ? '#F87171' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
+                    color: overdue ? 'var(--qs-danger)' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
                     {label}
                   </span>
                 </button>
@@ -804,7 +807,7 @@ export default function TodayPage() {
             }}>
               {remainder} <T k="pages.todaypage.addec4">more</T> {remainder === 1 ? 'case' : 'cases'} <T k="pages.todaypage.ab913e">beyond today's target</T>
               {' · '}
-              <a href="/my/queue" style={{ color: '#3B82F6', fontWeight: 600 }}>
+              <a href="/my/queue" style={{ color: 'var(--qs-info)', fontWeight: 600 }}>
                 <T k="pages.todaypage.90a419">Open full queue</T>
               </a>
             </div>
@@ -889,9 +892,9 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
       onClick={onOpen}
       style={{
         textAlign: 'left', cursor: 'pointer', width: '100%',
-        background: touched ? 'rgba(16,185,129,0.06)' : 'var(--qs-elevated)',
+        background: touched ? 'var(--qs-success-subtle)' : 'var(--qs-elevated)',
         border: '1px solid',
-        borderColor: touched ? '#10B98133' : 'var(--qs-border)',
+        borderColor: touched ? 'var(--qs-success-border)' : 'var(--qs-border)',
         borderRadius: 10, padding: '12px 14px',
         display: 'flex', alignItems: 'center', gap: 12,
         fontFamily: 'inherit', color: 'var(--qs-text)',
@@ -909,13 +912,13 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
           <span style={{
-            fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-            background: typeBadge.bg, color: typeBadge.color, letterSpacing: '0.05em',
+            ...typeBadge, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+            letterSpacing: '0.05em',
           }}>{typeBadge.label}</span>
           {tierBadge && (
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-              background: tierBadge.bg, color: tierBadge.color, letterSpacing: '0.05em',
+              ...tierBadge, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+              letterSpacing: '0.05em',
             }}>{tierBadge.label}</span>
           )}
           {householdSiblings.length > 0 && (
@@ -924,9 +927,8 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
                 .map(s => `${productLabel(s.product) || s.product || 'policy'} (${s.kind === 'cancel' ? 'pending cancel' : 'renewal'})`)
                 .join(', ')}. One call covers the household — the case detail has tabs to switch between policies.`}
               style={{
-                fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                background: '#F59E0B22', color: '#FBBF24', letterSpacing: '0.05em',
-                border: '1px solid #F59E0B44', cursor: 'help',
+                ...NEUTRAL_CHIP, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                letterSpacing: '0.05em', cursor: 'help',
               }}>
               ⌂ {householdSiblings.map(s =>
                 `+${String(productLabel(s.product) || s.product || '?').toUpperCase()}${s.kind === 'cancel' ? ' ⚠' : ''}`
@@ -935,14 +937,14 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
           )}
           {touched && (
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-              background: '#10B98122', color: '#34D399', letterSpacing: '0.05em',
+              ...SUCCESS_CHIP, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+              letterSpacing: '0.05em',
             }}><T k="pages.todaypage.535313">CALLED TODAY</T></span>
           )}
           {isCancel && item.promise_date && new Date(item.promise_date) < new Date() && (
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-              background: '#EF444433', color: '#FCA5A5', letterSpacing: '0.05em',
+              ...DANGER_CHIP, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+              letterSpacing: '0.05em',
             }}><T k="pages.todaypage.ded560">⚠ PAY PROMISE OVERDUE</T></span>
           )}
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
@@ -953,9 +955,8 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
           {winback && (
             <span
               title={`Lost their ${productLabel(winback.product)} ${winback.months}mo ago. While you have them on the renewal, pitch adding it back — the bundle discount lowers this premium too.`}
-              style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.35)',
-                color: '#34D399', letterSpacing: '0.04em' }}>
+              style={{ ...NEUTRAL_CHIP, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                letterSpacing: '0.04em' }}>
               <T k="pages.todaypage.e5b8f8">♻ WIN BACK</T> {productLabel(winback.product).toUpperCase()}
             </span>
           )}

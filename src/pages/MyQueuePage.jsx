@@ -21,6 +21,7 @@ import { titleCaseName } from '../lib/names';
 import { productLabel } from '../lib/productLabels';
 import MultiVehicleBadge from '../components/MultiVehicleBadge';
 import { useWinbackLapses, winbackFor } from '../hooks/useWinbackLapses';
+import { NEUTRAL_CHIP, DANGER_CHIP } from '../lib/statusChips';
 
 // Snooze guardrails: a case can't be deferred once its deadline is within 14
 // days, and a snooze can never PARK it to within 14 days of the deadline — so a
@@ -154,20 +155,6 @@ const PRIORITY_BUCKETS = [
   },
 ];
 
-// Neutral chip: an icon + label on an elevated surface. Flags that are
-// informational (bundle, renewing, autopay, AI spoke…) all use this so they
-// don't compete with the urgency signal.
-const NEUTRAL_CHIP = {
-  background: 'var(--qs-elevated)',
-  border: '1px solid var(--qs-border)',
-  color: 'var(--qs-dim)',
-};
-// Danger chip: the one red flag style (overdue promise, active cancel).
-const DANGER_CHIP = {
-  background: 'var(--qs-danger-subtle)',
-  border: '1px solid var(--qs-danger-border)',
-  color: 'var(--qs-danger)',
-};
 
 // Last attempt one-liner
 function lastAttemptSummary(result, attemptedAt) {
