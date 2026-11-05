@@ -41,7 +41,7 @@ export function ConsumerNav({ current }) {
 
   return (
     <header className="flex items-center justify-between gap-2 pt-5 lg:pt-7">
-      <Link to="/" aria-label="Cam Wiley Agency home" className="min-w-0"><BrandLogo /></Link>
+      <Link to="/" aria-label="Cam Wiley Agency home" className="min-w-0"><BrandLogo tagline /></Link>
       <div className="flex items-center gap-1">
         <nav aria-label="insuredbycam" className="hidden items-center gap-1 whitespace-nowrap text-sm font-semibold sm:flex">
           {PAGES.map(([key, to, label]) => (key === current

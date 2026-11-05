@@ -2,8 +2,8 @@
 // The brand: the Cam Wiley Agency seal (small form), "Cam Wiley Agency", and a line
 // under it ("Allstate agent · Conyers, GA", editable in the copy editor).
 // `tone`: 'dark' on the blue header, 'light' on white. One size everywhere, so it always
-// reads as the same logo; `tagline={false}` drops the line where the visitor already knows
-// who you are (menu, Rate Check steps, partner portal, agency app).
+// reads as the same logo. `tagline` adds the line; only the main site header uses it
+// (the menu, Rate Check steps, partner portal and agency app show seal and name only).
 import { useId } from 'react';
 import { T } from './SiteCopy';
 
@@ -33,7 +33,7 @@ export function SealMark({ className = 'h-9 w-9' }) {
   );
 }
 
-export default function BrandLogo({ tone = 'dark', tagline = true, className = '' }) {
+export default function BrandLogo({ tone = 'dark', tagline = false, className = '' }) {
   const dark = tone === 'dark';
   const name = 'text-[18px]';
   const mark = 'h-9 w-9';
