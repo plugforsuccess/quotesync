@@ -1,6 +1,6 @@
 // src/components/BrandLogo.jsx
 // The brand: a gold-edged navy shield with "CW", "Cam Wiley Agency", and a line
-// under it ("Allstate agent · Covington, GA", editable in the copy editor).
+// under it ("Allstate agent · Conyers, GA", editable in the copy editor).
 // `tone`: 'dark' on the blue header, 'light' on white. `compact` drops the line.
 import { useId } from 'react';
 import { T } from './SiteCopy';
@@ -33,7 +33,7 @@ export default function BrandLogo({ tone = 'dark', compact = false, size = 'md',
           style={{ fontFamily: "var(--font-display, 'Plus Jakarta Sans', Inter, sans-serif)" }}>Cam Wiley Agency</span>
         {!compact && (
           <span className={`mt-1 whitespace-nowrap text-[11.5px] font-medium ${dark ? 'text-blue-200' : 'text-slate-500'}`}>
-            <T k="brand.tagline">Allstate agent · Covington, GA</T>
+            <T k="brand.tagline">Allstate agent · Conyers, GA</T>
           </span>
         )}
       </span>
