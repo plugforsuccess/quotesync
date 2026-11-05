@@ -14,6 +14,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
 import Dismissible from '../components/Dismissible';
+import BrandLogo from '../components/BrandLogo';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
@@ -134,7 +135,7 @@ export default function RateCheckPage() {
   const saveDraftPages = (policy) => policy.pages.forEach((pg, order) => saveDraftPhoto({ id: pg.id, file: pg.file, policyId: policy.id, order }));
 
   useEffect(() => {
-    document.title = 'Get a second opinion on your insurance | insuredbycam';
+    document.title = 'Get a second opinion on your insurance | Cam Wiley Agency';
     window.scrollTo(0, 0);
   }, []);
 
@@ -1652,7 +1653,7 @@ function Shell({ children, step, bar, center = false, wide = false }) {
     <div className="min-h-screen bg-slate-50">
       {styles}
       <header className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 pt-5">
-        <span className="shrink-0 text-sm font-extrabold tracking-tight text-slate-900">insuredbycam <span className="font-semibold text-slate-400">· Rate Check</span></span>
+        <BrandLogo tone="light" className="shrink-0" />
         {step && (
           <ol className="flex items-center gap-1.5" aria-label={`Step ${step} of 3: ${STEPS[step - 1]}`}>
             {STEPS.map((st, i) => (

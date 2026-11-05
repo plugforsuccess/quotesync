@@ -74,7 +74,7 @@ export default function DefensiveDrivingPage() {
 
   return (
     <div className="bg-white text-slate-700 min-h-screen">
-      <title>Georgia 6-Hour Defensive Driving Course | insuredbycam</title>
+      <title>Georgia 6-Hour Defensive Driving Course | Cam Wiley Agency</title>
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative overflow-hidden text-white" style={{ background: HERO_BG }}>
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"

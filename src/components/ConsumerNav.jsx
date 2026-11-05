@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { T, EditPagePencil } from './SiteCopy';
+import BrandLogo from './BrandLogo';
 
 const ACCENT = '#39FF88';
 // Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
@@ -40,7 +41,7 @@ export function ConsumerNav({ current }) {
 
   return (
     <header className="flex items-center justify-between gap-2 pt-5 lg:pt-7">
-      <Link to="/" className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: GOLD }}>by</span>cam.com</Link>
+      <Link to="/" aria-label="Cam Wiley Agency home" className="min-w-0"><BrandLogo tagline /></Link>
       <div className="flex items-center gap-1">
         <nav aria-label="insuredbycam" className="hidden items-center gap-1 whitespace-nowrap text-sm font-semibold sm:flex">
           {PAGES.map(([key, to, label]) => (key === current
@@ -59,7 +60,7 @@ export function ConsumerNav({ current }) {
           <div className="absolute inset-0" style={{ background: 'rgba(15,45,107,0.55)' }} onClick={() => setOpen(false)} aria-hidden="true" />
           <div className="absolute inset-y-0 right-0 flex w-[82%] max-w-xs flex-col shadow-2xl" style={{ background: HERO_BG }}>
             <div className="flex items-center justify-between px-5 pt-5">
-              <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: GOLD }}>by</span>cam.com</span>
+              <BrandLogo />
               <button type="button" onClick={() => setOpen(false)} aria-label="Close menu"
                 className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10">
                 <X className="h-6 w-6" aria-hidden="true" />
