@@ -275,6 +275,16 @@ export default function RateCheckPage() {
     return () => { cancelled = true; };
   }, [inviteCode]);
 
+  // A producer already pitched them in person: skip the landing page and open the flow.
+  // A partner's link keeps the landing page (it introduces us). Once per visit.
+  const skippedLandingRef = useRef(false);
+  useEffect(() => {
+    if (!ready || !invite || invite.promoter_name || skippedLandingRef.current) return;
+    skippedLandingRef.current = true;
+    setStep(s => (s === 'results' ? s : itemsRef.current.some(i => i.status === 'draft') ? 'policies' : 'pick'));
+    window.scrollTo(0, 0);
+  }, [ready, invite]);
+
   // Save typed details as they change (never consent).
   useEffect(() => {
     if (!ready) return;
