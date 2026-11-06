@@ -27,4 +27,15 @@ export const customerReviewText = (name) => buildText('review', { name, reviewLi
 /** A referral partner who's also a customer. */
 export const partnerReviewText = (name) => buildText('partnerReview', { name, reviewLink: reviewUrl() });
 
+// The number customers text the agency at (copy key link.text_number, set in
+// Rate Checks → Texts). Anything that isn't a 10-digit US number counts as unset,
+// and the Text us button stays hidden.
+export const TEXT_NUMBER_KEY = 'link.text_number';
+export const TEXT_NUMBER_UNSET = 'Not set yet';
+export function textNumber(value) {
+  const d = String(value || '').replace(/\D/g, '');
+  const ten = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
+  return ten.length === 10 ? ten : null;
+}
+
 export const smsHref = (phone, body) => `sms:${phone ? `+1${String(phone).replace(/\D/g, '').slice(-10)}` : ''}?&body=${encodeURIComponent(body)}`;

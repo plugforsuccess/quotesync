@@ -12,12 +12,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { T, CopyImage } from '../components/SiteCopy';
+import { T, CopyImage, useCopyValue } from '../components/SiteCopy';
+import { TEXT_NUMBER_KEY, textNumber, smsHref } from '../lib/reviews';
 import Dismissible from '../components/Dismissible';
 import BrandLogo from '../components/BrandLogo';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
-  AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
@@ -1558,6 +1559,19 @@ function OfficeStatus({ className }) {
   );
 }
 
+// Text the office: opens Messages with a first line written in. Hidden until the
+// agency's number is set (Rate Checks → Texts).
+function TextUs({ className = '' }) {
+  const number = textNumber(useCopyValue(TEXT_NUMBER_KEY));
+  const body = useCopyValue('rc.textus.body', 'Hi Cam, I have a question about my insurance.');
+  if (!number) return null;
+  return (
+    <a href={smsHref(number, body)} className={`qb qb-outline-dark qb-md w-full ${className}`}>
+      <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textus.cta">Text us</T>
+    </a>
+  );
+}
+
 // The agency beside the ask: a compact card on phones, a full card on desktop.
 function OwnerCard() {
   return (
@@ -1573,6 +1587,7 @@ function OwnerCard() {
           <OfficeStatus className="mt-2.5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:border-0 lg:pt-0" />
         </div>
       </div>
+      <TextUs className="mt-4" />
       <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">
         {PROMISES.map(([k, text]) => (
           <li key={k} className="flex items-center gap-2.5 text-[15px] text-white">
@@ -1707,10 +1722,11 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
                 <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
               </p>
               <StartCard onStart={onStart} onUpload={onUpload} onDropFiles={onDropFiles} />
-              <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-blue-100 lg:justify-start">
+              <ul className="mx-auto mt-5 grid w-fit grid-cols-2 gap-x-6 gap-y-2.5 text-sm text-blue-100 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-5 lg:mx-0 lg:justify-start">
                 <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
                 <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
                 <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
+                <Trust icon={BadgeCheck} k="rc.trust.free" label="Free, no obligation" />
               </ul>
             </div>
             <OwnerCard />

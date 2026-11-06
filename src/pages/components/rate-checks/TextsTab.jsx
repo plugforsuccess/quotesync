@@ -9,7 +9,7 @@ import { T } from '../../../components/SiteCopy';
 import { CopyTextButton } from './Copyable';
 import Dismissible from '../../../components/Dismissible';
 import { TEXT_GROUPS, TEXT_TEMPLATES, STOP_LINE, buildText, segments, templateWarnings } from '../../../lib/textTemplates';
-import { REVIEW_LINK_KEY, REVIEW_LINK_FALLBACK, reviewUrl } from '../../../lib/reviews';
+import { REVIEW_LINK_KEY, REVIEW_LINK_FALLBACK, reviewUrl, TEXT_NUMBER_KEY, TEXT_NUMBER_UNSET } from '../../../lib/reviews';
 
 const box = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' };
 const sample = { name: 'Dana', carrier: 'State Farm', reviewLink: '[review link]', portalLink: '[portal link]' };
@@ -88,6 +88,16 @@ export default function TextsTab({ agencyId }) {
         </p>
         <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
           Paste yours with the pencil (Google Business Profile → Ask for reviews). It fills in [review link]. <a href={reviewUrl()} target="_blank" rel="noreferrer" className="underline">Test it</a>
+        </p>
+      </section>
+
+      <section className="dark-card" style={{ padding: 16 }} aria-label="Text us number">
+        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Your “Text us” number</p>
+        <p className="mt-1 rounded-lg p-2.5 font-mono text-[13px]" style={box}>
+          <T k={TEXT_NUMBER_KEY}>{TEXT_NUMBER_UNSET}</T>
+        </p>
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+          The mobile number customers can text from the website. The Text us button shows once this is a 10-digit number.
         </p>
       </section>
 
