@@ -1582,7 +1582,7 @@ function OwnerCard() {
   );
 }
 
-// The first screen's card: what happens, one button to start, and a shortcut for
+// The first screen's card: one button to start, and a shortcut for
 // people who already have their policy in hand (desktop: drop a PDF on it).
 function StartCard({ onStart, onUpload, onDropFiles }) {
   const [dragging, setDragging] = useState(false);
@@ -1591,23 +1591,13 @@ function StartCard({ onStart, onUpload, onDropFiles }) {
     const files = Array.from(e.dataTransfer?.files || []).filter(ACCEPTS);
     if (files.length) onDropFiles(files);
   };
-  const steps = [['1', 'rc.start.1', 'Pick your policies'], ['2', 'rc.start.2', 'Add your dec pages'], ['3', 'rc.start.3', 'Get a text back']];
   return (
     <div id="rc-upload-card" className={`mt-7 rounded-3xl bg-white p-5 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 transition ${dragging ? 'ring-4 ring-blue-300' : ''}`}
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
-      <p className="text-center text-[17px] font-extrabold"><T k="rc.start.title">How it works</T></p>
-      <ol className="mt-3 grid grid-cols-3 gap-2 text-center">
-        {steps.map(([n, k, label]) => (
-          <li key={n} className="text-[13px] font-semibold leading-snug text-slate-600">
-            <span className="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-xl text-sm font-extrabold" style={{ background: NAVY, color: GOLD }}>{n}</span>
-            <T k={k}>{label}</T>
-          </li>
-        ))}
-      </ol>
-      <button type="button" onClick={onStart} className="qb qb-gold qb-lg mt-4 w-full text-lg">
+      <button type="button" onClick={onStart} className="qb qb-gold qb-lg w-full text-lg">
         <T k="rc.start.cta">Get started</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
       </button>
-      <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes · no spam calls</T></p>
+      <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes</T></p>
       <button type="button" onClick={onUpload} className="mt-3 w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4">
         <T k="rc.start.shortcut">Have your policy handy? Upload it now</T><span className="hidden lg:inline"> · or drop a PDF here</span>
       </button>
@@ -1750,10 +1740,10 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
                 <li><T k="rc.howto.2">Open **Documents**. Some insurers call it **Policy Documents** or **Documents & ID Cards**.</T></li>
                 <li><T k="rc.howto.3">Find the most recent declarations page for each policy.</T></li>
                 <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
-                <li><T k="rc.howto.5">Come back here and tap **Upload my policy**.</T></li>
+                <li><T k="rc.howto.5">Come back here and tap **Get started**.</T></li>
               </ol>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
-              <p className="mt-1"><T k="rc.howto.paper">Tap **Take photos instead** and photograph every page of the declarations. Lay it flat in good light.</T></p>
+              <p className="mt-1"><T k="rc.howto.paper">Tap **Get started**, then **Take photos**, and photograph every page of the declarations. Lay it flat in good light.</T></p>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.screens.title">Can’t download it?</T></p>
               <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
             </div>
