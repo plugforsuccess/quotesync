@@ -72,7 +72,7 @@ export function CallScriptBox({ label = 'Call script', children }) {
       borderRadius: 6, padding: '7px 10px', marginBottom: 8,
     }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--qs-info)',
-        textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+        textTransform: 'uppercase', marginBottom: 4 }}><T>{label}</T></div>
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
         {children}
       </div>

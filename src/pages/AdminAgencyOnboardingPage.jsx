@@ -290,7 +290,7 @@ const AdminAgencyOnboardingPage = () => {
                   <span className={`text-xs font-medium hidden sm:inline ${
                     i === step ? 'text-primary-600' : i < step ? 'text-green-600' : 'text-gray-400'
                   }`}>
-                    {s.label}
+                    <T>{s.label}</T>
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
@@ -737,9 +737,9 @@ function Field({ label, children, error, hint, required }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
+        <T>{label}</T>
         {required && <span className="text-red-500 ml-0.5">*</span>}
-        {hint && <span className="text-xs text-gray-400 ml-1.5 font-normal">({hint})</span>}
+        {hint && <span className="text-xs text-gray-400 ml-1.5 font-normal">(<T>{hint}</T>)</span>}
       </label>
       {children}
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}

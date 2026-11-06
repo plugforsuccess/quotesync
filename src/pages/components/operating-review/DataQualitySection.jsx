@@ -31,7 +31,7 @@ function Stat({ label, rate, sample, tone }) {
   return (
     <div style={{ minWidth: 150 }}>
       <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--qs-subtle)', fontWeight: 600, marginBottom: 4 }}>
-        {label}
+        <T>{label}</T>
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <span style={{ fontSize: 30, fontWeight: 700, lineHeight: 1, color }}>

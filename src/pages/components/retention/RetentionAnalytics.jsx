@@ -189,7 +189,7 @@ function ResolvedTab({ resolvedEvents }) {
                     {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
                   </td>
                   <td>
-                    <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
+                    <span className="status-badge" style={{ background: sc.bg, color: sc.color }}><T>{sc.label}</T></span>
                   </td>
                   <td style={{ color: "var(--qs-subtle)", fontSize: 12 }}>{event.assigned_to || "—"}</td>
                   <td style={{ color: "var(--qs-subtle)", fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

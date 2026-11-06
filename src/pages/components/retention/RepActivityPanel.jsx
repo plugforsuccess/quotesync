@@ -78,7 +78,7 @@ function WorkedRows({ worked, k, onCustomer }) {
         {w.saved
           ? <span style={{ color: 'var(--qs-success)', fontWeight: 600 }}><T k="pages.components.retention.repactivitypanel.a02001">✓ saved</T>{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
           : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
-        {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
+        {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“<T>{w.note}</T>”</span>}
       </td>
     </tr>
     );
@@ -103,7 +103,7 @@ function TaskDoneRows({ tasks, k }) {
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
           ...SUCCESS_CHIP }}><T k="pages.components.retention.repactivitypanel.1e9906">TASK ✓</T></span>
-        <span style={{ color: 'var(--qs-text)' }}>{t.title}</span>
+        <span style={{ color: 'var(--qs-text)' }}><T>{t.title}</T></span>
         {t.customer_name ? ` · ${titleCaseName(t.customer_name)}` : ''}
       </td>
     </tr>

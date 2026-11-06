@@ -64,7 +64,7 @@ function InputField({ id, label, type = 'text', value, onChange, placeholder, er
     <div className={className}>
       {label && (
         <label htmlFor={id} className="block text-sm font-semibold text-gray-700 mb-1.5">
-          {label}
+          <T>{label}</T>
         </label>
       )}
       <input
@@ -305,7 +305,7 @@ export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isR
             onClick={() => handleSelect(opt.value)}
           >
             <span className="block text-lg mb-0.5">{opt.emoji}</span>
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -431,7 +431,7 @@ function CarrierLogoCard({ carrier, selected, onClick }) {
           <span className={`text-xs font-bold px-2 py-1 rounded ${
             isAllstate && selected ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
           }`}>
-            {carrier.label}
+            <T>{carrier.label}</T>
           </span>
         )}
       </div>
@@ -440,7 +440,7 @@ function CarrierLogoCard({ carrier, selected, onClick }) {
           ? isAllstate ? 'text-purple-700' : 'text-primary-700'
           : 'text-gray-600'
       }`}>
-        {carrier.label}
+        <T>{carrier.label}</T>
       </span>
     </button>
   );
@@ -472,7 +472,7 @@ export function CarrierSelectionStep({ heading, topCarriers, secondTierLabels, v
 
   return (
     <div>
-      <StepHeading>{heading}</StepHeading>
+      <StepHeading><T>{heading}</T></StepHeading>
       <StepDescription><T k="pages.components.wizard.wizardsteps.84fe8f">This helps us compare apples to apples.</T></StepDescription>
 
       {/* Logo card grid */}
@@ -544,7 +544,7 @@ export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
             className="w-full pl-10 pr-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500"
           />
         </div>
-        {hint && <p className="mt-2 text-sm text-amber-600 text-center">{hint}</p>}
+        {hint && <p className="mt-2 text-sm text-amber-600 text-center"><T>{hint}</T></p>}
       </div>
       <div className="mt-4 text-center">
         <button
@@ -592,7 +592,7 @@ export function CurrentHomePremiumStep({ value, onChange, onSkip }) {
             className="w-full pl-10 pr-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500"
           />
         </div>
-        {hint && <p className="mt-2 text-sm text-amber-600 text-center">{hint}</p>}
+        {hint && <p className="mt-2 text-sm text-amber-600 text-center"><T>{hint}</T></p>}
       </div>
       <div className="mt-4 text-center">
         <button
@@ -634,7 +634,7 @@ export function CoverageLapseStep({ value, onChange, onAutoAdvance }) {
             selected={value === opt.value}
             onClick={() => handleSelect(opt.value)}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -730,14 +730,14 @@ function VehicleMakeLogoCard({ make, selected, onClick }) {
           />
         ) : (
           <span className="text-xs font-bold px-2 py-1 rounded bg-gray-100 text-gray-700">
-            {make.label}
+            <T>{make.label}</T>
           </span>
         )}
       </div>
       <span className={`text-xs font-semibold uppercase tracking-wide ${
         selected ? 'text-primary-700' : 'text-gray-600'
       }`}>
-        {make.label}
+        <T>{make.label}</T>
       </span>
     </button>
   );
@@ -883,9 +883,9 @@ export function VehicleUseStep({ vehicleLabel, value, onChange }) {
                 </div>
                 <div>
                   <p className={`font-bold text-sm ${isSelected ? 'text-primary-700' : 'text-gray-800'}`}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{opt.description}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed"><T>{opt.description}</T></p>
                 </div>
               </div>
             </button>
@@ -920,7 +920,7 @@ export function AutoDrivingRecordStep({ value, onChange, onAutoAdvance }) {
             variant={value === opt.value && opt.value === '3+' ? 'warning' : 'default'}
             onClick={() => handleSelect(opt.value)}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -951,7 +951,7 @@ export function HomeClaimsHistoryStep({ value, onChange, onAutoAdvance }) {
             variant={value === opt.value && opt.value === '2+' ? 'warning' : 'default'}
             onClick={() => handleSelect(opt.value)}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -1492,7 +1492,7 @@ export function HomeInsuranceStatusStep({ value, onChange, onAutoAdvance }) {
             onClick={() => handleSelect(opt.value)}
           >
             <span className="mr-2">{opt.emoji}</span>
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -1526,7 +1526,7 @@ export function HomeOccupancyTypeStep({ value, onChange, onAutoAdvance }) {
             onClick={() => handleSelect(opt.value)}
           >
             <span className="mr-2">{opt.emoji}</span>
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>

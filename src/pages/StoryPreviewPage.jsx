@@ -139,7 +139,7 @@ const StoryPreviewPage = () => {
 
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-          {story.title}
+          <T>{story.title}</T>
         </h1>
 
         {/* Meta Info */}

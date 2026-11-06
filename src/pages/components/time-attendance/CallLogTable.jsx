@@ -48,7 +48,7 @@ function formatDateLabel(dateStr) {
 function FilterPill({ label, options, value, onChange }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-xs text-qs-subtle font-medium">{label}:</span>
+      <span className="text-xs text-qs-subtle font-medium"><T>{label}</T>:</span>
       <div className="inline-flex rounded-md border border-qs-border overflow-hidden">
         {options.map((opt) => (
           <button
@@ -60,7 +60,7 @@ function FilterPill({ label, options, value, onChange }) {
                 : 'bg-qs-card text-qs-dim hover:bg-qs-elevated'
             } ${opt.value !== options[0].value ? 'border-l border-qs-border' : ''}`}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </button>
         ))}
       </div>

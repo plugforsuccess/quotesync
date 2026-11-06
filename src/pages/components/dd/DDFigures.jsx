@@ -227,7 +227,7 @@ function Cards({ cards, big = false }) {
         return (
           <div key={card.title} className="ddc-fig-pop rounded-lg p-3" style={{ animationDelay: `${i * 0.35}s`, background: t.bg, border: `1px solid ${t.bd}` }}>
             <p className="flex items-center gap-1.5 font-bold ddc-sm" style={{ color: t.c }}>
-              {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />}{card.title}
+              {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />}<T>{card.title}</T>
             </p>
             {card.value && <p className={`mt-1 font-black ddc-heading ${big ? 'ddc-h2' : 'ddc-lg'}`}>{card.value}</p>}
             {card.items && (
@@ -454,7 +454,7 @@ export default function DDFigure({ name, caption }) {
   return (
     <figure className="ddc-fig rounded-xl border ddc-bd ddc-card p-4">
       <div className="mx-auto max-w-md"><Fig /></div>
-      {caption && <figcaption className="mt-2 text-center ddc-sm ddc-muted">{caption}</figcaption>}
+      {caption && <figcaption className="mt-2 text-center ddc-sm ddc-muted"><T>{caption}</T></figcaption>}
     </figure>
   );
 }
@@ -469,7 +469,7 @@ export function DDVideo({ youtube, src, caption, title = 'Lesson video' }) {
               allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
           : <video className="absolute inset-0 h-full w-full" src={src} controls playsInline preload="metadata" />}
       </div>
-      {caption && <figcaption className="px-4 py-3 ddc-sm ddc-muted">{caption}</figcaption>}
+      {caption && <figcaption className="px-4 py-3 ddc-sm ddc-muted"><T>{caption}</T></figcaption>}
     </figure>
   );
 }

@@ -98,8 +98,8 @@ function Age({ rc, now }) {
 
 function StatusChip({ status, quiet = false }) {
   const c = STATUS[status] || { label: status, cls: 'bg-gray-100 text-gray-600' };
-  if (quiet) return <span className="whitespace-nowrap text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}>{c.label}</span>;
-  return <span className={`inline-flex items-center whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${c.cls}`}>{c.label}</span>;
+  if (quiet) return <span className="whitespace-nowrap text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}><T>{c.label}</T></span>;
+  return <span className={`inline-flex items-center whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${c.cls}`}><T>{c.label}</T></span>;
 }
 
 // delta = current − Allstate, so positive means the customer saves.
@@ -291,7 +291,7 @@ function TabBar({ tab, setTab }) {
           <div className="relative w-full max-w-md rounded-t-2xl p-4 pb-8 sm:rounded-2xl sm:pb-4" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
             {MORE_GROUPS.map(g => (
               <div key={g.title} className="mb-3 last:mb-0">
-                <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>{g.title}</p>
+                <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{g.title}</T></p>
                 <div className="overflow-hidden rounded-xl" style={{ border: '1px solid var(--qs-border)' }}>
                   {g.tabs.map(({ v, label, hint, Icon }, i) => (
                     <button key={v} type="button" onClick={() => { setTab(v); setSheet(false); }}
@@ -534,7 +534,7 @@ export default function RateChecksPage() {
                   <button key={f.value} onClick={() => { setFilter(f.value); setOverdueOnly(false); }}
                     className={`min-h-[36px] flex-auto whitespace-nowrap rounded-md px-2 text-[13px] font-medium sm:flex-none sm:px-3 sm:text-sm ${filter === f.value && !overdueOnly ? 'bg-primary-600 text-white' : ''}`}
                     style={filter === f.value && !overdueOnly ? undefined : { color: 'var(--qs-text)' }}>
-                    {f.short || f.label} <span className={filter === f.value && !overdueOnly ? 'opacity-80' : ''} style={filter === f.value && !overdueOnly ? undefined : { color: 'var(--qs-subtle)' }}>{counts[f.value]}</span>
+                    <T>{f.short || f.label}</T> <span className={filter === f.value && !overdueOnly ? 'opacity-80' : ''} style={filter === f.value && !overdueOnly ? undefined : { color: 'var(--qs-subtle)' }}>{counts[f.value]}</span>
                   </button>
                 ))}
               </div>

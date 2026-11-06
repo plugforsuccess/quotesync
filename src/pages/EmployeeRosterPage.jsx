@@ -265,7 +265,7 @@ const EmployeeRosterPage = () => {
                   : 'bg-qs-elevated text-qs-dim border border-qs-border hover:bg-qs-card'
               }`}
             >
-              {f.label}
+              <T>{f.label}</T>
             </button>
           ))}
         </div>

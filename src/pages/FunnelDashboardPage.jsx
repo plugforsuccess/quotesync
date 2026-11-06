@@ -93,7 +93,7 @@ const FunnelDashboardPage = () => {
                 onMouseEnter={(e) => { if (timeRange !== key) e.currentTarget.style.background = 'var(--qs-elevated)'; }}
                 onMouseLeave={(e) => { if (timeRange !== key) e.currentTarget.style.background = ''; }}
               >
-                {label}
+                <T>{label}</T>
               </button>
             ))}
           </div>

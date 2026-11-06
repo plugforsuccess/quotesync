@@ -17,7 +17,7 @@ function Section({ n, title, children }) {
   return (
     <section className="mb-6">
       <h2 className="text-base font-bold text-gray-900 mb-1">
-        {n}. {title}
+        {n}. <T>{title}</T>
       </h2>
       <div className="text-sm text-gray-700 leading-relaxed space-y-2">
         {children}

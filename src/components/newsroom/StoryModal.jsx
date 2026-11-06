@@ -92,7 +92,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
 
               {/* Title */}
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-                {story.title}
+                <T>{story.title}</T>
               </h1>
 
               {/* Meta */}

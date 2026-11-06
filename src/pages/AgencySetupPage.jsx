@@ -126,10 +126,10 @@ export default function AgencySetupPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-400 font-medium">{index + 1}.</span>
                   <h3 className={`font-semibold ${step.completed ? 'text-gray-500' : 'text-gray-900'}`}>
-                    {step.label}
+                    <T>{step.label}</T>
                   </h3>
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">{step.description}</p>
+                <p className="text-sm text-gray-500 mt-0.5"><T>{step.description}</T></p>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors flex-shrink-0" />
             </Link>

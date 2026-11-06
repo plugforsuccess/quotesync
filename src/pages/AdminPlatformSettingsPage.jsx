@@ -75,7 +75,7 @@ function FeatureFlagsTab() {
               <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left', position: 'sticky', left: 0, background: 'var(--qs-elevated)', zIndex: 1 }}><T k="pages.adminplatformsettingspage.75ec3e">Agency</T></th>
               {FEATURE_KEYS.map(f => (
                 <th key={f.key} className="dark-section-label" style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }} title={f.description}>
-                  {f.label}
+                  <T>{f.label}</T>
                 </th>
               ))}
             </tr>
@@ -166,7 +166,7 @@ function RolePermissionsTab() {
               <th className="dark-section-label" style={{ padding: '10px 16px', textAlign: 'left', position: 'sticky', left: 0, background: 'var(--qs-elevated)', zIndex: 1 }}><T k="pages.adminplatformsettingspage.75ec3e">Agency</T></th>
               {FEATURE_KEYS.map(f => (
                 <th key={f.key} className="dark-section-label" style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }} title={f.description}>
-                  {f.label}
+                  <T>{f.label}</T>
                 </th>
               ))}
             </tr>
@@ -375,7 +375,7 @@ const AdminPlatformSettingsPage = () => {
               }}
             >
               <tab.icon size={14} />
-              {tab.label}
+              <T>{tab.label}</T>
             </button>
           ))}
         </div>

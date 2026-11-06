@@ -102,7 +102,7 @@ function PillToggle({ theme, setTheme }) {
                   color: active ? '#3B82F6' : 'var(--qs-text)',
                   flex: 1,
                 }}>
-                  {t.label}
+                  <T>{t.label}</T>
                 </span>
                 {active && (
                   <span style={{
@@ -160,7 +160,7 @@ function SwitchToggle({ theme, setTheme }) {
               fontWeight: theme === t.key ? 600 : 400,
               color: theme === t.key ? '#3B82F6' : 'var(--qs-dim)',
             }}>
-              {t.label}
+              <T>{t.label}</T>
             </span>
             {theme === t.key && (
               <span style={{

@@ -117,7 +117,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
                         onChange={() => setReason(r.value)}
                         className="text-primary-600 focus:ring-primary-500"
                       />
-                      <span className="text-sm text-gray-900">{r.label}</span>
+                      <span className="text-sm text-gray-900"><T>{r.label}</T></span>
                     </label>
                   ))}
                 </div>

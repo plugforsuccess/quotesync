@@ -97,7 +97,7 @@ function SortTh({ col, label, sortCol, sortDir, onSort }) {
   const active = sortCol === col;
   return (
     <th onClick={() => onSort(col)} style={{ cursor: "pointer", userSelect: "none" }}>
-      {label} {active ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : ""}
+      <T>{label}</T> {active ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : ""}
     </th>
   );
 }
@@ -130,13 +130,13 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount, clickable, onC
       )}
       <div style={{ fontSize: 11, color: 'var(--qs-subtle)', fontWeight: 600,
         textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
-        {label}
+        <T>{label}</T>
       </div>
       <div style={{ fontSize: 26, fontWeight: 700, color,
         fontFamily: "'DM Mono', monospace" }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}><T>{sub}</T></div>}
     </div>
   );
 }
@@ -188,7 +188,7 @@ function CustomerDrilldownModal({ event, onClose }) {
             { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "var(--qs-dim)" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
-              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}><T>{label}</T></div>
               <div style={{ fontSize: 13, fontWeight: 600, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
             </div>
           ))}
@@ -266,7 +266,7 @@ function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
         return c.active ? (
           <span key={c.id} aria-current="true" style={{ ...tab, cursor: 'default',
             background: t.bg, borderColor: t.color, color: t.color }}>
-            {label}
+            <T>{label}</T>
           </span>
         ) : (
           <button key={c.id} type="button" onClick={() => onOpen(c)} disabled={busyId === c.id}
@@ -864,7 +864,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   fontSize: 11, fontWeight: 600, color: "var(--qs-subtle)",
                   textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
                 }}>
-                  {label}
+                  <T>{label}</T>
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 700, color,
@@ -1009,7 +1009,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       borderColor: on ? "var(--qs-info)" : "var(--qs-border)",
                       background: on ? "var(--qs-info-subtle)" : "var(--qs-elevated)",
                       color: on ? "var(--qs-info)" : "var(--qs-dim)", fontFamily: "inherit" }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </button>
                 );
               })}
@@ -1136,7 +1136,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       )}
                       {a.note && (
                         <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
-                          {a.note}
+                          <T>{a.note}</T>
                         </div>
                       )}
                     </div>
@@ -2064,9 +2064,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 color: banner.color, borderRadius: 10, padding: "10px 14px", marginBottom: 16,
                 fontSize: 13, fontWeight: 700,
               }}>
-                <span>{banner.label}</span>
+                <span><T>{banner.label}</T></span>
                 {banner.sub && (
-                  <span style={{ fontWeight: 400, color: "var(--qs-subtle)" }}>· {banner.sub}</span>
+                  <span style={{ fontWeight: 400, color: "var(--qs-subtle)" }}>· <T>{banner.sub}</T></span>
                 )}
               </div>
             );
@@ -2113,7 +2113,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   fontSize: 11, fontWeight: 600, color: "var(--qs-subtle)",
                   textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
                 }}>
-                  {label}
+                  <T>{label}</T>
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 700, color: color || "var(--qs-text)",
@@ -2284,7 +2284,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       borderColor: on ? "var(--qs-info)" : "var(--qs-border)",
                       background: on ? "var(--qs-info-subtle)" : "var(--qs-elevated)",
                       color: on ? "var(--qs-info)" : "var(--qs-dim)", fontFamily: "inherit" }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </button>
                 );
               })}
@@ -2411,7 +2411,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       )}
                       {a.note && (
                         <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
-                          {a.note}
+                          <T>{a.note}</T>
                         </div>
                       )}
                     </div>
@@ -2768,7 +2768,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   })() },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -2784,7 +2784,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   color: 'var(--qs-dim)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -2835,7 +2835,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                 { label: 'Attempts', value: r.renewal_attempts || 0 },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -2874,7 +2874,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   color: 'var(--qs-text)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -3497,7 +3497,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
         ].map(f => (
           <button key={f.key} className={`btn-ghost ${riskFilter === f.key ? 'active' : ''}`}
             onClick={() => { setRiskFilter(f.key); setKpiFilter(null); onClearUrgentFilter?.(); }}>
-            {f.label}
+            <T>{f.label}</T>
           </button>
         ))}
 
@@ -3783,7 +3783,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                   fontWeight: assignedFilter === opt.value ? 700 : 500,
                 }}
               >
-                {opt.label}
+                <T>{opt.label}</T>
               </button>
             ))}
             {assigneeOptions.length > 0 && (

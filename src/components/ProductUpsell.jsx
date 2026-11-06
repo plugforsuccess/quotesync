@@ -77,7 +77,7 @@ const ProductUpsell = ({ context = 'post-quote' }) => {
               </div>
 
               <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                {product.description}
+                <T>{product.description}</T>
               </p>
 
               {/* Quick Benefits */}

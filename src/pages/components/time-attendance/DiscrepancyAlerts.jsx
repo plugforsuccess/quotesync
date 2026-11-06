@@ -144,9 +144,9 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, role
           <div key={i} className={`flex gap-3 p-4 rounded-lg border ${config.bg} ${config.border}`}>
             <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${config.iconColor}`} />
             <div>
-              <p className={`text-sm font-semibold ${config.text}`}>{alert.title}</p>
-              <p className={`text-sm ${config.text} mt-0.5`}>{alert.detail}</p>
-              <p className="text-xs text-qs-dim mt-1">{alert.meaning}</p>
+              <p className={`text-sm font-semibold ${config.text}`}><T>{alert.title}</T></p>
+              <p className={`text-sm ${config.text} mt-0.5`}><T>{alert.detail}</T></p>
+              <p className="text-xs text-qs-dim mt-1"><T>{alert.meaning}</T></p>
             </div>
           </div>
         );

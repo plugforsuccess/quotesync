@@ -251,7 +251,7 @@ export default function BonusPlanEditor({
                   <CheckCircle2 className="w-4 h-4" />
                   {ledger.status === 'paid' ? <T k="pages.components.timeattendance.bonusplaneditor.dc9d45">{'Paid'}</T> : <T k="pages.components.timeattendance.bonusplaneditor.876126">{'Finalized'}</T>} · $
                   {Number(ledger.bonus_amount).toLocaleString()} ({ledger.verified_count}{' '}
-                  {meta.short})
+                  <T>{meta.short}</T>)
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -301,7 +301,7 @@ function Stat({ value, label, accent }) {
       <div className={`text-2xl font-bold ${accent ? 'text-emerald-400' : 'text-qs-bright'}`}>
         {value}
       </div>
-      <div className="text-xs text-qs-subtle mt-1">{label}</div>
+      <div className="text-xs text-qs-subtle mt-1"><T>{label}</T></div>
     </div>
   );
 }

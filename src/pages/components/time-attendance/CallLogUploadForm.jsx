@@ -802,7 +802,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                   <div style={{ fontSize: 10, fontWeight: 600,
                     color: uploaded ? '#10B981' : missing ? '#EF4444' : 'var(--qs-muted)',
                     marginBottom: 2 }}>
-                    {day.label}
+                    <T>{day.label}</T>
                   </div>
                   <div style={{ fontSize: 16 }}>
                     {uploaded ? '✓' : missing ? '!' : day.isToday ? '·' : '—'}

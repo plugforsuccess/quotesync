@@ -61,10 +61,10 @@ const ProductCard = ({ product }) => {
             {name}
           </h3>
           <p className="text-sm text-accent-400 font-semibold mb-3">
-            {tagline}
+            <T>{tagline}</T>
           </p>
           <p className="text-sm text-white/70 leading-relaxed line-clamp-3">
-            {description}
+            <T>{description}</T>
           </p>
         </div>
 

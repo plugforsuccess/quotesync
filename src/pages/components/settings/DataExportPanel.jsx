@@ -73,10 +73,10 @@ export default function DataExportPanel({ agencyId }) {
             }}
           >
             <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span>{ds.label}</span>
+              <span><T>{ds.label}</T></span>
               <span style={{ color: 'var(--qs-info, #3B82F6)', fontSize: 12 }}>{busy === ds.key ? '…' : <T k="pages.components.settings.dataexportpanel.02ad37">{'↓ CSV'}</T>}</span>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 3 }}>{ds.desc}</div>
+            <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 3 }}><T>{ds.desc}</T></div>
           </button>
         ))}
       </div>

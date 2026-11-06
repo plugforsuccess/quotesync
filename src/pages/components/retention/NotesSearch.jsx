@@ -62,7 +62,7 @@ export default function NotesSearch({ agencyId }) {
                     <span key={t} style={{ fontSize: 10, color: 'var(--qs-subtle)', background: 'var(--qs-elevated)', borderRadius: 4, padding: '1px 6px' }}>#{t}</span>
                   ))}
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--qs-text)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{n.body}</div>
+                <div style={{ fontSize: 13, color: 'var(--qs-text)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}><T>{n.body}</T></div>
                 <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 4 }}>{n.author_name || '—'} · {fmtTime(n.created_at)}</div>
               </div>
             ))}

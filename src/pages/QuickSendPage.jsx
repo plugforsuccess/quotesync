@@ -205,7 +205,7 @@ function SendForm({ onSignedOut }) {
                     <p className="whitespace-nowrap text-sm tabular-nums text-slate-500">{formatPhoneInput(inv.phone)} · {shortAgo(inv.created_at)}</p>
                   </div>
                   <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-slate-700">
-                    <span className={`h-2 w-2 rounded-full ${DOT[p.tone]}`} aria-hidden="true" />{p.short}
+                    <span className={`h-2 w-2 rounded-full ${DOT[p.tone]}`} aria-hidden="true" /><T>{p.short}</T>
                   </span>
                 </li>
               );
@@ -268,7 +268,7 @@ function SendResult({ result, onAnother }) {
         </ol>
       )}
 
-      <p className="mt-4 text-sm leading-relaxed text-slate-600">{note}</p>
+      <p className="mt-4 text-sm leading-relaxed text-slate-600"><T>{note}</T></p>
 
       {showQr && <canvas ref={canvas} className="mx-auto mt-4 block rounded-lg border border-slate-200" aria-label="QR code for the upload link" />}
 

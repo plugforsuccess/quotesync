@@ -86,7 +86,7 @@ export default function DefensiveDrivingPage() {
               <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white"><T k="pages.defensivedrivingpage.3401c4">← Drivers Ed</T></Link>
               <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: GOLD }}><T k="pages.defensivedrivingpage.9496f3">Defensive Driving · Georgia</T></p>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4">
-                {course.title}
+                <T>{course.title}</T>
               </h1>
               <p className="text-lg text-blue-100 max-w-xl mb-6">
                 <T k="pages.defensivedrivingpage.4cdffd">A self-paced online defensive driving course built to help you earn an auto-insurance premium discount. Complete the modules, pass the final exam, and your certificate is forwarded to the agency automatically.</T>
@@ -247,7 +247,7 @@ function ModuleCard({ m, index }) {
         <T k="pages.defensivedrivingpage.e55f75">Module</T> {m.ordinal || index + 1}
         {georgia && <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.1em]" style={{ background: 'rgba(57,255,136,0.18)', color: DEEP }}><T k="pages.defensivedrivingpage.1426fa">Georgia law</T></span>}
       </p>
-      <h3 className="text-lg font-extrabold leading-snug tracking-tight text-[#0F2D6B]">{m.title}</h3>
+      <h3 className="text-lg font-extrabold leading-snug tracking-tight text-[#0F2D6B]"><T>{m.title}</T></h3>
       {content?.summary && <p className="mt-2.5 pb-5 text-sm leading-relaxed text-slate-600">{content.summary}</p>}
       {lessons.length > 0 && (
         <div className="mt-auto border-t border-slate-100 pt-4">
@@ -531,7 +531,7 @@ function AuthPanel() {
 function Field({ label, value, onChange, type = 'text', placeholder, autoComplete }) {
   return (
     <label className="block">
-      <span className="block text-xs font-semibold text-slate-600 mb-1">{label}</span>
+      <span className="block text-xs font-semibold text-slate-600 mb-1"><T>{label}</T></span>
       <input
         type={type}
         value={value}

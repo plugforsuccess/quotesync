@@ -155,7 +155,7 @@ export default function DefensiveDrivingPortalPage() {
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         <p className="ddc-eyebrow mb-2"><T k="pages.defensivedrivingportalpage.444e5d">Your course</T></p>
-        <h1 className="ddc-h1 font-black ddc-heading mb-4">{course.title}</h1>
+        <h1 className="ddc-h1 font-black ddc-heading mb-4"><T>{course.title}</T></h1>
 
         <div className="mb-8">
           <div className="flex items-center justify-between ddc-xs ddc-muted mb-1.5">
@@ -210,7 +210,7 @@ function ModuleRow({ vm, onOpen }) {
           : <Lock className="w-6 h-6 ddc-faint" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold ddc-heading ddc-base leading-snug break-words"><T k="pages.defensivedrivingportalpage.b8ff02">Module</T> {vm.ordinal}: {vm.title}</p>
+        <p className="font-semibold ddc-heading ddc-base leading-snug break-words"><T k="pages.defensivedrivingportalpage.b8ff02">Module</T> {vm.ordinal}: <T>{vm.title}</T></p>
         <p className="ddc-xs ddc-muted mt-0.5">
           {vm.completed ? <T k="pages.defensivedrivingportalpage.1798b3">{'Completed'}</T> : vm.unlocked ? <T k="pages.defensivedrivingportalpage.20c7c5">{'Ready'}</T> : <T k="pages.defensivedrivingportalpage.48a406">{'Complete the previous module to unlock'}</T>}
           {minutesFor(vm.content_ref) ? <>{" "}<T k="pages.defensivedrivingportalpage.11a639">{"· About"}</T>{" "}{minutesFor(vm.content_ref)}{" "}<T k="pages.defensivedrivingportalpage.b6c935">{"min"}</T></> : ''}
@@ -286,7 +286,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
           </p>
           <ReadAlongButton read={read} />
         </div>
-        {kind === 'intro' && <h1 className={`ddc-h1 font-black ddc-heading mb-6 ${read.at === 0 ? 'ddc-reading' : ''}`}>{mod.title}</h1>}
+        {kind === 'intro' && <h1 className={`ddc-h1 font-black ddc-heading mb-6 ${read.at === 0 ? 'ddc-reading' : ''}`}><T>{mod.title}</T></h1>}
 
         {kind === 'intro' && (
           <div>
@@ -313,7 +313,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
         {kind === 'section' && section && (
           <div>
             <article className="space-y-5">
-              {section.heading && <h1 className={`ddc-h2 font-black ddc-heading ${read.at === 0 ? 'ddc-reading' : ''}`}>{section.heading}</h1>}
+              {section.heading && <h1 className={`ddc-h2 font-black ddc-heading ${read.at === 0 ? 'ddc-reading' : ''}`}><T>{section.heading}</T></h1>}
               {section.blocks.map((b, i) => <div key={i} className={read.at === i + 1 ? 'ddc-reading' : undefined}><Block b={b} /></div>)}
             </article>
             {section.quiz?.length > 0 && (
@@ -482,7 +482,7 @@ function Callout({ variant = 'key', title, text, items }) {
   const Icon = c.icon;
   return (
     <div className={`rounded-xl p-4 ddc-cal ${c.cls}`}>
-      <p className="flex items-center gap-2 ddc-sm font-semibold mb-1.5 ddc-cal-title"><Icon className="w-4 h-4" /> {title || c.label}</p>
+      <p className="flex items-center gap-2 ddc-sm font-semibold mb-1.5 ddc-cal-title"><Icon className="w-4 h-4" /> <T>{title || c.label}</T></p>
       {text && <p className="ddc-sm ddc-text leading-relaxed">{text}</p>}
       {items && (
         <ul className="mt-1 space-y-1.5">
@@ -530,7 +530,7 @@ function SectionQuiz({ quiz, defaultPassed, onPass }) {
               })}
             </div>
             {(checked || passed) && answers[qi] != null && qq.explain && (
-              <p className="mt-2 ddc-sm ddc-muted leading-relaxed ddc-goldline pl-3">{qq.explain}</p>
+              <p className="mt-2 ddc-sm ddc-muted leading-relaxed ddc-goldline pl-3"><T>{qq.explain}</T></p>
             )}
           </div>
         ))}

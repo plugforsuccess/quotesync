@@ -158,12 +158,12 @@ const ProductDetailPage = () => {
               {name}
             </h1>
             <p className="text-xl text-accent-400 font-semibold mb-6">
-              {tagline}
+              <T>{tagline}</T>
             </p>
 
             {/* Description */}
             <p className="text-lg text-white/80 leading-relaxed mb-6">
-              {description}
+              <T>{description}</T>
             </p>
 
             {/* Meta Info */}

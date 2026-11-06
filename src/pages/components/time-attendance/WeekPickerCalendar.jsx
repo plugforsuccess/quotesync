@@ -292,7 +292,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-qs-bright bg-qs-card border border-qs-border rounded-lg hover:bg-qs-elevated hover:border-primary-400 transition-colors min-w-[220px] justify-center"
       >
         <Calendar className="w-4 h-4 text-primary-400" />
-        {label}
+        <T>{label}</T>
       </button>
       {createPortal(popup, document.body)}
     </>

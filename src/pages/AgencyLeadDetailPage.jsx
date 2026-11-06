@@ -406,7 +406,7 @@ const AgencyLeadDetailPage = () => {
                   return cfg ? (
                     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${cfg.bg} ${cfg.text}`}>
                       <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                      {cfg.label} <T k="pages.agencyleaddetailpage.c6142b">risk</T>
+                      <T>{cfg.label}</T> <T k="pages.agencyleaddetailpage.c6142b">risk</T>
                     </div>
                   ) : null;
                 })()}
@@ -1025,7 +1025,7 @@ const AgencyLeadDetailPage = () => {
                       disabled:opacity-50
                     `}
                   >
-                    {action.label}
+                    <T>{action.label}</T>
                   </button>
                 ))}
               </div>

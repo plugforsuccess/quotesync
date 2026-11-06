@@ -135,7 +135,7 @@ function UploadZone({ agencyId, currentUserId, reportType }) {
 
   return (
     <div style={{ flex: 1, minWidth: 240 }}>
-      <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 8 }}>{cfg.label}</div>
+      <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 8 }}><T>{cfg.label}</T></div>
       <div className="upload-zone" style={{ padding: 24 }} onClick={() => fileRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}>

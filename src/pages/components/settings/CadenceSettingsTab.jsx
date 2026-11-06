@@ -306,7 +306,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                             <div>
                               <div style={{ fontSize: 13, fontWeight: 600,
                                 color: isActive ? 'var(--qs-bright)' : 'var(--qs-muted)' }}>
-                                {template.label}
+                                <T>{template.label}</T>
                               </div>
                               <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 2 }}>
                                 {isActive

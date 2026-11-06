@@ -35,7 +35,7 @@ const dollars = (n) => (n == null ? '—' : money(n, { cents: !Number.isInteger(
 function Stat({ label, value, tone }) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{label}</p>
+      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></p>
       <p className="text-lg font-bold tabular-nums" style={{ color: tone || 'var(--qs-bright)' }}>{value}</p>
     </div>
   );
@@ -164,7 +164,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
           <dl className="mt-4 grid grid-cols-3 divide-x overflow-hidden rounded-xl" style={{ background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)' }}>
             {[['Partners', promoters.filter(p => p.active).length], ['Households', monthHouseholds], ['Owed', dollars(monthOwed)]].map(([k, v]) => (
               <div key={k} className="px-3 py-3 text-center" style={{ borderColor: 'var(--qs-border)' }}>
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}>{k}</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}><T>{k}</T></dt>
                 <dd className="mt-0.5 text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{v}</dd>
               </div>
             ))}
@@ -435,7 +435,7 @@ function Avatar({ p }) {
 function LinkRow({ label, url, copyLabel, muted = false, extra = null }) {
   return (
     <div className="mt-3">
-      <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{label}</p>
+      <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></p>
       <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', opacity: muted ? 0.55 : 1 }}>
         <span className="min-w-0 flex-1 truncate font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</span>
         <CopyTextButton text={url} className="shrink-0 rounded px-2 py-1 text-xs font-semibold" style={inputStyle}>{copyLabel}</CopyTextButton>
@@ -450,7 +450,7 @@ function SettingRow({ label, value, tone, action, children }) {
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderColor: 'var(--qs-border)' }}>
       <div className="min-w-0">
-        <dt className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{label}</dt>
+        <dt className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T>{label}</T></dt>
         <dd className="text-xs leading-snug" style={{ color: tone === 'warn' ? 'var(--qs-warning)' : 'var(--qs-subtle)' }}>{value}</dd>
         {children}
       </div>
@@ -713,8 +713,8 @@ function RuleRow({ title, hint, children }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <div className="min-w-0">
-        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{title}</p>
-        {hint && <p className="text-xs leading-snug" style={{ color: 'var(--qs-subtle)' }}>{hint}</p>}
+        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T>{title}</T></p>
+        {hint && <p className="text-xs leading-snug" style={{ color: 'var(--qs-subtle)' }}><T>{hint}</T></p>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -729,8 +729,8 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
   const num = (k, aria, prefix = '', suffix = '') => (draft
     ? <span className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>{prefix}
         <input inputMode="decimal" value={v[k]} onChange={set(k)} aria-label={aria}
-          className="w-16 rounded px-2 py-1 text-right text-sm tabular-nums" style={inputStyle} />{suffix}</span>
-    : <span className="text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{prefix}{v[k]}{suffix}</span>);
+          className="w-16 rounded px-2 py-1 text-right text-sm tabular-nums" style={inputStyle} />{suffix && <>{' '}<T>{suffix.trim()}</T></>}</span>
+    : <span className="text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{prefix}{v[k]}{suffix && <>{' '}<T>{suffix.trim()}</T></>}</span>);
   return (
     <section className="dark-card" style={{ padding: 16 }} aria-label="Payout rules">
       <div className="flex items-baseline justify-between gap-2">
@@ -796,7 +796,7 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
       <dl className="mt-2">
         {rows.map(t => (
           <div key={t.key} className="flex items-center justify-between gap-3 py-2.5" style={{ borderTop: '1px solid var(--qs-border)' }}>
-            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}>{t.label}{t.key === EXTRA_LINE.key ? <><T k="pages.components.ratechecks.partnerstab.37eac1">{", Up To"}</T>{" "}{EXTRA_LINE_CAP}</> : ''}</dt>
+            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}><T>{t.label}</T>{t.key === EXTRA_LINE.key ? <><T k="pages.components.ratechecks.partnerstab.37eac1">{", up to"}</T>{" "}{EXTRA_LINE_CAP}</> : ''}</dt>
             <dd>
               {draft ? (
                 <span className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>$

@@ -83,7 +83,7 @@ export default function ScriptsTab() {
     <div className="space-y-5">
       {SECTIONS.map(sec => (
         <section key={sec.title} aria-label={sec.title}>
-          <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>{sec.title}</h3>
+          <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{sec.title}</T></h3>
           <div className="space-y-3">
             {sec.scripts.map(s => (
               <article key={s.key} className="dark-card" style={{ padding: 16 }} aria-label={s.name}>

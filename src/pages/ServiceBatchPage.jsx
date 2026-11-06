@@ -264,7 +264,7 @@ export default function ServiceBatchPage() {
             borderColor: scope === s.value ? 'var(--qs-info)' : 'var(--qs-border)',
             background: scope === s.value ? 'var(--qs-info)' : 'var(--qs-card)',
             color: scope === s.value ? '#fff' : 'var(--qs-muted)',
-          }}>{s.label}</button>
+          }}><T>{s.label}</T></button>
         ))}
         {/* Sort — group by type (work-order) or flatten by log time / urgency */}
         <label title="Sort the open batch" style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -307,7 +307,7 @@ export default function ServiceBatchPage() {
             borderRadius: 10, padding: '12px 14px',
           }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {i + 1}. {lane.label}
+              {i + 1}. <T>{lane.label}</T>
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--qs-bright)', marginTop: 4 }}>
               {laneCounts[lane.value]}
@@ -348,8 +348,8 @@ export default function ServiceBatchPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span>{cfg.icon}</span>
                     <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                      ...NEUTRAL_CHIP }}>{cfg.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', textDecoration: 'line-through', opacity: 0.85 }}>{task.title}</span>
+                      ...NEUTRAL_CHIP }}><T>{cfg.label}</T></span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', textDecoration: 'line-through', opacity: 0.85 }}><T>{task.title}</T></span>
                     <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--qs-dim)' }}>
                       ✓ {empName[task.completed_by_id] || <T k="pages.servicebatchpage.bc7819">{'Unknown'}</T>} · {fmtShortDate(task.completed_at)}
                     </span>
@@ -428,7 +428,7 @@ export default function ServiceBatchPage() {
             <div key={group.value}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 16 }}>{group.icon}</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}>{group.label}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}><T>{group.label}</T></span>
                 <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>· {group.tasks.length}</span>
                 {LANE_MAP[group.lane]?.licensed && (
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
@@ -570,14 +570,14 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
           {prio && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-              background: prio.background, border: prio.border, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
+              background: prio.background, border: prio.border, color: prio.color, letterSpacing: '0.05em' }}><T>{prio.label}</T></span>
           )}
           {product && (
             <span title="Line of business" style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px',
               borderRadius: 4, ...NEUTRAL_CHIP, color: 'var(--qs-text)',
               letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace" }}>{product}</span>
           )}
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)' }}>{task.title}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)' }}><T>{task.title}</T></span>
           {waiting && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
               background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-muted)' }}>
@@ -614,7 +614,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
         )}
 
         {task.detail && (
-          <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 4, lineHeight: 1.5 }}>{task.detail}</div>
+          <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 4, lineHeight: 1.5 }}><T>{task.detail}</T></div>
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, flexWrap: 'wrap',
@@ -788,7 +788,7 @@ function SlaTimer({ task }) {
       <div style={{
         fontSize: 12.5, fontWeight: 800, lineHeight: 1.2, letterSpacing: '0.01em',
         fontFamily: "'DM Mono', monospace", fontVariantNumeric: 'tabular-nums',
-      }}>{sla.label}</div>
+      }}><T>{sla.label}</T></div>
       <style>{'@keyframes qs-pulse{0%,100%{opacity:1}50%{opacity:0.55}}'}</style>
     </div>
   );

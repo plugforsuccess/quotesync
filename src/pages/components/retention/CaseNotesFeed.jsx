@@ -81,7 +81,7 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
                   </button>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: 'var(--qs-text)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{n.body}</div>
+              <div style={{ fontSize: 13, color: 'var(--qs-text)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}><T>{n.body}</T></div>
               <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 4 }}>{n.author_name || '—'} · {fmtTime(n.created_at)}</div>
             </div>
           ))}

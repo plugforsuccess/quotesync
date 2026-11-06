@@ -43,7 +43,7 @@ function MetricRow({ label, target, actual, unit, inverse, source }) {
   return (
     <tr className="hover:bg-qs-elevated transition-colors">
       <td className="px-4 py-3 text-sm text-qs-bright font-medium">
-        {label}
+        <T>{label}</T>
         {source && (
           <span className="ml-1.5 text-xs text-qs-muted" title={`Source: ${source}`}>
             ({source})
@@ -66,7 +66,7 @@ function PassFailRow({ label, passed, manual, onToggle }) {
   return (
     <tr className="hover:bg-qs-elevated transition-colors">
       <td className="px-4 py-3 text-sm text-qs-bright font-medium">
-        {label}
+        <T>{label}</T>
         {manual && <span className="ml-1.5 text-xs text-qs-muted"><T k="pages.components.timeattendance.staffscorecard.3bbaf8">(manual)</T></span>}
       </td>
       <td className="px-4 py-3">
@@ -258,7 +258,7 @@ export default function StaffScorecard({
         <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${gradeConfig.bg} ${gradeConfig.border}`}>
           <div>
             <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.staffscorecard.891d58">Weekly Performance Grade</T></h3>
-            <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
+            <p className={`text-sm ${gradeConfig.color}`}><T>{gradeConfig.desc}</T></p>
             {employeeName && (
               <p className="text-xs text-qs-subtle mt-1">
                 {employeeName}

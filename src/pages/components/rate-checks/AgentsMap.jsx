@@ -234,7 +234,7 @@ export default function AgentsMap({ agents, scans, zip, onPickZip, tall = false 
 
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>
         {RANK.map(t => (
-          <span key={t} className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: TONES[t].fill }} />{TONES[t].label}</span>
+          <span key={t} className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: TONES[t].fill }} /><T>{TONES[t].label}</T></span>
         ))}
         <span className="basis-full">{zoomed ? <T k="pages.components.ratechecks.agentsmap.adc0b8">{'Drag to move · more towns appear as you zoom'}</T> : <T k="pages.components.ratechecks.agentsmap.f98e90">{'Pinch, scroll or double-tap to zoom'}</T>}</span>
       </div>

@@ -27,7 +27,7 @@ function Row({ r }) {
     <div style={{ border: `1px solid ${k.border}`, background: k.bg, borderRadius: 10, padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-          background: 'var(--qs-card)', color: k.color, letterSpacing: '0.05em' }}>{k.label}</span>
+          background: 'var(--qs-card)', color: k.color, letterSpacing: '0.05em' }}><T>{k.label}</T></span>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}>
           {titleCaseName(r.customer_name) || '—'}
         </span>
@@ -38,7 +38,7 @@ function Row({ r }) {
           {r.rep_name || <T k="pages.components.retention.saveintegritypanel.610472">{'Unattributed'}</T>} · {fmt$(r.premium)} · {fmtDate(r.resolution_date)}
         </span>
       </div>
-      {r.detail && <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{r.detail}</div>}
+      {r.detail && <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}><T>{r.detail}</T></div>}
     </div>
   );
 }

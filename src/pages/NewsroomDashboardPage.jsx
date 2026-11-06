@@ -473,7 +473,7 @@ const NewsroomDashboardPage = () => {
                           <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                         )}
                         <div>
-                          <div className="font-semibold text-gray-900">{story.title}</div>
+                          <div className="font-semibold text-gray-900"><T>{story.title}</T></div>
                           <div className="text-sm text-gray-500 line-clamp-1">
                             {story.preview_hook}
                           </div>

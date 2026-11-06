@@ -413,7 +413,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
                       : missing ? '#EF4444'
                       : 'var(--qs-muted)',
                   }}>
-                    {day.label}
+                    <T>{day.label}</T>
                   </div>
                   <div style={{ fontSize: 16 }}>
                     {uploaded ? (highAbandon ? '\u26A0' : '\u2713') : missing ? '!' : '\u2014'}

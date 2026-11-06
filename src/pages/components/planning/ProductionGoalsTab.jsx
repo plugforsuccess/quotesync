@@ -295,7 +295,7 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
             {ADVANCED_FIELDS.map((f) => (
               <div key={f.key}>
-                <label style={{ fontSize: 11 }}>{f.label}</label>
+                <label style={{ fontSize: 11 }}><T>{f.label}</T></label>
                 <input
                   type="number" min="0"
                   step={f.key === 'avg_calls_per_day' ? '0.5' : '1'}

@@ -290,7 +290,7 @@ function ModalShell({ title, onClose, children }) {
           background: 'var(--qs-elevated)',
         }}>
           <h2 style={{ margin: 0, fontSize: 18, color: 'var(--qs-bright)', fontWeight: 600 }}>
-            {title}
+            <T>{title}</T>
           </h2>
           <button
             type="button"
@@ -319,11 +319,11 @@ function FormField({ label, error, helpText, required, children }) {
         display: 'block', fontSize: 14, fontWeight: 500,
         color: 'var(--qs-text)', marginBottom: 4,
       }}>
-        {label} {required && <span style={{ color: 'var(--qs-danger)' }}>*</span>}
+        <T>{label}</T> {required && <span style={{ color: 'var(--qs-danger)' }}>*</span>}
       </label>
       {children}
       {helpText && !error && (
-        <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{helpText}</p>
+        <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}><T>{helpText}</T></p>
       )}
       {error && (
         <p style={{ fontSize: 12, color: 'var(--qs-danger)', marginTop: 4 }}>{error}</p>

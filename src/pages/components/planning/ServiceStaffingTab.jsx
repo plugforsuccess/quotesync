@@ -314,7 +314,7 @@ export default function ServiceStaffingTab({ agencyId }) {
       <div style={{ marginBottom: 14 }}>
         <label style={{ fontSize: 11, color: disabled ? 'var(--qs-muted)' : 'var(--qs-subtle)', fontWeight: 600,
           textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>
-          {label}
+          <T>{label}</T>
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {prefix && <span style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>{prefix}</span>}
@@ -332,10 +332,10 @@ export default function ServiceStaffingTab({ agencyId }) {
     return (
       <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--qs-border)' }}>
         <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4,
-          textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+          textTransform: 'uppercase', letterSpacing: '0.05em' }}><T>{label}</T></div>
         <div style={{ fontSize: large ? 22 : 15, fontWeight: 700, color,
           fontFamily: "'DM Mono', monospace" }}>{value}</div>
-        {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}><T>{sub}</T></div>}
       </div>
     );
   }
@@ -365,8 +365,8 @@ export default function ServiceStaffingTab({ agencyId }) {
                 className={`btn-ghost ${employmentType === t.key ? 'active' : ''}`}
                 style={{ fontSize: 11, padding: '5px 10px', flex: 1 }}
                 onClick={() => setEmploymentType(t.key)}>
-                <div style={{ fontWeight: 600 }}>{t.label}</div>
-                <div style={{ fontSize: 10, opacity: 0.7 }}>{t.description}</div>
+                <div style={{ fontWeight: 600 }}><T>{t.label}</T></div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}><T>{t.description}</T></div>
               </button>
             ))}
           </div>
@@ -522,7 +522,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                     ['Net ROI/mo',         fmt$(calc.ftVsPt.ptNetROI)],
                   ].map(([label, val]) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
+                      <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}><T>{label}</T></span>
                       <span style={{ fontSize: 12, fontWeight: 600,
                         color: label === 'Net ROI/mo'
                           ? (calc.ftVsPt.ptNetROI > 0 ? 'var(--qs-success)' : 'var(--qs-danger)')
@@ -548,7 +548,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                     ['Net ROI/mo',       fmt$(calc.ftVsPt.ftNetROI)],
                   ].map(([label, val]) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
+                      <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}><T>{label}</T></span>
                       <span style={{ fontSize: 12, fontWeight: 600,
                         color: label === 'Net ROI/mo'
                           ? (calc.ftVsPt.ftNetROI > 0 ? 'var(--qs-success)' : 'var(--qs-danger)')
@@ -621,7 +621,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                     : '1px solid var(--qs-border)',
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 6 }}>
-                    {s.label}
+                    <T>{s.label}</T>
                   </div>
                   {s.isPrincipal ? (
                     <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 8 }}>
@@ -641,7 +641,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                           ['Net value',         `${fmt$(s.netROI)}/mo`,           'var(--qs-success)'],
                         ].map(([label, val, color]) => (
                           <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
+                            <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}><T>{label}</T></span>
                             <span style={{ fontSize: 12, fontWeight: 600, color }}>{val}</span>
                           </div>
                         ))
@@ -652,7 +652,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                           ['Payback',     s.payback === Infinity ? '∞' : `${s.payback.toFixed(1)} mo`, 'var(--qs-dim)'],
                         ].map(([label, val, color]) => (
                           <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
+                            <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}><T>{label}</T></span>
                             <span style={{ fontSize: 12, fontWeight: 600, color }}>{val}</span>
                           </div>
                         ))

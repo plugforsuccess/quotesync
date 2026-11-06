@@ -766,7 +766,7 @@ export default function MyQueuePage() {
         </div>
         <div style={{ fontSize: '0.8125rem', color: 'var(--qs-dim)', marginTop: 2,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {sub}
+          <T>{sub}</T>
         </div>
       </button>
     );
@@ -816,7 +816,7 @@ export default function MyQueuePage() {
         </div>
         <div style={{ fontSize: '0.8125rem', color: 'var(--qs-dim)', marginTop: 2,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {sub}
+          <T>{sub}</T>
         </div>
       </button>
     );
@@ -1664,12 +1664,12 @@ export default function MyQueuePage() {
               }}>
               <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 6,
                 textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                {stat.label}{stat.isOn ? ' ✕' : ''}
+                <T>{stat.label}</T>{stat.isOn ? ' ✕' : ''}
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: stat.color, lineHeight: 1 }}>
                 {stat.value}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{stat.sub}</div>
+              <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}><T>{stat.sub}</T></div>
             </Tag>
           );
         })}
@@ -1689,7 +1689,7 @@ export default function MyQueuePage() {
               background: activeTab === t.key ? 'var(--qs-info)' : 'var(--qs-elevated)',
               color:      activeTab === t.key ? '#FFFFFF'        : 'var(--qs-subtle)',
             }}>
-            {t.label}
+            <T>{t.label}</T>
           </button>
         ))}
       </div>
@@ -1832,7 +1832,7 @@ export default function MyQueuePage() {
                         cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s',
                       }}
                     >
-                      {f.label}
+                      <T>{f.label}</T>
                     </button>
                   ))}
                 </div>
@@ -1846,7 +1846,7 @@ export default function MyQueuePage() {
                     }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: bucket.color,
                         textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        {bucket.label}
+                        <T>{bucket.label}</T>
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--qs-dim)',
                         background: 'var(--qs-elevated)', padding: '1px 7px',

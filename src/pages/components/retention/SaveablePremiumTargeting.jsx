@@ -66,7 +66,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
               <tbody>
                 {tactics.map((t) => (
                   <tr key={t.tactic}>
-                    <td>{t.label}</td>
+                    <td><T>{t.label}</T></td>
                     <td style={{ textAlign: 'right', fontWeight: 700, color: t.sufficient ? '#10B981' : 'var(--qs-dim)' }}>
                       {t.saveRate == null ? '—' : `${Math.round(t.saveRate * 100)}%`}
                       {!t.sufficient && <span style={{ fontSize: 10, color: 'var(--qs-subtle)' }}> <T k="pages.components.retention.saveablepremiumtargeting.c06848">(low n)</T></span>}

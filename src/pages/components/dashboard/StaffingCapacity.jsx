@@ -10,7 +10,7 @@ import { totalCostMonthly } from '../../../utils/compModelCalculations';
 function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
   return (
     <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-      <label className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</label>
+      <label className="text-sm" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></label>
       <div className="flex items-center gap-1">
         <input
           type="number"
@@ -30,7 +30,7 @@ function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
 function OutputRow({ label, value, color }) {
   return (
     <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</span>
+      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></span>
       <span className="text-sm font-semibold" style={{ color: color || 'var(--qs-bright)' }}>{value}</span>
     </div>
   );

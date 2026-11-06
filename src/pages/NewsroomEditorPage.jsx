@@ -666,7 +666,7 @@ const NewsroomEditorPage = () => {
               </select>
               {getCategoryBySlug(story.category)?.description && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {getCategoryBySlug(story.category).description}
+                  <T>{getCategoryBySlug(story.category).description}</T>
                 </p>
               )}
             </div>
@@ -722,7 +722,7 @@ const NewsroomEditorPage = () => {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    {tag.label}
+                    <T>{tag.label}</T>
                     {isSelected && <span className="ml-1">✓</span>}
                   </button>
                 );

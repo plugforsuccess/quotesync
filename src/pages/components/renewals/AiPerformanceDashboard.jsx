@@ -47,7 +47,7 @@ function MetricCard({ label, value, subtext, color, icon: Icon }) {
     <div style={{ borderRadius: 8, border: `1px solid ${c.border}`, padding: 16, background: c.bg }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <Icon size={14} style={{ color: c.text, opacity: 0.8 }} />
-        <p style={{ fontSize: 12, fontWeight: 500, color: c.text, opacity: 0.85 }}>{label}</p>
+        <p style={{ fontSize: 12, fontWeight: 500, color: c.text, opacity: 0.85 }}><T>{label}</T></p>
       </div>
       <p style={{ fontSize: 22, fontWeight: 700, color: c.text }}>{value}</p>
       {subtext && <p style={{ fontSize: 11, color: c.text, opacity: 0.65, marginTop: 2 }}>{subtext}</p>}

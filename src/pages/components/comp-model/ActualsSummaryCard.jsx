@@ -18,7 +18,7 @@ function fmt(value) {
 function SummaryRow({ label, value, highlight }) {
   return (
     <div className={`flex items-center justify-between py-2 ${highlight ? 'font-semibold' : ''}`}>
-      <span className="text-sm text-gray-600">{label}</span>
+      <span className="text-sm text-gray-600"><T>{label}</T></span>
       <span className={`text-sm font-medium ${
         highlight && value < 0 ? 'text-red-600' :
         highlight && value >= 0 ? 'text-green-600' :

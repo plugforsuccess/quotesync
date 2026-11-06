@@ -37,7 +37,7 @@ function OpenCommitmentsStrip({ commitments }) {
             fontSize: 12, padding: '5px 0',
             borderBottom: '1px solid #F59E0B22',
           }}>
-            <span style={{ color: 'var(--qs-text)' }}>{c.description}</span>
+            <span style={{ color: 'var(--qs-text)' }}><T>{c.description}</T></span>
             <span style={{ color: isOverdue ? '#EF4444' : 'var(--qs-muted)',
               flexShrink: 0, marginLeft: 12 }}>
               {isOverdue ? '⚠️ ' : ''}<T k="pages.myscorecardpage.d03639">Due</T> {c.due_date}
@@ -192,7 +192,7 @@ export default function MyScorecardPage() {
                 <div key={label} style={{ background: 'var(--qs-elevated)', borderRadius: 8,
                   padding: '20px 24px', border: '1px solid var(--qs-border)', textAlign: 'center' }}>
                   <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 8,
-                    textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+                    textTransform: 'uppercase', letterSpacing: '0.05em' }}><T>{label}</T></div>
                   <div style={{ fontSize: 26, fontWeight: 700, color,
                     fontFamily: "'DM Mono', monospace" }}>{value}</div>
                 </div>

@@ -26,7 +26,7 @@ function Field({ label, value }) {
   if (value == null || value === '') return null;
   return (
     <div>
-      <dt className="text-gray-500 text-sm">{label}</dt>
+      <dt className="text-gray-500 text-sm"><T>{label}</T></dt>
       <dd className="font-medium text-gray-900">{value}</dd>
     </div>
   );
@@ -59,7 +59,7 @@ function DeclarationEntry({ entry }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <h3 className="font-semibold text-gray-900"><T>{title}</T></h3>
           {entry.confidence && (
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CONFIDENCE_STYLES[entry.confidence] || 'bg-gray-100 text-gray-600'}`}>
               {entry.confidence === 'low' ? <T k="pages.components.leaddeclarationcard.327641">{'low confidence'}</T> : <>{entry.confidence}{" "}<T k="pages.components.leaddeclarationcard.016568">{"confidence"}</T></>}

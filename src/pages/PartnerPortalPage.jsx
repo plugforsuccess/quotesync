@@ -231,7 +231,7 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
         {TAX_CLASSES.map(t => (
           <label key={t.value} className={`flex items-start gap-3 rounded-xl border p-3 text-sm ${form.tax_class === t.value ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
             <input type="radio" name="w9-class" value={t.value} checked={form.tax_class === t.value} onChange={set('tax_class')} className="mt-0.5 h-5 w-5 accent-blue-700" />
-            <span><span className="block font-semibold text-[#0F2D6B]">{t.label}</span>{t.hint && <span className="block text-xs text-slate-500">{t.hint}</span>}</span>
+            <span><span className="block font-semibold text-[#0F2D6B]"><T>{t.label}</T></span>{t.hint && <span className="block text-xs text-slate-500"><T>{t.hint}</T></span>}</span>
           </label>
         ))}
       </div>
@@ -313,7 +313,7 @@ function W9Modal({ title, onClose, children }) {
       <div className="absolute inset-0" style={{ background: 'rgba(15,45,107,0.55)' }} onClick={onClose} aria-hidden="true" />
       <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:shadow-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="text-lg font-extrabold text-[#0F2D6B]">{title}</h2>
+          <h2 className="text-lg font-extrabold text-[#0F2D6B]"><T>{title}</T></h2>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -399,7 +399,7 @@ function GetSetUp({ token, data, onChange, shared }) {
         {done ? <Check className="h-4 w-4" aria-hidden="true" /> : n}
       </span>
       <div className="min-w-0 flex-1">
-        <p className={`font-semibold ${done ? 'text-slate-500 line-through decoration-slate-300' : 'text-[#0F2D6B]'}`}>{title}</p>
+        <p className={`font-semibold ${done ? 'text-slate-500 line-through decoration-slate-300' : 'text-[#0F2D6B]'}`}><T>{title}</T></p>
         {line && !done && <p className="text-sm leading-relaxed text-slate-600">{line}</p>}
         {children}
       </div>
@@ -464,7 +464,7 @@ function Earnings({ token, data, onChange }) {
           <div key={k} className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">{k}</p>
             <p className="text-xl font-extrabold tabular-nums text-[#0F2D6B]">{v}</p>
-            <p className="text-xs text-slate-500">{sub}</p>
+            <p className="text-xs text-slate-500"><T>{sub}</T></p>
           </div>
         ))}
       </section>
@@ -514,7 +514,7 @@ function Earnings({ token, data, onChange }) {
         <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.867844">How You're Paid · Per Household</T></h2>
         <dl className="mt-2 divide-y divide-slate-100 text-sm">
           {SCHEDULE_ROWS.map(([k, label]) => (
-            <div key={k} className="flex justify-between py-2"><dt className="text-slate-700">{label}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(data.schedule[k])}</dd></div>
+            <div key={k} className="flex justify-between py-2"><dt className="text-slate-700"><T>{label}</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(data.schedule[k])}</dd></div>
           ))}
           <div className="flex justify-between py-2"><dt className="text-slate-700"><T k="pages.partnerportalpage.c99e34">Each Extra Line, Up To 2</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(data.schedule.extra_line)}</dd></div>
         </dl>

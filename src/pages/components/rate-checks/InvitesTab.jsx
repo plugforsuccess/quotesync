@@ -49,7 +49,7 @@ function Stat({ label, value }) {
   return (
     <div className="min-w-0 text-center">
       <p className="text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{value}</p>
-      <p className="truncate text-xs" style={{ color: 'var(--qs-subtle)' }}>{label}</p>
+      <p className="truncate text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></p>
     </div>
   );
 }
@@ -121,7 +121,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
             {[['all', 'All', invites.length], ['waiting', 'Waiting', waiting], ['uploaded', 'Uploaded', invites.filter(i => i.upload_count > 0).length]].map(([v, l, n]) => (
               <button key={v} onClick={() => setFilter(v)} className={`min-h-[36px] whitespace-nowrap rounded-md px-3 text-sm font-medium ${filter === v ? 'bg-primary-600 text-white' : ''}`}
                 style={filter === v ? undefined : { color: 'var(--qs-text)' }}>
-                {l} <span className={filter === v ? 'opacity-80' : ''} style={filter === v ? undefined : { color: 'var(--qs-subtle)' }}>{n}</span>
+                <T>{l}</T> <span className={filter === v ? 'opacity-80' : ''} style={filter === v ? undefined : { color: 'var(--qs-subtle)' }}>{n}</span>
               </button>
             ))}
           </div>

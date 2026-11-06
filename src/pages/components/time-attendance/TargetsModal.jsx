@@ -152,11 +152,11 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
 
             {(roleType === 'sales' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS).map((group) => (
               <div key={group.title}>
-                <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide mb-3">{group.title}</h4>
+                <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide mb-3"><T>{group.title}</T></h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {group.fields.map((field) => (
                     <div key={field.key}>
-                      <label className="block text-xs font-medium text-qs-dim mb-1">{field.label}</label>
+                      <label className="block text-xs font-medium text-qs-dim mb-1"><T>{field.label}</T></label>
                       <input
                         type="number"
                         step={field.type === 'float' ? '0.1' : '1'}

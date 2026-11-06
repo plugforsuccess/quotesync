@@ -131,8 +131,8 @@ export default function FinalOutcomeModal({ isOpen, onClose, policy, onSuccess }
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   <div>
-                    <span className="font-medium">{o.label}</span>
-                    <span className="text-sm text-gray-500 ml-2">— {o.description}</span>
+                    <span className="font-medium"><T>{o.label}</T></span>
+                    <span className="text-sm text-gray-500 ml-2">— <T>{o.description}</T></span>
                   </div>
                 </button>
               );

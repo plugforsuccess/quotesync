@@ -28,7 +28,7 @@ function Row({ esc, empName, onOpenCase, onResolve, resolving }) {
       background: 'var(--qs-card)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-          background: badge.bg, color: badge.color, letterSpacing: '0.05em' }}>{badge.label}</span>
+          background: badge.bg, color: badge.color, letterSpacing: '0.05em' }}><T>{badge.label}</T></span>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}>
           {titleCaseName(esc.customer_name) || '—'}
         </span>
@@ -46,7 +46,7 @@ function Row({ esc, empName, onOpenCase, onResolve, resolving }) {
         {esc.reason || <T k="pages.components.retention.escalationsinbox.61148e">{'Needs a licensed agent'}</T>}
       </div>
       {esc.note && (
-        <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 3 }}>{esc.note}</div>
+        <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 3 }}><T>{esc.note}</T></div>
       )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>

@@ -56,7 +56,7 @@ function CountdownBlock({ deadline }) {
             {String(val).padStart(2, '0')}
           </div>
           <div className="text-[10px] sm:text-xs uppercase tracking-wide text-primary-100 mt-1">
-            {label}
+            <T>{label}</T>
           </div>
         </div>
       ))}
@@ -144,7 +144,7 @@ function RulesModal({ brand, floor, ceiling, rulesHref, onClose }) {
             {rules.map(([term, desc]) => (
               <div key={term}>
                 <dt className="text-sm font-semibold text-gray-900">{term}</dt>
-                <dd className="text-sm text-gray-600 mt-0.5">{desc}</dd>
+                <dd className="text-sm text-gray-600 mt-0.5"><T>{desc}</T></dd>
               </div>
             ))}
           </dl>

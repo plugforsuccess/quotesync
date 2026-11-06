@@ -55,7 +55,7 @@ function StatCard({ label, value, target, unit }) {
 
   return (
     <div className="bg-qs-card rounded-lg border border-qs-border p-4">
-      <p className="text-xs font-medium text-qs-subtle uppercase tracking-wide">{label}</p>
+      <p className="text-xs font-medium text-qs-subtle uppercase tracking-wide"><T>{label}</T></p>
       <p className="text-3xl font-bold text-qs-bright mt-1">
         {typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(1)) : value}
         {unit && <span className="text-lg font-normal text-qs-subtle ml-1">{unit}</span>}

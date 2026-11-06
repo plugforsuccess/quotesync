@@ -101,7 +101,7 @@ export default function DraftRestoreModal({
                     <T k="components.draftrestoremodal.768e0c">Title</T>
                   </label>
                   <p className="text-base font-semibold text-gray-900 truncate">
-                    {draft.title}
+                    <T>{draft.title}</T>
                   </p>
                 </div>
               )}
@@ -114,7 +114,7 @@ export default function DraftRestoreModal({
                   </label>
                   <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                     <p className="text-sm text-gray-700 line-clamp-6">
-                      {draft.body}
+                      <T>{draft.body}</T>
                     </p>
                   </div>
                 </div>

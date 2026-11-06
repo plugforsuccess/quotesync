@@ -94,7 +94,7 @@ export default function FixedAssumptionsForm({ config, onUpdate }) {
               </div>
               <div className="flex-1 min-w-0">
                 <label className="block text-xs font-medium text-gray-500 mb-0.5">
-                  {field.label}
+                  <T>{field.label}</T>
                 </label>
                 <div className="relative">
                   {field.type === 'currency' && (

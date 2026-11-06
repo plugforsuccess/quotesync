@@ -82,9 +82,9 @@ function Ring({ pct, color, label, sub }) {
         alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{ fontSize: 28, fontWeight: 800, color, fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
-          {label}
+          <T>{label}</T>
         </div>
-        {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 3 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 3 }}><T>{sub}</T></div>}
       </div>
     </div>
   );

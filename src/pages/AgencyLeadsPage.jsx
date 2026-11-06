@@ -394,7 +394,7 @@ const AgencyLeadsPage = () => {
                             return cfg ? (
                               <span className={`ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                                {cfg.label}
+                                <T>{cfg.label}</T>
                               </span>
                             ) : null;
                           })()}

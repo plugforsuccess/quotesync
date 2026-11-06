@@ -193,7 +193,7 @@ export default function PunchPage() {
                 { label: "Clock Out", val: entry.end_time },
               ].map(({ label, val }) => (
                 <div key={label} style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 10, padding: "10px 12px" }}>
-                  <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 15, fontWeight: 600, color: val ? "var(--qs-text)" : "var(--qs-border)", fontFamily: "'DM Mono', monospace" }}>
                     {val || "\u2014"}
                   </div>
@@ -234,7 +234,7 @@ export default function PunchPage() {
                     background: "transparent", color: actionCfg.secondary.color, fontSize: 14, fontWeight: 600,
                     cursor: "pointer", opacity: loading ? 0.6 : 1,
                   }}>
-                  {actionCfg.secondary.label} <T k="pages.punchpage.f0d153">(Skip Lunch)</T>
+                  <T>{actionCfg.secondary.label}</T> <T k="pages.punchpage.f0d153">(Skip Lunch)</T>
                 </button>
               )}
             </div>

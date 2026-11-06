@@ -20,7 +20,7 @@ function Section({ title, color, items, renderRight, onOpen }) {
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase',
         letterSpacing: '0.06em', marginBottom: 8 }}>
-        {title} ({items.length})
+        <T>{title}</T> ({items.length})
       </div>
       {items.length === 0 ? (
         <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}><T k="pages.components.employee.todayfocusmodal.d6ed99">None yet today.</T></div>

@@ -167,7 +167,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    {ch.label}
+                    <T>{ch.label}</T>
                   </button>
                 );
               })}
@@ -269,7 +269,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
                       onChange={() => setConsentChoice(opt.value)}
                       className="text-primary-600 focus:ring-primary-500"
                     />
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </label>
                 ))}
               </div>

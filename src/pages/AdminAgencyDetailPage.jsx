@@ -295,7 +295,7 @@ const AdminAgencyDetailPage = () => {
                 }}
               >
                 <tab.icon size={14} />
-                {tab.label}
+                <T>{tab.label}</T>
               </button>
             ))}
           </div>
@@ -318,7 +318,7 @@ const AdminAgencyDetailPage = () => {
                 ['Applied', new Date(agency.created_at).toLocaleString()],
               ].map(([label, val]) => (
                 <div key={label}>
-                  <label style={labelStyle}>{label}</label>
+                  <label style={labelStyle}><T>{label}</T></label>
                   <p style={valueStyle}>{val}</p>
                 </div>
               ))}

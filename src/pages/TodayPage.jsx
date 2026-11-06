@@ -701,14 +701,14 @@ export default function TodayPage() {
                   <span style={{
                     ...TYPE_BADGE[item._kind], fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                     letterSpacing: '0.05em', flexShrink: 0,
-                  }}>{TYPE_BADGE[item._kind].label}</span>
+                  }}><T>{TYPE_BADGE[item._kind].label}</T></span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1 }}>
                     {titleCaseName(item.customer_name) || '—'}
                   </span>
                   <span style={{ marginLeft: 'auto', fontSize: 12, flexShrink: 0,
                     color: overdue ? 'var(--qs-danger)' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
-                    {label}
+                    <T>{label}</T>
                   </span>
                 </button>
               );
@@ -746,14 +746,14 @@ export default function TodayPage() {
                   <span style={{
                     ...TYPE_BADGE.cancel, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                     letterSpacing: '0.05em', flexShrink: 0,
-                  }}>{TYPE_BADGE.cancel.label}</span>
+                  }}><T>{TYPE_BADGE.cancel.label}</T></span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1 }}>
                     {titleCaseName(item.customer_name) || '—'}
                   </span>
                   <span style={{ marginLeft: 'auto', fontSize: 12, flexShrink: 0,
                     color: overdue ? 'var(--qs-danger)' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
-                    {label}
+                    <T>{label}</T>
                   </span>
                 </button>
               );
@@ -914,12 +914,12 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings
           <span style={{
             ...typeBadge, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
             letterSpacing: '0.05em',
-          }}>{typeBadge.label}</span>
+          }}><T>{typeBadge.label}</T></span>
           {tierBadge && (
             <span style={{
               ...tierBadge, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
               letterSpacing: '0.05em',
-            }}>{tierBadge.label}</span>
+            }}><T>{tierBadge.label}</T></span>
           )}
           {householdSiblings.length > 0 && (
             <span

@@ -21,7 +21,7 @@ const fmtRate = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}
 function CohortCard({ title, c, accent, highlight }) {
   return (
     <div className="card" style={{ borderLeft: `3px solid ${accent}`, flex: 1, minWidth: 220 }}>
-      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 600, marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 600, marginBottom: 6 }}><T>{title}</T></div>
       <div style={{ fontSize: 30, fontWeight: 800, color: highlight ? accent : 'var(--qs-text)', lineHeight: 1.05 }}>
         {fmtPct(c.retainRate)}
       </div>
@@ -43,8 +43,8 @@ function ReadyRow({ ok, label, detail }) {
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 12.5, marginBottom: 6 }}>
       <span style={{ color: ok ? '#10B981' : '#F59E0B', fontWeight: 700 }}>{ok ? '✓' : '⏳'}</span>
-      <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>{label}</span>
-      <span style={{ color: 'var(--qs-dim)' }}>{detail}</span>
+      <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}><T>{label}</T></span>
+      <span style={{ color: 'var(--qs-dim)' }}><T>{detail}</T></span>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 // Compares Call Log data and Queue data for the same date range and generates alerts.
 // Renders as a card stack above the scorecard when alerts are present.
 
+import { T } from '../../../components/SiteCopy';
 import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────────
@@ -198,7 +199,7 @@ export default function CoverageAlerts({ queueData = [], callLogData = [], weekS
             <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${config.iconColor}`} />
             <div>
               <p className={`text-sm font-semibold ${config.text}`}>
-                {alert.title} {alert.date && `\u2014 ${formatDate(alert.date)}`}
+                <T>{alert.title}</T> {alert.date && `\u2014 ${formatDate(alert.date)}`}
               </p>
               <p className={`text-sm ${config.text} mt-0.5`}>{alert.message}</p>
             </div>

@@ -257,7 +257,7 @@ const AdminAuditPage = () => {
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${eventConfig.bg} ${eventConfig.text}`}>
-                              {eventConfig.label}
+                              <T>{eventConfig.label}</T>
                             </span>
                           </td>
                           <td className="px-6 py-4">

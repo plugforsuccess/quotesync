@@ -82,7 +82,7 @@ function Section({ icon: Icon, title, children }) {
         }}>
           <Icon size={14} style={{ color: 'var(--qs-info)' }} />
         </div>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{title}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}><T>{title}</T></span>
       </div>
       {children}
     </div>
@@ -92,7 +92,7 @@ function Section({ icon: Icon, title, children }) {
 function Field({ label, children, span }) {
   return (
     <div style={{ gridColumn: span === 2 ? 'span 2' : undefined }}>
-      {label && <label style={labelStyle}>{label}</label>}
+      {label && <label style={labelStyle}><T>{label}</T></label>}
       {children}
     </div>
   );
@@ -426,7 +426,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                             }}
                             style={{ accentColor: 'var(--qs-info)', width: 14, height: 14 }}
                           />
-                          {opt.label}
+                          <T>{opt.label}</T>
                         </label>
                       );
                     })}

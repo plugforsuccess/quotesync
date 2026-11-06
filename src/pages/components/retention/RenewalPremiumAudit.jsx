@@ -19,9 +19,9 @@ function signed(d) { return `${d > 0 ? '+' : d < 0 ? '−' : ''}${fmt$(Math.abs(
 function Stat({ label, value, sub, color }) {
   return (
     <div className="card">
-      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 500, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 500, marginBottom: 6 }}><T>{label}</T></div>
       <div style={{ fontSize: 22, fontWeight: 700, color: color || 'var(--qs-text)' }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}><T>{sub}</T></div>}
     </div>
   );
 }

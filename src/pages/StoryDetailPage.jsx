@@ -215,7 +215,7 @@ const StoryDetailPage = () => {
 
           {/* Title */}
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
-            {story.title}
+            <T>{story.title}</T>
           </h1>
 
           {/* Author Byline */}
@@ -351,7 +351,7 @@ const StoryDetailPage = () => {
                   >
                     <div className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                       <h4 className="font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                        {related.title}
+                        <T>{related.title}</T>
                       </h4>
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {related.preview_hook}

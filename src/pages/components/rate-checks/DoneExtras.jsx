@@ -63,7 +63,7 @@ export function NextTimeline({ texting, opensAt }) {
             : s.state === 'now' ? <span className="qc-pulse relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-700" aria-hidden="true"><span className="h-2.5 w-2.5 rounded-full bg-[#F5D061]" /></span>
             : <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 bg-white" aria-hidden="true" />}
           <div className="min-w-0 pt-0.5">
-            <p className={`text-[15px] font-bold leading-snug ${s.state === 'next' ? 'text-slate-500' : 'text-[#0F2D6B]'}`}>{s.title}</p>
+            <p className={`text-[15px] font-bold leading-snug ${s.state === 'next' ? 'text-slate-500' : 'text-[#0F2D6B]'}`}><T>{s.title}</T></p>
             <p className="mt-0.5 text-sm leading-snug text-slate-500">{s.line}</p>
           </div>
         </li>

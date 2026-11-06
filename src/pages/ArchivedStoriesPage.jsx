@@ -227,7 +227,7 @@ const ArchivedStoriesPage = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="text-sm font-medium text-gray-900 truncate max-w-md">
-                            {story.title}
+                            <T>{story.title}</T>
                           </span>
                           <span className="text-xs text-gray-500 mt-1">
                             {story.category} • {story.slug}

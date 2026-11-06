@@ -159,7 +159,7 @@ export default function MyLeadsPage() {
                   border: '1px solid', borderColor: logForm.result === o.value ? 'var(--qs-info)' : 'var(--qs-border)',
                   background: logForm.result === o.value ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
                   color: logForm.result === o.value ? 'var(--qs-info)' : 'var(--qs-dim)',
-                }}>{o.label}</button>
+                }}><T>{o.label}</T></button>
             ))}
           </div>
           <input className="dark-input" placeholder="Optional note…" value={logForm.note}
@@ -194,7 +194,7 @@ function Overlay({ title, children, onClose }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--qs-card, #1a1a1a)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 420 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright, #fff)', marginBottom: 14 }}>{title}</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright, #fff)', marginBottom: 14 }}><T>{title}</T></div>
         {children}
       </div>
     </div>

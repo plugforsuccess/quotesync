@@ -196,7 +196,7 @@ const NewsroomPage = () => {
                     : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                {cat.label}
+                <T>{cat.label}</T>
               </button>
             ))}
           </div>

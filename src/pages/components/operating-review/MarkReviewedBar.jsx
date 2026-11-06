@@ -295,7 +295,7 @@ function HistoryModal({ completions, onClose }) {
                   </div>
                   {c.note && (
                     <div style={{ fontSize: 13, color: 'var(--qs-text)', marginTop: 6 }}>
-                      {c.note}
+                      <T>{c.note}</T>
                     </div>
                   )}
                 </div>

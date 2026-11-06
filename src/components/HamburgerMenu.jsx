@@ -1,6 +1,7 @@
 // src/components/HamburgerMenu.jsx
 // Secondary nav dropdown for admin pages (hamburger menu)
 
+import { T } from './SiteCopy';
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -118,7 +119,7 @@ function HamburgerMenu({ items }) {
               }
             >
               <span className="text-lg">{item.icon}</span>
-              <span>{item.label}</span>
+              <span><T>{item.label}</T></span>
             </NavLink>
           ))}
         </div>

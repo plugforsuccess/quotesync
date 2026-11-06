@@ -116,7 +116,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 18 }}>{cfg.icon}</span>
                 <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                  background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color }}>{cfg.label}</span>
+                  background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color }}><T>{cfg.label}</T></span>
                 {productShort(task.product) && (
                   <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 4,
                     background: '#22D3EE1a', border: '1px solid #22D3EE40', color: '#67E8F9',
@@ -127,7 +127,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
               <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 16 }}>✕</button>
             </div>
 
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>{task.title}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}><T>{task.title}</T></div>
             {task.customer_name && (
               <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 12 }}>
                 {task.customer_name}{policies.length ? ` · ${policies.join(' · ')}` : ''}
@@ -137,7 +137,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
             {task.detail && (
               <div style={{ fontSize: 13, color: 'var(--qs-text)', background: 'var(--qs-elevated)',
                 border: '1px solid var(--qs-border)', borderRadius: 8, padding: '10px 12px', marginBottom: 14 }}>
-                {task.detail}
+                <T>{task.detail}</T>
               </div>
             )}
 
@@ -221,7 +221,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                       </span>
                       <span style={{ color: 'var(--qs-muted)' }}>{a.method}</span>
                       {nameFor(a.employee_id) && <span style={{ color: 'var(--qs-subtle)' }}>· {nameFor(a.employee_id)}</span>}
-                      {a.note && <span style={{ color: 'var(--qs-muted)', fontStyle: 'italic' }}>“{a.note}”</span>}
+                      {a.note && <span style={{ color: 'var(--qs-muted)', fontStyle: 'italic' }}>“<T>{a.note}</T>”</span>}
                     </div>
                   ))}
                 </div>

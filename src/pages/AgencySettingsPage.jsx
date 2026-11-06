@@ -95,7 +95,7 @@ const AgencySettingsPage = () => {
               style={activeTab !== key ? { color: 'var(--qs-subtle)' } : undefined}
             >
               <Icon className="w-4 h-4" />
-              {label}
+              <T>{label}</T>
             </button>
           ))}
         </div>
@@ -297,7 +297,7 @@ function TeamTab({ agencyId, isAgent }) {
                       fontSize: 11, fontWeight: 700, padding: '3px 8px',
                       borderRadius: 4, color: roleCfg.color, background: roleCfg.bg,
                     }}>
-                      {roleCfg.label}
+                      <T>{roleCfg.label}</T>
                     </span>
                   </td>
 
@@ -582,10 +582,10 @@ function MyRepWorkspace({ agencyId }) {
                 />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)' }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 1 }}>
-                    {opt.desc}
+                    <T>{opt.desc}</T>
                   </div>
                 </div>
               </label>
@@ -1664,7 +1664,7 @@ function ProducerGoalCard({ producerName, savedTargets }) {
             {TARGET_FIELDS.map(f => (
               <div key={f.key}>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>
-                  {f.label}
+                  <T>{f.label}</T>
                 </label>
                 <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>
                   {f.key === 'premium_monthly' && currentValues[f.key] > 0
@@ -1687,7 +1687,7 @@ function ProducerGoalCard({ producerName, savedTargets }) {
 function Field({ label, type = 'text', value, onChange, placeholder }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>{label}</label>
+      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></label>
       <input
         type={type}
         value={value}
@@ -1702,7 +1702,7 @@ function Field({ label, type = 'text', value, onChange, placeholder }) {
 function ReadOnly({ label, value }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-subtle)' }}>{label}</label>
+      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></label>
       <p style={{ color: 'var(--qs-bright)' }}>{value || '-'}</p>
     </div>
   );
@@ -1848,7 +1848,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
                                                            : 'var(--qs-muted)';
                   return (
                     <tr key={row.key} style={{ borderTop: '1px solid var(--qs-border)' }}>
-                      <td style={{ padding: '4px 8px', color: 'var(--qs-dim)' }}>{row.label}</td>
+                      <td style={{ padding: '4px 8px', color: 'var(--qs-dim)' }}><T>{row.label}</T></td>
                       <td style={{ padding: '4px 8px', textAlign: 'right', color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace" }}>
                         {fmt$(row.premium)}
                       </td>
@@ -1874,7 +1874,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
             return (
               <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 8, lineHeight: 1.5 }}>
                 <T k="pages.agencysettingspage.cbb99d">To close the</T> {gapPts.toFixed(1)}<T k="pages.agencysettingspage.90ec85">pt gap, shift mix toward</T>{' '}
-                <span style={{ color: 'var(--qs-bright)', fontWeight: 600 }}>{topLever.label}</span>
+                <span style={{ color: 'var(--qs-bright)', fontWeight: 600 }}><T>{topLever.label}</T></span>
                 {' '}({fmtPct(topLever.effectiveRate)} <T k="pages.agencysettingspage.fc5563">effective rate, currently</T> {fmtPct(topLever.share)} <T k="pages.agencysettingspage.d2c335">of premium).</T>
               </p>
             );

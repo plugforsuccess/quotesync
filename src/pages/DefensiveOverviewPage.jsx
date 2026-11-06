@@ -77,7 +77,7 @@ export default function DefensiveOverviewPage() {
           {kpis.map((k) => (
             <div key={k.label} className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
               <p className="text-2xl font-bold">{k.value ?? 0}</p>
-              <p className="text-[11px] uppercase tracking-wider text-gray-500 mt-1">{k.label}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500 mt-1"><T>{k.label}</T></p>
             </div>
           ))}
         </div>

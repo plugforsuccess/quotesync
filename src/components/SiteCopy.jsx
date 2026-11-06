@@ -239,6 +239,8 @@ const textKey = (s) => {
  * text itself, so the same wording edited once changes everywhere it appears. */
 export function T({ k: key, children }) {
   const { values, editing, save, fail } = useContext(Ctx);
+  // Only plain text can be edited; anything else (an element, nothing) shows as is.
+  if (typeof children !== 'string' || !/[A-Za-z]/.test(children)) return <>{children}</>;
   const fallback = typeof children === 'string' ? children : String(children ?? '');
   const k = key || textKey(fallback);
   const text = values[k] ?? fallback;

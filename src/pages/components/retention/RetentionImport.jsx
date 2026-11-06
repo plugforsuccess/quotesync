@@ -425,7 +425,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
                         ? opt.on
                         : { background: 'transparent', border: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }),
                     }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </button>
                 ))}
               </div>
@@ -500,7 +500,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               { label: 'Needs Review',    value: diffResult.toReview.length,  color: 'var(--qs-bright)' },
             ].filter(item => item.value > 0).map(({ label, value, color }) => (
               <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
-                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4 }}><T>{label}</T></div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -1559,7 +1559,7 @@ function ImportTab({
             <div key={s.step} style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ textAlign: 'center', padding: '0 12px' }}>
                 <div style={{ fontSize: 16, color: 'var(--qs-dim)' }}>{s.step}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-text)', marginTop: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-text)', marginTop: 2 }}><T>{s.label}</T></div>
                 <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>{s.sublabel}</div>
               </div>
               {i < arr.length - 1 && (

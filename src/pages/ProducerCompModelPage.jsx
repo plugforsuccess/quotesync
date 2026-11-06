@@ -325,7 +325,7 @@ export default function ProducerCompModelPage() {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  {tab.label}
+                  <T>{tab.label}</T>
                 </button>
               );
             })}

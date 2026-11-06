@@ -134,7 +134,7 @@ export function LinkedServiceTasks({ caseType, caseId }) {
               <span style={{ flex: 1, minWidth: 0, color: 'var(--qs-text)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 textDecoration: done ? 'line-through' : 'none', opacity: done ? 0.7 : 1 }}>
-                {t.title}
+                <T>{t.title}</T>
               </span>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
                 color: TASK_STATUS_COLOR[t.status] || 'var(--qs-muted)',

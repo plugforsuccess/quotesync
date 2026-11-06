@@ -252,7 +252,7 @@ export default function ReferralRewardsPage() {
                   <div className="text-2xl sm:text-3xl font-bold tabular-nums">
                     {String(val).padStart(2, '0')}
                   </div>
-                  <div className="text-xs text-primary-100 uppercase">{label}</div>
+                  <div className="text-xs text-primary-100 uppercase"><T>{label}</T></div>
                 </div>
               ))}
             </div>
@@ -291,7 +291,7 @@ export default function ReferralRewardsPage() {
                   {val}
                 </div>
                 <div className="text-[11px] uppercase tracking-wide text-gray-400 mt-0.5">
-                  {label}
+                  <T>{label}</T>
                 </div>
               </div>
             ))}
@@ -445,7 +445,7 @@ export default function ReferralRewardsPage() {
                       )}
                       {entry.note && (
                         <p className="text-xs text-gray-400 truncate">
-                          {entry.note}
+                          <T>{entry.note}</T>
                         </p>
                       )}
                     </div>

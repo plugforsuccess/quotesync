@@ -16,7 +16,7 @@ import AgentsMap from './AgentsMap';
 
 export function OwnershipChip({ value }) {
   const o = BOOK_OWNERSHIP[value] || BOOK_OWNERSHIP.check;
-  return <span title={o.hint} className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${o.cls}`}>{o.label}</span>;
+  return <span title={o.hint} className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${o.cls}`}><T>{o.label}</T></span>;
 }
 
 export default function CompetitorAgents({ agencyId, scans = [] }) {
@@ -171,7 +171,7 @@ function AgentCard({ r, open, onToggle, update }) {
             <span className="max-w-[45%] shrink-0 text-right text-sm" style={{ color: 'var(--qs-text)' }}>{r.carrier}</span>
           </div>
           <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-            {o.label}{(r.zips || []).length ? ` · ${r.zips.join(', ')}` : ''} · <b style={{ color: 'var(--qs-bright)' }}>{plural(r.rate_checks, 'customer')}</b>
+            <T>{o.label}</T>{(r.zips || []).length ? ` · ${r.zips.join(', ')}` : ''} · <b style={{ color: 'var(--qs-bright)' }}>{plural(r.rate_checks, 'customer')}</b>
           </p>
           {(Number(r.quoted) > 0 || r.avg_annual_premium != null) && (
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
@@ -252,7 +252,7 @@ function AgentDetails({ r, update }) {
           className="w-full rounded px-2 py-1.5" style={inputStyle}>
           {Object.entries(BOOK_OWNERSHIP).map(([k, o]) => <option key={k} value={k}>{o.label}</option>)}
         </select>
-        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{(BOOK_OWNERSHIP[r.book_ownership] || BOOK_OWNERSHIP.check).hint}</span>
+        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{(BOOK_OWNERSHIP[r.book_ownership] || BOOK_OWNERSHIP.check).hint}</T></span>
       </label>
       <div className="space-y-1">
         <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.competitoragents.f4c6f8">Notes</T></span>

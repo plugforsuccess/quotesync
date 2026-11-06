@@ -317,9 +317,9 @@ export default function CompareSchedulesTab({ config, productMix }) {
 function FormField({ label, helpText, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-[var(--qs-text)] mb-1">{label}</label>
+      <label className="block text-sm font-medium text-[var(--qs-text)] mb-1"><T>{label}</T></label>
       {children}
-      {helpText && <p className="text-xs text-[var(--qs-dim)] mt-1">{helpText}</p>}
+      {helpText && <p className="text-xs text-[var(--qs-dim)] mt-1"><T>{helpText}</T></p>}
     </div>
   );
 }
@@ -327,7 +327,7 @@ function FormField({ label, helpText, children }) {
 function StatCard({ label, value, subline }) {
   return (
     <div className="rounded border border-[var(--qs-border)] bg-[var(--qs-card)] p-4">
-      <div className="text-xs uppercase text-[var(--qs-subtle)] mb-2">{label}</div>
+      <div className="text-xs uppercase text-[var(--qs-subtle)] mb-2"><T>{label}</T></div>
       <div className="text-2xl font-bold text-[var(--qs-bright)]">{value}</div>
       {subline && <div className="text-xs text-[var(--qs-dim)] mt-1">{subline}</div>}
     </div>

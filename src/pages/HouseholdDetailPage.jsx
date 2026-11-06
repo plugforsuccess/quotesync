@@ -263,7 +263,7 @@ export default function HouseholdDetailPage() {
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
                       background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color,
-                    }}>{cfg.label}</span>
+                    }}><T>{cfg.label}</T></span>
                     {productShort(t.product) && (
                       <span title="Line of business" style={{
                         fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 4,
@@ -271,7 +271,7 @@ export default function HouseholdDetailPage() {
                         letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace",
                       }}>{productShort(t.product)}</span>
                     )}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{t.title}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}><T>{t.title}</T></span>
                     {t.requires_license && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#C4B5FD' }}>🔒</span>
                     )}
@@ -327,14 +327,14 @@ export default function HouseholdDetailPage() {
                 <span style={{
                   fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
                   background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color,
-                }}>{cfg.label}</span>
+                }}><T>{cfg.label}</T></span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{label(r.product)}</span>
                 <span style={{ fontSize: 12, color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace" }}>
                   {r.policy_no}
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--qs-dim)' }}>{r.status}</span>
                 {r.detail && (
-                  <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>{r.detail}</span>
+                  <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}><T>{r.detail}</T></span>
                 )}
                 {r.callback_at && (() => {
                   const overdue = new Date(r.callback_at) < new Date();
@@ -380,7 +380,7 @@ export default function HouseholdDetailPage() {
                   <span style={{
                     fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
                     background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color,
-                  }}>{cfg.label}</span>
+                  }}><T>{cfg.label}</T></span>
                   {t.product && (
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
@@ -420,7 +420,7 @@ export default function HouseholdDetailPage() {
                     }}>🏷 {String(code).replace(/_/g, ' ')}</span>
                   ))}
                   {t.note && (
-                    <span style={{ color: 'var(--qs-muted)', fontStyle: 'italic' }}>“{t.note}”</span>
+                    <span style={{ color: 'var(--qs-muted)', fontStyle: 'italic' }}>“<T>{t.note}</T>”</span>
                   )}
                 </div>
               );

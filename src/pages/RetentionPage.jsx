@@ -52,9 +52,9 @@ const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+
 function KpiCard({ label, value, sub, color, urgent, urgentCount, onUrgentClick }) {
   return (
     <div className="card" style={{ position: "relative" }}>
-      <div style={{ fontSize: 12, color: "var(--qs-subtle)", fontWeight: 500, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, color: "var(--qs-subtle)", fontWeight: 500, marginBottom: 6 }}><T>{label}</T></div>
       <div style={{ fontSize: 22, fontWeight: 700, color: color || "var(--qs-text)" }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}><T>{sub}</T></div>}
       {urgent && urgentCount > 0 && (
         <div
           onClick={onUrgentClick}

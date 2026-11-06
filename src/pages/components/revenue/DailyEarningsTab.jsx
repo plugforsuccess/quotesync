@@ -207,7 +207,7 @@ export default function DailyEarningsTab({ agencyId }) {
                 background: dashed ? 'transparent' : color,
                 borderTop: dashed ? `2px dashed ${color}` : 'none',
               }} />
-              <span style={{ fontSize: 11, color: 'var(--qs-dim)' }}>{label}</span>
+              <span style={{ fontSize: 11, color: 'var(--qs-dim)' }}><T>{label}</T></span>
             </div>
           ))}
         </div>

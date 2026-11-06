@@ -25,7 +25,7 @@ function ProductChips({ selected, onToggle }) {
           <button key={key} type="button" onClick={() => onToggle(key)} aria-pressed={on}
             className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold ${on ? 'bg-primary-600 text-white' : ''}`}
             style={on ? undefined : box}>
-            {on && <Check className="h-4 w-4" aria-hidden="true" />}{label}
+            {on && <Check className="h-4 w-4" aria-hidden="true" />}<T>{label}</T>
           </button>
         );
       })}
@@ -49,7 +49,7 @@ function TermSwitch({ value, onChange, label }) {
 function PremiumInput({ value, onChange, label }) {
   return (
     <label className="relative block min-w-0 flex-1">
-      <span className="sr-only">{label}</span>
+      <span className="sr-only"><T>{label}</T></span>
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--qs-subtle)' }}>$</span>
       <input inputMode="decimal" value={value} onChange={e => onChange(e.target.value)} placeholder="0"
         aria-label={label} className="h-10 w-full rounded-lg pl-7 pr-3 text-sm tabular-nums" style={box} />
@@ -64,8 +64,8 @@ function Sheet({ title, sub, onClose, children, footer }) {
       <div className="relative flex max-h-[92vh] w-full max-w-lg flex-col rounded-t-2xl sm:rounded-2xl" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
         <div className="flex items-start justify-between gap-3 px-5 pb-2 pt-5">
           <div>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{title}</h2>
-            {sub && <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{sub}</p>}
+            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T>{title}</T></h2>
+            {sub && <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T>{sub}</T></p>}
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5" style={{ color: 'var(--qs-subtle)' }}><X className="h-5 w-5" /></button>
         </div>
@@ -176,7 +176,7 @@ function BindForm({ lead, agencyId, openQuote, onClose }) {
             <div className="grid grid-cols-3 gap-1 rounded-xl p-1" style={box} role="radiogroup" aria-label="Bundle type">
               {Object.entries(BUNDLE).map(([k, label]) => (
                 <button key={k} type="button" role="radio" aria-checked={bundleType === k} onClick={() => setBundle(k === auto ? null : k)}
-                  className={`h-9 rounded-lg px-1 text-xs font-semibold sm:text-sm ${bundleType === k ? 'bg-primary-600 text-white' : ''}`}>{label}</button>
+                  className={`h-9 rounded-lg px-1 text-xs font-semibold sm:text-sm ${bundleType === k ? 'bg-primary-600 text-white' : ''}`}><T>{label}</T></button>
               ))}
             </div>
             {bundle && bundle !== auto && <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.sales.salesforms.d8a9de">Changed by you (worked out as</T> {BUNDLE[auto]}).</p>}
@@ -205,7 +205,7 @@ function LostForm({ lead, openQuotes, onClose }) {
         {LOST.map(([k, label, hint]) => (
           <button key={k} type="button" role="radio" aria-checked={reason === k} onClick={() => setReason(k)}
             className={`flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left ${reason === k ? 'ring-2 ring-primary-600' : ''}`} style={box}>
-            <span><span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}>{label}</span><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{hint}</span></span>
+            <span><span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}><T>{label}</T></span><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{hint}</T></span></span>
             {reason === k && <Check className="h-5 w-5 text-primary-600" aria-hidden="true" />}
           </button>
         ))}

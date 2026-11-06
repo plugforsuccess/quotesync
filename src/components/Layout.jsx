@@ -647,8 +647,8 @@ function EditWebsiteButton() {
           {EDIT_PAGES.map(([to, label, hint]) => (
             <NavLink key={to} to={to} role="menuitem" onClick={() => setOpen(false)}
               className="block px-4 py-2.5 hover:bg-blue-50">
-              <span className="block text-sm font-semibold" style={{ color: '#0F2D6B' }}>{label}</span>
-              <span className="block text-xs" style={{ color: '#546280' }}>{hint}</span>
+              <span className="block text-sm font-semibold" style={{ color: '#0F2D6B' }}><T>{label}</T></span>
+              <span className="block text-xs" style={{ color: '#546280' }}><T>{hint}</T></span>
             </NavLink>
           ))}
         </div>

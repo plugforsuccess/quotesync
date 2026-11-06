@@ -189,7 +189,7 @@ export default function PlanningHubPage() {
           <button key={key}
             className={`tab ${activeTab === key ? 'active' : ''}`}
             onClick={() => setActiveTab(key)}>
-            {label}
+            <T>{label}</T>
           </button>
         ))}
       </div>

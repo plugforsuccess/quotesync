@@ -199,7 +199,7 @@ export default function EmployeeLayout() {
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map(({ to, label }) => (
               <NavLink key={to} to={to} end className={navPillClass}>
-                {label}
+                <T>{label}</T>
               </NavLink>
             ))}
           </nav>
@@ -249,7 +249,7 @@ export default function EmployeeLayout() {
           </div>
           {navItems.map(({ to, label }) => (
             <NavLink key={to} to={to} end className={navPillClass}>
-              {label}
+              <T>{label}</T>
             </NavLink>
           ))}
           <a href="/my/change-password" className="qs-focusable px-4 py-2 rounded-lg text-[0.95rem] font-semibold whitespace-nowrap text-gray-900 hover:bg-black/5">

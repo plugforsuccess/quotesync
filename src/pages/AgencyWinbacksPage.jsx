@@ -84,7 +84,7 @@ export default function AgencyWinbacksPage() {
           <button key={v} type="button" role="tab" aria-selected={show === v} onClick={() => setShow(v)}
             className={`rounded-md px-3 py-1.5 text-sm font-semibold ${show === v ? 'bg-primary-600 text-white' : ''}`}
             style={show === v ? undefined : { color: 'var(--qs-text)' }}>
-            {label}
+            <T>{label}</T>
           </button>
         ))}
       </div>

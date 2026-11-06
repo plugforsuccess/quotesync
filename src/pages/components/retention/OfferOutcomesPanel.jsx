@@ -50,9 +50,9 @@ export default function OfferOutcomesPanel({ agencyId }) {
       background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
       borderRadius: 10, padding: '10px 14px', minWidth: 150, flex: '1 1 150px',
     }}>
-      <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>{label}</div>
+      <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}><T>{label}</T></div>
       <div style={{ fontSize: 18, fontWeight: 700, color: color || 'var(--qs-bright)' }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}><T>{sub}</T></div>}
     </div>
   );
 

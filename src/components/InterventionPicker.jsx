@@ -93,7 +93,7 @@ export default function InterventionPicker({ value, onChange, context, filter, r
   const groupLabel = (text, hint) => (
     <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)', margin: '2px 0 6px' }}>
       {text}
-      {hint && <span style={{ fontWeight: 400, fontStyle: 'italic' }}> · {hint}</span>}
+      {hint && <span style={{ fontWeight: 400, fontStyle: 'italic' }}> · <T>{hint}</T></span>}
     </div>
   );
   const chipRow = (types, kind, mb) => (

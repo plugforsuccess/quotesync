@@ -19,7 +19,7 @@ function TrendChart({ title, data, dataKey, targetValue, targetLabel, unit, doma
   const ct = useChartTheme();
   return (
     <div className="bg-qs-card rounded-lg border border-qs-border p-4">
-      <h5 className="text-sm font-semibold text-qs-bright mb-3">{title}</h5>
+      <h5 className="text-sm font-semibold text-qs-bright mb-3"><T>{title}</T></h5>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={ct.structural.grid} />

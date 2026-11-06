@@ -27,7 +27,7 @@ export function Section({ title, aside, ruled = false, children }) {
   return (
     <section>
       <div className="mb-1 flex items-baseline justify-between gap-3">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>{title}</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{title}</T></h3>
         {aside}
       </div>
       {ruled ? <div className="pt-3" style={{ borderTop: '1px solid var(--qs-border)' }}>{children}</div> : children}
@@ -216,7 +216,7 @@ function VehicleCard({ rc, v, index, level, n }) {
   const hasGapRow = gap.pills.length > 0 || Boolean(gap.flag);
   const gapRow = (mt) => hasGapRow && (
     <div className={`${mt} flex flex-wrap items-center gap-1.5 pl-[34px]`}>
-      {gap.pills.map(p => <span key={p.key} className={PILL} style={GAP_PILL}>{p.label}</span>)}
+      {gap.pills.map(p => <span key={p.key} className={PILL} style={GAP_PILL}><T>{p.label}</T></span>)}
       {gap.flag === 'no_gap' && <span className={PILL} style={FLAG_PILL}><T k="pages.components.ratechecks.policysheet.845366">No Gap</T></span>}
       {gap.flag === 'no_lien' && (
         <span className={`${PILL} gap-1`} style={FLAG_PILL}>
@@ -264,7 +264,7 @@ function VehicleCard({ rc, v, index, level, n }) {
       {!lien && gapRow('mt-3')}
       {extras.map((r, i) => (
         <p key={r.key} className={`${i === 0 && !lien && !hasGapRow ? 'mt-3' : 'mt-1.5'} pl-[34px] text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
-          {r.label} {r.value}
+          <T>{r.label}</T> {r.value}
         </p>
       ))}
     </li>

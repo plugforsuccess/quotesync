@@ -69,10 +69,10 @@ export default function UploadReminderBanner({ reminders }) {
                 </span>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>
-                    {r.label}
+                    <T>{r.label}</T>
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--qs-dim)', marginLeft: 8 }}>
-                    {r.description}
+                    <T>{r.description}</T>
                   </span>
                 </div>
                 <span style={{
@@ -80,7 +80,7 @@ export default function UploadReminderBanner({ reminders }) {
                   background: cfg.bg, border: `1px solid ${cfg.border}`,
                   borderRadius: 4, padding: '2px 6px',
                 }}>
-                  {cfg.label}
+                  <T>{cfg.label}</T>
                 </span>
               </div>
             );
