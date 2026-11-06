@@ -17,3 +17,15 @@ export function bundleTypeFor(products) {
 }
 export const defaultTerm = (product) => (product === 'auto' || product === 'motorcycle' ? 6 : 12);
 export const money = (n) => (n == null ? '—' : `$${Math.round(Number(n)).toLocaleString('en-US')}`);
+
+/**
+ * How many quotes a set of sales_quotes rows counts for: one per policy quoted.
+ * A household's auto + home is ONE record (a line per policy) but counts as 2 quotes.
+ * Use this for every quote count (scorecard, floors, reports), never the row count.
+ */
+export function quoteCount(quotes) {
+  return (quotes || []).reduce((n, q) => {
+    const lines = Array.isArray(q.lines) ? q.lines.length : 0;
+    return n + (lines || (Array.isArray(q.products) ? q.products.length : 0) || 1);
+  }, 0);
+}

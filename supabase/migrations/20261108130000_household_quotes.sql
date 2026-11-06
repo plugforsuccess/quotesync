@@ -2,6 +2,8 @@
 -- per policy (auto 6-month, home 12-month), instead of one quote per policy.
 -- Each line carries its rate_check_id so it can be updated or removed on its own.
 -- Rate Checks bound with Allstate still become binds, as before.
+-- Counting: a quote is one POLICY quoted, so this household record with auto + home
+-- counts as 2 quotes (see quoteCount in src/lib/sales.js). Never count rows.
 create or replace function public.rate_check_to_sales()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
