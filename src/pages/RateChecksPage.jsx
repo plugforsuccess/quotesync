@@ -725,8 +725,8 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
             </div>
           )}
           {/* What to beat, and the lead's record, on one row. */}
-          <div className="mt-3 flex items-baseline justify-between gap-3">
-            <GoalHeader household={household} className="" />
+          <div className="mt-2.5 flex items-baseline justify-between gap-3">
+            <GoalHeader household={household} className="" showSaved={false} />
             {rc.lead_id && (
               <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex shrink-0 items-center gap-1 text-sm text-primary-600 hover:underline">
                 <T k="pages.ratecheckspage.9fc953">Lead Record</T> <ExternalLink className="w-3.5 h-3.5" />
@@ -734,17 +734,17 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
             )}
           </div>
           {/* Steps: Review → Log Quote → Tell Them → Close */}
-          <nav aria-label="Sales steps" className="mt-3 flex gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
+          <nav aria-label="Sales steps" className="mt-2.5 flex gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
             {STEPS.map((x, i) => {
               const on = step === x.v;
               const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && !!logged);
               return (
                 <button key={x.v} type="button" disabled={x.soon} onClick={() => setStep(x.v)} aria-current={on ? 'step' : undefined}
                   title={x.soon ? 'Coming in the next step' : undefined}
-                  className={`flex min-h-[48px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-1 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
                   style={on ? undefined : { color: 'var(--qs-bright)' }}>
                   {/* The step number (or ✓ once done), small and light, above the name. */}
-                  <span className="text-[10px] font-medium tabular-nums opacity-70" aria-hidden="true">{done ? '✓' : i + 1}</span>
+                  <span className="text-[10px] font-medium leading-none tabular-nums opacity-70" aria-hidden="true">{done ? '✓' : i + 1}</span>
                   <T>{x.label}</T>
                 </button>
               );
