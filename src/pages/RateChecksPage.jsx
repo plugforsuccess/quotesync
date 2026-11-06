@@ -47,6 +47,7 @@ import { GoalHeader, HouseholdCard, LiveDelta } from './components/rate-checks/Q
 import { looksTooLow, savings } from './components/rate-checks/quoteMath';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
+import LogQuote from './components/sales/LogQuote';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -642,18 +643,23 @@ export default function RateChecksPage() {
 
 const SHOW_SEND_A_LINK = false;
 
-function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted }) {
-  // Prices saved in this drawer, so the chips and goal header update before the list refetches.
-  const [saved, setSaved] = useState({});
-  const household = rows.map(p => (p.id in saved ? { ...p, allstate_premium: saved[p.id] } : p));
-  const quoted = (res) => {
-    if (res?.allstate_premium != null) setSaved(m => ({ ...m, [rc.id]: res.allstate_premium }));
-    onQuoted(res);
-  };
+// The sales workspace: full screen, one household, in steps. Review the quote sheet,
+// log the Allstate quote, then (next steps) tell them and close.
+const STEPS = [
+  { v: 'review', label: 'Review' },
+  { v: 'log', label: 'Log Quote' },
+  { v: 'tell', label: 'Tell Them', soon: true },
+  { v: 'close', label: 'Close', soon: true },
+];
+
+function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
+  const [step, setStep] = useState('review');
+  const [logged, setLogged] = useState(null);
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
   const multi = household.length > 1;
+  const live = household.filter(p => p.status !== 'declined');
   // The header (name, call, goal) slides away while scrolling down into the quote
   // sheet and comes back on any scroll up.
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -674,12 +680,12 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true" aria-label="Rate check detail">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div onScroll={onScroll} className="relative h-full w-full max-w-xl overflow-y-auto shadow-xl" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
-        {/* Who + how to reach them */}
-        <div ref={header} className="sticky top-0 z-10 px-5 pt-4 pb-3 transition-transform duration-200"
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Sales workspace">
+      <div onScroll={onScroll} className="relative h-full w-full overflow-y-auto" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
+        {/* Who + how to reach them, then the steps */}
+        <div ref={header} className="sticky top-0 z-10 transition-transform duration-200"
           style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)', transform: headerHidden ? 'translateY(-100%)' : 'none' }}>
+        <div className="mx-auto max-w-3xl px-5 pt-4 pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || <T k="pages.ratecheckspage.968f20">{'Rate Check'}</T>}</h2>
@@ -726,9 +732,52 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               </Link>
             )}
           </div>
+          {/* Steps: Review → Log Quote → Tell Them → Close */}
+          <nav aria-label="Sales steps" className="mt-3 grid grid-cols-4 gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
+            {STEPS.map((x, i) => {
+              const on = step === x.v;
+              const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && !!logged);
+              return (
+                <button key={x.v} type="button" disabled={x.soon} onClick={() => setStep(x.v)} aria-current={on ? 'step' : undefined}
+                  title={x.soon ? 'Coming in the next step' : undefined}
+                  className={`flex min-h-[40px] items-center justify-center gap-1 rounded-lg px-1 text-xs font-semibold sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                  style={on ? undefined : { color: 'var(--qs-bright)' }}>
+                  <span className="tabular-nums">{done ? '✓' : i + 1}</span> <span className="truncate"><T>{x.label}</T></span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
         </div>
 
-        <div className="space-y-6 p-5">
+        {/* A household with more than one policy: one tab per policy. */}
+        {multi && step === 'review' && (
+          <div className="mx-auto flex max-w-3xl gap-2 overflow-x-auto px-5 pt-4" role="tablist" aria-label="Policies in this household">
+            {live.map(p => (
+              <button key={p.id} type="button" role="tab" aria-selected={p.id === rc.id} onClick={() => onSelect(p)}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ${p.id === rc.id ? 'bg-primary-600 text-white' : ''}`}
+                style={p.id === rc.id ? undefined : { background: 'var(--qs-elevated)', color: 'var(--qs-bright)', border: '1px solid var(--qs-border)' }}>
+                {carrierLabel(p) || <T k="pages.ratecheckspage.policy">Policy</T>} <T>{policyTypeLabel(p.policy_type)}</T>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {step === 'log' && (
+          <div className="mx-auto max-w-3xl space-y-4 p-5">
+            {logged ? (
+              <div className="rounded-xl p-4" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }} role="status">
+                <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.logged.title">Quote Logged</T></p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}><T k="sales.logged.line">The lead is now Quoted and it counts on your scorecard. Telling them and closing come in the next steps.</T></p>
+                <button type="button" onClick={() => setLogged(null)} className="mt-3 text-sm font-semibold text-primary-600 underline"><T k="sales.logged.edit">Change the Rates</T></button>
+              </div>
+            ) : (
+              <LogQuote household={live} onLogged={setLogged} />
+            )}
+          </div>
+        )}
+
+        {step === 'review' && <div className="mx-auto max-w-3xl space-y-6 p-5">
           {rc.extract_error && (
             <Notice tone="danger">
               <T k="pages.ratecheckspage.08f079">We couldn't read this photo. Look at it below and fill in the policy details by hand.</T>
@@ -743,27 +792,15 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
           {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info"><T k="pages.ratecheckspage.75068f">Scanned again — check the details below.</T></Notice>}
           <PolicyDetails rc={rc} warning={!rc.extract_error ? warning : null} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
-        {/* After the quote sheet: household and price (where the Allstate price goes), then what to quote. */}
-        <div className="-mx-5">
-          {/* Slide 1: the household (when there's more than one policy) with the price right under it. Slide 2: what to quote. */}
-          <Carousel label="Quote this policy" slides={[
-            { key: 'price', label: multi ? 'Household and price' : 'Price', content: (
-              <div className="flex h-full flex-col gap-3">
-                {multi && <HouseholdCard rc={rc} household={household} onSelect={onSelect} />}
-                <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
-                {rc.upload_source === 'agent' && (
-                  <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.d03dfd">Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</T></p>
-                )}
-              </div>
-            ) },
-            { key: 'decision', label: 'What to Quote', content: <DecisionCard rc={rc} household={household} /> },
-          ]} />
-        </div>
-
+          <DecisionCard rc={rc} household={household} />
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
           {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
-        </div>
+          <button type="button" onClick={() => { setStep('log'); window.scrollTo?.(0, 0); }}
+            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white">
+            <T k="sales.review.next">Quoted It in Allstate? Log the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>}
       </div>
     </div>
   );
