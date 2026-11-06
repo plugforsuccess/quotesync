@@ -140,7 +140,7 @@ test('a winback lead record is the workspace: review, save the quote by product,
   await expect(dialog.getByRole('textbox')).toHaveValue(/new Allstate quote for you: \$4,100 a year/);
   await expect(dialog.getByRole('button', { name: 'Send Text' })).toBeDisabled();
 
-  await dialog.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Bind/ }).click();
+  await dialog.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Close/ }).click();
   await dialog.getByRole('button', { name: 'Bound', exact: true }).click();
   await expect(dialog.getByLabel('Auto bound premium')).toHaveValue('1450');
   await dialog.getByRole('button', { name: /Mark Bound · 2 Policies/ }).click();
@@ -155,7 +155,7 @@ test('a winback lead record is the workspace: review, save the quote by product,
 test('a winback never quoted can still be closed Lost', async ({ page }) => {
   const writes = await openLead(page);
   const dialog = page.getByRole('dialog', { name: 'Sales workspace' });
-  await dialog.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Bind/ }).click();
+  await dialog.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Close/ }).click();
   await dialog.getByRole('button', { name: 'Lost', exact: true }).click();
   await dialog.getByRole('radio', { name: /No response/ }).click();
   await dialog.getByRole('button', { name: 'Mark Lost' }).click();

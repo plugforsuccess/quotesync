@@ -144,7 +144,7 @@ async function openClose(page, quotedRows) {
   await page.goto('/agency/leads/rate-checks');
   await page.getByRole('button', { name: /^All/ }).first().click(); // already quoted: not under Needs Quote
   await page.locator('li').filter({ hasText: 'Stephen' }).first().click();
-  await page.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Bind/ }).click();
+  await page.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Close/ }).click();
   await expect(page.getByRole('heading', { name: 'Policy Bound' })).toBeVisible();
   return writes;
 }
