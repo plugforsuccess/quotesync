@@ -1,13 +1,20 @@
 -- Producer Command Center, step 1: quotes and binds producers log, and the floors
 -- they're measured against.
 --
---   sales_quotes  one row per quote presented (products + quoted premium). Open until
---                 Bound or Lost; open quotes older than 30 days close as "No response".
---   sales_binds   one row per household bind: bound premium (what the customer paid,
---                 which can be less than quoted) and the bundle type.
---   bound_items   one row per product on a bind, with its item count (1 auto risk =
---                 1 item, so a 2-car auto policy is 2). Provisional until the Allstate
+--   sales_quotes  one row per quote presented: a line per product with its premium for
+--                 the policy term (6-month auto, 12-month home, as Allstate shows it).
+--                 Open until Bound or Lost; open quotes older than 30 days close as
+--                 "No response".
+--   sales_binds   one row per household bind, with the bundle type. bound_premium is
+--                 the household's total, annualized, kept current from its items.
+--   bound_items   one row per product on a bind: item count (1 auto risk = 1 item, so a
+--                 2-car auto policy is 2), the premium the customer paid for the term,
+--                 and for auto the first renewal date. The producer who wrote an auto
+--                 policy owns getting it to that first renewal (a $25-per-item bonus by
+--                 default; no cancellation is excused). Provisional until the Allstate
 --                 production report confirms it (later step).
+--
+-- Premiums are stored as typed, for the term; totals use premium × 12 ÷ term.
 --
 -- Credit goes to whoever logs it. Rate Checks feed in automatically: an Allstate quote
 -- entered on a Rate Check is a quote, and a Rate Check bound with Allstate is a bind
@@ -55,6 +62,9 @@ create table if not exists public.sales_quotes (
   customer_name text,
   quoted_on date not null default ((now() at time zone 'America/New_York')::date),
   products text[] not null check (cardinality(products) >= 1),
+  -- [{product, premium, term_months}] premium for the term, as typed
+  lines jsonb not null default '[]'::jsonb,
+  -- the quote's total, annualized (kept from lines)
   quoted_premium numeric check (quoted_premium is null or quoted_premium >= 0),
   status text not null default 'open' check (status in ('open', 'bound', 'lost')),
   lost_reason text check (lost_reason in ('price', 'no_response', 'not_eligible')),
@@ -98,6 +108,11 @@ create table if not exists public.bound_items (
   employee_id uuid references public.employees(id) on delete set null,
   product text not null,
   item_count integer not null default 1 check (item_count >= 1),
+  premium numeric check (premium is null or premium >= 0),
+  term_months integer not null default 12 check (term_months in (6, 12)),
+  first_renewal_on date,
+  first_renewal_status text check (first_renewal_status in ('pending', 'renewed', 'cancelled')),
+  first_renewal_resolved_at timestamptz,
   policy_number text,
   prior_policy_items integer,
   rate_check_id uuid unique references public.rate_checks(id) on delete cascade,
@@ -120,6 +135,8 @@ create table if not exists public.producer_floor_settings (
   quotes_floor integer not null default 8,
   pace_weight numeric not null default 0.4,
   pipeline_weight numeric not null default 0.6,
+  -- Paid per auto item still in force at its first renewal (Schedule A).
+  first_renewal_bonus numeric not null default 25,
   updated_at timestamptz not null default now()
 );
 insert into public.producer_floor_settings (agency_id)
@@ -140,6 +157,20 @@ begin
   return new;
 end $$;
 
+create or replace function public.sales_quote_lines()
+returns trigger language plpgsql as $$
+begin
+  if jsonb_array_length(coalesce(new.lines, '[]'::jsonb)) > 0 then
+    new.products := array(select distinct l->>'product' from jsonb_array_elements(new.lines) l);
+    new.quoted_premium := (select round(sum((l->>'premium')::numeric * 12 / coalesce(nullif((l->>'term_months')::int, 0), 12)), 2)
+                           from jsonb_array_elements(new.lines) l where l->>'premium' is not null);
+  end if;
+  return new;
+end $$;
+drop trigger if exists sales_quotes_lines on public.sales_quotes;
+create trigger sales_quotes_lines before insert or update of lines on public.sales_quotes
+  for each row execute function public.sales_quote_lines();
+
 drop trigger if exists sales_quotes_fill on public.sales_quotes;
 create trigger sales_quotes_fill before insert or update on public.sales_quotes
   for each row execute function public.sales_fill_employee();
@@ -153,20 +184,27 @@ begin
   if new.employee_id is null then
     select employee_id into new.employee_id from sales_binds where id = new.bind_id;
   end if;
+  if new.product = 'auto' and new.first_renewal_on is null then
+    select bound_on + make_interval(months => new.term_months) into new.first_renewal_on from sales_binds where id = new.bind_id;
+    new.first_renewal_status := coalesce(new.first_renewal_status, 'pending');
+  end if;
   return new;
 end $$;
 drop trigger if exists bound_items_fill on public.bound_items;
-create trigger bound_items_fill before insert on public.bound_items
+create trigger bound_items_fill before insert or update of product, term_months on public.bound_items
   for each row execute function public.bound_items_fill();
 
--- Recompute a bind's bundle type from its products, unless someone chose it by hand.
+-- Recompute a bind's bundle type from its products (unless someone chose it by hand)
+-- and its annual premium from its items.
 create or replace function public.sales_bind_rebundle()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare b uuid := coalesce(new.bind_id, old.bind_id);
 begin
-  update sales_binds sb set bundle_type = bundle_type_for(coalesce(
-      (select array_agg(distinct product) from bound_items where bind_id = b), array[]::text[]))
-  where sb.id = b and not sb.bundle_type_overridden;
+  update sales_binds sb set
+    bundle_type = case when sb.bundle_type_overridden then sb.bundle_type else bundle_type_for(coalesce(
+      (select array_agg(distinct product) from bound_items where bind_id = b), array[]::text[])) end,
+    bound_premium = (select round(sum(premium * 12 / term_months), 2) from bound_items where bind_id = b and premium is not null)
+  where sb.id = b;
   return null;
 end $$;
 drop trigger if exists bound_items_rebundle on public.bound_items;
@@ -226,17 +264,20 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare
   product text := coalesce(new.policy_type, 'auto');
   items int := case when coalesce(new.policy_type, 'auto') = 'auto' then greatest(coalesce(new.vehicle_count, 1), 1) else 1 end;
+  -- Rate Checks keep premium annual; Allstate auto is a 6-month term.
+  term int := case when coalesce(new.policy_type, 'auto') = 'auto' then 6 else 12 end;
   q uuid; b uuid; day date;
 begin
   if coalesce(new.is_test, false) then return null; end if;
 
   -- An Allstate quote on the Rate Check is a quote, credited to whoever entered it.
   if new.allstate_premium is not null and new.quoted_at is not null then
-    insert into sales_quotes (agency_id, logged_by, lead_id, rate_check_id, customer_name, quoted_on, products, quoted_premium)
+    insert into sales_quotes (agency_id, logged_by, lead_id, rate_check_id, customer_name, quoted_on, products, lines)
     values (new.agency_id, new.quoted_by, new.lead_id, new.id, new.first_name,
-            (new.quoted_at at time zone 'America/New_York')::date, array[product], new.allstate_premium)
-    on conflict (rate_check_id) do update set
-      quoted_premium = excluded.quoted_premium, lead_id = excluded.lead_id, products = excluded.products;
+            (new.quoted_at at time zone 'America/New_York')::date, array[product],
+            jsonb_build_array(jsonb_build_object('product', product, 'term_months', term,
+              'premium', round(new.allstate_premium * term / 12, 2))))
+    on conflict (rate_check_id) do update set lines = excluded.lines, lead_id = excluded.lead_id;
   elsif tg_op = 'UPDATE' and old.allstate_premium is not null and new.allstate_premium is null then
     delete from sales_quotes where rate_check_id = new.id and status = 'open';
   end if;
@@ -252,14 +293,13 @@ begin
           where lead_id = new.lead_id and bound_on = day and source = 'rate_check' limit 1;
       end if;
       if b is null then
-        insert into sales_binds (agency_id, logged_by, lead_id, quote_id, customer_name, bound_on, bound_premium, source)
-        values (new.agency_id, new.bound_by, new.lead_id, q, new.first_name, day, new.bound_premium, 'rate_check')
+        insert into sales_binds (agency_id, logged_by, lead_id, quote_id, customer_name, bound_on, source)
+        values (new.agency_id, new.bound_by, new.lead_id, q, new.first_name, day, 'rate_check')
         returning id into b;
-      else
-        update sales_binds set bound_premium = coalesce(bound_premium, 0) + coalesce(new.bound_premium, 0) where id = b;
       end if;
-      insert into bound_items (agency_id, bind_id, product, item_count, prior_policy_items, rate_check_id, policy_number)
-      values (new.agency_id, b, product, items, items, new.id, null);
+      insert into bound_items (agency_id, bind_id, product, item_count, prior_policy_items, rate_check_id, premium, term_months)
+      values (new.agency_id, b, product, items, items, new.id,
+              case when new.bound_premium is null then null else round(new.bound_premium * term / 12, 2) end, term);
     end if;
     update sales_quotes set status = 'bound', closed_at = coalesce(closed_at, now()), lost_reason = null
       where id = q and status <> 'bound';
@@ -267,7 +307,6 @@ begin
     -- Unbound, or bound elsewhere after all: take it back out.
     select bind_id into b from bound_items where rate_check_id = new.id;
     delete from bound_items where rate_check_id = new.id;
-    update sales_binds set bound_premium = greatest(coalesce(bound_premium, 0) - coalesce(old.bound_premium, 0), 0) where id = b;
     delete from sales_binds sb where sb.id = b and not exists (select 1 from bound_items where bind_id = b);
     update sales_quotes set status = 'open', closed_at = null where id = q and status = 'bound';
   end if;
