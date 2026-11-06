@@ -201,6 +201,15 @@ export function SiteCopyProvider({ children }) {
 
 /** The pencil in the consumer nav's top-right corner: edits the page you're on. Only
  * the principal (or a platform admin) sees it, and only on pages with editable copy. */
+/** The saved text for `key` (or `fallback`), kept current as edits save. For values
+ * that aren't shown as text, like the agency's texting number. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useCopyValue(key, fallback = '') {
+  const { values } = useContext(Ctx);
+  const v = values?.[key];
+  return typeof v === 'string' && v.trim() ? v.trim() : fallback;
+}
+
 export function EditPagePencil({ className = '' }) {
   const { canStartEditing, startEditing } = useContext(Ctx);
   if (!canStartEditing) return null;

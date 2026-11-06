@@ -12,7 +12,8 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { T, CopyImage } from '../components/SiteCopy';
+import { T, CopyImage, useCopyValue } from '../components/SiteCopy';
+import { TEXT_NUMBER_KEY, textNumber, smsHref } from '../lib/reviews';
 import Dismissible from '../components/Dismissible';
 import BrandLogo from '../components/BrandLogo';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
@@ -1558,6 +1559,19 @@ function OfficeStatus({ className }) {
   );
 }
 
+// Text the office: opens Messages with a first line written in. Hidden until the
+// agency's number is set (Rate Checks → Texts).
+function TextUs({ className = '' }) {
+  const number = textNumber(useCopyValue(TEXT_NUMBER_KEY));
+  const body = useCopyValue('rc.textus.body', 'Hi Cam, I have a question about my insurance.');
+  if (!number) return null;
+  return (
+    <a href={smsHref(number, body)} className={`qb qb-outline-dark qb-md w-full ${className}`}>
+      <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textus.cta">Text us</T>
+    </a>
+  );
+}
+
 // The agency beside the ask: a compact card on phones, a full card on desktop.
 function OwnerCard() {
   return (
@@ -1573,6 +1587,7 @@ function OwnerCard() {
           <OfficeStatus className="mt-2.5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:border-0 lg:pt-0" />
         </div>
       </div>
+      <TextUs className="mt-4" />
       <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">
         {PROMISES.map(([k, text]) => (
           <li key={k} className="flex items-center gap-2.5 text-[15px] text-white">
