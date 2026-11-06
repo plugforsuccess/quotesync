@@ -127,14 +127,14 @@ test('typing a space in a button label edits the text and does not press the but
   await page.goto('/?edit=1');
   let pickers = 0;
   page.on('filechooser', () => { pickers += 1; });
-  const label = page.getByRole('textbox', { name: /Edit text: Upload my policy/ }).first();
+  const label = page.getByRole('textbox', { name: /Edit text: Get started/ }).first();
   await label.click();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.type('Upload my 2 policies');
   await expect(label).toHaveText('Upload my 2 policies');
   await page.keyboard.press('Enter');
   await expect.poll(() => writes.length).toBe(1);
-  expect(writes[0].body).toMatchObject({ key: 'rc.upload.title', value: 'Upload my 2 policies' });
+  expect(writes[0].body).toMatchObject({ key: 'rc.start.cta', value: 'Upload my 2 policies' });
   await page.waitForTimeout(300);
   expect(pickers).toBe(0);
 });
