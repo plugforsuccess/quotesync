@@ -477,15 +477,20 @@ test('policy checks and who-is-who: expired, no cars, name from the policy, rela
   await page.getByRole('button', { name: /Continue · 1 policy/i }).click();
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
   await chooser.setFiles(photo);
-  // One question at a time: "More pages?" waits while this policy has a question open.
-
-  // Expired: asked first, and Continue waits.
-  await expect(page.getByText(/This policy ended Mar 2025/)).toBeVisible();
+  // A deck: one question in front, the rest wait behind it.
+  const deck = page.getByRole('region', { name: 'Questions about policy 1' });
+  await expect(deck.getByText(/This policy ended Mar 2025/)).toBeVisible();
+  await expect(deck.getByText('1 of 3')).toBeVisible();
+  await expect(page.getByText(/We don’t see any cars yet/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Answer the Question Above' })).toBeDisabled();
   await page.getByRole('button', { name: 'It’s Current' }).click();
   // Then: no cars on the page.
-  await expect(page.getByText(/We don’t see any cars yet/)).toBeVisible();
+  await expect(deck.getByText(/We don’t see any cars yet/)).toBeVisible();
+  await expect(deck.getByText('1 of 2')).toBeVisible();
   await page.getByRole('button', { name: 'It’s All There' }).click();
+  // Last: more pages, alone.
+  await expect(deck.getByText('Does this policy have more pages?')).toBeVisible();
+  await expect(deck.getByText(/of \d/)).toHaveCount(0);
   await page.getByRole('button', { name: /^Continue$/ }).click();
 
   // The name arrives from the policy; typing a different one asks how they're related.

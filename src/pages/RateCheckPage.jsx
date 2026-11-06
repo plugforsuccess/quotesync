@@ -10,7 +10,7 @@
 
 /* COPY REVIEW: submit this page to Allstate marketing compliance before paid traffic */
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { persistUtmParams, getUtmParams } from '../lib/leadsApi';
 import { POLICYHOLDER_RELATIONSHIPS, REFERRER_RELATIONSHIPS, OTHER_MAX, normalizeOther, isPolicyholder } from '../lib/relationship';
@@ -95,13 +95,14 @@ const READ_AS = { landlord: 'other' };
 // An auto policy whose first page lists no cars, or a policy that already ended: asked on
 // the card ("Add Page" / "It's All There", "Remove It" / "It's Current") before Continue.
 const todayISO = () => new Date().toISOString().slice(0, 10);
-function concernOf(item) {
+function concernsOf(item) {
   const t = item?.typeCheck;
-  if (t?.state !== 'done') return null;
-  if (t.expires && t.expires < todayISO() && !item.expiredOk) return 'expired';
+  if (t?.state !== 'done') return [];
+  const out = [];
+  if (t.expires && t.expires < todayISO() && !item.expiredOk) out.push('expired');
   const isAuto = (item.kind || READ_AS[t.read] || t.read) === 'auto';
-  if (isAuto && t.cars === 0 && (item.pages?.length || 0) < 2 && !item.carsOk) return 'no_cars';
-  return null;
+  if (isAuto && t.cars === 0 && (item.pages?.length || 0) < 2 && !item.carsOk) out.push('no_cars');
+  return out;
 }
 function mismatchOf(item) {
   const t = item?.typeCheck;
@@ -843,7 +844,7 @@ export default function RateCheckPage() {
   // ── Step 2: policies (a checklist of the picked types when guided) ──
   const returning = sent.length > 0 && !!given;
   const guided = !returning && Array.isArray(wanted) && wanted.length > 0;
-  const unsure = drafts.filter(d => mismatchOf(d) || concernOf(d));
+  const unsure = drafts.filter(d => mismatchOf(d) || concernsOf(d).length);
   const checking = drafts.some(d => d.typeCheck?.state === 'checking');
   const addedKinds = guided ? wanted.filter(k => drafts.some(d => d.kind === k && !mismatchOf(d))) : [];
   const allAdded = guided && addedKinds.length === wanted.length;
@@ -852,7 +853,7 @@ export default function RateCheckPage() {
     return (
       <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id} flash={flash === it.id}
         mismatch={mismatchOf(it)} onKeep={() => patchItem(it.id, { typeOk: true })}
-        concern={concernOf(it)} onConcernOk={(k) => patchItem(it.id, k === 'expired' ? { expiredOk: true } : { carsOk: true })}
+        onConcernOk={(k) => patchItem(it.id, k === 'expired' ? { expiredOk: true } : { carsOk: true })}
         onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
         onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
         onRemove={() => removeItem(it.id)}
@@ -1197,8 +1198,9 @@ function Thumb({ item, scanning = false, small = false }) {
 
 // A policy waiting to be sent: its pages in order, each with retake/remove, and an
 // add-page tile. Right after a photo it asks whether the policy has more pages.
-function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onConcernOk, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
+function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
+  const concerns = concernsOf(item);
   const [picked, setPicked] = useState(null); // the page tapped for retake / remove
   const pickedIndex = pages.findIndex(pg => pg.id === picked);
   const bad = pages.findIndex(pg => pg.quality?.issue);
@@ -1306,35 +1308,6 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onCo
         </Prompt>
       )}
 
-      {concern === 'expired' && !mismatch && (
-        <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> {new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</>}
-          actions={<>
-            <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.replace">Remove It</T></button>
-            <button type="button" onClick={() => onConcernOk(concern)} className={promptSecondary}><T k="rc.check.current">It’s Current</T></button>
-          </>}>
-          <T k="rc.check.expired-why">We quote against your current policy. If you have a newer one, add that instead.</T>
-        </Prompt>
-      )}
-      {concern === 'no_cars' && !mismatch && (
-        <Prompt icon={Car} title={<T k="rc.check.no-cars-title">We don’t see any cars yet</T>}
-          actions={<>
-            <button type="button" onClick={onAddPage} className={promptPrimary}><Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.check.add-page">Add Page</T></button>
-            <button type="button" onClick={() => onConcernOk(concern)} className={promptSecondary}><T k="rc.check.all-there">It’s All There</T></button>
-          </>}>
-          <T k="rc.check.no-cars-why">Add the page that lists your vehicles so we can match your coverage.</T>
-        </Prompt>
-      )}
-
-      {mismatch === 'not_a_policy' && (
-        <Prompt icon={FileText} title={<T k="rc.check.not-policy-title">This doesn’t look like a policy</T>}
-          actions={<>
-            <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.remove">Remove It</T></button>
-            <button type="button" onClick={onKeep} className={promptSecondary}><T k="rc.check.keep">It’s a Policy</T></button>
-          </>}>
-          <T k="rc.check.not-policy-why">We need the declarations page: the one that lists your coverages and price.</T>
-        </Prompt>
-      )}
-
       {onMergeUp && (
         <button type="button" onClick={onMergeUp}
           className="mt-3 w-full rounded-xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
@@ -1342,32 +1315,66 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onCo
         </button>
       )}
 
-      {asking && !concern && !mismatch && (
-        <Prompt tone="info" icon={Layers} role="group" title={<T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T>}
-          actions={<>
-            <button type="button" onClick={onAddPage} className={promptPrimary}><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.add-page">Add Page</T> {pages.length + 1}</button>
-            <button type="button" onClick={onDoneAdding} className={promptSecondary}><T k="rc.flow.thats-all">That's All</T></button>
-          </>}>
-          <T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T>
-        </Prompt>
-      )}
+      {/* Questions on this policy, one at a time: the front card is answered first and the
+          rest wait behind it. */}
+      <PromptDeck label={`Questions about policy ${n}`} cards={[
+        mismatch === 'not_a_policy' && { key: 'not_a_policy', tone: 'ask', el: (
+          <Prompt icon={FileText} title={<T k="rc.check.not-policy-title">This doesn’t look like a policy</T>}
+            actions={<>
+              <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.remove">Remove It</T></button>
+              <button type="button" onClick={onKeep} className={promptSecondary}><T k="rc.check.keep">It’s a Policy</T></button>
+            </>}>
+            <T k="rc.check.not-policy-why">We need the declarations page: the one that lists your coverages and price.</T>
+          </Prompt>
+        ) },
+        concerns.includes('expired') && { key: 'expired', tone: 'ask', el: (
+          <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> {new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</>}
+            actions={<>
+              <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.replace">Remove It</T></button>
+              <button type="button" onClick={() => onConcernOk('expired')} className={promptSecondary}><T k="rc.check.current">It’s Current</T></button>
+            </>}>
+            <T k="rc.check.expired-why">We quote against your current policy. If you have a newer one, add that instead.</T>
+          </Prompt>
+        ) },
+        concerns.includes('no_cars') && { key: 'no_cars', tone: 'ask', el: (
+          <Prompt icon={Car} title={<T k="rc.check.no-cars-title">We don’t see any cars yet</T>}
+            actions={<>
+              <button type="button" onClick={onAddPage} className={promptPrimary}><Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.check.add-page">Add Page</T></button>
+              <button type="button" onClick={() => onConcernOk('no_cars')} className={promptSecondary}><T k="rc.check.all-there">It’s All There</T></button>
+            </>}>
+            <T k="rc.check.no-cars-why">Add the page that lists your vehicles so we can match your coverage.</T>
+          </Prompt>
+        ) },
+        asking && { key: 'more', tone: 'info', el: (
+          <Prompt tone="info" icon={Layers} role="group" title={<T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T>}
+            actions={<>
+              <button type="button" onClick={onAddPage} className={promptPrimary}><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.add-page">Add Page</T> {pages.length + 1}</button>
+              <button type="button" onClick={onDoneAdding} className={promptSecondary}><T k="rc.flow.thats-all">That's All</T></button>
+            </>}>
+            <T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T>
+          </Prompt>
+        ) },
+      ]} />
     </li>
   );
 }
 
 // Every question or note on a policy uses this: icon, bold line, short reason, and up
 // to two equal buttons. Amber = needs an answer; blue = for their information.
-function Prompt({ tone = 'ask', icon: Icon = AlertTriangle, title, children, actions = null, role }) {
+function Prompt({ tone = 'ask', icon: Icon = AlertTriangle, title, children, actions = null, role, className = 'mt-3', badge = null }) {
   const ask = tone === 'ask';
   return (
     <div role={role || (ask ? 'alert' : 'status')}
-      className={`mt-3 rounded-2xl p-3.5 ${ask ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-blue-50 ring-1 ring-blue-100'}`}>
+      className={`${className} rounded-2xl p-3.5 ${ask ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-blue-50 ring-1 ring-blue-100'}`}>
       <div className="flex items-start gap-3">
         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${ask ? 'bg-amber-100 text-amber-600' : 'bg-white text-blue-700'}`} aria-hidden="true">
           <Icon className="h-4 w-4" strokeWidth={2.5} />
         </span>
         <div className="min-w-0 flex-1 pt-1">
-          <p className="text-[15px] font-semibold leading-snug text-[#0F2D6B]">{title}</p>
+          <div className="flex items-start gap-2">
+            <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-[#0F2D6B]">{title}</p>
+            {badge && <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-500 ring-1 ring-slate-200">{badge}</span>}
+          </div>
           {children && <p className="mt-1 text-sm leading-relaxed text-slate-600">{children}</p>}
         </div>
       </div>
@@ -1377,6 +1384,28 @@ function Prompt({ tone = 'ask', icon: Icon = AlertTriangle, title, children, act
 }
 const promptPrimary = 'qb qb-blue qb-md w-full whitespace-nowrap px-3 text-[15px]';
 const promptSecondary = 'qb qb-outline qb-md w-full whitespace-nowrap bg-white px-3 text-[15px]';
+
+// A deck of questions: only the front card can be answered; the next two peek out
+// underneath it, so the customer sees there's more without reading it all at once.
+function PromptDeck({ cards, label }) {
+  const live = cards.filter(Boolean);
+  if (!live.length) return null;
+  const [front, ...rest] = live;
+  const behind = rest.slice(0, 2);
+  const layer = (tone) => tone === 'ask' ? 'bg-amber-100 ring-amber-300' : 'bg-blue-100 ring-blue-200';
+  return (
+    <section aria-label={label} className="relative mt-3" style={{ marginBottom: behind.length * 11 }}>
+      {behind.map((c, i) => (
+        <div key={c.key} aria-hidden="true"
+          className={`absolute inset-0 rounded-2xl shadow-[0_4px_10px_-6px_rgba(15,45,107,0.3)] ring-1 transition-all duration-300 ${layer(c.tone)}`}
+          style={{ transform: `translateY(${(i + 1) * 11}px) scale(${1 - (i + 1) * 0.05})`, opacity: 1 - i * 0.3, zIndex: 2 - i }} />
+      ))}
+      <div key={front.key} className="rc-deck-in relative z-10 rounded-2xl shadow-[0_6px_16px_-8px_rgba(15,45,107,0.25)]">
+        {cloneElement(front.el, { className: '', badge: live.length > 1 ? `1 of ${live.length}` : null })}
+      </div>
+    </section>
+  );
+}
 
 // Several photos picked at once: pages of one policy, or one photo per policy?
 function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
