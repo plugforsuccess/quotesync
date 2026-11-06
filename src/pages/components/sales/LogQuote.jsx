@@ -65,7 +65,7 @@ export default function LogQuote({ household, onLogged }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.log.title">Record the Allstate Quote</T></h3>
+        <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.log.title">Save the Allstate Quote</T></h3>
         <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.log.line">Run it in Allstate, then type each policy’s rate for its term. Leave a policy blank if you didn’t quote it.</T></p>
       </div>
 
@@ -104,7 +104,7 @@ export default function LogQuote({ household, onLogged }) {
       {log.isError && <p className="text-sm text-red-600" role="alert">{log.error.message}</p>}
       <button type="submit" disabled={!filled.length || log.isPending}
         className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
-        {log.isPending ? <T k="sales.log.saving">Recording…</T> : <><Check className="h-5 w-5" aria-hidden="true" /> <T k="sales.log.button">Record Quote</T></>}
+        {log.isPending ? <T k="sales.log.saving">Saving…</T> : <><Check className="h-5 w-5" aria-hidden="true" /> <T k="sales.log.button">Save Quote</T></>}
       </button>
     </form>
   );

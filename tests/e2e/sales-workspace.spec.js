@@ -78,16 +78,22 @@ async function mock(page, state) {
 
 
 const old = new Date(Date.now() - 14 * 86400000).toISOString();
-const base = { agency_id: AG, lead_id: 'L1', first_name: 'Stephen', phone: '6785550107', email: 'stephen@example.com', status: 'extracted', created_at: old, is_test: false, extract_confidence: 'high', duplicate_of: null, insured_address: '1 Main St, Covington, GA 30014' };
+const base = { agency_id: AG, lead_id: 'L1', first_name: 'Stephen', phone: '6785550107', email: 'stephen@example.com', status: 'extracted', created_at: old, consent_given_at: old, is_test: false, extract_confidence: 'high', duplicate_of: null, insured_address: '1 Main St, Covington, GA 30014' };
 const rows = [
   { ...base, id: 'a1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 6980, current_premium: 3490, term_months: 6, extracted: { insured_name: 'Stephen Pearson' } },
   { ...base, id: 'h1', carrier: 'State Farm', policy_type: 'home', annual_premium: 2936, current_premium: 2936, term_months: 12, extracted: { insured_name: 'Stephen Pearson' } },
 ];
-test('log a household quote: per-policy term rates, saved as annual, then Quote Recorded', async ({ page }) => {
+test('log a household quote: per-policy term rates, saved as annual, then Quote Saved', async ({ page }) => {
   const writes = await mock(page, { partners: [partner()], rules: null, payouts: [] });
   await page.route(SB + '/rest/v1/rate_checks*', async (route) => {
     const req = route.request(); const u = new URL(req.url());
-    if (req.method() === 'PATCH') { writes.push({ table: 'rate_checks', q: u.search, body: req.postDataJSON() }); return route.fulfill({ status: 204, body: '' }); }
+    if (req.method() === 'PATCH') {
+      const body = req.postDataJSON();
+      writes.push({ table: 'rate_checks', q: u.search, body });
+      // Keep the household in step with what was saved (allstate_premium in, so the next read has it).
+      for (const r of rows) if (u.search.includes(`eq.${r.id}`) || u.search.includes(r.id)) Object.assign(r, body);
+      return route.fulfill({ status: 204, body: '' });
+    }
     if (u.searchParams.get('promoter_id')) return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
     const one = (req.headers().accept || '').includes('vnd.pgrst.object');
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(one ? rows[0] : rows) });
@@ -95,19 +101,28 @@ test('log a household quote: per-policy term rates, saved as annual, then Quote 
   await page.goto('/agency/leads/rate-checks');
   await page.locator('li').filter({ hasText: 'Stephen' }).first().click();
   await expect(page.getByRole('heading', { name: 'Quote Sheet' })).toBeVisible();
-  await page.getByRole('button', { name: /Record the Quote/ }).click();
+  await page.getByRole('button', { name: /Save the Quote/ }).click();
   await page.getByLabel(/Allstate 6-month Rate/).fill('2950');
   await page.getByLabel(/Allstate 12-month Rate/).fill('2500');
   await expect(page.getByText('Saves $1,080/yr')).toBeVisible(); // auto: $3,490 vs $2,950 for 6 months
   await expect(page.getByText(/Household · \$8,400\/yr vs \$9,916/)).toBeVisible();
-  await page.getByRole('button', { name: /^Record Quote$/ }).last().click();
-  await page.getByText('Quote Recorded').waitFor();
+  await page.getByRole('button', { name: /^Save Quote$/ }).last().click();
+  await page.getByText('Quote Saved').waitFor();
   // Each policy's rate is saved as annual on its rate check, as the producer who logged it.
   const saved = writes.filter(w => w.table === 'rate_checks');
-  expect(saved).toEqual([
+  expect(saved.slice(0, 2)).toEqual([
     expect.objectContaining({ q: '?id=eq.a1', body: { allstate_premium: 5900, quoted_by: UID } }),
     expect.objectContaining({ q: '?id=eq.h1', body: { allstate_premium: 2500, quoted_by: UID } }),
   ]);
+  // Contact: the message is written from the saved quote; Send goes from the agency's number.
+  await page.getByRole('button', { name: /Next: Contact Them/ }).click();
+  const box = page.getByLabel('Text Message');
+  await expect(box).toHaveValue(/saving you \$1,516\. Reply Y/);
+  await page.getByRole('button', { name: 'Send Text' }).click();
+  await expect(page.getByText('Sent from the agency’s number.')).toBeVisible();
+  const sms = writes.find(w => (w.table || '').includes('send-manual-sms'));
+  expect(sms.body).toMatchObject({ lead_id: 'L1', body: expect.stringContaining('saving you $1,516') });
+  expect(writes.some(w => w.table === 'rate_checks' && w.body.quote_ready_texted_at)).toBe(true);
   // The old path that changed the lead's status itself is not used.
   expect(writes.some(w => (w.table || '').includes('rate-check-outcome'))).toBe(false);
 });

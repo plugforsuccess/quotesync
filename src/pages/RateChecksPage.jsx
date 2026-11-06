@@ -48,6 +48,7 @@ import { looksTooLow, savings } from './components/rate-checks/quoteMath';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import LogQuote from './components/sales/LogQuote';
+import ContactStep from './components/sales/ContactStep';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -644,11 +645,11 @@ export default function RateChecksPage() {
 const SHOW_SEND_A_LINK = false;
 
 // The sales workspace: full screen, one household, in steps. Review the quote sheet,
-// record the Allstate quote, then (next steps) contact them and close.
+// save the Allstate quote, then contact them and close.
 const STEPS = [
   { v: 'review', label: 'Quote' },
-  { v: 'log', label: 'Record Quote' },
-  { v: 'tell', label: 'Contact', soon: true },
+  { v: 'log', label: 'Save Quote' },
+  { v: 'tell', label: 'Contact' },
   { v: 'close', label: 'Close', soon: true },
 ];
 
@@ -733,16 +734,16 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
             )}
           </div>
           {/* Steps: Review → Log Quote → Tell Them → Close */}
-          <nav aria-label="Sales steps" className="mt-3 grid grid-cols-4 gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
+          <nav aria-label="Sales steps" className="mt-3 flex gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
             {STEPS.map((x, i) => {
               const on = step === x.v;
               const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && !!logged);
               return (
                 <button key={x.v} type="button" disabled={x.soon} onClick={() => setStep(x.v)} aria-current={on ? 'step' : undefined}
                   title={x.soon ? 'Coming in the next step' : undefined}
-                  className={`flex min-h-[40px] items-center justify-center gap-1 rounded-lg px-1 text-xs font-semibold sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`flex min-h-[40px] flex-auto items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2 text-[13px] font-semibold sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
                   style={on ? undefined : { color: 'var(--qs-bright)' }}>
-                  <span className="tabular-nums">{done ? '✓' : i + 1}</span> <span className="truncate"><T>{x.label}</T></span>
+                  {done ? <span aria-hidden="true">✓</span> : <span className="hidden tabular-nums sm:inline">{i + 1}</span>} <T>{x.label}</T>
                 </button>
               );
             })}
@@ -767,13 +768,24 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
           <div className="mx-auto max-w-3xl space-y-4 p-5">
             {logged ? (
               <div className="rounded-xl p-4" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }} role="status">
-                <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.logged.title">Quote Recorded</T></p>
-                <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}><T k="sales.logged.line">The lead is now Quoted and it counts on your scorecard. Contacting them and closing come in the next steps.</T></p>
-                <button type="button" onClick={() => setLogged(null)} className="mt-3 text-sm font-semibold text-primary-600 underline"><T k="sales.logged.edit">Change the Rates</T></button>
+                <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.logged.title">Quote Saved</T></p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}><T k="sales.logged.line2">The lead is now Quoted and it counts on your scorecard.</T></p>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <button type="button" onClick={() => setStep('tell')} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-bold text-white">
+                    <T k="sales.logged.next">Next: Contact Them</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => setLogged(null)} className="text-sm font-semibold text-primary-600 underline"><T k="sales.logged.edit">Change the Rates</T></button>
+                </div>
               </div>
             ) : (
               <LogQuote household={live} onLogged={setLogged} />
             )}
+          </div>
+        )}
+
+        {step === 'tell' && (
+          <div className="mx-auto max-w-3xl p-5">
+            <ContactStep household={live} />
           </div>
         )}
 
@@ -798,7 +810,7 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
           {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
           <button type="button" onClick={() => { setStep('log'); window.scrollTo?.(0, 0); }}
             className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white">
-            <T k="sales.review.next">Quoted It in Allstate? Record the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
+            <T k="sales.review.next">Quoted It in Allstate? Save the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>}
       </div>
