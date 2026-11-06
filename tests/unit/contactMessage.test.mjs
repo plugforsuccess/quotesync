@@ -13,3 +13,7 @@ test('saves and same ask for a Y; costs more is honest and promises a re-check',
   assert.match(more, /hard to beat .* before your next renewal\.$/);
   assert.doesNotMatch(more, /Reply Y/);
 });
+
+test('quoted (nothing to compare with) gives the price and asks for a Y', () => {
+  assert.match(contactMessage('quoted', { first: 'Lee', producer: 'Amy', allstate: 3204 }), /^Hi Lee, it's Amy with Cam Wiley Agency\. I put together a new Allstate quote for you: \$3,204 a year\. Reply Y/);
+});

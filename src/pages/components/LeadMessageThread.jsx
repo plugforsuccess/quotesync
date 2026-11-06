@@ -115,7 +115,7 @@ export default function LeadMessageThread({ messages = [], isLoading, leadId, le
               onChange={e => setReplyText(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
               placeholder="Send a message..."
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm
+              className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base
                          focus:outline-none focus:ring-2 focus:ring-primary-500"
               maxLength={320}
               disabled={sending}
@@ -123,7 +123,7 @@ export default function LeadMessageThread({ messages = [], isLoading, leadId, le
             <button
               onClick={handleSend}
               disabled={sending || !replyText.trim()}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm
+              className="shrink-0 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm
                          font-medium rounded-lg transition-colors disabled:opacity-50"
             >
               {sending ? <T k="pages.components.leadmessagethread.cf7655">{'Sending…'}</T> : <T k="pages.components.leadmessagethread.9bc257">{'Send'}</T>}

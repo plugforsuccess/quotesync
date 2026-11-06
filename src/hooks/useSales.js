@@ -44,8 +44,15 @@ const premiumOf = (v) => {
 export function useLogQuote() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: async ({ agencyId, lead, lines }) => {
+    mutationFn: async ({ agencyId, lead, lines, quoteId }) => {
       const clean = lines.map(l => ({ product: l.product, premium: premiumOf(l.premium), term_months: Number(l.term_months) || 12 }));
+      // Changing the rates on a quote that's still open: same quote, new lines (no second quote).
+      if (quoteId) {
+        const { data, error } = await supabase.from('sales_quotes')
+          .update({ products: clean.map(l => l.product), lines: clean }).eq('id', quoteId).eq('status', 'open').select().single();
+        if (error) throw error;
+        return data;
+      }
       const { data, error } = await supabase.from('sales_quotes').insert({
         agency_id: agencyId, lead_id: lead.id,
         customer_name: [lead.first_name, lead.last_name].filter(Boolean).join(' ') || null,
@@ -106,6 +113,7 @@ const refreshAll = (qc, leadId) => {
   qc.invalidateQueries({ queryKey: ['rate_checks'] });
   qc.invalidateQueries({ queryKey: ['agency_leads'] });
   qc.invalidateQueries({ queryKey: salesKey(leadId) });
+  qc.invalidateQueries({ queryKey: ['lead_detail', leadId] });
 };
 
 /**
@@ -138,9 +146,10 @@ export function useScheduleFollowUp() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ leadId, at, note }) => {
-      const { error } = await supabase.from('leads')
-        .update({ next_followup_at: at, callback_note: note?.trim() || null })
-        .eq('id', leadId);
+      // No note typed: leave the lead's note as it is (a winback's note is its story).
+      const patch = { next_followup_at: at };
+      if (note?.trim()) patch.callback_note = note.trim();
+      const { error } = await supabase.from('leads').update(patch).eq('id', leadId);
       if (error) throw error;
     },
     onSuccess: (_d, v) => refreshAll(qc, v.leadId),
@@ -156,7 +165,12 @@ export function useLoseHousehold() {
         .update({ status: 'lost', lost_reason: reason, closed_at: new Date().toISOString() })
         .eq('lead_id', leadId).eq('status', 'open').select('id');
       if (error) throw error;
-      if (!data?.length) throw new Error('No open quote on this household. Save the quote first.');
+      if (data?.length) return;
+      // Never quoted (a winback that never called back): close the lead itself as Lost.
+      const { error: leadError } = await supabase.from('leads')
+        .update({ status: 'closed_lost', disposition_reason: reason, disposed_at: new Date().toISOString() })
+        .eq('id', leadId);
+      if (leadError) throw leadError;
     },
     onSuccess: (_d, v) => refreshAll(qc, v.leadId),
   });

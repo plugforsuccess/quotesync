@@ -12,7 +12,7 @@ import { relationshipLine, referrerLine } from '../lib/relationship';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
+  AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, History, Link2, Mail, Map as MapIcon,
   MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -50,6 +50,7 @@ import InviteDialog from './components/rate-checks/InviteDialog';
 import LogQuote from './components/sales/LogQuote';
 import ContactStep from './components/sales/ContactStep';
 import CloseStep from './components/sales/CloseStep';
+import LeadHistory from './components/sales/LeadHistory';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -654,7 +655,7 @@ const STEPS = [
   { v: 'close', label: 'Close' },
 ];
 
-function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
+export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
   const [step, setStep] = useState('review');
   const [logged, setLogged] = useState(null);
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
@@ -729,9 +730,10 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
           <div className="mt-2.5 flex items-baseline justify-between gap-3">
             <GoalHeader household={household} className="" showSaved={false} />
             {rc.lead_id && (
-              <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex shrink-0 items-center gap-1 text-sm text-primary-600 hover:underline">
-                <T k="pages.ratecheckspage.9fc953">Lead Record</T> <ExternalLink className="w-3.5 h-3.5" />
-              </Link>
+              <button type="button" onClick={() => setStep(s => (s === 'history' ? 'review' : 'history'))} aria-pressed={step === 'history'}
+                className="ml-auto inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-600 hover:underline">
+                <History className="h-3.5 w-3.5" aria-hidden="true" /> <T k="sales.history.open">History</T>
+              </button>
             )}
           </div>
           {/* Steps: Review → Log Quote → Tell Them → Close */}
@@ -793,6 +795,12 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
               style={{ border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
               <T k="sales.contact.toclose">Next: Close It Out</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
+          </div>
+        )}
+
+        {step === 'history' && (
+          <div className="mx-auto max-w-3xl p-5">
+            <LeadHistory leadId={rc.lead_id} />
           </div>
         )}
 
