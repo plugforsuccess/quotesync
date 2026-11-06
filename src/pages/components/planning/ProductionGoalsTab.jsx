@@ -447,7 +447,7 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
           </div>
         </div>
         <div>
-          <label style={{ fontSize: 11 }}><T k="pages.components.planning.productiongoalstab.77fd9d">Effective month</T></label>
+          <label style={{ fontSize: 11 }}><T k="pages.components.planning.productiongoalstab.77fd9d">Effective Month</T></label>
           <input type="month" value={monthStr} onChange={(e) => setMonthStr(e.target.value)} />
         </div>
       </div>
@@ -496,7 +496,7 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
               title="Distribute the agency goal across producers by run-rate"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <Wand2 size={14} /> {applying ? 'Applying…' : 'Apply suggested to all'}
+              <Wand2 size={14} /> {applying ? 'Applying…' : 'Apply Suggested to All'}
             </button>
           ) : (
             <span style={{ fontSize: 12, color: 'var(--qs-dim)' }}>

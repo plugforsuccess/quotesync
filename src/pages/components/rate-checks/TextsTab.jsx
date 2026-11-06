@@ -114,7 +114,7 @@ export default function TextsTab({ agencyId }) {
         <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>Quick Send</h3>
         <article className="dark-card" style={{ padding: 16 }}>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>Upload link</h4>
+            <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>Upload Link</h4>
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}><Lock className="h-3 w-3" aria-hidden="true" /> Locked</span>
           </div>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>

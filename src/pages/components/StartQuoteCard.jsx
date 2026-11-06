@@ -68,7 +68,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
 
                       <span className="relative z-10 text-white font-black text-lg tracking-wide whitespace-nowrap">
-                        <T k="pages.components.startquotecard.59e107">Check my rate</T>
+                        <T k="pages.components.startquotecard.59e107">Check My Rate</T>
                       </span>
                       <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:trangray-x-2" />
                     </div>
@@ -79,7 +79,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                     onClick={onGetQuote}
                     className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors cursor-pointer bg-transparent border-0"
                   >
-                    <T k="pages.components.startquotecard.02948b">Have your policy handy? Connect it now →</T>
+                    <T k="pages.components.startquotecard.02948b">Have Your Policy Handy? Connect It Now →</T>
                   </button>
 
                   <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-600">
@@ -139,7 +139,7 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-3">
                 <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-gray-900 via-primary-900 to-secondary-900 bg-clip-text text-transparent">
-                <T k="pages.components.startquotecard.c6345c">The Process is Simple</T>
+                <T k="pages.components.startquotecard.c6345c">The Process Is Simple</T>
               </h2>
             </div>
             <p className="text-sm font-semibold text-indigo-600"><T k="pages.components.startquotecard.b6c324">Click any step for details</T></p>
@@ -309,7 +309,7 @@ const HowItWorks = ({ onGetQuote }) => {
           </div>
           <div>
             <h3 className="font-bold text-gray-900 mb-2 text-lg">
-              <T k="pages.components.startquotecard.78eadc">Important: Do you currently have auto insurance?</T>
+              <T k="pages.components.startquotecard.78eadc">Important: Do You Currently Have Auto Insurance?</T>
             </h3>
             <p className="text-sm text-gray-700 leading-relaxed">
               <T k="pages.components.startquotecard.6374c9">This service works by comparing your</T>{' '}

@@ -4,6 +4,7 @@
 // their discount, with an apply form), in the consumer site's look — royal-blue hero with the shared nav, white
 // cards, deep-blue headings, the fluorescent green as the accent. No black.
 import { useState } from 'react';
+import { rateCheckStart } from '../lib/rateCheckStart';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight, Loader2, Share2, PenLine, BadgeDollarSign } from 'lucide-react';
 import { T } from '../components/SiteCopy';
@@ -167,14 +168,14 @@ function PartnerProgram() {
             <form onSubmit={apply} noValidate>
               <p className="text-lg font-extrabold text-[#0F2D6B]"><T k="de.partner.formtitle">Apply to be a partner</T></p>
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.20db0b">First name</T>
+                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.20db0b">First Name</T>
                   <input className={input} autoComplete="given-name" value={f.first} onChange={set('first')} maxLength={60} required />
                 </label>
-                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.8d3f5e">Last name</T>
+                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.8d3f5e">Last Name</T>
                   <input className={input} autoComplete="family-name" value={f.last} onChange={set('last')} maxLength={60} />
                 </label>
               </div>
-              <label className="mt-3 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.d14571">Mobile number</T>
+              <label className="mt-3 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.d14571">Mobile Number</T>
                 <input className={input} type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" value={f.phone} onChange={set('phone')} required />
               </label>
               <label className="mt-3 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.ce8ae9">Email</T> <span className="font-normal text-slate-400"><T k="pages.driversedpage.f53d1c">(optional)</T></span>
@@ -186,7 +187,7 @@ function PartnerProgram() {
                 <Choice legend="Is Cam Wiley your agent?" name="agent" value={f.agent}
                   options={[['agency', 'Yes'], ['allstate_other', 'No'], ['allstate_unsure', 'Not sure']]} onChange={v => setF(x => ({ ...x, agent: v }))} />
               )}
-              <label className="mt-4 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.4d20d1">Who would you share it with?</T> <span className="font-normal text-slate-400"><T k="pages.driversedpage.f53d1c">(optional)</T></span>
+              <label className="mt-4 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.4d20d1">Who Would You Share It With?</T> <span className="font-normal text-slate-400"><T k="pages.driversedpage.f53d1c">(optional)</T></span>
                 <select className={input} value={f.audience} onChange={set('audience')}>
                   <option value="">Choose one</option>
                   {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
@@ -196,7 +197,7 @@ function PartnerProgram() {
               <button type="submit" disabled={!ok || state.status === 'sending'}
                 className="qb qb-blue qb-lg mt-5 w-full">
                 {state.status === 'sending' && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
-                <T k="de.partner.button">Apply to be a partner</T>
+                <T k="de.partner.button">Apply to Be a Partner</T>
               </button>
               <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree we may call or text you about the partner program.</p>
             </form>
@@ -231,11 +232,11 @@ export default function GeorgiaDriverEducationPage() {
             <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <a href={RETURNING_CUSTOMER_LINK} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">
-                <T k="pages.driversedpage.e432d4">Already enrolled? Continue your course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <T k="pages.driversedpage.e432d4">Already Enrolled? Continue Your Course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
               {/* Same side padding as the pill above, so its text lines up with the pill's text. */}
               <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: GOLD }}>
-                <T k="de.partner.herolink">Become a referral partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <T k="de.partner.herolink">Become a Referral Partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -293,7 +294,7 @@ export default function GeorgiaDriverEducationPage() {
       {/* FAQ */}
       <section className="bg-slate-50 py-14 lg:py-20" aria-labelledby="de-faq">
         <div className={wrap}>
-          <h2 id="de-faq" className={sectionTitle}><T k="pages.driversedpage.af2a4d">Frequently asked questions</T></h2>
+          <h2 id="de-faq" className={sectionTitle}><T k="pages.driversedpage.af2a4d">Frequently Asked Questions</T></h2>
           <dl className="mt-8 grid gap-4 md:grid-cols-2">
             {(SHOW_JOSHUAS_LAW ? FAQ_BOTH : FAQ_DD).map(([q, a]) => (
               <div key={q} className="rounded-3xl border border-slate-200 bg-white p-6">
@@ -308,10 +309,10 @@ export default function GeorgiaDriverEducationPage() {
       {/* The rate check ask */}
       <section className="relative overflow-hidden py-16 text-center text-white lg:py-20" style={{ background: HERO_BG }}>
         <div className={`relative ${wrap}`}>
-          <h2 className="text-[30px] font-extrabold leading-tight tracking-tight lg:text-[40px]"><T k="pages.driversedpage.35a223">Need an insurance quote?</T></h2>
+          <h2 className="text-[30px] font-extrabold leading-tight tracking-tight lg:text-[40px]"><T k="pages.driversedpage.35a223">Need an Insurance Quote?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="pages.driversedpage.021418">Snap your declarations page. Cam checks if Allstate can beat it.</T></p>
-          <Link to="/" className="qb qb-gold qb-lg mx-auto mt-7 px-8 text-lg">
-            <T k="pages.driversedpage.725f04">Check my rate</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
+          <Link to={rateCheckStart('drivers_ed')} className="qb qb-gold qb-lg mx-auto mt-7 px-8 text-lg">
+            <T k="pages.driversedpage.725f04">Check My Rate</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         </div>
       </section>

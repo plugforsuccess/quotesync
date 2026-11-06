@@ -58,7 +58,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
               <thead>
                 <tr>
                   <th><T k="pages.components.retention.saveablepremiumtargeting.a5a3f4">Tactic</T></th>
-                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.d6eb43">Save rate</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.d6eb43">Save Rate</T></th>
                   <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.8d9673">Saved / Resolved</T></th>
                   <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.019d1c">Used</T></th>
                 </tr>
@@ -110,7 +110,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
                 <th><T k="pages.components.retention.saveablepremiumtargeting.deb105">Product</T></th>
                 <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.8d5e7e">Premium</T></th>
                 <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.36996f">Rate Δ</T></th>
-                <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.0d970d">Churn risk</T></th>
+                <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.0d970d">Churn Risk</T></th>
                 <th style={{ textAlign: 'right' }}><T k="pages.components.retention.saveablepremiumtargeting.490ef5">Saveable</T></th>
                 <th></th>
               </tr>

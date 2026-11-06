@@ -65,7 +65,7 @@ export default function RenewalPremiumAudit({ agencyId }) {
       {realized && realized.count > 0 && (
         <div className="card" style={{ borderColor: 'rgba(59,130,246,0.35)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 3px' }}>
-            <T k="pages.components.retention.renewalpremiumaudit.f29dea">Realized increase per policy</T>
+            <T k="pages.components.retention.renewalpremiumaudit.f29dea">Realized Increase Per Policy</T>
           </h3>
           <p style={{ fontSize: 11, color: 'var(--qs-muted)', margin: '0 0 12px' }}>
             <T k="pages.components.retention.renewalpremiumaudit.a29c87">What retained customers actually pay vs their prior premium (paid − last year) — the renewal offer minus the save discount, net of the rate shock. The "are we growing premium per policy" number.</T>
@@ -90,10 +90,10 @@ export default function RenewalPremiumAudit({ agencyId }) {
       )}
 
       <div className="card">
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}><T k="pages.components.retention.renewalpremiumaudit.fce7b1">By renewal</T></h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}><T k="pages.components.retention.renewalpremiumaudit.fce7b1">By Renewal</T></h3>
         <table>
           <thead>
-            <tr><th><T k="pages.components.retention.renewalpremiumaudit.ce2660">Customer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.51359e">Policy</T></th><th><T k="pages.components.retention.renewalpremiumaudit.03f4a4">Closed</T></th><th><T k="pages.components.retention.renewalpremiumaudit.608033">Rep</T></th><th><T k="pages.components.retention.renewalpremiumaudit.6bb244">Offer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.e0010a">Paid</T></th><th><T k="pages.components.retention.renewalpremiumaudit.83f3f9">vs offer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.8c5a9b">vs prior</T></th></tr>
+            <tr><th><T k="pages.components.retention.renewalpremiumaudit.ce2660">Customer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.51359e">Policy</T></th><th><T k="pages.components.retention.renewalpremiumaudit.03f4a4">Closed</T></th><th><T k="pages.components.retention.renewalpremiumaudit.608033">Rep</T></th><th><T k="pages.components.retention.renewalpremiumaudit.6bb244">Offer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.e0010a">Paid</T></th><th><T k="pages.components.retention.renewalpremiumaudit.83f3f9">vs Offer</T></th><th><T k="pages.components.retention.renewalpremiumaudit.8c5a9b">vs Prior</T></th></tr>
           </thead>
           <tbody>
             {rows.map(r => (

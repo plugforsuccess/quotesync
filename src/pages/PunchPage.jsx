@@ -6,9 +6,9 @@ const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/punch`;
 const ACTION_CONFIG = {
   not_clocked_in:   { next: "clock_in",  label: "Clock In",        color: "#B07A0E", icon: "▶" },
   clocked_in:       { next: "lunch_out", label: "Lunch Out",       color: "#F59E0B", icon: "☕", secondary: { next: "clock_out", label: "Clock Out", color: "#EF4444" } },
-  on_lunch:         { next: "lunch_in",  label: "Back from Lunch", color: "#3B82F6", icon: "↩" },
+  on_lunch:         { next: "lunch_in",  label: "Back From Lunch", color: "#3B82F6", icon: "↩" },
   back_from_lunch:  { next: "clock_out", label: "Clock Out",       color: "#EF4444", icon: "■" },
-  clocked_out:      { label: "Done for today", color: "var(--qs-subtle)", done: true },
+  clocked_out:      { label: "Done For Today", color: "var(--qs-subtle)", done: true },
 };
 
 const STATUS_LABELS = {
@@ -233,7 +233,7 @@ export default function PunchPage() {
                     background: "transparent", color: actionCfg.secondary.color, fontSize: 14, fontWeight: 600,
                     cursor: "pointer", opacity: loading ? 0.6 : 1,
                   }}>
-                  {actionCfg.secondary.label} (skip lunch)
+                  {actionCfg.secondary.label} (Skip Lunch)
                 </button>
               )}
             </div>
@@ -248,7 +248,7 @@ export default function PunchPage() {
           )}
 
           <button onClick={() => { setPin(""); setScreen("pin"); }} style={{ marginTop: 20, background: "transparent", border: "none", color: "var(--qs-muted)", fontSize: 12, cursor: "pointer" }}>
-            &larr; Different employee
+            ← Different Employee
           </button>
         </div>
       )}

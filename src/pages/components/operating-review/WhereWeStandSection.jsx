@@ -73,7 +73,7 @@ export default function WhereWeStandSection({ agencyId, reviewWeekStart, priorWe
     <section style={sectionStyle}>
       <header style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-          <T k="pages.components.operatingreview.wherewestandsection.cdc3a1">Where we stand</T>
+          <T k="pages.components.operatingreview.wherewestandsection.cdc3a1">Where We Stand</T>
         </h2>
         <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 0 }}>
           <T k="pages.components.operatingreview.wherewestandsection.3667e7">Snapshot of the agency right now, with deltas vs. the prior week.</T>
@@ -242,28 +242,28 @@ function buildCards(s, activeProducerCount) {
 
   return [
     {
-      label: "Last week's NB",
+      label: "Last Week's NB",
       value: s.lastWeekNB,
       delta: s.lastWeekNB - s.weekBeforeNB,
       deltaLabel: deltaLabel(s.lastWeekNB, s.weekBeforeNB, ' items'),
       subline: 'Sum of policy_count, Mon–Sun',
     },
     {
-      label: 'Renewals this week',
+      label: 'Renewals This Week',
       value: s.thisWeekRenewals,
       delta: s.thisWeekRenewals - s.priorWeekRenewals,
       deltaLabel: deltaLabel(s.thisWeekRenewals, s.priorWeekRenewals, ''),
       subline: 'Renewal_date in current week',
     },
     {
-      label: 'Pending cancels active',
+      label: 'Pending Cancels Active',
       value: s.activeCancels,
       delta: null,
       deltaLabel: null,
       subline: `${s.activeCancelsP0P1} P0/P1 urgent`,
     },
     {
-      label: 'Producer throughput',
+      label: 'Producer Throughput',
       value: throughputLastWeek,
       delta: parseFloat(throughputLastWeek) - parseFloat(throughputWeekBefore),
       deltaLabel: deltaLabel(
@@ -274,14 +274,14 @@ function buildCards(s, activeProducerCount) {
       subline: `Items/producer · ${activeProducerCount} active`,
     },
     {
-      label: 'Lead flow',
+      label: 'Lead Flow',
       value: s.lastWeekLeads,
       delta: s.lastWeekLeads - s.weekBeforeLeads,
       deltaLabel: deltaLabel(s.lastWeekLeads, s.weekBeforeLeads, ' leads'),
       subline: 'New leads, prior week',
     },
     {
-      label: 'Save rate (30d)',
+      label: 'Save Rate (30d)',
       value: saveRate != null ? `${saveRate}%` : '—',
       delta: saveRate != null && priorSaveRate != null ? saveRate - priorSaveRate : null,
       deltaLabel:

@@ -165,7 +165,7 @@ export async function preparePolicy(files) {
  * POST the dec page + contact + consent to the rate-check edge function.
  * Resolves to { status, rate_check_id, carrier, policy_type, annual_premium }.
  */
-export async function submitRateCheck({ prepared, firstName, phone, email, zip, housingSituation, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
+export async function submitRateCheck({ prepared, firstName, lastName = '', relationships = null, phone, email, zip, housingSituation, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
   const utm = getUtmParams();
   const res = await fetch(RATE_CHECK_URL, {
     method: 'POST',
@@ -177,6 +177,12 @@ export async function submitRateCheck({ prepared, firstName, phone, email, zip, 
       image_base64: prepared.base64,
       media_type: prepared.mediaType,
       first_name: firstName.trim(),
+      last_name: (lastName || '').trim() || null,
+      ...(relationships ? {
+        policyholder_name: relationships.policyholderName, contact_relationship: relationships.contact,
+        contact_relationship_other: relationships.contactOther, referrer_relationship: relationships.referrer,
+        referrer_relationship_other: relationships.referrerOther,
+      } : {}),
       phone: phone.replace(/\D/g, ''),
       email: String(email || '').trim(),
       zip,
@@ -217,7 +223,7 @@ async function otp(mode, phone, extra = {}) {
   const res = await fetch(OTP_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
-    body: JSON.stringify({ mode, phone: phone.replace(/\D/g, ''), session_id: getSessionId(), ...extra }),
+    body: JSON.stringify({ mode, ...(phone ? { phone: phone.replace(/\D/g, '') } : {}), session_id: getSessionId(), ...extra }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -232,6 +238,24 @@ async function otp(mode, phone, extra = {}) {
 export const sendOtp = (phone) => otp('send', phone);
 /** Check the code they typed; resolves to { verified: true }. */
 export const verifyOtp = (phone, code) => otp('verify', phone, { code: String(code || '').replace(/\D/g, '') });
+/** Email a 6-digit code to confirm the address. */
+export const sendEmailOtp = (email) => otp('send', null, { channel: 'email', email: String(email || '').trim().toLowerCase() });
+export const verifyEmailOtp = (email, code) => otp('verify', null, { channel: 'email', email: String(email || '').trim().toLowerCase(), code: String(code || '').replace(/\D/g, '') });
+
+// Common email typos → the address they meant ("gmial.com" → "gmail.com").
+const EMAIL_FIXES = {
+  'gmial.com': 'gmail.com', 'gmai.com': 'gmail.com', 'gmail.co': 'gmail.com', 'gamil.com': 'gmail.com', 'gnail.com': 'gmail.com', 'gmail.con': 'gmail.com', 'gmaill.com': 'gmail.com',
+  'yahoo.co': 'yahoo.com', 'yaho.com': 'yahoo.com', 'yahooo.com': 'yahoo.com', 'yahoo.con': 'yahoo.com',
+  'hotmial.com': 'hotmail.com', 'hotmai.com': 'hotmail.com', 'hotmail.co': 'hotmail.com', 'hotmail.con': 'hotmail.com',
+  'outlok.com': 'outlook.com', 'outlook.co': 'outlook.com', 'outlook.con': 'outlook.com',
+  'icloud.co': 'icloud.com', 'iclod.com': 'icloud.com', 'icloud.con': 'icloud.com', 'aol.co': 'aol.com', 'aol.con': 'aol.com',
+};
+/** "you@gmial.com" → "you@gmail.com", or null when it looks fine. */
+export function emailFix(email) {
+  const m = String(email || '').trim().toLowerCase().match(/^([^\s@]+)@([^\s@]+)$/);
+  const fixed = m && EMAIL_FIXES[m[2]];
+  return fixed ? `${m[1]}@${fixed}` : null;
+}
 
 const PARTNER_URL = RATE_CHECK_URL.replace(/rate-check$/, 'rate-check-partner');
 
@@ -292,6 +316,23 @@ export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '
  * undefined if it couldn't be checked (busy, offline): the upload still sends the
  * code, so the server credits the link either way.
  */
+/** What kind of policy is this file? A quick type-only check as a policy is added to
+ * a slot (nothing is stored). null when it can't tell or the check fails — never blocks. */
+export async function checkPolicyType(file) {
+  try {
+    const prepared = await prepareDecPage(file);
+    if (prepared.bytes > 6 * 1024 * 1024) return null;
+    const res = await fetch(RATE_CHECK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
+      body: JSON.stringify({ mode: 'classify', image_base64: prepared.base64, media_type: prepared.mediaType }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.policy_type ? data : null;
+  } catch { return null; }
+}
+
 export async function lookupInvite(code) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {

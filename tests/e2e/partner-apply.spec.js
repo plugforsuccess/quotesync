@@ -9,7 +9,7 @@ test('apply to be a referral partner from Drivers Ed', async ({ page }) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ applied: true }) });
   });
   await page.goto('/courses');
-  await page.getByRole('link', { name: /Become a referral partner/ }).click();
+  await page.getByRole('link', { name: /Become a referral partner/i }).click();
   await expect(page.getByRole('heading', { name: /Get paid to share the savings/ })).toBeInViewport();
 
   const apply = page.getByRole('button', { name: 'Apply to be a partner' });
@@ -20,7 +20,7 @@ test('apply to be a referral partner from Drivers Ed', async ({ page }) => {
   await expect(page.getByText('Is Cam Wiley your agent?')).toHaveCount(0);
   await page.getByRole('group', { name: 'Are you an Allstate customer?' }).getByText('Yes', { exact: true }).click();
   await page.getByRole('group', { name: 'Is Cam Wiley your agent?' }).getByText('Not sure', { exact: true }).click();
-  await page.getByLabel(/Who would you share it with/).selectOption('Coworkers');
+  await page.getByLabel(/Who Would You Share It With/).selectOption('Coworkers');
   await apply.click();
 
   await expect(page.getByText('Thanks, Dana!')).toBeVisible();

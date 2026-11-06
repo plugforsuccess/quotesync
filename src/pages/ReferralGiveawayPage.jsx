@@ -124,7 +124,7 @@ function RulesModal({ brand, floor, ceiling, rulesHref, onClose }) {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-lg font-bold text-gray-900">
-            Rules &amp; limitations
+            Rules & Limitations
           </h2>
           <button
             type="button"
@@ -175,7 +175,7 @@ export default function ReferralGiveawayPage() {
         <div className="text-center max-w-md">
           <Gift className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-900 mb-2">
-            Giveaway unavailable
+            Giveaway Unavailable
           </h1>
           <p className="text-gray-500">
             We couldn&apos;t load the referral giveaway right now. Please check
@@ -239,7 +239,7 @@ export default function ReferralGiveawayPage() {
               onClick={() => setRulesOpen(true)}
               className="underline underline-offset-2 hover:text-white"
             >
-              See rules
+              See Rules
             </button>
           </p>
         </div>

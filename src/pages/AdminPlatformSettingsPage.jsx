@@ -65,7 +65,7 @@ function FeatureFlagsTab() {
   return (
     <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)' }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.adminplatformsettingspage.8a0267">Feature Flags by Agency</T></h2>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.adminplatformsettingspage.8a0267">Feature Flags By Agency</T></h2>
         <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}><T k="pages.adminplatformsettingspage.bcc753">Toggle features on/off per agency</T></p>
       </div>
       <div style={{ overflowX: 'auto' }}>
@@ -156,7 +156,7 @@ function RolePermissionsTab() {
   return (
     <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)' }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.adminplatformsettingspage.d22e48">Role Permissions by Agency</T></h2>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.adminplatformsettingspage.d22e48">Role Permissions By Agency</T></h2>
         <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2 }}><T k="pages.adminplatformsettingspage.73e20d">Set minimum role required for each feature per agency</T></p>
       </div>
       <div style={{ overflowX: 'auto' }}>
@@ -254,7 +254,7 @@ function CatFactorsTab() {
     <div>
       {/* Filter */}
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <label style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminplatformsettingspage.ddf54f">Filter by state:</T></label>
+        <label style={{ fontSize: 13, color: 'var(--qs-dim)' }}><T k="pages.adminplatformsettingspage.ddf54f">Filter By State:</T></label>
         <select
           className="dark-select"
           value={stateFilter}

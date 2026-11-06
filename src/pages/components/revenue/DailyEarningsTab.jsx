@@ -198,8 +198,8 @@ export default function DailyEarningsTab({ agencyId }) {
         <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
           {[
             { color: ct.data.green, label: 'Actual MTD' },
-            { color: ct.structural.referenceLine, label: 'Ideal pace', dashed: true },
-            { color: 'var(--qs-info)', label: '$40k goal', dashed: true },
+            { color: ct.structural.referenceLine, label: 'Ideal Pace', dashed: true },
+            { color: 'var(--qs-info)', label: '$40k Goal', dashed: true },
           ].map(({ color, label, dashed }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{

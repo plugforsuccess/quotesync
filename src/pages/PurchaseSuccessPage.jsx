@@ -101,7 +101,7 @@ const PurchaseSuccessPage = () => {
           <div className="relative">
             <FileText className="w-16 h-16 mx-auto mb-4 text-primary-600" />
             <h2 className="text-xl font-bold text-gray-900 mb-3">
-              Your Guide is Ready
+              Your Guide Is Ready
             </h2>
             <p className="text-sm text-gray-600 mb-6">
               Click below to download your {product.format} ({product.pages} pages)

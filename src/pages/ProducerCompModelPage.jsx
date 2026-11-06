@@ -173,7 +173,7 @@ export default function ProducerCompModelPage() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.producercompmodelpage.e3062d">Producer not found</T></h2>
+          <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.producercompmodelpage.e3062d">Producer Not Found</T></h2>
           <p className="text-qs-dim mb-4"><T k="pages.producercompmodelpage.152644">The producer you're looking for doesn't exist or you don't have access.</T></p>
           <Link to="/admin/staff-performance" className="text-primary-400 hover:text-primary-300 font-medium">
             <T k="pages.producercompmodelpage.88b41a">Back to Performance</T>
@@ -203,7 +203,7 @@ export default function ProducerCompModelPage() {
         <div className="dark-card text-center">
           <Settings className="w-16 h-16 text-qs-muted mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-qs-bright mb-2">
-            <T k="pages.producercompmodelpage.a201b0">Set up compensation model for</T> {producerName}
+            <T k="pages.producercompmodelpage.a201b0">Set Up Compensation Model For</T> {producerName}
           </h2>
           <p className="text-qs-dim mb-6 max-w-md mx-auto">
             <T k="pages.producercompmodelpage.9d6d1e">Configure compensation assumptions to see real-time scenario projections — monthly and annual — for this producer.</T>

@@ -103,6 +103,7 @@ const RATE_LIMIT = 5 // public requests per minute per IP
 const LOOKUP_RATE_LIMIT = 30 // invite-link opens per minute per IP
 const AGENT_RATE_LIMIT = 30 // staff uploads per minute per user
 const HOUSEHOLD_RATE_LIMIT = 20 // a household's 2nd, 3rd… policy, per minute per session
+const CLASSIFY_RATE_LIMIT = 30 // type checks as policies are added, per minute per IP
 const RATE_WINDOW_SECONDS = 60
 
 // A follow-up policy from someone who already sent one: same session, phone and IP, recently.
@@ -297,6 +298,71 @@ const INSTRUCTION =
   'The upload may be several pages of the same policy (drivers, vehicles and coverages often continue on later ' +
   'pages): read every page and combine them into one record. ' +
   'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
+
+// ── Type check as a policy is added ─────────────────────────────────────────
+// The guided flow asks which policies someone has, then one upload slot per type.
+// Before anything is sent, each file's type is checked so a home policy dropped in
+// the Auto slot is caught on the spot. Nothing is stored; only the type comes back.
+const CLASSIFY_MODEL = Deno.env.get('RATE_CHECK_CLASSIFY_MODEL') || 'claude-haiku-4-5'
+const CLASSIFY_MAX_BYTES = 6 * 1024 * 1024
+const CLASSIFY_TYPES = ['auto', 'home', 'condo', 'renters', 'landlord', 'umbrella', 'motorcycle', 'boat', 'other', 'not_a_policy']
+const CLASSIFY_TOOL = {
+  name: 'policy_type',
+  description: 'Record what kind of insurance document this is.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      policy_type: { type: 'string', enum: CLASSIFY_TYPES, description: 'auto = personal auto; home = homeowners (HO-3/HO-5, dwelling); condo = condo unit owners (HO-6); renters = renters/tenants (HO-4); landlord = rental dwelling (DP-1/DP-3); umbrella = personal umbrella/excess liability; motorcycle; boat = boat or watercraft; other = another insurance policy; not_a_policy = not an insurance declarations page or policy document.' },
+      confidence: { type: 'string', enum: ['high', 'low'], description: 'high only if the page clearly shows the policy type.' },
+      zip: { type: ['string', 'null'], description: "The 5-digit ZIP code of the named insured's mailing address (or the insured property), if shown. Null if not shown." },
+      insured_first_name: { type: ['string', 'null'], description: 'First name of the first named insured (policyholder), as printed. Null if not shown.' },
+      insured_last_name: { type: ['string', 'null'], description: 'Last name of the first named insured (policyholder), as printed. Null if not shown.' },
+      other_insured_names: { type: 'array', items: { type: 'string' }, description: 'Any additional NAMED INSUREDS (e.g. a spouse listed as second named insured), full names as printed. Not drivers. Empty if none.' },
+      driver_names: { type: 'array', items: { type: 'string' }, description: 'Listed drivers who are not named insureds, full names as printed. Empty if none.' },
+      expiration_date: { type: ['string', 'null'], description: 'Policy period end date, YYYY-MM-DD. Null if not shown.' },
+      vehicle_count: { type: ['integer', 'null'], description: 'For auto: how many vehicles are listed on this page. 0 if it is an auto policy page with no vehicles listed. Null if not auto.' },
+    },
+    required: ['policy_type', 'confidence'],
+  },
+}
+
+async function classifyPolicy(apiKey: string, base64: string, mediaType: string) {
+  const fileBlock = mediaType === 'application/pdf'
+    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
+    : { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } }
+  const call = async (model: string, toolChoice: Record<string, string>) => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 20_000)
+    try {
+      return await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model, max_tokens: 400, tools: [CLASSIFY_TOOL], tool_choice: toolChoice,
+          messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: 'What kind of insurance policy is this? Also give the policyholder\'s name, other people named on it, the ZIP code, the policy end date and (for auto) how many vehicles are listed. Answer with the policy_type tool.' }] }],
+        }),
+      })
+    } finally { clearTimeout(timer) }
+  }
+  let res = await call(CLASSIFY_MODEL, { type: 'tool', name: 'policy_type' })
+  if (res.status === 400 && (await res.clone().text()).includes('tool_choice')) res = await call(CLASSIFY_MODEL, { type: 'auto' })
+  if (res.status === 404 || res.status === 400) res = await call(ANTHROPIC_MODEL, { type: 'tool', name: 'policy_type' }) // model unavailable: use the reader's model
+  if (!res.ok) throw new Error(`Anthropic API error (${res.status}): ${(await res.text()).slice(0, 300)}`)
+  const json = await res.json()
+  const input = (json.content || []).find((c: any) => c.type === 'tool_use')?.input || {}
+  const type = CLASSIFY_TYPES.includes(input.policy_type) ? input.policy_type : null
+  const zip = /^\d{5}$/.test(String(input.zip || '').slice(0, 5)) ? String(input.zip).slice(0, 5) : null
+  const name = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().replace(/\s+/g, ' ').slice(0, 60) : null)
+  const expiration = /^\d{4}-\d{2}-\d{2}$/.test(String(input.expiration_date || '')) ? input.expiration_date : null
+  return {
+    policy_type: type, confidence: input.confidence === 'high' ? 'high' : 'low', zip,
+    insured_first_name: name(input.insured_first_name), insured_last_name: name(input.insured_last_name),
+    other_insured_names: Array.isArray(input.other_insured_names) ? input.other_insured_names.map(name).filter(Boolean).slice(0, 4) : [],
+    driver_names: Array.isArray(input.driver_names) ? input.driver_names.map(name).filter(Boolean).slice(0, 8) : [],
+    expiration_date: expiration,
+    vehicle_count: Number.isInteger(input.vehicle_count) ? input.vehicle_count : null,
+  }
+}
 
 async function extractDecPage(apiKey: string, base64: string, mediaType: string) {
   const fileBlock = mediaType === 'application/pdf'
@@ -805,6 +871,26 @@ Deno.serve(async (req) => {
     }, 200, corsHeaders)
   }
 
+  // ── Type check as a policy is added (public, nothing stored) ──
+  if (body?.mode === 'classify') {
+    if (!(await checkRateLimit(supabase, `rate_check_classify:${clientIp}`, CLASSIFY_RATE_LIMIT))) {
+      return jsonResponse({ error: 'Rate limit exceeded' }, 429, corsHeaders)
+    }
+    const b64 = typeof body.image_base64 === 'string' ? body.image_base64.replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '') : ''
+    const mt = String(body.media_type || '')
+    if (!b64 || !EXTRACTABLE.has(mt) || base64DecodedSize(b64) > CLASSIFY_MAX_BYTES) {
+      return jsonResponse({ error: 'Unsupported file' }, 400, corsHeaders)
+    }
+    if (!anthropicKey) return jsonResponse({ policy_type: null, confidence: 'low' }, 200, corsHeaders)
+    try {
+      return jsonResponse(await classifyPolicy(anthropicKey, b64, mt), 200, corsHeaders)
+    } catch (e) {
+      // Never block an upload because the check failed.
+      console.error('[RATE_CHECK] classify failed:', (e as Error).message)
+      return jsonResponse({ policy_type: null, confidence: 'low' }, 200, corsHeaders)
+    }
+  }
+
   // ── Staff upload (Rate Checks inbox): verify the caller and their agency ──
   let staff: { userId: string; agencyId: string; name: string | null } | null = null
   if (body?.mode === 'agent' || body?.mode === 'rescan') {
@@ -872,7 +958,7 @@ Deno.serve(async (req) => {
 
   // ── Validate ──
   const phone = String(body.phone || '').replace(/\D/g, '').replace(/^1(\d{10})$/, '$1')
-  const zip = String(body.zip || '').trim()
+  let zip = String(body.zip || '').trim()
   const mediaType = String(body.media_type || '').toLowerCase()
   const imageBase64 = typeof body.image_base64 === 'string'
     ? body.image_base64.replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '')
@@ -884,13 +970,13 @@ Deno.serve(async (req) => {
   if (phone.length !== 10) errors.push('phone must be a 10-digit US number')
   // The form requires an email; the function only checks the shape (an older form may not send one).
   if (email && !EMAIL_RE.test(email)) errors.push('email is not valid')
-  // ZIP is optional for staff uploads (an emailed dec page may not need it typed in).
-  if (staff ? (zip && !/^\d{5}$/.test(zip)) : !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
+  // ZIP is optional: when it isn't typed, it's taken from the address on the policy.
+  if (zip && !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
   // The text-message box is optional: a time means they checked it; none means they left it unchecked.
   if (!staff && body.consent_given_at && Number.isNaN(Date.parse(body.consent_given_at))) {
     errors.push('consent_given_at is not a valid time')
   }
-  if (!staff && !['own', 'rent', 'family', 'retirement'].includes(String(body.housing_situation || ''))) errors.push('housing_situation is required')
+  // Where they live is no longer asked; the policy type says it (home/condo = own, renters = rent).
   if (!MEDIA_TYPES[mediaType]) errors.push('media_type not allowed')
   if (!imageBase64) errors.push('image_base64 is required')
   else if (base64DecodedSize(imageBase64) > MAX_IMAGE_BYTES) errors.push('image exceeds 10 MB')
@@ -899,6 +985,18 @@ Deno.serve(async (req) => {
   }
 
   const firstName = cleanText(body.first_name, 80)
+  const lastName = cleanText(body.last_name, 80)
+  // Who the policy belongs to, and how the person filling this in relates to them and
+  // to the partner who shared the link (Other is typed; it arrives already normalized).
+  const REL = ['self', 'spouse', 'domestic_partner', 'parent', 'child', 'household', 'other']
+  const REF = ['friend', 'family', 'coworker', 'client', 'other']
+  const relationships = {
+    policyholder_name: cleanText(body.policyholder_name, 120),
+    contact_relationship: REL.includes(String(body.contact_relationship)) ? String(body.contact_relationship) : null,
+    contact_relationship_other: body.contact_relationship === 'other' ? cleanText(body.contact_relationship_other, 40) : null,
+    referrer_relationship: REF.includes(String(body.referrer_relationship)) ? String(body.referrer_relationship) : null,
+    referrer_relationship_other: body.referrer_relationship === 'other' ? cleanText(body.referrer_relationship_other, 40) : null,
+  }
   // Where they live (asked on the form; optional on staff uploads). Drives rules and the lead.
   const HOUSING = ['own', 'rent', 'family', 'retirement']
   const housing = HOUSING.includes(String(body.housing_situation || '')) ? String(body.housing_situation) : null
@@ -945,6 +1043,18 @@ Deno.serve(async (req) => {
       .gte('verified_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       .limit(1)
     if (!verified?.length) return jsonResponse({ error: 'Verify your mobile number first.', code: 'phone_unverified' }, 403, corsHeaders)
+    if (email) {
+      const { data: emailOk } = await supabase
+        .from('rate_check_otps')
+        .select('id')
+        .eq('channel', 'email')
+        .eq('email', email)
+        .eq('session_id', sessionId)
+        .not('verified_at', 'is', null)
+        .gte('verified_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .limit(1)
+      if (!emailOk?.length) return jsonResponse({ error: 'Verify your email first.', code: 'email_unverified' }, 403, corsHeaders)
+    }
   }
   const landingPage = staff ? 'agent_upload' : cleanText(body.landing_page, 512)
   // Who gets credit: the producer who sent the link, or the staff member uploading.
@@ -976,6 +1086,8 @@ Deno.serve(async (req) => {
       .insert({
         agency_id: agencyId,
         session_id: sessionId,
+        last_name: lastName,
+        ...relationships,
         first_name: firstName,
         phone,
         email,
@@ -1020,6 +1132,14 @@ Deno.serve(async (req) => {
 
     // ── 3. Extract ──
     const { flat, extractError } = await extractAndStore(supabase, anthropicKey, rateCheckId, agencyId, imageBase64, mediaType)
+
+    // No ZIP typed (the form no longer asks when the policy has an address): take it
+    // from the insured address on the policy.
+    if (!zip && flat?.insured_address) {
+      const found = String(flat.insured_address).match(/\b(\d{5})(?:-\d{4})?\b/g)
+      const z = found?.length ? found[found.length - 1].slice(0, 5) : null
+      if (z) { zip = z; await supabase.from('rate_checks').update({ zip }).eq('id', rateCheckId) }
+    }
 
     // ── 3b. Same policy sent twice → one card ──
     const duplicate = flat ? await findDuplicate(supabase, rateCheckId, agencyId, phone, flat) : null
@@ -1083,6 +1203,7 @@ Deno.serve(async (req) => {
           .from('leads')
           .update({
             ...(firstName ? { first_name: firstName } : {}),
+            ...(lastName ? { last_name: lastName } : {}),
             ...(phone ? { phone } : {}),
             ...(email ? { email } : {}),
             ...(zip ? { zip } : {}),
@@ -1105,6 +1226,7 @@ Deno.serve(async (req) => {
             state: 'GA',
             zip: zip || null,
             first_name: firstName,
+            last_name: lastName,
             phone,
             email,
             ...consent,

@@ -547,7 +547,7 @@ function Layout({ forcePlane = null }) {
                 className="flex w-full items-center gap-2 mt-2 px-2 py-2.5 text-sm font-medium text-red-300 hover:text-red-200 hover:bg-white/10 rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sign out</span>
+                <span>Sign Out</span>
               </button>
             </div>
           </div>

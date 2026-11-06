@@ -92,7 +92,7 @@ export default function SaveVelocityPanel({ agencyId }) {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>
-            <T k="pages.components.retention.savevelocitypanel.09e7cb">Save velocity — last 8 weeks</T>
+            <T k="pages.components.retention.savevelocitypanel.09e7cb">Save Velocity — Last 8 Weeks</T>
           </h3>
           <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
             <strong style={{ color: '#B07A0E' }}>{totalSaves}</strong> <T k="pages.components.retention.savevelocitypanel.c94a10">saves ·</T>{' '}
@@ -135,7 +135,7 @@ export default function SaveVelocityPanel({ agencyId }) {
       {/* By save method — "how did we keep them?" */}
       <div className="card">
         <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>
-          <T k="pages.components.retention.savevelocitypanel.cf1d64">By save method (8-week window)</T>
+          <T k="pages.components.retention.savevelocitypanel.cf1d64">By Save Method (8-Week Window)</T>
         </h4>
         {methods.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--qs-muted)' }}><T k="pages.components.retention.savevelocitypanel.b4b9e9">No saves recorded in the window yet.</T></div>
@@ -173,7 +173,7 @@ export default function SaveVelocityPanel({ agencyId }) {
       {/* Per-rep rollup */}
       <div className="card">
         <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>
-          <T k="pages.components.retention.savevelocitypanel.362686">By rep (8-week window)</T>
+          <T k="pages.components.retention.savevelocitypanel.362686">By Rep (8-Week Window)</T>
         </h4>
         {reps.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--qs-muted)' }}><T k="pages.components.retention.savevelocitypanel.b4b9e9">No saves recorded in the window yet.</T></div>

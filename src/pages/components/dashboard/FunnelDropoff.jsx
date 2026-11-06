@@ -50,7 +50,7 @@ export default function FunnelDropoff({ funnel }) {
 
   return (
     <div className="dark-card">
-      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.funneldropoff.0c5658">Funnel Step Drop-off</T></h2>
+      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.dashboard.funneldropoff.0c5658">Funnel Step Drop-Off</T></h2>
 
       <div className="overflow-x-auto">
         <div style={{ minWidth: '600px' }}>

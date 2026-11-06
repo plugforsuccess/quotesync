@@ -374,7 +374,7 @@ function TeamTab({ agencyId, isAgent }) {
         <div>
           <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)',
             marginBottom: 12 }}>
-            <T k="pages.agencysettingspage.5a49ba">Employees without a login account</T>
+            <T k="pages.agencysettingspage.5a49ba">Employees Without a Login Account</T>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {unlinkedEmployees.map(emp => (
@@ -552,7 +552,7 @@ function MyRepWorkspace({ agencyId }) {
                 cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
               }}
             >
-              {saving ? 'Setting up…' : 'Set up rep workspace'}
+              {saving ? 'Setting Up…' : 'Set Up Rep Workspace'}
             </button>
           </div>
         </div>
@@ -1120,7 +1120,7 @@ function CommissionTab({ agencyId, isAgent }) {
                 disabled={upsertRates.isPending}
                 className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
               >
-                {upsertRates.isPending ? 'Setting up...' : 'Set Up Commission Rates'}
+                {upsertRates.isPending ? 'Setting Up...' : 'Set Up Commission Rates'}
               </button>
             )}
           </div>
@@ -1311,7 +1311,7 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.8a43ad">ZIP Prefix (optional)</T></label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T k="pages.agencysettingspage.8a43ad">ZIP Prefix (Optional)</T></label>
                 <input type="text" value={newRule.zip_prefix} onChange={(e) => setNewRule(r => ({ ...r, zip_prefix: e.target.value }))} className="dark-input" placeholder="e.g. 303" maxLength={3} />
               </div>
               <div>
@@ -1814,7 +1814,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
             className="btn-ghost"
             style={{ fontSize: 12, padding: '6px 12px' }}
           >
-            <T k="pages.agencysettingspage.efb3a0">Suggest premium goal from trailing rate</T>
+            <T k="pages.agencysettingspage.efb3a0">Suggest Premium Goal From Trailing Rate</T>
           </button>
           <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>
             <T k="pages.agencysettingspage.dc5f49">At</T> {fmtPct(trailing)} <T k="pages.agencysettingspage.7f0a63">→ premium goal ≈</T> {fmt$(commissionGoal / trailing)}

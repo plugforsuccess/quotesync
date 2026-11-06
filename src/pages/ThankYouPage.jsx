@@ -52,7 +52,7 @@ const ThankYouPage = () => {
 
         {/* Personal Video Section */}
         <div className="video-section">
-          <h2 className="video-title"><T k="pages.thankyoupage.c9c9b7">A Quick Message from Cameron</T></h2>
+          <h2 className="video-title"><T k="pages.thankyoupage.c9c9b7">A Quick Message From Cameron</T></h2>
           <div className="video-wrapper">
             <iframe
               src="https://www.youtube.com/embed/CBmtFPMUcr0"

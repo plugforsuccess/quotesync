@@ -190,7 +190,7 @@ const AdminAuditPage = () => {
         {logs.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <FileSearch className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2"><T k="pages.adminauditpage.bf0bc8">No audit logs found</T></h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2"><T k="pages.adminauditpage.bf0bc8">No Audit Logs Found</T></h2>
             <p className="text-gray-600">
               {eventTypeFilter === 'all'
                 ? 'No audit events have been recorded yet.'

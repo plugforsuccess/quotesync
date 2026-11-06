@@ -76,7 +76,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
               </div>
 
               <div>
-                <label className="dark-label"><T k="pages.components.employees.terminatemodal.170556">Reason (optional)</T></label>
+                <label className="dark-label"><T k="pages.components.employees.terminatemodal.170556">Reason (Optional)</T></label>
                 <textarea
                   value={terminationReason}
                   onChange={(e) => setTerminationReason(e.target.value)}

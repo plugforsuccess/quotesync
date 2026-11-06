@@ -954,3 +954,8 @@ gmp-placeautocomplete input:focus {
 :root { --font-display: 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
 h1, h2, h3 { font-family: var(--font-display); }
 .qs-app-shell h1, .qs-app-shell h2, .qs-app-shell h3 { font-family: inherit; }
+
+/* Rate Check question deck: the next card slides forward from behind. */
+.rc-deck-in { animation: rc-deck-in .28s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes rc-deck-in { from { opacity: .4; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rc-deck-in { animation: none; } }

@@ -144,8 +144,8 @@ export default function OfferOutcomesPanel({ agencyId }) {
                 <tr style={{ borderBottom: '1px solid var(--qs-border)' }}>
                   <th style={th}><T k="pages.components.retention.offeroutcomespanel.ce2660">Customer</T></th>
                   <th style={th}><T k="pages.components.retention.offeroutcomespanel.51359e">Policy</T></th>
-                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.98f171">On the table</T></th>
-                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.45b201">We quoted</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.98f171">On the Table</T></th>
+                  <th style={th}><T k="pages.components.retention.offeroutcomespanel.45b201">We Quoted</T></th>
                   <th style={th}><T k="pages.components.retention.offeroutcomespanel.0365d2">Competitor</T></th>
                   <th style={th}><T k="pages.components.retention.offeroutcomespanel.a5a3f4">Tactic</T></th>
                   <th style={th}><T k="pages.components.retention.offeroutcomespanel.608033">Rep</T></th>

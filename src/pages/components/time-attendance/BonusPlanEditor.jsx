@@ -126,7 +126,7 @@ export default function BonusPlanEditor({
               onClick={() => setEditing(true)}
               className="text-sm font-medium px-4 py-2 rounded-md bg-primary-600 hover:bg-primary-500 text-white"
             >
-              <T k="pages.components.timeattendance.bonusplaneditor.77a290">Configure bonus plan</T>
+              <T k="pages.components.timeattendance.bonusplaneditor.77a290">Configure Bonus Plan</T>
             </button>
           </div>
         )}
@@ -146,7 +146,7 @@ export default function BonusPlanEditor({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                  <T k="pages.components.timeattendance.bonusplaneditor.948cf2">Paid on</T>
+                  <T k="pages.components.timeattendance.bonusplaneditor.948cf2">Paid On</T>
                 </label>
                 <select
                   value={form.bonus_unit}
@@ -160,7 +160,7 @@ export default function BonusPlanEditor({
               </div>
               <div>
                 <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                  <T k="pages.components.timeattendance.bonusplaneditor.e7c460">Monthly threshold</T>
+                  <T k="pages.components.timeattendance.bonusplaneditor.e7c460">Monthly Threshold</T>
                 </label>
                 <input
                   type="number" min="0"
@@ -171,7 +171,7 @@ export default function BonusPlanEditor({
               </div>
               <div>
                 <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                  <T k="pages.components.timeattendance.bonusplaneditor.702273">$ per unit above threshold</T>
+                  <T k="pages.components.timeattendance.bonusplaneditor.702273">$ Per Unit Above Threshold</T>
                 </label>
                 <input
                   type="number" min="0" step="0.01"
@@ -184,7 +184,7 @@ export default function BonusPlanEditor({
 
             <div>
               <label className="block text-xs text-qs-subtle uppercase tracking-wider mb-1">
-                <T k="pages.components.timeattendance.bonusplaneditor.f7ee74">Notes (optional)</T>
+                <T k="pages.components.timeattendance.bonusplaneditor.f7ee74">Notes (Optional)</T>
               </label>
               <input
                 type="text"
@@ -201,7 +201,7 @@ export default function BonusPlanEditor({
                 disabled={saving}
                 className="text-sm font-medium px-4 py-2 rounded-md bg-primary-600 hover:bg-primary-500 text-white disabled:opacity-60"
               >
-                {saving ? 'Saving…' : 'Save plan'}
+                {saving ? 'Saving…' : 'Save Plan'}
               </button>
               <button
                 onClick={() => setEditing(false)}
@@ -226,7 +226,7 @@ export default function BonusPlanEditor({
                 onClick={() => setEditing(true)}
                 className="text-xs text-qs-dim hover:text-qs-text flex items-center gap-1"
               >
-                <Pencil className="w-3 h-3" /> <T k="pages.components.timeattendance.bonusplaneditor.a4d3ee">Edit plan</T>
+                <Pencil className="w-3 h-3" /> <T k="pages.components.timeattendance.bonusplaneditor.a4d3ee">Edit Plan</T>
               </button>
             </div>
 
@@ -267,7 +267,7 @@ export default function BonusPlanEditor({
                       disabled={finalizing}
                       className="text-xs px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-60"
                     >
-                      <T k="pages.components.timeattendance.bonusplaneditor.cb0eb4">Mark paid</T>
+                      <T k="pages.components.timeattendance.bonusplaneditor.cb0eb4">Mark Paid</T>
                     </button>
                   )}
                 </div>
@@ -282,7 +282,7 @@ export default function BonusPlanEditor({
                   disabled={finalizing}
                   className="text-xs px-3 py-1.5 rounded-md bg-primary-600 hover:bg-primary-500 text-white disabled:opacity-60"
                 >
-                  {finalizing ? 'Closing…' : 'Close month'}
+                  {finalizing ? 'Closing…' : 'Close Month'}
                 </button>
               </div>
             )}

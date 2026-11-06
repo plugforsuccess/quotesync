@@ -28,9 +28,9 @@ import { NEUTRAL_CHIP, DANGER_CHIP } from '../lib/statusChips';
 // case never hides past the point it has to be worked. eligibleSnoozeOptions
 // returns the still-allowed durations for a given deadline (possibly none).
 const SNOOZE_CHOICES = [
-  { days: 1, reason: 'retry_tomorrow',   label: '1 day — retry tomorrow' },
-  { days: 2, reason: 'retry_in_2_days',  label: '2 days — retry in 2 days' },
-  { days: 7, reason: 'retry_next_week',  label: '1 week — retry next week' },
+  { days: 1, reason: 'retry_tomorrow',   label: '1 Day — Retry Tomorrow' },
+  { days: 2, reason: 'retry_in_2_days',  label: '2 Days — Retry in 2 Days' },
+  { days: 7, reason: 'retry_next_week',  label: '1 Week — Retry Next Week' },
 ];
 const SNOOZE_DEADLINE_BUFFER_DAYS = 14;
 function eligibleSnoozeOptions(deadlineStr) {
@@ -131,13 +131,13 @@ function groupRenewalsByHousehold(cases) {
 const PRIORITY_BUCKETS = [
   {
     key: 'P0',
-    label: 'Lapsed — coverage gone',
+    label: 'Lapsed — Coverage Gone',
     sublabel: 'Policy terminated. Reinstatement call required.',
     color: 'var(--qs-danger)',
   },
   {
     key: 'P1',
-    label: 'High priority',
+    label: 'High Priority',
     sublabel: 'Past due or <7 days · Premium ≥$2,000',
     color: 'var(--qs-text)',
   },
@@ -580,8 +580,8 @@ export default function MyQueuePage() {
   // In the Callbacks / Promises views, skip priority bucketing — show one flat
   // group in strict due order so reps work them in sequence.
   const FLAT_CANCEL_VIEWS = {
-    callbacks: { label: '📅 Callbacks · soonest first',    color: 'var(--qs-text)' },
-    promises:  { label: '⚠ Pay promises · most overdue first', color: 'var(--qs-danger)' },
+    callbacks: { label: '📅 Callbacks · Soonest First',    color: 'var(--qs-text)' },
+    promises:  { label: '⚠ Pay Promises · Most Overdue First', color: 'var(--qs-danger)' },
   };
   const BUCKETS = FLAT_CANCEL_VIEWS[cancelFilter]
     ? (displayCancelCases.length
@@ -988,7 +988,7 @@ export default function MyQueuePage() {
               className="qs-focusable"
               onClick={() => setExpandedTranscript(prev => prev === event.id ? null : event.id)}
               style={{ ...chip, ...NEUTRAL_CHIP, cursor: 'pointer' }}>
-              <T k="pages.myqueuepage.45882e">🤖 AI spoke</T>
+              <T k="pages.myqueuepage.45882e">🤖 AI Spoke</T>
             </button>
           )}
         </header>
@@ -1190,7 +1190,7 @@ export default function MyQueuePage() {
                 color: 'var(--qs-text)', fontWeight: 600,
                 marginLeft: 'auto',
               }}>
-              <T k="pages.myqueuepage.33c277">Open case →</T>
+              <T k="pages.myqueuepage.33c277">Open Case →</T>
             </button>
           </div>
 
@@ -1287,7 +1287,7 @@ export default function MyQueuePage() {
                 <button
                   onClick={() => setExpandedTranscript(prev => prev === event.id ? null : event.id)}
                   style={{ ...flag, cursor: 'pointer' }}>
-                  <T k="pages.myqueuepage.45882e">🤖 AI spoke</T>
+                  <T k="pages.myqueuepage.45882e">🤖 AI Spoke</T>
                 </button>
               )}
 
@@ -1496,7 +1496,7 @@ export default function MyQueuePage() {
               color: 'var(--qs-text)', cursor: 'pointer', fontWeight: 600,
               marginLeft: 'auto',
             }}>
-            <T k="pages.myqueuepage.33c277">Open case →</T>
+            <T k="pages.myqueuepage.33c277">Open Case →</T>
           </button>
         </div>
       </div>
@@ -1628,7 +1628,7 @@ export default function MyQueuePage() {
             apply: () => setRenewalFilter(f => f === 'crossing' ? 'all' : 'crossing'),
           },
           {
-            label: '💡 Bundle pitch',
+            label: '💡 Bundle Pitch',
             value: renewalCases.filter(isBundleTarget).length,
             color: renewalCases.some(isBundleTarget) ? 'var(--qs-bright)' : 'var(--qs-dim)',
             sub:   'monoline · cross-sell gap',
@@ -1771,7 +1771,7 @@ export default function MyQueuePage() {
                 transition: 'all 0.15s',
               }}
             >
-              {focusMode ? '⚡ Focus mode' : '☰ Full queue'}
+              {focusMode ? '⚡ Focus Mode' : '☰ Full Queue'}
             </button>
           </div>
         </div>
@@ -1890,7 +1890,7 @@ export default function MyQueuePage() {
                         color: 'var(--qs-info)', fontSize: 13, fontWeight: 600, padding: 0,
                       }}
                     >
-                      <T k="pages.myqueuepage.0b4db2">View all</T>
+                      <T k="pages.myqueuepage.0b4db2">View All</T>
                     </button>
                   </div>
                 )}
@@ -1990,7 +1990,7 @@ export default function MyQueuePage() {
                         color: 'var(--qs-info)', fontSize: 13, fontWeight: 600, padding: 0,
                       }}
                     >
-                      <T k="pages.myqueuepage.0b4db2">View all</T>
+                      <T k="pages.myqueuepage.0b4db2">View All</T>
                     </button>
                   </div>
                 )}

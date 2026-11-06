@@ -10,18 +10,20 @@
 
 /* COPY REVIEW: submit this page to Allstate marketing compliance before paid traffic */
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { T, CopyImage, useCopyValue } from '../components/SiteCopy';
+import { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { persistUtmParams, getUtmParams } from '../lib/leadsApi';
+import { POLICYHOLDER_RELATIONSHIPS, REFERRER_RELATIONSHIPS, OTHER_MAX, normalizeOther, isPolicyholder } from '../lib/relationship';
+import { T, CopyImage, useCopyValue, EditPagePencil } from '../components/SiteCopy';
 import { TEXT_NUMBER_KEY, textNumber, smsHref } from '../lib/reviews';
 import Dismissible from '../components/Dismissible';
 import BrandLogo from '../components/BrandLogo';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
-  AlertTriangle, BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, BadgeCheck, CalendarX, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
-import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
+import { checkPolicyType, sendEmailOtp, verifyEmailOtp, emailFix, preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import { nextOpening } from '../lib/businessHours';
 import { DrawnCheck, CountUp, NextTimeline, CamCard, ShareLine } from './components/rate-checks/DoneExtras';
@@ -49,7 +51,8 @@ const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: '
 
 // Texted-code verification of the mobile number: off while the agency tests; set
 // VITE_RATE_CHECK_OTP=true (and RATE_CHECK_OTP_REQUIRED on the function) to turn it on.
-const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
+const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true'; // code by text (needs a Twilio number)
+const EMAIL_OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_EMAIL_OTP === 'true'; // code by email
 // The licensed agent shown on the page (same headshot as the homepage). Two GA
 // licenses: Cam's individual resident license goes under his headshot (the card
 // names him); the agency's resident license goes in the footer next to the agency name.
@@ -86,6 +89,29 @@ const KINDS = [
 ];
 const KIND = Object.fromEntries(KINDS.map(([k, label, Icon]) => [k, { label, Icon }]));
 const WANTED_KEY = 'rc_wanted_v1';
+// A policy whose file reads (clearly) as another type than its slot: that type, or
+// 'not_a_policy'. Landlord and other lines map to Other. null when it matches or can't tell.
+const READ_AS = { landlord: 'other' };
+// An auto policy whose first page lists no cars, or a policy that already ended: asked on
+// the card ("Add Page" / "It's All There", "Remove It" / "It's Current") before Continue.
+const todayISO = () => new Date().toISOString().slice(0, 10);
+function concernsOf(item) {
+  const t = item?.typeCheck;
+  if (t?.state !== 'done') return [];
+  const out = [];
+  if (t.expires && t.expires < todayISO() && !item.expiredOk) out.push('expired');
+  const isAuto = (item.kind || READ_AS[t.read] || t.read) === 'auto';
+  if (isAuto && t.cars === 0 && (item.pages?.length || 0) < 2 && !item.carsOk) out.push('no_cars');
+  return out;
+}
+function mismatchOf(item) {
+  const t = item?.typeCheck;
+  if (!item?.kind || item.typeOk || t?.state !== 'done' || !t.read || t.confidence !== 'high') return null;
+  const read = READ_AS[t.read] || t.read;
+  if (read === 'not_a_policy') return read;
+  if (!KIND[read] || read === item.kind) return null;
+  return read;
+}
 const KINDS_KEY = 'rc_kinds_v1';
 const readJSON = (key) => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
 const writeJSON = (key, v) => {
@@ -112,6 +138,14 @@ export default function RateCheckPage() {
   const [wanted, setWantedState] = useState(() => readJSON(WANTED_KEY));
   const setWanted = (list) => { setWantedState(list); writeJSON(WANTED_KEY, list); };
   const kindsRef = useRef(readJSON(KINDS_KEY) || {});
+  const policyZipRef = useRef('');
+  const [flash, setFlash] = useState(null); // a policy to point at (a duplicate was picked)
+  // How they relate to the policyholder (when the name isn't theirs) and to the partner.
+  const [rel, setRel] = useState({ holder: '', holderOther: '', referrer: '', referrerOther: '' });
+  const relRef = useRef(rel); relRef.current = rel;
+  const holderRef = useRef(null);
+  const namePrefilled = useRef(false);
+  const checkTypeRef = useRef(() => {});
   const rememberKind = (id, kind) => { if (!kind) return; kindsRef.current = { ...kindsRef.current, [id]: kind }; writeJSON(KINDS_KEY, kindsRef.current); };
   const groupKind = useRef(null);
   // A policy: { id, pages: [{ id, file, preview, quality }], file, preview (page 1),
@@ -127,12 +161,12 @@ export default function RateCheckPage() {
   const [textNudge, setTextNudge] = useState(false);
   const textNudgedRef = useRef(false);
   const [grouping, setGrouping] = useState(null); // File[]
-  const [fields, setFields] = useState({ firstName: '', phone: '', email: '', zip: '', housing: '' });
+  const [fields, setFields] = useState({ firstName: '', lastName: '', phone: '', email: '', zip: '', housing: '' });
   // Text-message verification of the mobile number. The verified number is kept for
   // the tab session so a reload (or a second policy) doesn't ask again.
-  const [otp, setOtp] = useState({ status: 'idle', code: '', error: '', sentAt: 0 }); // idle | sending | sent | verifying
   const [verifiedPhone, setVerifiedPhone] = useState(() => { try { return sessionStorage.getItem('rc_verified_phone') || ''; } catch { return ''; } });
-  const [, tick] = useState(0);
+  const [verifiedEmail, setVerifiedEmail] = useState(() => { try { return sessionStorage.getItem('rc_verified_email') || ''; } catch { return ''; } });
+  const [codeFor, setCodeFor] = useState(null); // 'phone' | 'email': the code pop-up that's open
   const [consent, setConsent] = useState(false);
   const [referralConsent, setReferralConsent] = useState(false);
   const [given, setGiven] = useState(null); // { consentGivenAt, referralConsentGivenAt } once sent this session
@@ -190,7 +224,7 @@ export default function RateCheckPage() {
         });
       }
       const f = session?.fields || draft?.fields;
-      if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, phone: f.phone || prev.phone, email: f.email || prev.email, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
+      if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, lastName: f.lastName || prev.lastName, phone: f.phone || prev.phone, email: f.email || prev.email, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
       // Sent here from the /save wizard: fill in what they already told it.
       const handed = takeScannerPrefill();
       if (handed) setFields(prev => ({
@@ -202,11 +236,26 @@ export default function RateCheckPage() {
       if (restored.length) {
         updateItems(() => restored);
         restored.filter(i => i.status === 'draft').forEach(i => i.pages.forEach(pg => checkQuality(pg.id, pg.file)));
+        restored.filter(i => i.status === 'draft').forEach(checkTypeRef.current);
       }
       setReady(true);
     })();
     return () => { cancelled = true; };
   }, [checkQuality, updateItems]);
+
+  // "Check My Rate" from another page (Drivers Ed, the menu) links to /?start=1: open the
+  // flow at its first step (or the policies already started), not the landing page.
+  const location = useLocation();
+  useEffect(() => {
+    if (!ready) return;
+    const q = new URLSearchParams(location.search);
+    if (q.get('start') !== '1') return;
+    persistUtmParams(); // keep where they came from (e.g. utm_source=drivers_ed)
+    q.delete('start');
+    window.history.replaceState(window.history.state, '', `${location.pathname}${q.toString() ? `?${q}` : ''}`);
+    setStep(s => (s === 'results' ? s : itemsRef.current.some(i => i.status === 'draft') ? 'policies' : 'pick'));
+    window.scrollTo(0, 0);
+  }, [ready, location.search, location.pathname]);
 
   // A producer's tagged link: pre-fill what they typed at the booth (draft wins).
   useEffect(() => {
@@ -247,8 +296,9 @@ export default function RateCheckPage() {
       try {
         const prepared = await preparePolicy(it.pages.map(pg => pg.file));
         const data = await submitWithRetry(() => submitRateCheck({
-          prepared, firstName: f.firstName, phone: f.phone.replace(/\D/g, ''), email: f.email, zip: f.zip,
-          housingSituation: f.housing, consentGivenAt: grant.consentGivenAt,
+          prepared, firstName: f.firstName, lastName: f.lastName, phone: f.phone.replace(/\D/g, ''), email: f.email.trim(),
+          zip: f.zip || policyZipRef.current || '', housingSituation: f.housing,
+          relationships: relationshipsFor(f), consentGivenAt: grant.consentGivenAt,
           referralConsentGivenAt: grant.referralConsentGivenAt,
           // Always the link's code: the server credits it (or ignores an expired one), so a failed lookup never loses the credit.
           inviteCode: inviteCode || null,
@@ -270,7 +320,41 @@ export default function RateCheckPage() {
     if (kind) policies = policies.map(pol => { rememberKind(pol.id, kind); return { ...pol, kind }; });
     updateItems(list => [...list, ...policies]);
     policies.forEach(pol => { saveDraftPages(pol); pol.pages.forEach(pg => checkQuality(pg.id, pg.file)); });
+    policies.forEach(checkType);
     if (step === 'results') setStep('policies');
+  };
+
+  // Is the file in a slot the kind of policy the slot is for? Checked as it's added, so a
+  // home policy in the Auto slot is caught here and never sent.
+  const patchItem = (id, change) => updateItems(list => list.map(i => (i.id === id ? { ...i, ...change } : i)));
+  const checkType = (pol) => {
+    const file = pol.pages?.[0]?.file;
+    if (!file) return;
+    patchItem(pol.id, { typeCheck: { state: 'checking' } });
+    checkPolicyType(file).then(r => {
+      const typeCheck = {
+        state: 'done', read: r?.policy_type || null, confidence: r?.confidence || 'low', zip: r?.zip || null,
+        holder: r?.insured_first_name || r?.insured_last_name
+          ? { first: r.insured_first_name || '', last: r.insured_last_name || '', co: Array.isArray(r.other_insured_names) ? r.other_insured_names : [] }
+          : null,
+        expires: r?.expiration_date || null, cars: Number.isInteger(r?.vehicle_count) ? r.vehicle_count : null,
+      };
+      const cur = itemsRef.current.find(i => i.id === pol.id);
+      if (!cur) return;
+      const wrong = mismatchOf({ ...cur, typeCheck });
+      // A clear mismatch moves itself to the right slot; the slot it was meant for
+      // reopens and says what to add. Only "not a policy" asks the customer.
+      if (wrong && wrong !== 'not_a_policy') {
+        patchItem(pol.id, { typeCheck, movedFrom: cur.kind });
+        moveKind(pol.id, wrong);
+      } else patchItem(pol.id, { typeCheck });
+    });
+  };
+  checkTypeRef.current = checkType;
+  const moveKind = (id, kind) => {
+    rememberKind(id, kind);
+    patchItem(id, { kind });
+    if (Array.isArray(wanted) && !wanted.includes(kind)) setWanted([...wanted, kind]);
   };
 
   const onPick = (e) => {
@@ -284,7 +368,21 @@ export default function RateCheckPage() {
     const have = new Set(itemsRef.current.flatMap(i => (i.pages || []).map(pg => fileKey(pg.file))));
     const fresh = picked.filter(f => !have.has(fileKey(f)));
     const kind = target?.kind || null;
-    if (!target?.mode && fresh.length < picked.length) setNotice(fresh.length ? 'Skipped a photo you already added.' : 'You already added that one.');
+    if (target?.mode !== 'retake' && fresh.length < picked.length) {
+      // Never silent: say so, point at where it already is, and show it.
+      const dupFile = picked.find(f => have.has(fileKey(f)));
+      const owner = itemsRef.current.find(i => (i.pages || []).some(pg => fileKey(pg.file) === fileKey(dupFile)));
+      const where = owner?.kind && KIND[owner.kind] ? ` It’s under ${KIND[owner.kind].label}.` : '';
+      setNotice(fresh.length
+        ? `Skipped ${picked.length - fresh.length === 1 ? 'a file' : `${picked.length - fresh.length} files`} you already added.${where}`
+        : `You already added that file.${where}`);
+      if (owner) {
+        setFlash(owner.id);
+        setTimeout(() => document.querySelector(`[data-policy="${owner.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+        setTimeout(() => setFlash(f => (f === owner.id ? null : f)), 2400);
+      }
+      navigator.vibrate?.([12, 60, 12]);
+    }
 
     if (target?.mode === 'retake') {
       const old = itemsRef.current.find(i => i.id === target.policyId);
@@ -399,8 +497,8 @@ export default function RateCheckPage() {
     itemsRef.current.forEach(i => i.preview && URL.revokeObjectURL(i.preview));
     await clearDraft();
     clearSession();
-    updateItems(() => []); setFields({ firstName: '', phone: '', email: '', zip: '', housing: '' });
-    setOtp({ status: 'idle', code: '', error: '', sentAt: 0 });
+    updateItems(() => []); setFields({ firstName: '', lastName: '', phone: '', email: '', zip: '', housing: '' });
+    setCodeFor(null);
     setConsent(false); setReferralConsent(false); setGiven(null); setResumed(false); setStep('policies');
     setWanted(null); kindsRef.current = {}; writeJSON(KINDS_KEY, null);
     window.scrollTo(0, 0);
@@ -410,44 +508,53 @@ export default function RateCheckPage() {
   const sent = items.filter(i => i.status !== 'draft');
   const phoneDigits = fields.phone.replace(/\D/g, '');
   const phoneVerified = !OTP_ENABLED || (phoneDigits.length === 10 && verifiedPhone === phoneDigits);
+  const emailClean = fields.email.trim().toLowerCase();
+  const emailVerified = !EMAIL_OTP_ENABLED || (isEmail(emailClean) && verifiedEmail === emailClean);
+  // ZIP comes from the policy (read as it's added); only asked when no policy shows one.
+  const policyZip = items.map(d => d.typeCheck?.zip).find(z => /^\d{5}$/.test(z || '')) || '';
+  policyZipRef.current = policyZip;
+  const needZip = !policyZip && !drafts.some(d => d.typeCheck?.state === 'checking');
+  // The policyholder, from the first policy that shows a name: pre-fills the name fields,
+  // and when they type a different name we ask how they're related (one tap, optional).
+  const holder = items.map(d => d.typeCheck?.holder).find(h => h && (h.first || h.last)) || null;
+  holderRef.current = holder;
+  const holderName = holder ? [holder.first, holder.last].filter(Boolean).join(' ') : '';
+  const askHolder = !!holder && !!fields.firstName.trim() && !!fields.lastName.trim() && !isPolicyholder(fields.firstName, fields.lastName, holder);
+  const partnerFirst = invite?.promoter_name || '';
+  const askReferrer = !!partnerFirst || !!getUtmParams()?.referral_code;
   const missing = [
     !fields.firstName.trim() && 'your first name',
+    !fields.lastName.trim() && 'your last name',
     phoneDigits.length !== 10 && 'your mobile number',
+    phoneDigits.length === 10 && !phoneVerified && 'a verified mobile number',
     !isEmail(fields.email) && 'your email',
-    !/^\d{5}$/.test(fields.zip) && 'your ZIP code',
-    !fields.housing && 'where you live',
-    phoneDigits.length === 10 && !phoneVerified && 'the code we texted you',
+    isEmail(fields.email) && !emailVerified && 'a verified email',
+    needZip && !/^\d{5}$/.test(fields.zip) && 'your ZIP code',
   ].filter(Boolean);
   const contactOk = missing.length === 0;
 
-  // ── Mobile number verification ──
-  const requestCode = async () => {
-    setOtp(o => ({ ...o, status: 'sending', error: '' }));
-    try {
-      await sendOtp(phoneDigits);
-      setOtp({ status: 'sent', code: '', error: '', sentAt: Date.now() });
-    } catch (err) {
-      setOtp(o => ({ ...o, status: o.sentAt ? 'sent' : 'idle', error: err.message }));
-    }
+  // What the upload says about who's who.
+  const relationshipsFor = (f) => {
+    const x = relRef.current; const h = holderRef.current;
+    const mine = !h || isPolicyholder(f.firstName, f.lastName, h);
+    return {
+      policyholderName: h ? [h.first, h.last].filter(Boolean).join(' ') : null,
+      contact: mine ? (h ? 'self' : null) : (x.holder || null),
+      contactOther: !mine && x.holder === 'other' ? normalizeOther(x.holderOther) || null : null,
+      referrer: x.referrer || null,
+      referrerOther: x.referrer === 'other' ? normalizeOther(x.referrerOther) || null : null,
+    };
   };
-  const checkCode = async (code) => {
-    setOtp(o => ({ ...o, status: 'verifying', error: '' }));
-    try {
-      await verifyOtp(phoneDigits, code);
-      try { sessionStorage.setItem('rc_verified_phone', phoneDigits); } catch { /* private mode */ }
-      setVerifiedPhone(phoneDigits);
-      setOtp({ status: 'idle', code: '', error: '', sentAt: 0 });
-      navigator.vibrate?.(8);
-    } catch (err) {
-      setOtp(o => ({ ...o, status: 'sent', error: err.message }));
-    }
+
+  // ── Verified by code: the pop-up reports back here ──
+  const onCodeVerified = (kind) => {
+    const key = kind === 'phone' ? 'rc_verified_phone' : 'rc_verified_email';
+    const value = kind === 'phone' ? phoneDigits : emailClean;
+    try { sessionStorage.setItem(key, value); } catch { /* private mode */ }
+    if (kind === 'phone') setVerifiedPhone(value); else setVerifiedEmail(value);
+    setCodeFor(null);
+    navigator.vibrate?.(8);
   };
-  const canResend = Date.now() - otp.sentAt > 30_000;
-  useEffect(() => {
-    if (otp.status !== 'sent' || canResend) return undefined;
-    const t = setTimeout(() => tick(n => n + 1), 30_500 - (Date.now() - otp.sentAt));
-    return () => clearTimeout(t);
-  }, [otp.status, otp.sentAt, canResend]);
 
   const submit = (over = {}) => {
     const textOk = over.consent ?? consent;
@@ -479,12 +586,12 @@ export default function RateCheckPage() {
       )}
       <span className="min-w-0">
         <span className="block truncate font-bold text-[#0F2D6B]">{invite.promoter_full_name || invite.promoter_name}</span>
-        <span className="block text-xs text-slate-600">shared this with you</span>
+        <span className="block text-xs text-slate-600"><T k="rc.flow.shared-this-with-you">shared this with you</T></span>
       </span>
     </div>
   ) : invite ? (
     <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
-      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : <T k="rc.flow.your-allstate-agent">Your Allstate agent</T>}{' '}<T k="rc.flow.sent-you-this-link">sent you this link</T>
       {invite.event_name ? ` after ${invite.event_name}` : ''}.
     </p>
   ) : null;
@@ -494,7 +601,7 @@ export default function RateCheckPage() {
       initials={invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()} />
   ) : invite ? (
     <p className="mb-6 inline-block rounded-xl bg-white/10 px-3 py-2 text-sm text-white ring-1 ring-white/20">
-      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : <T k="rc.flow.your-allstate-agent">Your Allstate agent</T>}{' '}<T k="rc.flow.sent-you-this-link">sent you this link</T>
       {invite.event_name ? ` after ${invite.event_name}` : ''}.
     </p>
   ) : null;
@@ -503,13 +610,13 @@ export default function RateCheckPage() {
     <>
       {inviteExpired && (
         <Dismissible id="rc.invite-expired" light className="mb-4">
-          <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">That link has expired, but you can still check your rate below.</p>
+          <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700"><T k="rc.flow.that-link-has-expired-but">That link has expired, but you can still check your rate below.</T></p>
         </Dismissible>
       )}
       {resumed && step === 'policies' && (
         <p className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          <span>Welcome back — we kept your progress.</span>
-          <button type="button" onClick={startOver} className="shrink-0 font-semibold underline">Start over</button>
+          <span><T k="rc.flow.welcome-back-we-kept-your">Welcome back — we kept your progress.</T></span>
+          <button type="button" onClick={startOver} className="shrink-0 font-semibold underline"><T k="rc.flow.start-over">Start Over</T></button>
         </p>
       )}
     </>
@@ -538,15 +645,15 @@ export default function RateCheckPage() {
       policySlide,
       {
         key: 'more',
-        label: 'Add more',
+        label: 'Add More',
         untitled: true,
         content: (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <p className="font-semibold text-slate-900">Got another policy?</p>
-            <p className="mt-1 text-sm text-slate-600">A second car, your home, a boat. Bundling often saves the most.</p>
+            <p className="font-semibold text-slate-900"><T k="rc.flow.got-another-policy">Got another policy?</T></p>
+            <p className="mt-1 text-sm text-slate-600"><T k="rc.flow.a-second-car-your-home">A second car, your home, a boat. Bundling often saves the most.</T></p>
             <button type="button" onClick={() => { setStep('policies'); window.scrollTo(0, 0); }}
               className="qb qb-blue qb-md mt-3">
-              <Plus className="h-5 w-5" aria-hidden="true" /> Add more policies
+              <Plus className="h-5 w-5" aria-hidden="true" />{' '}<T k="rc.flow.add-more-policies">Add More Policies</T>
             </button>
           </div>
         ),
@@ -559,7 +666,7 @@ export default function RateCheckPage() {
         <div role="status" aria-live="polite" className="text-center">
           {!reading && <DrawnCheck />}
           <h1 className={`text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] ${reading ? '' : 'qc-rise'}`} style={reading ? undefined : { animationDelay: '150ms' }}>
-            {reading ? <T k="rc.results.reading">Reading your policies…</T> : <T k="rc.results.done">Got it — Cam is on it.</T>}
+            {reading ? <T k="rc.results.reading">Reading Your Policies…</T> : <T k="rc.results.done">Got it — Cam is on it.</T>}
           </h1>
           <p className={`mx-auto mt-2 max-w-xs text-slate-600 ${reading ? '' : 'qc-rise'}`} style={reading ? undefined : { animationDelay: '230ms' }}>
             {reading
@@ -574,10 +681,10 @@ export default function RateCheckPage() {
 
         {priced.length > 0 && (
           <div className="qc-rise mt-5 rounded-2xl px-5 py-4 text-center text-white shadow-lg shadow-blue-900/20" style={{ background: HERO_BG, animationDelay: '320ms' }}>
-            <p className="text-sm text-blue-100">You pay today</p>
+            <p className="text-sm text-blue-100"><T k="rc.flow.you-pay-today">You pay today</T></p>
             <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span className="sr-only" data-testid="rc-total">{money(total)}</span><span aria-hidden="true"><CountUp value={total} format={money} /></span><span className="text-lg font-semibold text-blue-100"> /yr</span></p>
             <p className="mt-1 text-sm text-blue-100">
-              across {priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''} · the price to beat
+              <T k="rc.flow.across">across</T>{' '}{priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''}{' '}<T k="rc.flow.the-price-to-beat">· the price to beat</T>
             </p>
           </div>
         )}
@@ -591,7 +698,7 @@ export default function RateCheckPage() {
 
         {!reading && (
           <p className="mt-5 text-center text-sm text-slate-500">
-            Not {fields.firstName || 'you'}? <button type="button" onClick={startOver} className="font-semibold underline">Start over</button>
+            <T k="rc.flow.not">Not</T>{' '}{fields.firstName || 'you'}? <button type="button" onClick={startOver} className="font-semibold underline"><T k="rc.flow.start-over">Start Over</T></button>
           </p>
         )}
       </Shell>
@@ -601,7 +708,7 @@ export default function RateCheckPage() {
   // ── Guided step 1: which policies to check ──
   if (step === 'pick') {
     return (
-      <Shell step={1}>
+      <Shell step={1} noFooter>
         <PickPolicies initial={wanted || []} onBack={() => { setStep('policies'); window.scrollTo(0, 0); }}
           onContinue={(list) => { setWanted(list); setStep('policies'); window.scrollTo(0, 0); }} />
       </Shell>
@@ -610,6 +717,10 @@ export default function RateCheckPage() {
 
   // ── Step 2: contact ──
   if (step === 'you') {
+    if (!namePrefilled.current && holder && !fields.firstName && !fields.lastName) {
+      namePrefilled.current = true;
+      queueMicrotask(() => setFields(f => (f.firstName || f.lastName ? f : { ...f, firstName: cleanName(holder.first), lastName: cleanName(holder.last) })));
+    }
     const canSend = contactOk && drafts.length > 0;
     const send = () => {
       if (!canSend) return;
@@ -620,19 +731,19 @@ export default function RateCheckPage() {
       ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}.`
       : '';
     return (
-      <Shell step={3} bar={
+      <Shell step={3} noFooter bar={
         <ActionBar hint={canSend ? null : hint}>
           <button type="button" onClick={send} disabled={!canSend} className={primaryBtn}>
-            {drafts.length > 1 ? `Check my ${drafts.length} policies` : 'Check my rate'}
+            {drafts.length > 1 ? `Check My ${drafts.length} Policies` : 'Check My Rate'}
             <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
           </button>
         </ActionBar>
       }>
         {banner}
         <button type="button" onClick={() => setStep('policies')} className="-ml-1 mb-3 inline-flex items-center gap-1 text-sm font-semibold text-slate-600">
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {drafts.length === 1 ? '1 policy' : `${drafts.length} policies`}
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {drafts.length === 1 ? '1 Policy' : `${drafts.length} Policies`}
         </button>
-        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.contact.heading">How can Cam reach you?</T></h1>
+        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.contact.heading">How Can Cam Reach You?</T></h1>
         <p className="mt-2 text-slate-600"><T k="rc.contact.line">Cam’s team only reaches out if we can get you a cheaper rate. No call centers, ever.</T></p>
 
         {textNudge && (
@@ -640,89 +751,77 @@ export default function RateCheckPage() {
             onClick={(e) => { if (e.target === e.currentTarget) setTextNudge(false); }}>
             <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><MessageSquare className="h-6 w-6" aria-hidden="true" /></span>
-              <h2 id="rc-text-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.textnudge.title">Want a text when your quote is ready?</T></h2>
+              <h2 id="rc-text-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.textnudge.title">Want a Text When Your Quote Is Ready?</T></h2>
               <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.textnudge.line">You left the text box unchecked. Check it and we’ll text you the moment your quote is ready.</T></p>
               <button type="button" onClick={() => { setTextNudge(false); setConsent(true); submit({ consent: true }); }}
                 className="qb qb-blue qb-lg mt-5 w-full">
-                <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textnudge.yes">Text me</T>
+                <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textnudge.yes">Text Me</T>
               </button>
               <button type="button" onClick={() => { setTextNudge(false); submit(); }}
                 className="qb qb-md mt-2 w-full font-semibold text-slate-600 active:bg-slate-50">
-                <T k="rc.textnudge.no">No thanks, send</T>
+                <T k="rc.textnudge.no">No Thanks, Send</T>
               </button>
               <p className="mt-2 text-center text-[11px] leading-snug text-slate-400" data-copy="fixed">{CONSENT.fine.replace('By checking this', 'By tapping “Text me”')}</p>
             </div>
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="mt-6 space-y-4" noValidate>
-          <Field label="First name" htmlFor="rc-first">
-            <input id="rc-first" autoComplete="given-name" value={fields.firstName} maxLength={60} required
-              onChange={e => setFields(f => ({ ...f, firstName: e.target.value }))} className={inputCls} />
-          </Field>
-          <Field label="Mobile number" htmlFor="rc-phone">
-            <input id="rc-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" required
-              value={fields.phone} className={inputCls}
-              onChange={e => { setFields(f => ({ ...f, phone: formatPhoneInput(e.target.value) })); setOtp({ status: 'idle', code: '', error: '', sentAt: 0 }); }} />
-          </Field>
-          {OTP_ENABLED && phoneDigits.length === 10 && (phoneVerified ? (
-            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700" role="status">
-              <Check className="h-4 w-4" aria-hidden="true" /> Number verified
-            </p>
-          ) : !otp.sentAt ? (
-            <div>
-              <button type="button" onClick={requestCode} disabled={otp.status === 'sending'}
-                className="qb qb-outline qb-md w-full">
-                {otp.status === 'sending' ? 'Sending…' : 'Text me a code'}
-              </button>
-              <p className="mt-1.5 px-1 text-xs text-slate-500">We text a 6-digit code to confirm it&apos;s you.</p>
-              {otp.error && <p className="mt-1 px-1 text-sm text-red-600" role="alert">{otp.error}</p>}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <label htmlFor="rc-code" className="block text-sm font-semibold text-slate-800">Enter the 6-digit code we texted to {fields.phone}</label>
-              <div className="mt-2 flex gap-2">
-                <input id="rc-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="123456" value={otp.code}
-                  className={`${inputCls} tracking-[0.25em]`}
-                  onChange={e => {
-                    const code = e.target.value.replace(/\D/g, '').slice(0, 6);
-                    setOtp(o => ({ ...o, code, error: '' }));
-                    if (code.length === 6) checkCode(code);
-                  }} />
-                <button type="button" onClick={() => checkCode(otp.code)} disabled={otp.code.length !== 6 || otp.status === 'verifying'}
-                  className="qb qb-blue qb-md shrink-0">
-                  {otp.status === 'verifying' ? 'Checking…' : 'Verify'}
-                </button>
-              </div>
-              {otp.error && <p className="mt-2 text-sm text-red-600" role="alert">{otp.error}</p>}
-              <button type="button" onClick={requestCode} disabled={!canResend || otp.status === 'sending'}
-                className="mt-2 text-xs font-semibold text-slate-600 underline disabled:no-underline disabled:opacity-60">
-                {otp.status === 'sending' ? 'Sending…' : canResend ? 'Send a new code' : 'Send a new code in 30 seconds'}
-              </button>
-            </div>
-          ))}
-          <Field label="Email" htmlFor="rc-email">
-            <input id="rc-email" type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" required
-              value={fields.email} onChange={e => setFields(f => ({ ...f, email: e.target.value }))} className={inputCls} />
-          </Field>
-          <div className="grid grid-cols-[7.5rem_1fr] gap-3">
-            <Field label="ZIP code" htmlFor="rc-zip">
-              <input id="rc-zip" inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="30094" required
-                value={fields.zip} onChange={e => setFields(f => ({ ...f, zip: e.target.value.replace(/\D/g, '').slice(0, 5) }))} className={inputCls} />
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="mt-7 space-y-5" noValidate>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={<T k="rc.contact.first">First Name</T>} htmlFor="rc-first">
+              <input id="rc-first" autoComplete="given-name" autoCapitalize="words" value={fields.firstName} maxLength={60} required
+                onChange={e => setFields(f => ({ ...f, firstName: cleanName(e.target.value) }))} className={inputCls} />
             </Field>
-            <Field label="Where do you live?" htmlFor="rc-housing">
-              <select id="rc-housing" value={fields.housing} required onChange={e => setFields(f => ({ ...f, housing: e.target.value }))} className={inputCls}>
-                <option value="">Choose one</option>
-                {HOUSING_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+            <Field label={<T k="rc.contact.last">Last Name</T>} htmlFor="rc-last">
+              <input id="rc-last" autoComplete="family-name" autoCapitalize="words" value={fields.lastName} maxLength={60} required
+                onChange={e => setFields(f => ({ ...f, lastName: cleanName(e.target.value) }))} className={inputCls} />
             </Field>
           </div>
+          {askHolder && (
+            <RelationPicker id="rc-rel-holder" legend={<><span className="font-semibold text-slate-900">{holderName}</span> <T k="rc.rel.holder">is your…</T></>}
+              options={POLICYHOLDER_RELATIONSHIPS} value={rel.holder} other={rel.holderOther}
+              onChange={(v) => setRel(x => ({ ...x, holder: v }))} onOther={(t) => setRel(x => ({ ...x, holderOther: t }))} />
+          )}
+          <Field label={<T k="rc.contact.mobile">Mobile Number</T>} htmlFor="rc-phone">
+            <VerifyField verified={OTP_ENABLED && phoneDigits.length === 10 && phoneVerified}
+              canVerify={OTP_ENABLED && phoneDigits.length === 10 && !phoneVerified} onVerify={() => setCodeFor('phone')}>
+              <input id="rc-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" required
+                value={fields.phone} className={`${inputCls} pr-28`}
+                onChange={e => setFields(f => ({ ...f, phone: formatPhoneInput(e.target.value) }))} />
+            </VerifyField>
+          </Field>
+          <Field label={<T k="rc.contact.email">Email</T>} htmlFor="rc-email">
+            <VerifyField verified={EMAIL_OTP_ENABLED && isEmail(emailClean) && emailVerified}
+              canVerify={EMAIL_OTP_ENABLED && isEmail(emailClean) && !emailVerified} onVerify={() => setCodeFor('email')}>
+              <input id="rc-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" placeholder="you@example.com" required
+                value={fields.email} className={`${inputCls} pr-28`}
+                onChange={e => setFields(f => ({ ...f, email: e.target.value.replace(/\s/g, '') }))} />
+            </VerifyField>
+            {emailFix(fields.email) && (
+              <button type="button" onClick={() => setFields(f => ({ ...f, email: emailFix(f.email) }))}
+                className="mt-1.5 px-1 text-left text-sm text-slate-600">
+                <T k="rc.contact.didyoumean">Did you mean</T> <span className="font-semibold text-blue-700 underline underline-offset-2">{emailFix(fields.email)}</span>?
+              </button>
+            )}
+          </Field>
+          {needZip && (
+            <Field label={<T k="rc.contact.zip">ZIP Code</T>} htmlFor="rc-zip">
+              <input id="rc-zip" inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="30094" required
+                value={fields.zip} onChange={e => setFields(f => ({ ...f, zip: e.target.value.replace(/\D/g, '').slice(0, 5) }))} className={`${inputCls} max-w-[9rem]`} />
+            </Field>
+          )}
+
+          {askReferrer && (
+            <RelationPicker id="rc-rel-ref" legend={<><T k="rc.rel.ref">How do you know</T> <span className="font-semibold text-slate-900">{partnerFirst || <T k="rc.rel.ref-who">the person who sent you</T>}</span>? <span className="text-slate-400">· <T k="rc.flow.optional">Optional</T></span></>}
+              options={REFERRER_RELATIONSHIPS} value={rel.referrer} other={rel.referrerOther}
+              onChange={(v) => setRel(x => ({ ...x, referrer: v }))} onOther={(t) => setRel(x => ({ ...x, referrerOther: t }))} />
+          )}
 
           <fieldset className="pt-2">
-            <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Optional</legend>
+            <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="rc.flow.optional">Optional</T></legend>
             <div className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
               <Choice checked={consent} onChange={setConsent} {...CONSENT}>
-                {' '}<Link to="/ratecheck-privacy#sms-terms" className="underline">Text terms</Link>
-                {' · '}<Link to="/privacy" className="underline">Privacy</Link>
+                {' '}<Link to="/ratecheck-privacy#sms-terms" className="underline"><T k="rc.flow.text-terms">Text terms</T></Link>
+                {' · '}<Link to="/privacy" className="underline"><T k="rc.flow.privacy">Privacy</T></Link>
               </Choice>
               <Choice checked={referralConsent} onChange={setReferralConsent} {...REFERRAL_CONSENT} />
             </div>
@@ -732,6 +831,12 @@ export default function RateCheckPage() {
           </p>
           <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
         </form>
+        {codeFor && (
+          <CodeSheet channel={codeFor} target={codeFor === 'phone' ? fields.phone : emailClean}
+            send={codeFor === 'phone' ? () => sendOtp(phoneDigits) : () => sendEmailOtp(emailClean)}
+            check={codeFor === 'phone' ? (c) => verifyOtp(phoneDigits, c) : (c) => verifyEmailOtp(emailClean, c)}
+            onVerified={() => onCodeVerified(codeFor)} onClose={() => setCodeFor(null)} />
+        )}
       </Shell>
     );
   }
@@ -739,12 +844,17 @@ export default function RateCheckPage() {
   // ── Step 2: policies (a checklist of the picked types when guided) ──
   const returning = sent.length > 0 && !!given;
   const guided = !returning && Array.isArray(wanted) && wanted.length > 0;
-  const addedKinds = guided ? wanted.filter(k => drafts.some(d => d.kind === k)) : [];
+  const unsure = drafts.filter(d => mismatchOf(d) || concernsOf(d).length);
+  const checking = drafts.some(d => d.typeCheck?.state === 'checking');
+  const addedKinds = guided ? wanted.filter(k => drafts.some(d => d.kind === k && !mismatchOf(d))) : [];
   const allAdded = guided && addedKinds.length === wanted.length;
   const draftCard = (it) => {
     const n = drafts.indexOf(it);
     return (
-      <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id}
+      <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id} flash={flash === it.id}
+        mismatch={mismatchOf(it)} onKeep={() => patchItem(it.id, { typeOk: true })}
+        onConcernOk={(k) => patchItem(it.id, k === 'expired' ? { expiredOk: true } : { carsOk: true })}
+        onMovedOk={() => patchItem(it.id, { movedSeen: true })}
         onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
         onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
         onRemove={() => removeItem(it.id)}
@@ -762,19 +872,23 @@ export default function RateCheckPage() {
     window.scrollTo(0, 0);
   };
   return (
-    <Shell step={2} wide={drafts.length === 0 && !returning && !guided} bar={guided ? (
+    <Shell step={2} wide={drafts.length === 0 && !returning && !guided} noFooter={!(drafts.length === 0 && !returning && !guided)} bar={guided ? (
       <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
         <div className="flex min-w-0 flex-1 flex-col items-stretch">
-          {allAdded ? (
+          {unsure.length > 0 || checking ? (
+            <button type="button" disabled className={primaryBtn}>
+              {unsure.length ? <T k="rc.check.fix-first">Answer the Question Above</T> : <><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> <T k="rc.check.checking">Checking Your Policies…</T></>}
+            </button>
+          ) : allAdded ? (
             <button type="button" onClick={() => goNext()} className={primaryBtn}>
               <T k="rc.guided.continue">Continue</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
             </button>
           ) : (
             <>
-              <button type="button" disabled className={primaryBtn}>{addedKinds.length} of {wanted.length} added</button>
+              <button type="button" disabled className={primaryBtn}>{addedKinds.length} of {wanted.length}{' '}<T k="rc.flow.added">Added</T></button>
               {drafts.length > 0 && (
                 <button type="button" onClick={() => goNext()} className="mt-1.5 py-1 text-sm font-semibold text-slate-600 underline underline-offset-4">
-                  <T k="rc.guided.partial">Continue with what I have</T>
+                  <T k="rc.guided.partial">Continue With What I Have</T>
                 </button>
               )}
             </>
@@ -787,8 +901,8 @@ export default function RateCheckPage() {
           className="qb qb-outline h-14 w-14 shrink-0 p-0">
           <Plus className="h-6 w-6" aria-hidden="true" />
         </button>
-        <button type="button" onClick={() => goNext()} className={primaryBtn}>
-          {returning ? (drafts.length === 1 ? 'Send it' : `Send all ${drafts.length}`) : 'Continue'}
+        <button type="button" onClick={() => goNext()} disabled={unsure.length > 0} className={primaryBtn}>
+          {unsure.length > 0 ? <T k="rc.check.fix-first">Answer the Question Above</T> : returning ? (drafts.length === 1 ? 'Send It' : `Send All ${drafts.length}`) : 'Continue'}
           <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-sm tabular-nums">{drafts.length}</span>
         </button>
       </ActionBar>
@@ -799,15 +913,15 @@ export default function RateCheckPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setMoreNudge(false); }}>
           <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Layers className="h-6 w-6" aria-hidden="true" /></span>
-            <h2 id="rc-more-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.more.title">Only one policy?</T></h2>
+            <h2 id="rc-more-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"><T k="rc.more.title">Only One Policy?</T></h2>
             <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600"><T k="rc.more.line">Add your home, renters or another car too. Checking them together usually finds the biggest savings.</T></p>
             <button type="button" onClick={() => { setMoreNudge(false); setAskingMore(null); openFiles(); }}
               className="qb qb-blue qb-lg mt-5 w-full">
-              <Plus className="h-5 w-5" aria-hidden="true" /> <T k="rc.more.add">Add another policy</T>
+              <Plus className="h-5 w-5" aria-hidden="true" /> <T k="rc.more.add">Add Another Policy</T>
             </button>
             <button type="button" onClick={() => goNext(true)}
               className="qb qb-md mt-2 w-full font-semibold text-slate-600 active:bg-slate-50">
-              <T k="rc.more.skip">Continue with one</T>
+              <T k="rc.more.skip">Continue With One</T>
             </button>
           </div>
         </div>
@@ -817,19 +931,21 @@ export default function RateCheckPage() {
         <p className="mb-4 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
           <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
           {sent.length === 1 ? '1 policy already sent.' : `${sent.length} policies already sent.`}
-          <button type="button" onClick={() => setStep('results')} className="ml-auto font-semibold underline">View</button>
+          <button type="button" onClick={() => setStep('results')} className="ml-auto font-semibold underline"><T k="rc.flow.view">View</T></button>
         </p>
       )}
 
       {guided ? (
         <>
-          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.guided.title">Upload your policies</T></h1>
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.guided.title">Upload Your Policies</T></h1>
           <p className="mt-1.5 text-[15px] text-slate-600"><T k="rc.guided.line">The page that lists your coverages and price. A PDF, photos or screenshots all work.</T></p>
           <ul className="mt-5 space-y-3">
             {wanted.map(k => (
               <KindSlot key={k} kind={k} drafts={drafts.filter(d => d.kind === k)} renderDraft={draftCard}
+                movedAway={drafts.find(d => d.movedFrom === k && d.kind !== k)?.kind || null}
                 onUpload={() => { setAskingMore(null); openFiles({ kind: k }); }}
-                onCamera={() => { setAskingMore(null); openCamera({ kind: k }); }} />
+                onCamera={() => { setAskingMore(null); openCamera({ kind: k }); }}
+                onRemoveKind={wanted.length > 1 ? () => setWanted(wanted.filter(w => w !== k)) : null} />
             ))}
             {drafts.some(d => !d.kind || !wanted.includes(d.kind)) && (
               <li className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -840,24 +956,24 @@ export default function RateCheckPage() {
           </ul>
           <button type="button" onClick={() => { setStep('pick'); window.scrollTo(0, 0); }}
             className="mt-4 inline-flex w-full items-center justify-center gap-1.5 py-2 font-semibold text-blue-700">
-            <Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.guided.addtype">Add another type of policy</T>
+            <Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.guided.addtype">Add Another Type of Policy</T>
           </button>
         </>
       ) : drafts.length === 0 ? (
         returning ? (
           <>
-            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add another policy</h1>
+            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.flow.add-another-policy">Add Another Policy</T></h1>
             <button type="button" onClick={() => openFiles()}
               className="qb qb-blue mt-6 w-full flex-col gap-3 rounded-3xl px-6 py-8">
               <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
                 <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
               </span>
-              <span className="text-xl font-bold"><T k="rc.upload.title">Upload my policy</T></span>
-              <span className="text-sm text-blue-100"><T k="rc.upload.line">PDF, photos or screenshots</T></span>
+              <span className="text-xl font-bold"><T k="rc.upload.title">Upload My Policy</T></span>
+              <span className="text-sm text-blue-100"><T k="rc.upload.line">PDF, Photos or Screenshots</T></span>
             </button>
             <button type="button" onClick={() => openCamera()}
               className="qb qb-outline qb-lg mt-3 w-full flex-col gap-0 font-normal text-slate-700">
-              <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Use my camera instead</T></span>
+              <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Use My Camera Instead</T></span>
               <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Get every page of your policy</T></span>
             </button>
           </>
@@ -869,12 +985,12 @@ export default function RateCheckPage() {
       ) : (
         <>
           <div className="flex items-end justify-between">
-            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Your policies</h1>
+            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.flow.your-policies">Your Policies</T></h1>
             <span className="pb-1 text-sm font-semibold text-slate-500 tabular-nums">
               {drafts.length === 1 ? '1 added' : `${drafts.length} added`}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-600">Include every page of each policy. Add every auto, home and umbrella policy you have.</p>
+          <p className="mt-1 text-sm text-slate-600"><T k="rc.flow.include-every-page-of-each">Include every page of each policy. Add every auto, home and umbrella policy you have.</T></p>
 
           <ul className="mt-5 space-y-3">
             {drafts.map((it, n) => (
@@ -887,7 +1003,7 @@ export default function RateCheckPage() {
             <li className="flex gap-2">
               <button type="button" onClick={newPolicyPhoto}
                 className="qb qb-lg flex-1 border-2 border-dashed border-blue-300 bg-blue-50/60 font-semibold text-blue-800 active:bg-blue-100">
-                <Camera className="h-5 w-5" aria-hidden="true" /> Add another policy
+                <Camera className="h-5 w-5" aria-hidden="true" />{' '}<T k="rc.flow.add-another-policy">Add Another Policy</T>
               </button>
               <button type="button" onClick={() => { setAskingMore(null); openFiles(); }} aria-label="Upload more"
                 className="qb qb-outline w-16 p-0">
@@ -898,7 +1014,11 @@ export default function RateCheckPage() {
         </>
       )}
 
-      {notice && <p className="mt-4 rounded-xl bg-[#0F2D6B] px-3 py-2 text-center text-sm text-white" role="status">{notice}</p>}
+      {notice && (
+        <p className="fixed inset-x-0 bottom-32 z-40 mx-auto flex w-fit max-w-[92%] items-center gap-2 rounded-2xl bg-[#0F2D6B] px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-blue-950/40" role="alert">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[#F5D061]" aria-hidden="true" /> {notice}
+        </p>
+      )}
       {grouping && <GroupSheet count={grouping.length} onOne={() => groupPicked('one')} onSeparate={() => groupPicked('separate')} onMix={() => groupPicked('mix')} onCancel={() => setGrouping(null)} />}
     </Shell>
   );
@@ -911,9 +1031,9 @@ function PickPolicies({ initial, onContinue, onBack }) {
   return (
     <>
       <button type="button" onClick={onBack} className="-ml-1 mb-3 inline-flex items-center gap-1 text-sm font-semibold text-slate-600">
-        <ChevronLeft className="h-4 w-4" aria-hidden="true" /> Back
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.back">Back</T>
       </button>
-      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.pick.title">What should we check?</T></h1>
+      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.pick.title">What Should We Check?</T></h1>
       <p className="mt-2 text-[15px] leading-relaxed text-slate-600"><T k="rc.pick.line">Pick every policy you have. Checking them together usually finds the biggest savings.</T></p>
       <div className="mt-5 grid grid-cols-2 gap-2.5" role="group" aria-label="Policies to check">
         {KINDS.map(([k, label, Icon]) => {
@@ -921,7 +1041,7 @@ function PickPolicies({ initial, onContinue, onBack }) {
           return (
             <button key={k} type="button" onClick={() => toggle(k)} aria-pressed={on}
               className={`relative flex items-center gap-2.5 rounded-2xl border-[1.5px] px-3.5 py-3.5 text-left text-[15px] font-bold text-[#0F2D6B] transition ${on ? 'border-blue-700 bg-blue-50 shadow-[0_0_0_3px_rgba(29,78,216,0.12)]' : 'border-slate-200 bg-white active:bg-slate-50'}`}>
-              <Icon className="h-5 w-5 shrink-0 text-blue-700" aria-hidden="true" /> {label}
+              <Icon className="h-5 w-5 shrink-0 text-blue-700" aria-hidden="true" /> <T k={`rc.kind.${k}`}>{label}</T>
               {on && <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-700 text-white"><Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" /></span>}
             </button>
           );
@@ -929,7 +1049,7 @@ function PickPolicies({ initial, onContinue, onBack }) {
       </div>
       <ActionBar>
         <button type="button" disabled={!sel.length} onClick={() => onContinue(KINDS.map(([k]) => k).filter(k => sel.includes(k)))} className={primaryBtn}>
-          {sel.length ? `Continue · ${sel.length} ${sel.length === 1 ? 'policy' : 'policies'}` : 'Pick at least one'}
+          {sel.length ? <><T k="rc.pick.continue">Continue</T> · {sel.length} {sel.length === 1 ? <T k="rc.pick.policy">Policy</T> : <T k="rc.pick.policies">Policies</T>}</> : <T k="rc.pick.none">Pick At Least One</T>}
           {sel.length > 0 && <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />}
         </button>
       </ActionBar>
@@ -939,37 +1059,53 @@ function PickPolicies({ initial, onContinue, onBack }) {
 
 // Guided step 2: one slot per picked type. Empty: upload or take photos, plus where to
 // find it. Filled: the policy's card(s), and room for another of the same type.
-function KindSlot({ kind, drafts, renderDraft, onUpload, onCamera }) {
+function KindSlot({ kind, drafts, renderDraft, movedAway, onUpload, onCamera, onRemoveKind }) {
   const { label, Icon } = KIND[kind] || KIND.other;
   const [help, setHelp] = useState(false);
   const done = drafts.length > 0;
+  const lower = (k) => (KIND[k]?.label || '').toLowerCase();
   return (
-    <li className={`rounded-2xl border-[1.5px] bg-white p-4 ${done ? 'border-blue-200' : 'border-slate-200'}`}>
+    <li className={`rounded-3xl bg-white p-4 shadow-sm ring-1 ${done ? 'ring-blue-200' : 'ring-slate-200'}`}>
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Icon className="h-5 w-5" aria-hidden="true" /></span>
-        <div className="min-w-0 flex-1">
-          <p className="font-bold text-[#0F2D6B]">{label}</p>
-          <p className="text-[13px] text-slate-500">{done ? (drafts.length === 1 ? 'Added' : `${drafts.length} policies added`) : 'Not added yet'}</p>
-        </div>
-        {done && <span className="qc-badge qc-badge-sm shrink-0" aria-label="Added"><Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /></span>}
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+        <p className="min-w-0 flex-1 text-[17px] font-bold text-[#0F2D6B]"><T k={`rc.kind.${kind}`}>{label}</T></p>
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${done ? 'bg-blue-50 text-blue-800' : 'bg-slate-100 text-slate-600'}`}>
+          {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-400" aria-hidden="true" />}
+          {done ? (drafts.length === 1 ? <T k="rc.slot.added">Added</T> : <>{drafts.length} <T k="rc.slot.added-many">policies added</T></>) : <T k="rc.slot.not-added">Not added yet</T>}
+        </span>
+        {!done && onRemoveKind && (
+          <button type="button" onClick={onRemoveKind} aria-label={`I don't have ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()} policy`}
+            className="-mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
       </div>
+      {!done && movedAway && (
+        <p className="mt-3 flex items-start gap-2 rounded-2xl bg-blue-50 px-3 py-2.5 text-sm text-[#0F2D6B]" role="status">
+          <Layers className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" />
+          <span><T k="rc.slot.moved-away">That file was</T> {/^[aeiou]/i.test(KIND[movedAway]?.label || '') ? 'an' : 'a'} {lower(movedAway)} <T k="rc.slot.moved-away-2">policy. Add your</T> {lower(kind)} <T k="rc.slot.moved-away-3">policy here.</T></span>
+        </p>
+      )}
       {done ? (
         <>
           <ul className="mt-3 space-y-2">{drafts.map(renderDraft)}</ul>
-          <button type="button" onClick={onUpload} className="mt-2 text-sm font-semibold text-blue-700">+ Another {label.toLowerCase()} policy</button>
+          <button type="button" onClick={onUpload}
+            className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-slate-200 text-sm font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-50/50">
+            <Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.another2">Add Another</T> {label} <T k="rc.flow.policy">Policy</T>
+          </button>
         </>
       ) : (
         <>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={onUpload} className="qb qb-blue qb-md flex-1 px-3 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" /> Upload</button>
-            <button type="button" onClick={onCamera} className="qb qb-outline qb-md flex-1 px-3 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" /> Use my camera</button>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button type="button" onClick={onUpload} className="qb qb-blue qb-md w-full whitespace-nowrap px-2 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.upload">Upload</T></button>
+            <button type="button" onClick={onCamera} className="qb qb-outline qb-md w-full whitespace-nowrap px-2 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.use-my-camera">Use My Camera</T></button>
           </div>
-          <button type="button" onClick={() => setHelp(v => !v)} aria-expanded={help} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-700">
-            <T k="rc.slot.help">Where do I find it?</T> <ChevronDown className={`h-3.5 w-3.5 transition-transform ${help ? 'rotate-180' : ''}`} aria-hidden="true" />
+          <button type="button" onClick={() => setHelp(v => !v)} aria-expanded={help} className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-700">
+            <T k="rc.slot.help">Where Do I Find It?</T> <ChevronDown className={`h-3.5 w-3.5 transition-transform ${help ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
           {help && (
-            <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">
-              <T k="rc.slot.helptext">In your insurer’s app or website, open Documents and download your latest policy (the declarations page). A paper copy? Tap Use my camera and get every page.</T>
+            <p className="mt-2 rounded-2xl bg-slate-50 p-3 text-[13px] leading-relaxed text-slate-600">
+              <T k="rc.slot.helptext">In your insurer’s app or website, open Documents and download your latest policy (the declarations page). A paper copy? Tap Use My Camera and get every page.</T>
             </p>
           )}
         </>
@@ -1041,11 +1177,11 @@ function PartnerHeroStrip({ name, photo, initials }) {
       )}
       <span className={`min-w-0 text-[14px] leading-snug ${stacked ? '' : 'whitespace-nowrap'}`}>
         <span className={`font-bold text-white ${stacked ? 'block truncate' : ''}`}>{name}</span>
-        {stacked ? <span className="block text-blue-100">shared this with you</span> : <span className="text-blue-100"> shared this with you</span>}
+        {stacked ? <span className="block text-blue-100"><T k="rc.flow.shared-this-with-you">shared this with you</T></span> : <span className="text-blue-100">{' '}<T k="rc.flow.shared-this-with-you">shared this with you</T></span>}
       </span>
       {/* The one-line version, measured off-screen. */}
       <span ref={probe} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap text-[14px] font-bold leading-snug">
-        {name} <span className="font-normal">shared this with you</span>
+        {name} <span className="font-normal"><T k="rc.flow.shared-this-with-you">shared this with you</T></span>
       </span>
     </div>
   );
@@ -1070,8 +1206,9 @@ function Thumb({ item, scanning = false, small = false }) {
 
 // A policy waiting to be sent: its pages in order, each with retake/remove, and an
 // add-page tile. Right after a photo it asks whether the policy has more pages.
-function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
+function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, onMovedOk, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
+  const concerns = concernsOf(item);
   const [picked, setPicked] = useState(null); // the page tapped for retake / remove
   const pickedIndex = pages.findIndex(pg => pg.id === picked);
   const bad = pages.findIndex(pg => pg.quality?.issue);
@@ -1082,8 +1219,6 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
   const total = pages.reduce((t, pg) => t + (pg.pdfPages || 1), 0);
   const counting = pages.some(pg => isPdfName(pg.file) && pg.pdfPages === undefined);
 
-  const bytes = pages.reduce((t, pg) => t + (pg.file?.size || 0), 0);
-  const size = bytes ? (bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`) : null;
   const pageCount = counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`;
 
   // One downloaded PDF: a single file row, not the photo tiles.
@@ -1091,15 +1226,14 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
     const pg = pages[0];
     const name = String(pg.file?.name || '').replace(/\.pdf$/i, '') || 'Policy PDF';
     return (
-      <li className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+      <li data-policy={item.id} className={`flex items-center gap-3 rounded-2xl bg-slate-50 p-3 ring-1 transition-shadow ${flash ? 'ring-4 ring-amber-300' : 'ring-slate-200'}`}>
+        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200">
           <FileText className="h-5 w-5" />
-          <span className="text-[9px] font-extrabold tracking-wide">PDF</span>
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-slate-900">{name}</p>
           <p className="mt-0.5 text-sm text-slate-500">
-            Policy {n} · <span>{pageCount}</span>{size && ` · ${size}`}
+            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>
           </p>
         </div>
         <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Replace policy ${n}`}
@@ -1114,17 +1248,15 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
     );
   }
   return (
-    <li className={`rounded-2xl border bg-white p-3 shadow-sm ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
+    <li data-policy={item.id} className={`rounded-2xl bg-slate-50 p-3 ring-1 transition-shadow ${flash ? 'ring-4 ring-amber-300' : asking ? 'ring-2 ring-blue-300' : 'ring-slate-200'}`}>
       <div className="flex items-center gap-3">
-        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-slate-50 text-slate-500 ring-1 ring-slate-200">
+        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200">
           <Camera className="h-5 w-5" />
-          <span className="text-[9px] font-extrabold tracking-wide">PHOTOS</span>
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-900">Photographed policy</p>
+          <p className="font-semibold text-slate-900"><T k="rc.flow.photographed-policy">Photographed policy</T></p>
           <p className="mt-0.5 truncate text-sm text-slate-500">
-            Policy {n} · <span>{pageCount}</span>{size && ` · ${size}`}
-            {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
+            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>
           </p>
         </div>
         <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
@@ -1152,49 +1284,135 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
           <button type="button" onClick={onAddPage} aria-label={`Add page ${pages.length + 1} to policy ${n}`}
             className="flex h-14 w-11 flex-col items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
             <Plus className="h-4 w-4" aria-hidden="true" />
-            <span className="text-[10px] font-bold leading-3">Page</span>
+            <span className="text-[10px] font-bold leading-3"><T k="rc.flow.page">Page</T></span>
           </button>
         </li>
       </ul>
 
+      {bad >= 0 && pickedIndex < 0 && (
+        <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-amber-700">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span><T k="rc.flow.page">Page</T> {bad + 1} {pages[bad].quality.issue === 'dark' ? <T k="rc.flow.too-dark">looks too dark. Tap it to retake.</T> : <T k="rc.flow.blurry">looks blurry. Tap it to retake.</T>}</span>
+        </p>
+      )}
+
       {pickedIndex >= 0 && (
-        <div className="mt-2 flex items-center gap-2 rounded-xl bg-slate-50 p-2 pl-3 ring-1 ring-slate-200">
-          <span className="flex-1 text-sm font-semibold text-slate-700">Page {pickedIndex + 1}</span>
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-white p-2 pl-3 ring-1 ring-slate-200">
+          <span className="flex-1 text-sm font-semibold text-slate-700"><T k="rc.flow.page">Page</T>{' '}{pickedIndex + 1}</span>
           <button type="button" onClick={() => { setPicked(null); onRetakePage(picked); }} aria-label={`Retake page ${pickedIndex + 1} of policy ${n}`}
             className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
-            <RotateCcw className="h-4 w-4" aria-hidden="true" /> Retake
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.retake">Retake</T>
           </button>
           <button type="button" onClick={() => { setPicked(null); onRemovePage(picked); }} aria-label={`Remove page ${pickedIndex + 1} of policy ${n}`}
             className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-slate-200">
-            <X className="h-4 w-4" aria-hidden="true" /> Remove
+            <X className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.remove">Remove</T>
           </button>
         </div>
       )}
 
+
       {onMergeUp && (
         <button type="button" onClick={onMergeUp}
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700">
-          Same policy as Policy {index}? Combine them
+          className="mt-3 w-full rounded-xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+          <T k="rc.flow.same-policy-as-policy">Same Policy As Policy</T>{' '}{index}<T k="rc.flow.combine-them">? Combine Them</T>
         </button>
       )}
 
-      {asking && (
-        <div className="mt-2 rounded-xl bg-blue-50 p-3" role="group" aria-label="More pages?">
-          <p className="font-semibold text-slate-900">Does this policy have more pages?</p>
-          <p className="mt-0.5 text-sm text-slate-600">Drivers, cars and coverages are often on page 2 or 3.</p>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={onAddPage}
-              className="qb qb-blue qb-md flex-1 px-3">
-              <Camera className="h-4 w-4" aria-hidden="true" /> Add page {pages.length + 1}
-            </button>
-            <button type="button" onClick={onDoneAdding}
-              className="qb qb-outline qb-md flex-1 px-3">
-              That&apos;s all
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Questions on this policy, one at a time: the front card is answered first and the
+          rest wait behind it. */}
+      <PromptDeck label={`Questions about policy ${n}`} cards={[
+        item.movedFrom && item.kind !== item.movedFrom && !item.movedSeen && { key: 'moved', tone: 'info', el: (
+          <Prompt tone="info" icon={Check} title={<><T k="rc.check.moved">Moved to</T> {KIND[item.kind]?.label}</>}
+            actions={<button type="button" onClick={onMovedOk} className={`${promptPrimary} col-span-2`}><T k="rc.check.got-it">Got It</T></button>}>
+            <T k="rc.check.moved-why2">This file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} {(KIND[item.kind]?.label || '').toLowerCase()} <T k="rc.check.moved-policy">policy.</T>
+          </Prompt>
+        ) },
+        mismatch === 'not_a_policy' && { key: 'not_a_policy', tone: 'ask', el: (
+          <Prompt icon={FileText} title={<T k="rc.check.not-policy-title">This doesn’t look like a policy</T>}
+            actions={<>
+              <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.remove">Remove It</T></button>
+              <button type="button" onClick={onKeep} className={promptSecondary}><T k="rc.check.keep">It’s a Policy</T></button>
+            </>}>
+            <T k="rc.check.not-policy-why">We need the declarations page: the one that lists your coverages and price.</T>
+          </Prompt>
+        ) },
+        concerns.includes('expired') && { key: 'expired', tone: 'ask', el: (
+          <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> {new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</>}
+            actions={<>
+              <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.replace">Remove It</T></button>
+              <button type="button" onClick={() => onConcernOk('expired')} className={promptSecondary}><T k="rc.check.current">It’s Current</T></button>
+            </>}>
+            <T k="rc.check.expired-why">We quote against your current policy. If you have a newer one, add that instead.</T>
+          </Prompt>
+        ) },
+        concerns.includes('no_cars') && { key: 'no_cars', tone: 'ask', el: (
+          <Prompt icon={Car} title={<T k="rc.check.no-cars-title">We don’t see any cars yet</T>}
+            actions={<>
+              <button type="button" onClick={onAddPage} className={promptPrimary}><Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.check.add-page">Add Page</T></button>
+              <button type="button" onClick={() => onConcernOk('no_cars')} className={promptSecondary}><T k="rc.check.all-there">It’s All There</T></button>
+            </>}>
+            <T k="rc.check.no-cars-why">Add the page that lists your vehicles so we can match your coverage.</T>
+          </Prompt>
+        ) },
+        asking && { key: 'more', tone: 'info', el: (
+          <Prompt tone="info" icon={Layers} role="group" title={<T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T>}
+            actions={<>
+              <button type="button" onClick={onAddPage} className={promptPrimary}><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.add-page">Add Page</T> {pages.length + 1}</button>
+              <button type="button" onClick={onDoneAdding} className={promptSecondary}><T k="rc.flow.thats-all">That's All</T></button>
+            </>}>
+            <T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T>
+          </Prompt>
+        ) },
+      ]} />
     </li>
+  );
+}
+
+// Every question or note on a policy uses this: icon, bold line, short reason, and up
+// to two equal buttons. Amber = needs an answer; blue = for their information.
+function Prompt({ tone = 'ask', icon: Icon = AlertTriangle, title, children, actions = null, role, className = 'mt-3', badge = null }) {
+  const ask = tone === 'ask';
+  return (
+    <div role={role || (ask ? 'alert' : 'status')}
+      className={`${className} rounded-2xl p-3.5 ${ask ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-blue-50 ring-1 ring-blue-100'}`}>
+      <div className="flex items-start gap-3">
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${ask ? 'bg-amber-100 text-amber-600' : 'bg-white text-blue-700'}`} aria-hidden="true">
+          <Icon className="h-4 w-4" strokeWidth={2.5} />
+        </span>
+        <div className="min-w-0 flex-1 pt-1">
+          <div className="flex items-start gap-2">
+            <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-[#0F2D6B]">{title}</p>
+            {badge && <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-500 ring-1 ring-slate-200">{badge}</span>}
+          </div>
+          {children && <p className="mt-1 text-sm leading-relaxed text-slate-600">{children}</p>}
+        </div>
+      </div>
+      {actions && <div className="mt-3 grid grid-cols-2 gap-2">{actions}</div>}
+    </div>
+  );
+}
+const promptPrimary = 'qb qb-blue qb-md w-full whitespace-nowrap px-3 text-[15px]';
+const promptSecondary = 'qb qb-outline qb-md w-full whitespace-nowrap bg-white px-3 text-[15px]';
+
+// A deck of questions: only the front card can be answered; the next two peek out
+// underneath it, so the customer sees there's more without reading it all at once.
+function PromptDeck({ cards, label }) {
+  const live = cards.filter(Boolean);
+  if (!live.length) return null;
+  const [front, ...rest] = live;
+  const behind = rest.slice(0, 2);
+  const layer = (tone) => tone === 'ask' ? 'bg-amber-100 ring-amber-300' : 'bg-blue-100 ring-blue-200';
+  return (
+    <section aria-label={label} className="relative mt-3" style={{ marginBottom: behind.length * 11 }}>
+      {behind.map((c, i) => (
+        <div key={c.key} aria-hidden="true"
+          className={`absolute inset-0 rounded-2xl shadow-[0_4px_10px_-6px_rgba(15,45,107,0.3)] ring-1 transition-all duration-300 ${layer(c.tone)}`}
+          style={{ transform: `translateY(${(i + 1) * 11}px) scale(${1 - (i + 1) * 0.05})`, opacity: 1 - i * 0.3, zIndex: 2 - i }} />
+      ))}
+      <div key={front.key} className="rc-deck-in relative z-10 rounded-2xl shadow-[0_6px_16px_-8px_rgba(15,45,107,0.25)]">
+        {cloneElement(front.el, { className: '', badge: live.length > 1 ? `1 of ${live.length}` : null })}
+      </div>
+    </section>
   );
 }
 
@@ -1203,22 +1421,22 @@ function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-slate-900/40" role="dialog" aria-modal="true" aria-label="How should we group these?">
       <div className="w-full max-w-md rounded-t-3xl bg-white px-5 pb-6 pt-5" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-        <p className="text-xl font-extrabold text-slate-900">You picked {count} files</p>
-        <p className="mt-1 text-slate-600">Are they pages of one policy, or more than one policy?</p>
+        <p className="text-xl font-extrabold text-slate-900"><T k="rc.flow.you-picked">You picked</T>{' '}{count}{' '}<T k="rc.flow.files">files</T></p>
+        <p className="mt-1 text-slate-600"><T k="rc.flow.are-they-pages-of-one">Are they pages of one policy, or more than one policy?</T></p>
         <button type="button" onClick={onOne}
           className="qb qb-blue qb-lg mt-5 w-full">
-          One policy, {count} pages
+          <T k="rc.flow.one-policy">One Policy,</T>{' '}{count}{' '}<T k="rc.flow.pages">Pages</T>
         </button>
         <button type="button" onClick={onSeparate}
           className="qb qb-outline qb-md mt-3 w-full">
-          {count} separate policies
+          {count}{' '}<T k="rc.flow.separate-policies">Separate Policies</T>
         </button>
         <button type="button" onClick={onMix}
           className="qb qb-outline qb-md mt-3 w-full flex-col gap-0">
-          A mix — I&apos;ll sort them
-          <span className="text-xs font-normal text-slate-500">e.g. 3 pages of auto and 2 of home</span>
+          <T k="rc.flow.a-mix-ill-sort-them">A Mix — I'll Sort Them</T>
+          <span className="text-xs font-normal text-slate-500"><T k="rc.flow.eg-3-pages-of-auto">e.g. 3 pages of auto and 2 of home</T></span>
         </button>
-        <button type="button" onClick={onCancel} className="mt-2 w-full py-2 text-sm font-medium text-slate-500">Cancel</button>
+        <button type="button" onClick={onCancel} className="mt-2 w-full py-2 text-sm font-medium text-slate-500"><T k="rc.flow.cancel">Cancel</T></button>
       </div>
     </div>
   );
@@ -1239,7 +1457,7 @@ function ResultRow({ item, index, onRetake, onRetry }) {
     detail = <span className="inline-flex items-center gap-1.5 text-blue-700"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />{item.status === 'queued' ? 'Waiting…' : 'Reading…'}</span>;
   } else if (item.status === 'unreadable') {
     title = 'Couldn’t read it';
-    detail = <span className="text-slate-600">Cam will check it</span>;
+    detail = <span className="text-slate-600"><T k="rc.flow.cam-will-check-it">Cam will check it</T></span>;
   } else if (item.status === 'failed') {
     title = `Policy ${index + 1} didn’t send`;
     detail = <span className="text-red-700">{item.error}</span>;
@@ -1259,11 +1477,11 @@ function ResultRow({ item, index, onRetake, onRetry }) {
         </span>
       )}
       {item.status === 'unreadable' && (
-        <button type="button" onClick={onRetake} className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900">Retake</button>
+        <button type="button" onClick={onRetake} className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900"><T k="rc.flow.retake">Retake</T></button>
       )}
       {item.status === 'failed' && (
         <button type="button" onClick={item.pages?.length ? onRetry : onRetake} className="shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-800">
-          {item.pages?.length ? 'Try again' : 'Retake'}
+          {item.pages?.length ? <T k="rc.flow.try-again">Try Again</T> : <T k="rc.flow.retake">Retake</T>}
         </button>
       )}
     </li>
@@ -1344,14 +1562,14 @@ function MeetCam({ onUpload }) {
   }));
   // The last card: the ask.
   slides.push({
-    key: 'cta', label: 'Let’s make sure your insurance fits your life', untitled: true, bare: true,
+    key: 'cta', label: 'Let’s Make Sure Your Insurance Fits Your Life', untitled: true, bare: true,
     content: (
       <div className="flex h-full min-h-[300px] flex-col justify-center p-6 text-left" style={{ background: HERO_BG }}>
         <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#F5D061]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
         <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Check your rate with Cam’s team and see what you could save.</T></p>
         <button type="button" onClick={onUpload}
           className="qb qb-gold qb-lg mt-6 w-full">
-          <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Check my rate</T>
+          <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Check My Rate</T>
         </button>
       </div>
     ),
@@ -1402,6 +1620,117 @@ function Choice({ checked, onChange, title, fine, children }) {
   );
 }
 
+// Names: letters, spaces, hyphens and apostrophes only (no digits or emoji pasted in).
+const cleanName = (v) => v.replace(/[^\p{L}\s'’.-]/gu, '').replace(/\s{2,}/g, ' ').slice(0, 60);
+
+// One tap: a row of choices; "Other" opens a short typed answer (normalized when sent).
+function RelationPicker({ id, legend, options, value, other, onChange, onOther }) {
+  return (
+    <fieldset className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <legend className="sr-only">{legend}</legend>
+      <p className="text-[15px] leading-snug text-slate-800" aria-hidden="true">{legend}</p>
+      <div className="mt-3 flex flex-wrap gap-2" role="radiogroup">
+        {options.map(([k, label]) => (
+          <button key={k} type="button" role="radio" aria-checked={value === k} onClick={() => onChange(value === k ? '' : k)}
+            className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold transition-colors ${value === k ? 'bg-blue-700 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+            {value === k && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />}
+            <T k={`${id}.${k}`}>{label}</T>
+          </button>
+        ))}
+      </div>
+      {value === 'other' && (
+        <div className="relative mt-3">
+          <input aria-label="Describe how you're related" value={other} maxLength={OTHER_MAX} placeholder="e.g. Cousin, Roommate"
+            onChange={e => onOther(e.target.value.slice(0, OTHER_MAX))}
+            className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-3.5 pr-14 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" />
+          <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-xs tabular-nums text-slate-400">{other.length}/{OTHER_MAX}</span>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+// A field with a Verify button inside it (or a Verified badge once done).
+function VerifyField({ verified, canVerify, onVerify, children }) {
+  return (
+    <div className="relative">
+      {children}
+      {verified ? (
+        <span className="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-7 items-center gap-1 rounded-full bg-blue-50 px-2.5 text-xs font-bold text-blue-800">
+          <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" /> <T k="rc.code.verified">Verified</T>
+        </span>
+      ) : canVerify ? (
+        <button type="button" onClick={onVerify} className="absolute inset-y-0 right-1.5 my-auto h-9 rounded-lg bg-blue-700 px-3.5 text-sm font-bold text-white">
+          <T k="rc.code.verify">Verify</T>
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+// The code pop-up: sends the code when it opens, checks it as the 6th digit lands.
+function CodeSheet({ channel, target, send, check, onVerified, onClose }) {
+  const [code, setCode] = useState('');
+  const [state, setState] = useState('sending'); // sending | sent | checking
+  const [error, setError] = useState('');
+  const [sentAt, setSentAt] = useState(0);
+  const [, tick] = useState(0);
+  const input = useRef(null);
+  const doSend = useCallback(async () => {
+    setState('sending'); setError('');
+    try { await send(); setSentAt(Date.now()); setState('sent'); setTimeout(() => input.current?.focus(), 50); }
+    catch (err) { setError(err.message); setState('sent'); }
+  }, [send]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { doSend(); }, []);
+  const canResend = sentAt > 0 && Date.now() - sentAt > 30_000;
+  useEffect(() => {
+    if (!sentAt || canResend) return undefined;
+    const t = setTimeout(() => tick(n => n + 1), 30_500 - (Date.now() - sentAt));
+    return () => clearTimeout(t);
+  }, [sentAt, canResend]);
+  const verify = async (c) => {
+    setState('checking'); setError('');
+    try { await check(c); onVerified(); }
+    catch (err) { setError(err.message); setState('sent'); setCode(''); input.current?.focus(); }
+  };
+  const isPhone = channel === 'phone';
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F2D6B]/50 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="rc-code-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+            {isPhone ? <MessageSquare className="h-6 w-6" aria-hidden="true" /> : <Lock className="h-6 w-6" aria-hidden="true" />}
+          </span>
+          <button type="button" onClick={onClose} aria-label="Close" className="-mr-1 rounded-full p-1.5 text-slate-400"><X className="h-5 w-5" /></button>
+        </div>
+        <h2 id="rc-code-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900">
+          {isPhone ? <T k="rc.code.title.phone">Enter the Code We Texted</T> : <T k="rc.code.title.email">Enter the Code We Emailed</T>}
+        </h2>
+        <p className="mt-1 text-[15px] text-slate-600">
+          {state === 'sending' ? <T k="rc.code.sending">Sending your code to</T> : <T k="rc.code.sent">We sent a 6-digit code to</T>}{' '}
+          <span className="font-semibold text-slate-900">{target}</span>.
+        </p>
+        <input ref={input} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="••••••" value={code}
+          aria-label="6-digit code" disabled={state === 'checking'}
+          className="mt-4 h-16 w-full rounded-2xl border-2 border-slate-300 bg-white text-center text-3xl font-bold tracking-[0.5em] text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          onChange={e => { const c = e.target.value.replace(/\D/g, '').slice(0, 6); setCode(c); setError(''); if (c.length === 6) verify(c); }} />
+        {error && <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>}
+        {state === 'checking' && <p className="mt-2 flex items-center gap-2 text-sm text-slate-600"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> <T k="rc.code.checking">Checking…</T></p>}
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <button type="button" onClick={onClose} className="font-semibold text-slate-600 underline underline-offset-4">
+            {isPhone ? <T k="rc.code.wrong.phone">Wrong Number?</T> : <T k="rc.code.wrong.email">Wrong Email?</T>}
+          </button>
+          <button type="button" onClick={doSend} disabled={!canResend || state === 'sending'} className="font-semibold text-blue-700 disabled:text-slate-400">
+            {canResend ? <T k="rc.code.resend">Send a New Code</T> : <T k="rc.code.resend-wait">New Code in 30 Seconds</T>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, htmlFor, children }) {
   return (
     <div>
@@ -1448,7 +1777,7 @@ const tileEdge = (i) => [2, 3, 6].map((cols, bp) => {
 function ProductsWeInsure() {
   return (
     <section aria-labelledby="rc-products">
-      <h2 id="rc-products" className={sectionTitle}><T k="rc.products.heading">Products we insure</T></h2>
+      <h2 id="rc-products" className={sectionTitle}><T k="rc.products.heading">Products We Insure</T></h2>
       <ul className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:mt-8 lg:grid-cols-6 lg:gap-3">
         {PRODUCTS.map(([key, Icon, name, sub], i) => (
           <li key={key} className={`flex min-w-0 flex-col items-center rounded-2xl border-2 bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center ${tileEdge(i)}`}>
@@ -1497,7 +1826,7 @@ function CarrierLogos() {
       <style>{'@keyframes rc-marquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}.rc-marquee{animation:rc-marquee 36s linear infinite;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       {/* The heading sits above the strip; the strip has its own band. */}
       <div className={wrap}>
-        <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
+        <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers We Write</T></h2>
       </div>
       {/* White section: logos with white backgrounds sit on it cleanly. No blend modes:
           iPhone Safari drops them inside a moving strip and the logos vanish, leaving
@@ -1574,7 +1903,7 @@ function TextUs({ className = '' }) {
   if (!number) return null;
   return (
     <a href={smsHref(number, body)} className={`qb qb-outline-dark qb-md w-full ${className}`}>
-      <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textus.cta">Text us</T>
+      <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textus.cta">Text Us</T>
     </a>
   );
 }
@@ -1622,11 +1951,11 @@ function StartCard({ onStart, onUpload, onDropFiles }) {
     <div id="rc-upload-card" className={`mt-7 rounded-3xl bg-white p-5 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 transition ${dragging ? 'ring-4 ring-blue-300' : ''}`}
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
       <button type="button" onClick={onStart} className="qb qb-gold qb-lg w-full text-lg">
-        <T k="rc.start.cta">Check my rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+        <T k="rc.start.cta">Check My Rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
       </button>
       <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes</T></p>
       <button type="button" onClick={onUpload} className="mt-3 w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4">
-        <T k="rc.start.shortcut">Have your policy handy? Upload it now</T><span className="hidden lg:inline"> · or drop a PDF here</span>
+        <T k="rc.start.shortcut">Have Your Policy Handy? Upload It Now</T><span className="hidden lg:inline">{' '}<T k="rc.flow.or-drop-a-pdf-here">· Or Drop a PDF Here</T></span>
       </button>
     </div>
   );
@@ -1702,7 +2031,7 @@ function StickyUpload({ onUpload }) {
     <div className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0F2D6B]/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur transition-transform duration-300 lg:hidden ${show ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
       aria-hidden={!show}>
       <button type="button" onClick={onUpload} tabIndex={show ? 0 : -1} className="qb qb-gold qb-md w-full">
-        <T k="rc.sticky.start">Check my rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+        <T k="rc.sticky.start">Check My Rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
       </button>
     </div>
   );
@@ -1744,7 +2073,7 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
       {/* How it works */}
       <section data-reveal className="bg-white pt-14 pb-12 lg:pt-20 lg:pb-16" aria-labelledby="rc-how">
         <div className={wrap}>
-          <h2 id="rc-how" className={sectionTitle}><T k="rc.how.heading">How it works</T></h2>
+          <h2 id="rc-how" className={sectionTitle}><T k="rc.how.heading">How It Works</T></h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-3 lg:gap-6">
             {HOW.map(([n, Icon, title, line]) => (
               <li key={n} className="relative rounded-3xl border border-slate-200 bg-slate-50 p-6">
@@ -1758,7 +2087,7 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
           <ExampleText />
           <button type="button" onClick={() => setHowTo(v => !v)} aria-expanded={howTo}
             className="mt-6 inline-flex items-center gap-1.5 font-semibold text-blue-700">
-            <T k="rc.howto.toggle">Can’t find your policy?</T>
+            <T k="rc.howto.toggle">Can’t Find Your Policy?</T>
             <ChevronDown className={`h-4 w-4 transition-transform ${howTo ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
           {howTo && (
@@ -1768,10 +2097,10 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
                 <li><T k="rc.howto.2">Open **Documents**. Some insurers call it **Policy Documents** or **Documents & ID Cards**.</T></li>
                 <li><T k="rc.howto.3">Find the most recent declarations page for each policy.</T></li>
                 <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
-                <li><T k="rc.howto.5">Come back here and tap **Check my rate**.</T></li>
+                <li><T k="rc.howto.5">Come back here and tap **Check My Rate**.</T></li>
               </ol>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
-              <p className="mt-1"><T k="rc.howto.paper">Tap **Check my rate**, then **Use my camera**, and photograph every page of the declarations. Lay it flat in good light.</T></p>
+              <p className="mt-1"><T k="rc.howto.paper">Tap **Check My Rate**, then **Use My Camera**, and photograph every page of the declarations. Lay it flat in good light.</T></p>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.screens.title">Can’t download it?</T></p>
               <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
             </div>
@@ -1809,10 +2138,10 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your policy. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <button type="button" onClick={onStart} className="qb qb-gold qb-lg flex-1 text-lg">
-              <T k="rc.closing.start">Check my rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+              <T k="rc.closing.start">Check My Rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
             </button>
             <button type="button" onClick={onUpload} className="qb qb-outline-dark qb-lg">
-              <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload2">Upload now</T>
+              <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload2">Upload Now</T>
             </button>
           </div>
         </div>
@@ -1825,7 +2154,7 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
 const STEPS = ['Policies', 'Upload', 'Contact'];
 // `wide`: the landing page spreads out on desktop (two columns, wider grids); the
 // steps stay one narrow column, which reads better for forms.
-function Shell({ children, step, bar, center = false, wide = false }) {
+function Shell({ children, step, bar, center = false, wide = false, noFooter = false }) {
   const styles = <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}.rc-track{scrollbar-width:none}.rc-track::-webkit-scrollbar{display:none}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>;
   // The landing page is full width and draws its own header (see Landing).
   if (wide) {
@@ -1842,7 +2171,10 @@ function Shell({ children, step, bar, center = false, wide = false }) {
     <div className="min-h-screen bg-slate-50">
       {styles}
       <header className="mx-auto max-w-md px-4 pt-5">
-        <BrandLogo tone="light" className="shrink-0" />
+        <div className="flex items-center justify-between gap-2">
+          <BrandLogo tone="light" className="shrink-0" />
+          <EditPagePencil tone="light" />
+        </div>
         {step && (
           <ol className="mt-4 grid grid-cols-3 gap-1.5" aria-label={step > STEPS.length ? 'All steps done' : `Step ${step} of 3: ${STEPS[step - 1]}`}>
             {STEPS.map((st, i) => {
@@ -1850,7 +2182,7 @@ function Shell({ children, step, bar, center = false, wide = false }) {
               return (
                 <li key={st} aria-current={state === 'on' ? 'step' : undefined}>
                   <span className={`block h-1.5 rounded-full transition-colors ${state === 'on' ? 'bg-blue-700' : state === 'done' ? 'bg-blue-300' : 'bg-slate-300'}`} />
-                  <span className={`mt-1.5 block text-[11px] font-semibold ${state === 'on' ? 'text-blue-700' : state === 'done' ? 'text-slate-500' : 'text-slate-400'}`}>{i + 1} {st}</span>
+                  <span className={`mt-1.5 block text-[11px] font-semibold ${state === 'on' ? 'text-blue-700' : state === 'done' ? 'text-slate-500' : 'text-slate-400'}`}>{i + 1} <T k={`rc.steps.${i + 1}`}>{st}</T></span>
                 </li>
               );
             })}
@@ -1860,7 +2192,7 @@ function Shell({ children, step, bar, center = false, wide = false }) {
       <main key={step} className={`qc-step ${center
         ? 'mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-md flex-col justify-center px-4 py-6'
         : 'mx-auto max-w-md px-4 pt-6 pb-10'}`}>{children}</main>
-      <RateCheckFooter padForBar={!!bar} />
+      {noFooter ? (bar && <div className="h-40" aria-hidden="true" />) : <RateCheckFooter padForBar={!!bar} />}
       {bar}
     </div>
   );

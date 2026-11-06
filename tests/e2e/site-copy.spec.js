@@ -50,7 +50,7 @@ test('a principal edits a line in place and it saves', async ({ page }) => {
   const writes = await mock(page, { loggedIn: true });
   await page.goto('/');
   await page.getByRole('button', { name: 'Edit this page' }).click();
-  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
+  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products We Insure/ });
   await eyebrow.click();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.type('Products we cover');
@@ -68,7 +68,7 @@ test('edits confirm with "Saved"; pasted text loses its formatting; overlong lin
   const writes = await mock(page, { loggedIn: true });
   await page.goto('/?edit=1');
   await expect(page.getByRole('button', { name: 'Done editing' })).toBeVisible(); // ?edit=1 turns editing on
-  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
+  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products We Insure/ });
 
   // Paste rich HTML: only its text goes in.
   await eyebrow.click();
@@ -100,7 +100,7 @@ test('edits confirm with "Saved"; pasted text loses its formatting; overlong lin
 test('a failed save says why in plain words', async ({ page }) => {
   await mock(page, { loggedIn: true, failWrites: true });
   await page.goto('/?edit=1');
-  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
+  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products We Insure/ });
   await eyebrow.click();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.type('Products we cover');
@@ -127,7 +127,7 @@ test('typing a space in a button label edits the text and does not press the but
   await page.goto('/?edit=1');
   let pickers = 0;
   page.on('filechooser', () => { pickers += 1; });
-  const label = page.getByRole('textbox', { name: /Edit text: Check my rate/ }).first();
+  const label = page.getByRole('textbox', { name: /Edit text: Check My Rate/ }).first();
   await label.click();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.type('Upload my 2 policies');
@@ -146,22 +146,22 @@ test('an edit saves without tapping away: after a pause, and on Done editing', a
   const writes = await mock(page, { loggedIn: true });
   await page.goto('/');
   await page.getByRole('button', { name: 'Edit this page' }).click();
-  const line = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
+  const line = page.getByRole('textbox', { name: /Edit text: Products We Insure/ });
   await line.click();
   await page.keyboard.press('End');
   await page.keyboard.type(' today');
   // No blur: it saves once typing stops.
   await expect.poll(() => writes.length, { timeout: 4000 }).toBe(1);
-  expect(writes[0].body).toMatchObject({ key: 'rc.products.heading', value: 'Products we insure today' });
+  expect(writes[0].body).toMatchObject({ key: 'rc.products.heading', value: 'Products We Insure today' });
 
   // Typed, then straight to Done editing, with focus never leaving the line.
   await line.click();
   await page.keyboard.press('End');
   await page.keyboard.type('!');
   await page.evaluate(() => {
-    const done = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Done editing'));
+    const done = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Done Editing'));
     done.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   });
   await expect.poll(() => writes.length).toBe(2);
-  expect(writes[1].body).toMatchObject({ key: 'rc.products.heading', value: 'Products we insure today!' });
+  expect(writes[1].body).toMatchObject({ key: 'rc.products.heading', value: 'Products We Insure today!' });
 });

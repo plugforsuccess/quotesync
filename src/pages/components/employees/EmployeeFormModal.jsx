@@ -11,7 +11,7 @@ const ROLE_OPTIONS = [
   { value: 'service_inbound',  label: 'Service — Inbound'  },
   { value: 'service_outbound', label: 'Service — Outbound' },
   { value: 'sales',            label: 'Sales'              },
-  { value: 'unlicensed',       label: 'Unlicensed (front desk)' },
+  { value: 'unlicensed',       label: 'Unlicensed (Front Desk)' },
   { value: 'admin',            label: 'Admin'              },
 ];
 

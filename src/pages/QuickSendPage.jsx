@@ -65,7 +65,7 @@ export default function QuickSendPage() {
           {screen === 'ready' && (
             <p className="flex items-center gap-2 text-sm text-slate-500">
               {me?.producer_first && <><span className="font-semibold text-slate-700">{me.producer_first}</span><span aria-hidden="true">·</span></>}
-              <button type="button" onClick={signOut} className="font-semibold text-blue-700">Sign out</button>
+              <button type="button" onClick={signOut} className="font-semibold text-blue-700">Sign Out</button>
             </p>
           )}
         </header>
@@ -176,7 +176,7 @@ function SendForm({ onSignedOut }) {
                 value={name} onChange={e => setName(e.target.value)} placeholder="First name" />
             </label>
             <label className="block">
-              <span className={label}>Mobile number</span>
+              <span className={label}>Mobile Number</span>
               <input className={field} type="tel" inputMode="tel" autoComplete="off" value={phone}
                 onChange={e => setPhone(formatPhoneInput(e.target.value))} placeholder="(404) 555-1212" />
             </label>
@@ -271,13 +271,13 @@ function SendResult({ result, onAnother }) {
 
       {showQr && <canvas ref={canvas} className="mx-auto mt-4 block rounded-lg border border-slate-200" aria-label="QR code for the upload link" />}
 
-      <button type="button" onClick={onAnother} className="mt-5 w-full rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800">Send another</button>
+      <button type="button" onClick={onAnother} className="mt-5 w-full rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800">Send Another</button>
       <div className="mt-3 flex items-center justify-center gap-6 text-sm font-semibold text-blue-700">
         <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 py-1">
-          {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}{copied ? 'Copied' : 'Copy link'}
+          {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}{copied ? 'Copied' : 'Copy Link'}
         </button>
         <button type="button" onClick={() => setShowQr(v => !v)} aria-expanded={showQr} className="inline-flex items-center gap-1.5 py-1">
-          <QrCode className="h-4 w-4" aria-hidden="true" />{showQr ? 'Hide QR code' : 'Show QR code'}
+          <QrCode className="h-4 w-4" aria-hidden="true" />{showQr ? 'Hide QR Code' : 'Show QR Code'}
         </button>
       </div>
     </div>

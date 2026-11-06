@@ -724,7 +724,7 @@ const StaffPerformancePage = () => {
             {rcData.length === 0 ? (
               <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
                 <BarChart3 className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-qs-bright mb-2">No performance data</h2>
+                <h2 className="text-xl font-semibold text-qs-bright mb-2">No Performance Data</h2>
                 <p className="text-qs-dim">Upload RingCentral data for this week to see producer metrics.</p>
               </div>
             ) : (
@@ -813,7 +813,7 @@ const StaffPerformancePage = () => {
             {rcData.length === 0 && !callLogMetrics ? (
               <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
                 <BarChart3 className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-qs-bright mb-2">No performance data</h2>
+                <h2 className="text-xl font-semibold text-qs-bright mb-2">No Performance Data</h2>
                 <p className="text-qs-dim">Upload a call log or RingCentral XLSX to see the scorecard.</p>
               </div>
             ) : callLogMetrics && singleEmployee ? (

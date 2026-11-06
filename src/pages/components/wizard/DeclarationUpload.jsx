@@ -45,7 +45,7 @@ export default function DeclarationUpload({ leadId, agentName }) {
       <div className="flex items-center gap-2 mb-3">
         <FileText className="w-5 h-5 text-primary-500" />
         <h3 className="font-bold text-gray-900">
-          {hasItems ? 'Add another policy?' : 'Have your current policy handy?'}
+          {hasItems ? 'Add Another Policy?' : 'Have Your Current Policy Handy?'}
         </h3>
       </div>
       <p className="text-sm text-gray-600 mb-4">
@@ -80,17 +80,17 @@ export default function DeclarationUpload({ leadId, agentName }) {
         {status === 'working' ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span><T k="pages.components.wizard.declarationupload.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'your document'}…</span>
+            <span><T k="pages.components.wizard.declarationupload.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'Your Document'}…</span>
           </>
         ) : hasItems ? (
           <>
             <Plus className="w-5 h-5" />
-            <span><T k="pages.components.wizard.declarationupload.e4e33d">Add another dec page</T></span>
+            <span><T k="pages.components.wizard.declarationupload.e4e33d">Add Another Dec Page</T></span>
           </>
         ) : (
           <>
             <UploadCloud className="w-5 h-5" />
-            <span>{status === 'error' ? 'Try another file' : 'Choose file'}</span>
+            <span>{status === 'error' ? 'Try Another File' : 'Choose File'}</span>
           </>
         )}
       </button>

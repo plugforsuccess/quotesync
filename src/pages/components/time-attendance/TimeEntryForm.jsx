@@ -10,7 +10,7 @@ import { getFederalHolidays, getHolidayLabel } from '../../../lib/federalHoliday
 
 const CODES = [
   { value: 'REG', label: 'Regular' },
-  { value: 'WFH', label: 'Work from Home' },
+  { value: 'WFH', label: 'Work From Home' },
   { value: 'SICK', label: 'Sick (Full Day)' },
   { value: 'SICK_PART', label: 'Sick (Partial)' },
   { value: 'PTO', label: 'PTO' },
@@ -392,7 +392,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
         {/* Notes */}
         <div className="sm:col-span-2">
           <label className="dark-label">
-            <T k="pages.components.timeattendance.timeentryform.f4c6f8">Notes</T> {notesRequired ? <span className="text-red-400"><T k="pages.components.timeattendance.timeentryform.9bfb6e">(required)</T></span> : '(optional)'}
+            <T k="pages.components.timeattendance.timeentryform.f4c6f8">Notes</T> {notesRequired ? <span className="text-red-400"><T k="pages.components.timeattendance.timeentryform.9bfb6e">(Required)</T></span> : '(Optional)'}
           </label>
           <textarea
             value={notes}

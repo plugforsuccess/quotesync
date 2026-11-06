@@ -122,7 +122,7 @@ export function ShareLine() {
     <p className="qc-rise mt-5 text-center text-sm text-slate-500" style={{ animationDelay: '620ms' }}>
       <T k="rc.done.share.line">Know someone who might be overpaying?</T>{' '}
       <button type="button" onClick={share} className="inline-flex items-center gap-1 font-semibold text-blue-700 underline-offset-4 hover:underline">
-        <Share2 className="h-3.5 w-3.5" aria-hidden="true" /> {copied ? 'Link copied' : <T k="rc.done.share.cta">Share it</T>}
+        <Share2 className="h-3.5 w-3.5" aria-hidden="true" /> {copied ? 'Link Copied' : <T k="rc.done.share.cta">Share It</T>}
       </button>
     </p>
   );

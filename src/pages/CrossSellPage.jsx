@@ -191,7 +191,7 @@ export default function CrossSellPage() {
                 fontSize: 14, fontWeight: 600, cursor: 'pointer',
               }}
             >
-              {winbackBusy ? 'Generating…' : '♻ Generate winback leads'}
+              {winbackBusy ? 'Generating…' : '♻ Generate Winback Leads'}
             </button>
           )}
           <button

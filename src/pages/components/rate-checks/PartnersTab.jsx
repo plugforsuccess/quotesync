@@ -71,7 +71,9 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const byPartner = useMemo(() => {
     const all = households(scans, schedule, Date.now(), rules);
     return Object.fromEntries(promoters.map(p => {
-      const hh = applyCap(all.filter(h => h.promoterId === p.id), p.monthly_cap);
+      // A partner's own household (same phone as the partner) is never paid as a referral.
+      const own = (h) => !!p.phone && String(h.phone || '').replace(/\D/g, '').slice(-10) === String(p.phone).replace(/\D/g, '').slice(-10);
+      const hh = applyCap(all.filter(h => h.promoterId === p.id && !own(h)), p.monthly_cap);
       const mine = payouts.filter(x => x.promoter_id === p.id);
       return [p.id, { hh, summary: partnerSummary(hh, month), plan: payoutPlan(hh, mine, month, rules.minPayout) }];
     }));
@@ -115,14 +117,14 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       {promoters.length === 0 ? (
         /* No partners yet: one card, one button. */
         <div className="dark-card" style={{ padding: 20 }}>
-          <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.partnerstab.811aa9">No partners yet</T></h3>
+          <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.partnerstab.811aa9">No Partners Yet</T></h3>
           <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             <T k="pages.components.ratechecks.partnerstab.bbdbfa">Add someone who'll share your Rate Check link.</T> {PARTNER_AGREEMENT_REQUIRED ? 'They get a private portal to sign the agreement, then their own link that pays per household.' : 'They get their own link that pays per household, and a private portal to see what they’ve earned.'}
           </p>
           {canEdit && !adding && (
             <div className="mt-4 flex flex-wrap gap-2">
               <button type="button" onClick={() => setAdding(true)} className="inline-flex min-h-[44px] w-[9.5rem] items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
-                <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add partner</T>
+                <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add Partner</T>
               </button>
               <SendPitch className="min-h-[44px] w-[9.5rem] justify-center rounded-lg px-4" />
             </div>
@@ -147,7 +149,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 <SendPitch className="h-9 w-[8.5rem] justify-center rounded-full px-3.5" />
                 <button type="button" onClick={() => setAdding(a => !a)} aria-expanded={adding}
                   className="inline-flex h-9 w-[8.5rem] items-center justify-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
-                  <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add partner</T>
+                  <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add Partner</T>
                 </button>
               </span>
             )}
@@ -163,7 +165,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
           {Object.keys(paidThisYear).length > 0 && (
             <button type="button" onClick={exportYear} title={`What each partner was paid in ${year}, by payment date`}
               className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:underline">
-              <Download className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.0095a9">Export</T> {year} <T k="pages.components.ratechecks.partnerstab.c18bab">payments for 1099s</T>
+              <Download className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.0095a9">Export</T> {year} <T k="pages.components.ratechecks.partnerstab.c18bab">payments For 1099s</T>
             </button>
           )}
           {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
@@ -193,7 +195,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                     </span>
                     <span className="hidden w-24 shrink-0 text-right sm:block">
                       <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{monthName(month)}</span>
-                      <span className="block text-sm font-semibold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{s?.month.households || 0} {(s?.month.households || 0) === 1 ? 'household' : 'households'}</span>
+                      <span className="block text-sm font-semibold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{s?.month.households || 0} {(s?.month.households || 0) === 1 ? 'Household' : 'Households'}</span>
                     </span>
                     <span className="w-16 shrink-0 text-right sm:w-20">
                       <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{paid ? 'Paid' : 'Owed'}</span>
@@ -217,7 +219,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         return (
           <section key={p.id} id={`partner-${p.id}`} className="dark-card scroll-mt-24" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
             <button type="button" onClick={() => setSelected(null)} className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {promoters.length > 1 ? `All partners (${promoters.length})` : 'All partners'}
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {promoters.length > 1 ? `All Partners (${promoters.length})` : 'All Partners'}
             </button>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <PartnerPhoto promoter={p} canEdit={canEdit} />
@@ -271,7 +273,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 <button type="button" onClick={() => setOpen(expanded ? null : p.id)} aria-expanded={expanded}
                   className="inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
                   {expanded ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
-                  {monthRows.length} {monthRows.length === 1 ? 'household' : 'households'} <T k="pages.components.ratechecks.partnerstab.13b5bf">in</T> {monthLabel(month)}
+                  {monthRows.length} {monthRows.length === 1 ? 'Household' : 'Households'} <T k="pages.components.ratechecks.partnerstab.13b5bf">in</T> {monthLabel(month)}
                 </button>
               ) : (
                 <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.ef6e5f">No households in</T> {monthLabel(month)} <T k="pages.components.ratechecks.partnerstab.58969e">yet.</T></span>
@@ -279,7 +281,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               {canEdit && (paid ? (
                 <button type="button" disabled={recordPayout.isPending}
                   onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, months: [{ period: monthStart(month) }], userId, remove: true })}
-                  className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}><T k="pages.components.ratechecks.partnerstab.16903d">Mark unpaid</T></button>
+                  className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}><T k="pages.components.ratechecks.partnerstab.16903d">Mark Unpaid</T></button>
               ) : plan.amount > 0 && !plan.underMinimum && !p.w9_received_at ? (
                 <span className="text-xs font-semibold" style={{ color: 'var(--qs-warning)' }}><T k="pages.components.ratechecks.partnerstab.ff3f98">W-9 needed before paying</T> {dollars(plan.amount)}</span>
               ) : plan.amount > 0 && !plan.underMinimum ? (
@@ -390,7 +392,7 @@ function PartnerPhoto({ promoter: p, canEdit }) {
         <button type="button" onClick={() => (photo ? setPhoto.mutate({ promoter: p, dataUrl: null }) : input.current?.click())}
           disabled={setPhoto.isPending} className="text-[11px] font-semibold text-primary-600"
           aria-label={photo ? `Remove ${first}'s photo` : `Add ${first}'s photo`}>
-          {setPhoto.isPending ? 'Saving…' : photo ? 'Remove' : 'Add photo'}
+          {setPhoto.isPending ? 'Saving…' : photo ? 'Remove' : 'Add Photo'}
         </button>
       )}
       {error && <p className="max-w-[7rem] text-center text-[11px] text-red-500">{error}</p>}
@@ -497,7 +499,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
   return (
     <section className="dark-card" style={{ padding: 16 }} aria-label="Partner applications">
       <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>
-        {apps.length === 1 ? '1 person wants to be a partner' : `${apps.length} people want to be partners`}
+        {apps.length === 1 ? '1 Person Wants to Be a Partner' : `${apps.length} People Want to Be Partners`}
       </h3>
       <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.28fa07">From the Drivers Ed page. Add them, then send them their portal link.</T></p>
       <ul className="mt-3 space-y-2">
@@ -518,7 +520,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
                   className="min-h-[36px] rounded-lg px-3 text-sm font-semibold" style={inputStyle}><T k="pages.components.ratechecks.partnerstab.c8a59e">Dismiss</T></button>
                 <button type="button" onClick={() => add(a)} disabled={busy === a.id}
                   className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white disabled:opacity-60">
-                  <Plus className="h-4 w-4" aria-hidden="true" /> {busy === a.id ? 'Adding…' : 'Add as partner'}
+                  <Plus className="h-4 w-4" aria-hidden="true" /> {busy === a.id ? 'Adding…' : 'Add As Partner'}
                 </button>
               </div>
             )}
@@ -587,7 +589,7 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       {anyAddress && !fullAddress && <p className="text-xs md:col-span-3" style={{ color: 'var(--qs-warning)' }}><T k="pages.components.ratechecks.partnerstab.4ff75f">Finish the address (street, city, state and 5-digit ZIP), or clear it.</T></p>}
 
       <button type="submit" disabled={!ok || save.isPending} className="h-11 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white disabled:opacity-50 md:col-start-3">
-        {save.isPending ? 'Adding…' : 'Add partner'}
+        {save.isPending ? 'Adding…' : 'Add Partner'}
       </button>
       {save.error && <p className="text-sm text-red-500 md:col-span-3">{save.error.message}</p>}
     </form>
@@ -622,7 +624,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
   return (
     <section className="dark-card" style={{ padding: 16 }} aria-label="Payout rules">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.4b8f92">Payout rules</T></h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.4b8f92">Payout Rules</T></h3>
         {canEdit && !draft && <button type="button" onClick={() => setDraft({ ...rules })} className="text-sm font-semibold text-primary-600"><T k="pages.components.ratechecks.partnerstab.7dce12">Edit</T></button>}
       </div>
       <div className="mt-2">
@@ -662,7 +664,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
           <button type="button" onClick={() => setDraft(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}><T k="pages.components.ratechecks.partnerstab.ea4788">Cancel</T></button>
           <button type="button" disabled={saveRules.isPending}
             onClick={() => saveRules.mutate({ agencyId, userId, rules: draft }, { onSuccess: () => setDraft(null) })}
-            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"><T k="pages.components.ratechecks.partnerstab.0f671f">Save rules</T></button>
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"><T k="pages.components.ratechecks.partnerstab.0f671f">Save Rules</T></button>
         </div>
       )}
       {saveRules.error && <p className="mt-2 text-sm text-red-500">{saveRules.error.message}</p>}
@@ -678,13 +680,13 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
   return (
     <section className="dark-card" style={{ padding: 16 }}>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.2ee376">Pay schedule · per qualified household</T></h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.2ee376">Pay Schedule · Per Qualified Household</T></h3>
         {canEdit && !draft && <button type="button" onClick={() => setDraft({ ...schedule })} className="text-sm font-semibold text-primary-600"><T k="pages.components.ratechecks.partnerstab.7dce12">Edit</T></button>}
       </div>
       <dl className="mt-2">
         {rows.map(t => (
           <div key={t.key} className="flex items-center justify-between gap-3 py-2.5" style={{ borderTop: '1px solid var(--qs-border)' }}>
-            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}>{t.label}{t.key === EXTRA_LINE.key ? `, up to ${EXTRA_LINE_CAP}` : ''}</dt>
+            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}>{t.label}{t.key === EXTRA_LINE.key ? `, Up To ${EXTRA_LINE_CAP}` : ''}</dt>
             <dd>
               {draft ? (
                 <span className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>$
@@ -706,7 +708,7 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
           <button type="button" onClick={() => setDraft(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}><T k="pages.components.ratechecks.partnerstab.ea4788">Cancel</T></button>
           <button type="button" disabled={saveRates.isPending}
             onClick={() => saveRates.mutate({ agencyId, schedule: Object.fromEntries(Object.entries(draft).map(([k, v]) => [k, Number(v) || 0])) }, { onSuccess: () => setDraft(null) })}
-            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"><T k="pages.components.ratechecks.partnerstab.ba40c5">Save schedule</T></button>
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"><T k="pages.components.ratechecks.partnerstab.ba40c5">Save Schedule</T></button>
         </div>
       )}
       {saveRates.error && <p className="mt-2 text-sm text-red-500">{saveRates.error.message}</p>}

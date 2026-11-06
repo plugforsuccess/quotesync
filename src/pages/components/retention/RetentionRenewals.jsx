@@ -401,7 +401,7 @@ export default function RetentionRenewals({ agencyId }) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 0' }}>
         <RefreshCw size={40} style={{ color: 'var(--qs-border)', margin: '0 auto 16px' }} />
-        <h2 style={{ color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.components.retention.retentionrenewals.b056df">No renewals uploaded yet</T></h2>
+        <h2 style={{ color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.components.retention.retentionrenewals.b056df">No Renewals Uploaded Yet</T></h2>
         <p style={{ color: 'var(--qs-dim)', fontSize: 13 }}>
           <T k="pages.components.retention.retentionrenewals.49bedd">Upload your Allstate Renewal report using the Import tab.</T>
         </p>

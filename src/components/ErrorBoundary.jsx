@@ -104,7 +104,7 @@ class ErrorBoundary extends Component {
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Something went wrong
+                  Something Went Wrong
                 </h1>
                 <p className="text-gray-600 mb-4">
                   The application encountered an unexpected error. This might be due to:

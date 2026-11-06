@@ -247,7 +247,7 @@ export default function StaffingCapacity({
       <div className="dark-card">
         <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">
           <Clock className="w-4 h-4 inline mr-1" />
-          <T k="pages.components.dashboard.staffingcapacity.a73c54">Producer Day Breakdown (per producer)</T>
+          <T k="pages.components.dashboard.staffingcapacity.a73c54">Producer Day Breakdown (Per Producer)</T>
         </h3>
         <div className="flex rounded-lg overflow-hidden h-14 text-xs font-medium">
           <div

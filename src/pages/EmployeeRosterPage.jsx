@@ -279,7 +279,7 @@ const EmployeeRosterPage = () => {
         ) : filteredEmployees.length === 0 ? (
           <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
             <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.employeerosterpage.3ddf4c">No employees found</T></h2>
+            <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.employeerosterpage.3ddf4c">No Employees Found</T></h2>
             <p className="text-qs-dim">
               {statusFilter === 'all'
                 ? 'Add your first employee to get started.'

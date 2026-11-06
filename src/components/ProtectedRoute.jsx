@@ -48,7 +48,7 @@ const ProtectedRoute = ({
     return (
       <div className="min-h-screen bg-red-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white border border-red-200 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-red-700 mb-2">Permissions could not be loaded</h2>
+          <h2 className="text-xl font-semibold text-red-700 mb-2">Permissions Could Not Be Loaded</h2>
           <p className="text-sm text-gray-700 mb-4">We couldn't load your permissions. Please retry.</p>
           <button
             type="button"

@@ -48,25 +48,31 @@ function jpegSize(buf) {
   return null;
 }
 
-async function fillContact(page) {
+async function fillContact(page, { skipName = false } = {}) {
   // The code is texted by rate-check-otp; here it answers "sent" and accepts any code.
   await page.route('**/functions/v1/rate-check-otp', async (route) => {
     const body = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body.mode === 'send' ? { sent: true } : { verified: true }) });
   });
-  await page.getByLabel('First name').fill('Keisha');
-  await page.getByLabel('Mobile number').fill('4045551212');
-  await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
-  // Only when the build has VITE_RATE_CHECK_OTP=true.
-  const textMe = page.getByRole('button', { name: 'Text me a code' });
-  if (await textMe.isVisible()) {
-    await textMe.click();
-    await page.getByLabel(/Enter the 6-digit code/).fill('123456');
-    await expect(page.getByRole('status')).toHaveText(/Number verified/);
+  if (!skipName) {
+    await page.getByLabel('First Name').fill('Keisha');
+    await page.getByLabel('Last Name').fill('Example');
   }
-  await page.getByLabel('Email').fill('keisha@example.com');
-  await page.getByLabel('ZIP code').fill('30094');
-  await page.getByLabel('Where do you live?').selectOption('own');
+  await page.getByLabel('Mobile Number').fill('4045551212');
+  await expect(page.getByLabel('Mobile Number')).toHaveValue('(404) 555-1212');
+  await page.getByLabel('Email', { exact: true }).fill('keisha@example.com');
+  // Codes only when the build turns them on (VITE_RATE_CHECK_OTP / _EMAIL_OTP): Verify → pop-up → code.
+  for (const field of ['Mobile Number', 'Email']) {
+    const verify = page.locator('div.relative').filter({ has: page.getByLabel(field, { exact: true }) }).getByRole('button', { name: 'Verify' });
+    if (await verify.isVisible()) {
+      await verify.click();
+      await page.getByLabel('6-digit code').fill('123456');
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+    }
+  }
+  // ZIP is asked only when no policy shows one.
+  const zip = page.getByLabel('ZIP Code');
+  if (await zip.isVisible()) await zip.fill('30094');
 }
 
 // Two one-time prompts can appear in the flow: "Only one policy?" on Continue and
@@ -90,6 +96,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
 
   let posted = null;
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     posted = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
@@ -110,7 +117,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   await page.getByRole('button', { name: 'Continue with one' }).click();
 
   await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
-  const submit = page.getByRole('button', { name: 'Check my rate' });
+  const submit = page.getByRole('button', { name: 'Check My Rate' });
   await expect(submit).toBeDisabled();
   await fillContact(page);
   // Both boxes are optional and start unchecked: automated texts first, partner referral second.
@@ -138,7 +145,6 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   expect(posted.phone).toBe('4045551212');
   expect(posted.zip).toBe('30094');
   expect(posted.email).toBe('keisha@example.com');
-  expect(posted.housing_situation).toBe('own');
   expect(posted.consent_version).toBe('ratecheck-v2');
   expect(posted.sms_consent).toBe('opted_in');
   expect(Date.parse(posted.consent_given_at)).not.toBeNaN();
@@ -164,6 +170,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   const posts = [];
   let throttledOnce = false;
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     if (posts.length === 1 && !throttledOnce) {
       throttledOnce = true; // the page should wait and retry this one
       return route.fulfill({ status: 429, contentType: 'application/json', body: '{"error":"Rate limit exceeded"}' });
@@ -179,7 +186,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   await page.getByRole('button', { name: '2 separate policies' }).click();
   await expect(page.getByText('2 added')).toBeVisible();
   await page.getByTestId('rc-files').setInputFiles(files[0]); // duplicate
-  await expect(page.getByText('You already added that one.')).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'You already added that file.' })).toBeVisible(); // a toast on screen, not a silent skip
   await page.getByTestId('rc-files').setInputFiles(files[2]);
   await expect(page.getByText('3 added')).toBeVisible();
   await page.getByRole('button', { name: 'Remove policy 3' }).click();
@@ -209,7 +216,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   await page.getByRole('button', { name: 'Add more policies' }).click();
   await expect(page.getByText('3 policies already sent.')).toBeVisible();
   await page.getByTestId('rc-files').setInputFiles(files[3]);
-  await page.getByRole('button', { name: /Send it/ }).click();
+  await page.getByRole('button', { name: /Send it/i }).click();
   await expect(page.getByText('Auto · $980/yr')).toBeVisible({ timeout: 15_000 });
   expect(posts).toHaveLength(4);
   expect(posts[3].sms_consent).toBe('declined');
@@ -244,7 +251,7 @@ test('saves progress on the device and warns about dark or blurry photos', async
   await expect(page.getByLabel('First name')).toHaveValue('Dre');
   await expect(page.getByRole('checkbox').nth(0)).not.toBeChecked();
 
-  await page.getByRole('button', { name: '2 policies', exact: true }).click();
+  await page.getByRole('button', { name: '2 Policies', exact: true }).click();
   await page.getByRole('button', { name: 'Start over' }).click();
   await expect(page.getByRole('heading', { name: 'Get a cheaper rate on your insurance today.' })).toBeVisible();
   await page.reload();
@@ -257,6 +264,7 @@ test('a policy with several pages goes up as one PDF, and asks about more pages'
   });
   const posts = [];
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     posts.push(route.request().postDataJSON());
     await route.fulfill({ status: 200, contentType: 'application/json',
       body: JSON.stringify({ status: 'received', rate_check_id: 't1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 1560 }) });
@@ -288,7 +296,7 @@ test('a policy with several pages goes up as one PDF, and asks about more pages'
   await page.getByRole('button', { name: /Continue/ }).click();
   await fillContact(page);
   await page.getByRole('checkbox').nth(0).check();
-  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
 
   expect(posts).toHaveLength(1);
@@ -307,6 +315,7 @@ test('a downloaded PDF counts its own pages and goes up whole', async ({ page },
   fs.writeFileSync(file, await doc.save());
   const posts = [];
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     posts.push(route.request().postDataJSON());
     await route.fulfill({ status: 200, contentType: 'application/json',
       body: JSON.stringify({ status: 'received', rate_check_id: 't1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 1560 }) });
@@ -328,7 +337,7 @@ test('a downloaded PDF counts its own pages and goes up whole', async ({ page },
   await page.getByRole('button', { name: /Continue/ }).click();
   await fillContact(page);
   await page.getByRole('checkbox').nth(0).check();
-  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
 
   expect(posts).toHaveLength(1);
@@ -344,6 +353,7 @@ async function partnerLinkUpload(page, testInfo, lookup) {
   fs.writeFileSync(photo, noisePng(900, 1200));
   const posts = [];
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     const body = route.request().postDataJSON();
     if (body.mode === 'invite_lookup') return lookup(route);
     posts.push(body);
@@ -359,7 +369,7 @@ async function sendOne(page, photo) {
   await page.getByRole('button', { name: /Continue/ }).click();
   await fillContact(page);
   await page.getByRole('checkbox').nth(0).check();
-  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
 }
 
@@ -387,12 +397,12 @@ test('the guided flow: pick policies, add each one, continue', async ({ page }, 
   const photo = testInfo.outputPath('auto-dec.png');
   fs.writeFileSync(photo, noisePng(900, 1200));
   await page.goto('/ratecheck');
-  await page.getByRole('button', { name: /Check my rate/ }).first().click();
+  await page.getByRole('button', { name: /Check My Rate/ }).first().click();
   await expect(page.getByRole('heading', { name: 'What should we check?' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pick at least one' })).toBeDisabled();
   await page.getByRole('button', { name: 'Auto', exact: true }).click();
   await page.getByRole('button', { name: 'Home', exact: true }).click();
-  await page.getByRole('button', { name: /Continue · 2 policies/ }).click();
+  await page.getByRole('button', { name: /Continue · 2 policies/i }).click();
 
   await expect(page.getByRole('heading', { name: 'Upload your policies' })).toBeVisible();
   await expect(page.getByRole('button', { name: '0 of 2 added' })).toBeDisabled();
@@ -404,9 +414,147 @@ test('the guided flow: pick policies, add each one, continue', async ({ page }, 
   await page.getByRole('button', { name: "That's all" }).click();
   await expect(page.getByRole('button', { name: '1 of 2 added' })).toBeDisabled();
   await expect(page.getByText('Not added yet')).toHaveCount(1); // Home still open
+  // No home policy after all: the X takes Home off the list. Auto, now the only one, has no X.
+  await expect(page.getByRole('button', { name: "I don't have an auto policy" })).toHaveCount(0);
+  await page.getByRole('button', { name: "I don't have a home policy" }).click();
+  await expect(page.getByText('Not added yet')).toHaveCount(0);
 
   // Picked up front, so no "Only one policy?" prompt: straight to contact.
-  await page.getByRole('button', { name: 'Continue with what I have' }).click();
+  await page.getByRole('button', { name: /^Continue$/ }).click();
   await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Only one policy?' })).toHaveCount(0);
+});
+
+test('a policy in the wrong slot is caught before anything is sent', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const photo = testInfo.outputPath('auto-in-home.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  const sent = [];
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    const body = route.request().postDataJSON();
+    if (body?.mode === 'classify') {
+      await new Promise(r => setTimeout(r, 300));
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ policy_type: 'auto', confidence: 'high' }) });
+    }
+    sent.push(body);
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/?start=1');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 2 policies/i }).click();
+
+  // An auto policy uploaded into the Home slot (the second slot).
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Upload', exact: true }).nth(1).click(),
+  ]);
+  await chooser.setFiles(photo);
+  await page.getByRole('button', { name: "That's all" }).click();
+  // It moves itself to Auto; Home reopens and says what to add. Nothing to tap.
+  await expect(page.getByText('this file is an auto policy.')).toBeVisible();
+  await page.getByRole('button', { name: 'Got It' }).click();
+  await expect(page.getByText('this file is an auto policy.')).toHaveCount(0);
+  await expect(page.getByText('That file was an auto policy. Add your home policy here.')).toBeVisible();
+  await expect(page.getByRole('button', { name: '1 of 2 added' })).toBeDisabled();
+  await expect(page.getByText('Not added yet')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /Move to|It’s Right/ })).toHaveCount(0);
+  expect(sent).toHaveLength(0); // nothing went to the agency
+});
+
+test('policy checks and who-is-who: expired, no cars, name from the policy, relationships', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const photo = testInfo.outputPath('dana-auto.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  let posted = null;
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    const body = route.request().postDataJSON();
+    if (body?.mode === 'classify') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        policy_type: 'auto', confidence: 'high', zip: '30013', insured_first_name: 'Dana', insured_last_name: 'Reyes',
+        other_names: [], expiration_date: '2025-03-01', vehicle_count: 0 }) });
+    }
+    if (body?.mode === 'invite_lookup') return route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    posted = body;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'received', rate_check_id: 'r1', carrier: 'GEICO', policy_type: 'auto', annual_premium: 1400 }) });
+  });
+  await page.goto('/?start=1&ref=FRIEND1');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 1 policy/i }).click();
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
+  await chooser.setFiles(photo);
+  // A deck: one question in front, the rest wait behind it.
+  const deck = page.getByRole('region', { name: 'Questions about policy 1' });
+  await expect(deck.getByText(/This policy ended Mar 2025/)).toBeVisible();
+  await expect(deck.getByText('1 of 3')).toBeVisible();
+  await expect(page.getByText(/We don’t see any cars yet/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Answer the Question Above' })).toBeDisabled();
+  await page.getByRole('button', { name: 'It’s Current' }).click();
+  // Then: no cars on the page.
+  await expect(deck.getByText(/We don’t see any cars yet/)).toBeVisible();
+  await expect(deck.getByText('1 of 2')).toBeVisible();
+  await page.getByRole('button', { name: 'It’s All There' }).click();
+  // Last: more pages, alone.
+  await expect(deck.getByText('Does this policy have more pages?')).toBeVisible();
+  await expect(deck.getByText(/of \d/)).toHaveCount(0);
+  await page.getByRole('button', { name: /^Continue$/ }).click();
+
+  // The name arrives from the policy; typing a different one asks how they're related.
+  await expect(page.getByLabel('First Name')).toHaveValue('Dana');
+  await expect(page.getByLabel('Last Name')).toHaveValue('Reyes');
+  await expect(page.getByRole('radio', { name: 'Partner', exact: true })).toHaveCount(0);
+  await page.getByLabel('First Name').fill('Mike');
+  await expect(page.getByRole('radio', { name: 'Partner', exact: true })).toBeVisible();
+  await page.getByRole('radio', { name: 'Other' }).first().click();
+  await page.getByLabel('Describe how you\'re related').fill('my COUSIN!!');
+  // Came from a referral link: how they know the person (optional).
+  await page.getByRole('radio', { name: 'Coworker' }).click();
+
+  await fillContact(page, { skipName: true });
+  await page.getByRole('checkbox').nth(0).check();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
+  await expect.poll(() => posted).not.toBeNull();
+  expect(posted).toMatchObject({
+    first_name: 'Mike', last_name: 'Reyes', policyholder_name: 'Dana Reyes',
+    contact_relationship: 'other', contact_relationship_other: 'Cousin',
+    referrer_relationship: 'coworker', zip: '30013',
+  });
+});
+
+test('a second named insured (husband and wife on one policy) is not asked how they are related', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const photo = testInfo.outputPath('pearson-auto.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  let posted = null;
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    const body = route.request().postDataJSON();
+    if (body?.mode === 'classify') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        policy_type: 'auto', confidence: 'high', zip: '30013', insured_first_name: 'Marcus', insured_last_name: 'Pearson',
+        other_insured_names: ['Lee Ann Pearson'], driver_names: ['Tony Pearson'], expiration_date: '2027-06-01', vehicle_count: 2 }) });
+    }
+    posted = body;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'received', rate_check_id: 'r2', carrier: 'State Farm', policy_type: 'auto', annual_premium: 2100 }) });
+  });
+  await page.goto('/?start=1');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 1 policy/i }).click();
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
+  await chooser.setFiles(photo);
+  await page.getByRole('button', { name: "That's all" }).click();
+  await page.getByRole('button', { name: /^Continue$/ }).click();
+
+  // The wife fills it in: she's a named insured too, so no question.
+  await page.getByLabel('First Name').fill('Lee Ann');
+  await expect(page.getByRole('radio', { name: 'Spouse' })).toHaveCount(0);
+  // A listed driver who isn't a named insured is asked.
+  await page.getByLabel('First Name').fill('Tony');
+  await expect(page.getByRole('radio', { name: 'Child' })).toBeVisible();
+  await page.getByLabel('First Name').fill('Lee Ann');
+
+  await fillContact(page, { skipName: true });
+  await page.getByRole('checkbox').nth(0).check();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
+  await expect.poll(() => posted).not.toBeNull();
+  expect(posted).toMatchObject({ first_name: 'Lee Ann', last_name: 'Pearson', policyholder_name: 'Marcus Pearson', contact_relationship: 'self' });
 });

@@ -39,7 +39,7 @@ export default function WinMap({ agencyId }) {
     return (
       <div className="dark-card relative overflow-hidden" style={{ padding: 0 }}>
         <div className="p-5">
-          <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.winmaptab.16b6c2">Building your win map</T></h2>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.winmaptab.16b6c2">Building Your Win Map</T></h2>
           <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             {closest
               ? <>{have} <T k="pages.components.ratechecks.winmaptab.8bf885">of</T> {MIN_QUOTES} <T k="pages.components.ratechecks.winmaptab.0dc602">quotes toward your first ZIP</T> <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}>({closest.zip5} · {closest.carrier || 'Unknown'}{closest.policy_type ? ` ${policyTypeLabel(closest.policy_type).toLowerCase()}` : ''})</span></>
@@ -65,13 +65,13 @@ export default function WinMap({ agencyId }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 text-sm" style={{ borderBottom: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }}>
         <span><T k="pages.components.ratechecks.winmaptab.59c8a6">How often Allstate beats each carrier, by ZIP.</T></span>
         <label className="whitespace-nowrap sm:ml-auto">
-          <T k="pages.components.ratechecks.winmaptab.0198c3">At least</T>
+          <T k="pages.components.ratechecks.winmaptab.0198c3">At Least</T>
           <input type="number" min={1} value={minQuoted} onChange={e => setMinQuoted(Math.max(1, Number(e.target.value) || 1))}
             className="mx-1.5 w-14 rounded px-2 py-1" style={inputStyle} aria-label="Minimum quotes" />
           <T k="pages.components.ratechecks.winmaptab.2150fd">quotes</T>
         </label>
         <button type="button" onClick={() => setSortDir(d => (d === 'desc' ? 'asc' : 'desc'))} className="whitespace-nowrap font-semibold text-primary-600 md:hidden">
-          <T k="pages.components.ratechecks.winmaptab.5d88e8">Win rate</T> {sortDir === 'desc' ? '↓' : '↑'}
+          <T k="pages.components.ratechecks.winmaptab.5d88e8">Win Rate</T> {sortDir === 'desc' ? '↓' : '↑'}
         </button>
       </div>
       {rows.length === 0 ? (
@@ -95,9 +95,9 @@ export default function WinMap({ agencyId }) {
                 <tr style={{ background: 'var(--qs-elevated)' }}>
                   {['Their carrier', 'Policy', 'ZIP', 'Quotes', 'Wins'].map(h => <th key={h} className={thCls} style={thStyle}>{h}</th>)}
                   <th className={thCls} style={thStyle}>
-                    <button onClick={() => setSortDir(d => (d === 'desc' ? 'asc' : 'desc'))} className="uppercase"><T k="pages.components.ratechecks.winmaptab.5d88e8">Win rate</T> {sortDir === 'desc' ? '↓' : '↑'}</button>
+                    <button onClick={() => setSortDir(d => (d === 'desc' ? 'asc' : 'desc'))} className="uppercase"><T k="pages.components.ratechecks.winmaptab.5d88e8">Win Rate</T> {sortDir === 'desc' ? '↓' : '↑'}</button>
                   </th>
-                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.winmaptab.77e44d">Avg savings</T></th>
+                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.winmaptab.77e44d">Avg Savings</T></th>
                 </tr>
               </thead>
               <tbody>

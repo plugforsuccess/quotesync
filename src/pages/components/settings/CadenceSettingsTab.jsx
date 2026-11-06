@@ -362,7 +362,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
 
                             <div>
                               <label style={{ fontSize: 11, color: 'var(--qs-muted)',
-                                display: 'block', marginBottom: 4 }}><T k="pages.components.settings.cadencesettingstab.e756c3">Preferred time</T></label>
+                                display: 'block', marginBottom: 4 }}><T k="pages.components.settings.cadencesettingstab.e756c3">Preferred Time</T></label>
                               <input
                                 type="time"
                                 value={time}
@@ -471,7 +471,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                                   border: '1px solid var(--qs-border)',
                                   color: 'var(--qs-dim)', cursor: 'pointer',
                                 }}>
-                                <T k="pages.components.settings.cadencesettingstab.d0857e">Download .ics</T>
+                                <T k="pages.components.settings.cadencesettingstab.d0857e">Download .Ics</T>
                               </button>
                             </div>
                           </div>

@@ -18,8 +18,8 @@ import { ATL_VIEW, FULL_H, FULL_VIEW, FULL_W, clampView, placeLabels, zoomAt, zo
 // Whose book: independent (could be bought) > Allstate book > not sure > captive.
 const TONES = {
   acquirable: { fill: 'var(--qs-success)', label: 'Independent' },
-  allstate: { fill: 'var(--qs-info)', label: 'Allstate book' },
-  check: { fill: 'var(--qs-warning)', label: 'Not sure' },
+  allstate: { fill: 'var(--qs-info)', label: 'Allstate Book' },
+  check: { fill: 'var(--qs-warning)', label: 'Not Sure' },
   not_acquirable: { fill: 'var(--qs-subtle)', label: 'Captive' },
 };
 const RANK = ['acquirable', 'allstate', 'check', 'not_acquirable'];
@@ -244,7 +244,7 @@ export default function AgentsMap({ agents, scans, zip, onPickZip, tall = false 
           <span className="min-w-0">
             <b>{zip}</b>{picked ? ` · ${picked.city} · ${picked.customers} customer${picked.customers === 1 ? '' : 's'}, ${picked.agents.length} agent${picked.agents.length === 1 ? '' : 's'}` : ''}
           </span>
-          <button type="button" onClick={() => onPickZip('')} className="min-h-[36px] shrink-0 font-semibold text-primary-600"><T k="pages.components.ratechecks.agentsmap.eb9202">Show all</T></button>
+          <button type="button" onClick={() => onPickZip('')} className="min-h-[36px] shrink-0 font-semibold text-primary-600"><T k="pages.components.ratechecks.agentsmap.eb9202">Show All</T></button>
         </div>
       )}
     </div>

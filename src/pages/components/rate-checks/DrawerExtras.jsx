@@ -25,7 +25,7 @@ export function CurrentAgentBox({ rc }) {
   return (
     <section>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.drawerextras.565bea">Their current agent</T></h3>
+        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.drawerextras.565bea">Their Current Agent</T></h3>
         <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.drawerextras.4dff40">Internal only</T></span>
       </div>
       <dl>
@@ -61,7 +61,7 @@ export function ReferralBox({ rc }) {
 
   return (
     <section>
-      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.drawerextras.1b1a7a">Refer to a partner</T></h3>
+      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.drawerextras.1b1a7a">Refer to a Partner</T></h3>
       {consented && (
         <div className="space-y-2 text-sm">
           <p style={{ color: 'var(--qs-subtle)' }}>
@@ -83,7 +83,7 @@ export function ReferralBox({ rc }) {
               <input value={line} onChange={e => setLine(e.target.value)} placeholder="What they need, e.g. SR-22" aria-label="What they need" className="rounded px-2 py-1.5" style={inputStyle} />
               <input value={note} onChange={e => setNote(e.target.value)} placeholder="Note for the partner (optional)" aria-label="Note" className="rounded px-2 py-1.5 sm:col-span-2" style={inputStyle} />
               <button type="submit" disabled={!partnerId || create.isPending} className="justify-self-start rounded bg-primary-600 px-3 py-1.5 font-semibold text-white disabled:opacity-50">
-                {create.isPending ? 'Saving…' : 'Log referral'}
+                {create.isPending ? 'Saving…' : 'Log Referral'}
               </button>
             </form>
           )}

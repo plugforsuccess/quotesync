@@ -179,7 +179,7 @@ export function SiteCopyProvider({ children }) {
             </p>
             <button type="button" onClick={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setEditing(false); }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-sm font-bold text-slate-900">
-              <Check className="h-4 w-4" aria-hidden="true" /> Done editing
+              <Check className="h-4 w-4" aria-hidden="true" /> Done Editing
             </button>
           </div>
           {error && <p className="bg-red-600 px-4 py-1.5 text-center text-xs text-white" role="alert">{error}</p>}
@@ -210,12 +210,12 @@ export function useCopyValue(key, fallback = '') {
   return typeof v === 'string' && v.trim() ? v.trim() : fallback;
 }
 
-export function EditPagePencil({ className = '' }) {
+export function EditPagePencil({ className = '', tone = 'dark' }) {
   const { canStartEditing, startEditing } = useContext(Ctx);
   if (!canStartEditing) return null;
   return (
     <button type="button" onClick={startEditing} aria-label="Edit this page" title="Edit this page"
-      className={`qs-edit-pencil inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white ${className}`}>
+      className={`qs-edit-pencil inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tone === 'light' ? 'text-slate-500 hover:bg-slate-100 hover:text-[#0F2D6B]' : 'text-white/80 hover:bg-white/10 hover:text-white'} ${className}`}>
       <Pencil className="h-[18px] w-[18px]" aria-hidden="true" />
     </button>
   );

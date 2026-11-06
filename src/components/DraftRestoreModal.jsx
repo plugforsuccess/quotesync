@@ -109,7 +109,7 @@ export default function DraftRestoreModal({
               {hasBody && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Content Preview ({contentLength} characters)
+                    Content Preview ({contentLength} Characters)
                   </label>
                   <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                     <p className="text-sm text-gray-700 line-clamp-6">

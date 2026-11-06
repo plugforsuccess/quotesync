@@ -179,7 +179,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     placeholder="Note (optional) — e.g. tried cell, left VM"
                     style={{ ...ctrl, gridColumn: '1 / -1' }} />
                   <label style={{ ...lbl, gridColumn: '1 / -1', textTransform: 'none', letterSpacing: 0, fontWeight: 500, color: 'var(--qs-dim)' }}>
-                    Next follow-up (optional)
+                    Next Follow-Up (Optional)
                     <div style={{ display: 'flex', gap: 5, margin: '6px 0' }} title="Quick follow-up — N days from now">
                       {FOLLOW_UP_QUICK_DAYS.map(days => (
                         <button key={days} type="button" onClick={() => setAtt(a => ({ ...a, followUp: followUpInDays(days) }))}
@@ -201,7 +201,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     style={{ gridColumn: '1 / -1', padding: '9px', borderRadius: 8, border: '1px solid var(--qs-border)',
                       background: 'var(--qs-elevated)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 700,
                       cursor: logAttempt.isPending ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                    {logAttempt.isPending ? 'Logging…' : '＋ Log attempt'}
+                    {logAttempt.isPending ? 'Logging…' : '＋ Log Attempt'}
                   </button>
                 </div>
               )}
@@ -257,7 +257,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     background: (needsNote && !note.trim()) ? 'var(--qs-elevated)' : '#10B981',
                     color: (needsNote && !note.trim()) ? 'var(--qs-muted)' : '#fff',
                     fontSize: 14, fontWeight: 700, cursor: (needsNote && !note.trim()) ? 'not-allowed' : 'pointer' }}>
-                  {update.isPending ? 'Saving…' : '✓ Mark done'}
+                  {update.isPending ? 'Saving…' : '✓ Mark Done'}
                 </button>
                 {hardToReach && (
                   <button onClick={finalNotice} disabled={update.isPending}
@@ -265,7 +265,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 10,
                       border: '1px solid #F59E0B55', background: 'transparent', color: '#FBBF24',
                       fontSize: 13, fontWeight: 700, cursor: update.isPending ? 'not-allowed' : 'pointer' }}>
-                    ✉ Final notice sent → close as unreachable
+                    ✉ Final Notice Sent → Close As Unreachable
                   </button>
                 )}
               </>

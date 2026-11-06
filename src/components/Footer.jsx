@@ -1,5 +1,6 @@
 // src/components/Footer.jsx
 import React from 'react';
+import { rateCheckStart } from '../lib/rateCheckStart';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -27,8 +28,8 @@ const Footer = () => {
             <h4 className="text-lg font-semibold mb-3">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Check my rate
+                <Link to={rateCheckStart('footer')} className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Check My Rate
                 </Link>
               </li>
               <li>

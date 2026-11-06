@@ -2,6 +2,7 @@
 // Individual story page with full SEO optimization for /news/{slug}
 
 import { T } from '../components/SiteCopy';
+import { rateCheckStart } from '../lib/rateCheckStart';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
@@ -155,7 +156,7 @@ const StoryDetailPage = () => {
     if (!story) return;
     trackNewsroomCTAClick(story, ctaType);
 
-    if (ctaType === 'compare_policy') navigate('/');
+    if (ctaType === 'compare_policy') navigate(rateCheckStart('newsroom'));
   };
 
   if (loading) {
@@ -285,7 +286,7 @@ const StoryDetailPage = () => {
           {/* Why This Matters */}
           <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              <T k="pages.storydetailpage.aa8aa0">Why this matters</T>
+              <T k="pages.storydetailpage.aa8aa0">Why This Matters</T>
             </h2>
             <p className="text-gray-700 leading-relaxed text-lg">
               {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
@@ -317,7 +318,7 @@ const StoryDetailPage = () => {
           {/* The ask */}
           <div className="bg-gray-50 rounded-lg p-8 border border-gray-200 mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              <T k="pages.storydetailpage.964a04">Does this touch your policy?</T>
+              <T k="pages.storydetailpage.964a04">Does This Touch Your Policy?</T>
             </h3>
             <p className="text-gray-600 mb-5"><T k="pages.storydetailpage.f12ac4">Upload your policy and a licensed agent will check it, usually within 30 minutes during business hours. Or just text Cam the question.</T></p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -325,7 +326,7 @@ const StoryDetailPage = () => {
                 onClick={() => handleCTAClick('compare_policy')}
                 className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
               >
-                <T k="pages.storydetailpage.f8feed">Check my rate</T>
+                <T k="pages.storydetailpage.f8feed">Check My Rate</T>
               </button>
               <a
                 href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}

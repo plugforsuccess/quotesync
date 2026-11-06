@@ -9,6 +9,8 @@ import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProducerQueue, useLogLeadTouch, useScheduleLeadFollowup, useSnoozeLead } from '../hooks/useProducerQueue';
+import { useAuth } from '../contexts/AuthContext';
+import { SalesSheet } from './components/sales/SalesForms';
 
 function relativeTime(dateStr) {
   if (!dateStr) return null;
@@ -27,7 +29,7 @@ const RESULTS = [
   { value: 'disconnected', label: 'Disconnected' },
 ];
 
-function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
+function LeadCard({ lead, onLog, onFollowup, onSnooze, onSales }) {
   const due = lead.next_followup_at && new Date(lead.next_followup_at).getTime() <= Date.now();
   const enrichment = lead.enrichment_status;
   const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ').trim();
@@ -87,8 +89,10 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
 
       <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
         <button onClick={() => onLog(lead)} style={btn('primary')}><T k="pages.myleadspage.60866b">Log Touch</T></button>
-        <button onClick={() => onFollowup(lead)} style={btn()}><T k="pages.myleadspage.d0a869">📅 Follow-up</T></button>
+        <button onClick={() => onFollowup(lead)} style={btn()}><T k="pages.myleadspage.d0a869">📅 Follow-Up</T></button>
         <button onClick={() => onSnooze(lead)} style={btn()}><T k="pages.myleadspage.3dd493">💤 Snooze</T></button>
+        <button onClick={() => onSales(lead, 'quote')} style={btn()}>Quote</button>
+        <button onClick={() => onSales(lead, 'bind')} style={btn()}>Bound</button>
         <Link to={`/agency/leads/${lead.id}`} style={{ ...btn(), textDecoration: 'none', display: 'inline-block' }}><T k="pages.myleadspage.a96b08">Open →</T></Link>
       </div>
     </div>
@@ -116,6 +120,8 @@ export default function MyLeadsPage() {
   const [fuForm, setFuForm] = useState({ time: '', note: '' });
 
   const closeAll = () => { setLogTarget(null); setFuTarget(null); };
+  const { currentAgencyId } = useAuth();
+  const [sales, setSales] = useState(null); // { lead, mode }
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px' }}>
@@ -136,8 +142,11 @@ export default function MyLeadsPage() {
           onLog={(l) => { setLogTarget(l); setLogForm({ result: 'no_answer', note: '' }); }}
           onFollowup={(l) => { setFuTarget(l); setFuForm({ time: '', note: '' }); }}
           onSnooze={(l) => snoozeLead.mutate({ leadId: l.id, days: 3, reason: 'producer snooze' })}
+          onSales={(l, mode) => setSales({ lead: l, mode })}
         />
       ))}
+
+      {sales && <SalesSheet mode={sales.mode} lead={sales.lead} agencyId={currentAgencyId} onClose={() => setSales(null)} />}
 
       {/* Log Touch */}
       {logTarget && (

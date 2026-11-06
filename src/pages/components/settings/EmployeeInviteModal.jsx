@@ -76,7 +76,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, fontWeight: 600,
                 color: 'var(--qs-subtle)', display: 'block', marginBottom: 6 }}>
-                <T k="pages.components.settings.employeeinvitemodal.b357b5">Email address</T>
+                <T k="pages.components.settings.employeeinvitemodal.b357b5">Email Address</T>
               </label>
               <input
                 type="email"

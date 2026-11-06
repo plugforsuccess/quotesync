@@ -501,7 +501,7 @@ const NewsroomEditorPage = () => {
                     className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
                   >
                     <Send className="w-4 h-4" />
-                    <span className="hidden sm:inline"><T k="pages.newsroomeditorpage.d8d370">Submit for Review</T></span>
+                    <span className="hidden sm:inline"><T k="pages.newsroomeditorpage.d8d370">Submit For Review</T></span>
                     <span className="sm:hidden"><T k="pages.newsroomeditorpage.a4d3b1">Submit</T></span>
                   </button>
                 </>
@@ -617,7 +617,7 @@ const NewsroomEditorPage = () => {
           {/* Preview Hook */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <T k="pages.newsroomeditorpage.9b9a75">Preview Hook (2-3 sentences)</T> <span className="text-red-500">*</span>
+              <T k="pages.newsroomeditorpage.9b9a75">Preview Hook (2-3 Sentences)</T> <span className="text-red-500">*</span>
             </label>
             <textarea
               value={story.preview_hook}

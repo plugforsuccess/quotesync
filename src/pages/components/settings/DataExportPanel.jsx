@@ -55,7 +55,7 @@ export default function DataExportPanel({ agencyId }) {
 
   return (
     <div className="card" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20 }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright, #fff)', margin: 0 }}><T k="pages.components.settings.dataexportpanel.9d2bf3">Export your data</T></h3>
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright, #fff)', margin: 0 }}><T k="pages.components.settings.dataexportpanel.9d2bf3">Export Your Data</T></h3>
       <p style={{ fontSize: 12, color: 'var(--qs-dim)', margin: '6px 0 16px' }}>
         <T k="pages.components.settings.dataexportpanel.b78ebc">Download your agency's data as CSV — it's yours, portable any time. Includes the proprietary retention layer: call logs with the save tactic, outcomes, and the monthly book snapshots.</T>
       </p>

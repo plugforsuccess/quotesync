@@ -59,7 +59,7 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
         <FileText className="w-7 h-7 text-white" />
       </div>
       <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 leading-tight">
-        <T k="pages.components.wizard.declarationfastpathstep.ad0dfc">Skip the questions — upload your policy</T>
+        <T k="pages.components.wizard.declarationfastpathstep.ad0dfc">Skip the Questions — Upload Your Policy</T>
       </h2>
       <p className="text-sm text-gray-500 mb-5 leading-relaxed">
         <T k="pages.components.wizard.declarationfastpathstep.60a29f">Have your current declarations page? Upload it (PDF preferred — a clear photo works too) and we'll read your coverage, premium, and vehicles automatically. Bundling? Add your auto</T> <span className="font-medium"><T k="pages.components.wizard.declarationfastpathstep.be5d5d">and</T></span> <T k="pages.components.wizard.declarationfastpathstep.17cd1d">home dec pages.</T>
@@ -95,17 +95,17 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
         {working ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span><T k="pages.components.wizard.declarationfastpathstep.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'your document'}…</span>
+            <span><T k="pages.components.wizard.declarationfastpathstep.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'Your Document'}…</span>
           </>
         ) : hasItems ? (
           <>
             <Plus className="w-5 h-5" />
-            <span><T k="pages.components.wizard.declarationfastpathstep.e4e33d">Add another dec page</T></span>
+            <span><T k="pages.components.wizard.declarationfastpathstep.e4e33d">Add Another Dec Page</T></span>
           </>
         ) : (
           <>
             <UploadCloud className="w-5 h-5" />
-            <span>{status === 'error' ? 'Try another file' : 'Upload declarations page'}</span>
+            <span>{status === 'error' ? 'Try Another File' : 'Upload Declarations Page'}</span>
           </>
         )}
       </button>

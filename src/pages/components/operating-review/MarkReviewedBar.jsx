@@ -117,7 +117,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
               style={btnPrimary}
             >
               <Check size={14} />
-              <T k="pages.components.operatingreview.markreviewedbar.42c7ae">Mark this week reviewed</T>
+              <T k="pages.components.operatingreview.markreviewedbar.42c7ae">Mark This Week Reviewed</T>
             </button>
           )}
 
@@ -166,7 +166,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <h2 style={{ margin: 0, fontSize: 16, color: 'var(--qs-bright)', fontWeight: 600 }}>
-                <T k="pages.components.operatingreview.markreviewedbar.88b104">Mark reviewed — optional note</T>
+                <T k="pages.components.operatingreview.markreviewedbar.88b104">Mark Reviewed — Optional Note</T>
               </h2>
               <button
                 type="button"
@@ -257,7 +257,7 @@ function HistoryModal({ completions, onClose }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <h2 style={{ margin: 0, fontSize: 18, color: 'var(--qs-bright)', fontWeight: 600 }}>
-            <T k="pages.components.operatingreview.markreviewedbar.07502b">Review history (last 6 months)</T>
+            <T k="pages.components.operatingreview.markreviewedbar.07502b">Review History (Last 6 Months)</T>
           </h2>
           <button
             type="button"

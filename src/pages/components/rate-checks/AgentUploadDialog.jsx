@@ -39,7 +39,7 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
         style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.agentuploaddialog.d008bd">Upload dec page</T></h2>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.agentuploaddialog.d008bd">Upload Dec Page</T></h2>
             <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.fd9270">For a dec page a customer emailed or texted you.</T></p>
           </div>
           <button type="button" onClick={onClose} disabled={upload.isPending} aria-label="Close" className="rounded p-1.5" style={inputStyle}><X className="w-4 h-4" /></button>
@@ -61,25 +61,25 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
         )}
         <button type="button" onClick={() => fileInput.current?.click()} disabled={upload.isPending}
           className="w-full rounded-lg border-2 border-dashed px-4 py-4 text-sm font-semibold" style={{ borderColor: 'var(--qs-border)', color: 'var(--qs-bright)' }}>
-          {files.length ? `+ Add page ${files.length + 1}` : 'Choose photos or PDF'}
+          {files.length ? `+ Add Page ${files.length + 1}` : 'Choose Photos or PDF'}
           <span className="block text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>
             {files.length ? 'More pages of the same policy' : 'Pick every page of the policy; they’re read together'}
           </span>
         </button>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="col-span-2 space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.77ca59">Customer mobile *</T></span>
+          <label className="col-span-2 space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.77ca59">Customer Mobile *</T></span>
             <input className={field} style={inputStyle} type="tel" inputMode="tel" placeholder="(404) 555-1212"
               value={phone} onChange={e => setPhone(formatPhoneInput(e.target.value))} required />
           </label>
-          <label className="space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.20db0b">First name</T></span>
+          <label className="space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.20db0b">First Name</T></span>
             <input className={field} style={inputStyle} value={firstName} onChange={e => setFirstName(e.target.value)} maxLength={60} />
           </label>
           <label className="space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.4348f9">ZIP</T></span>
             <input className={field} style={inputStyle} inputMode="numeric" maxLength={5} value={zip}
               onChange={e => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))} />
           </label>
-          <label className="col-span-2 space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.91ae8d">Where they live (if known)</T></span>
+          <label className="col-span-2 space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.agentuploaddialog.91ae8d">Where They Live (If Known)</T></span>
             <select className={field} style={inputStyle} value={housing} onChange={e => setHousing(e.target.value)}>
               <option value="">Not sure</option>
               {HOUSING_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -96,7 +96,7 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={upload.isPending} className="rounded-lg px-4 py-2 text-sm" style={inputStyle}><T k="pages.components.ratechecks.agentuploaddialog.ea4788">Cancel</T></button>
           <button type="submit" disabled={!canSubmit} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            {upload.isPending ? 'Reading dec page…' : 'Upload & scan'}
+            {upload.isPending ? 'Reading Dec Page…' : 'Upload & Scan'}
           </button>
         </div>
       </form>

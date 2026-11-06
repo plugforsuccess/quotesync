@@ -26,7 +26,7 @@ export default function QuickSendCard({ agencyId }) {
         </Link>
         <button type="button" onClick={() => setShowPhones(v => !v)} aria-expanded={showPhones}
           className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
-          <Smartphone className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.f90fd6">Signed-in phones (</T>{devices.length})
+          <Smartphone className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.f90fd6">Signed-in Phones (</T>{devices.length})
         </button>
       </div>
 
@@ -46,7 +46,7 @@ export default function QuickSendCard({ agencyId }) {
                 </div>
                 <button type="button" onClick={() => { if (window.confirm(`Sign out ${d.producer_name || 'this'}’s ${d.label || 'phone'}? They’ll need their PIN to sign in again.`)) remove.mutate(d.id); }}
                   className="min-h-[36px] shrink-0 rounded-lg px-3 text-sm font-semibold text-red-600" style={inputStyle}>
-                  <T k="pages.components.ratechecks.quicksendcard.c87aac">Sign out</T>
+                  <T k="pages.components.ratechecks.quicksendcard.c87aac">Sign Out</T>
                 </button>
               </li>
             ))}

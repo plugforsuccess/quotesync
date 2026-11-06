@@ -115,7 +115,7 @@ export default function SaveConfirmationPage() {
                 <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-8 py-4 rounded-xl transition-all duration-300">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
                   <span className="relative z-10 text-white font-black text-lg">
-                    <T k="pages.saveconfirmationpage.03b047">Connect my policy</T>
+                    <T k="pages.saveconfirmationpage.03b047">Connect My Policy</T>
                   </span>
                   <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:trangray-x-1" />
                 </div>

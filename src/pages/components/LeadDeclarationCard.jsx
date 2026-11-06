@@ -74,7 +74,7 @@ function DeclarationEntry({ entry }) {
             className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-800 disabled:opacity-60"
           >
             {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
-            <T k="pages.components.leaddeclarationcard.773c80">View original</T>
+            <T k="pages.components.leaddeclarationcard.773c80">View Original</T>
           </button>
         )}
       </div>
@@ -96,7 +96,7 @@ function DeclarationEntry({ entry }) {
 
       {Array.isArray(entry.discounts) && entry.discounts.length > 0 && (
         <div className="mt-4">
-          <dt className="text-gray-500 text-sm mb-1.5"><T k="pages.components.leaddeclarationcard.ccfb0d">Discounts on current policy</T></dt>
+          <dt className="text-gray-500 text-sm mb-1.5"><T k="pages.components.leaddeclarationcard.ccfb0d">Discounts on Current Policy</T></dt>
           <div className="flex flex-wrap gap-1.5">
             {entry.discounts.map((d, i) => (
               <span key={i} className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">{d}</span>
