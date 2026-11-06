@@ -27,9 +27,7 @@ function Choice({ on, onClick, icon: Icon, children }) {
 // Marks a card as the Allstate policy being written.
 function AllstateMark() {
   return (
-    <span className="inline-flex h-9 shrink-0 items-center rounded-lg bg-white px-1.5" style={{ border: '1px solid var(--qs-border)' }}>
-      <img src="/logos/carriers/allstate.jpg" alt="Allstate" className="h-7 w-auto" />
-    </span>
+    <img src="/logos/carriers/allstate-transparent.png" alt="Allstate" className="h-9 w-auto shrink-0" />
   );
 }
 
