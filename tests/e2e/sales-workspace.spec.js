@@ -154,8 +154,10 @@ test('close: mark bound writes each policy bound with Allstate at its annual pre
   const writes = await openClose(page, quotedRows);
   await page.getByRole('button', { name: 'Bound', exact: true }).click();
   await expect(page.getByLabel('Auto bound premium')).toHaveValue('2950'); // 6-month, from the saved quote
-  await expect(page.getByLabel('Auto policy number')).toHaveValue('SF-4421-907'); // from the upload
-  await expect(page.getByLabel('Home policy number')).toHaveValue(''); // none read
+  await expect(page.getByLabel('Auto policy number')).toHaveValue(''); // the new Allstate number, not State Farm's
+  await expect(page.getByText('Auto New Business')).toBeVisible();
+  await expect(page.getByText('Home New Business')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Allstate' })).toHaveCount(2);
   await expect(page.getByText(/Was State Farm/)).toHaveCount(0);
   await page.getByRole('button', { name: /Mark Bound · 2 Policies/ }).click();
   await expect(page.getByText(/Bound\. The lead is closed as Won/)).toBeVisible();

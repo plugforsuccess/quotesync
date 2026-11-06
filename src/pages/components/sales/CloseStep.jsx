@@ -24,6 +24,15 @@ function Choice({ on, onClick, icon: Icon, children }) {
   );
 }
 
+// Marks a card as the Allstate policy being written.
+function AllstateMark() {
+  return (
+    <span className="inline-flex h-9 shrink-0 items-center rounded-lg bg-white px-1.5" style={{ border: '1px solid var(--qs-border)' }}>
+      <img src="/logos/carriers/allstate.jpg" alt="Allstate" className="h-7 w-auto" />
+    </span>
+  );
+}
+
 function Done({ children }) {
   return (
     <div className="rounded-xl p-4" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }} role="status">
@@ -38,7 +47,7 @@ function Bound({ household, leadId }) {
   const [rows, setRows] = useState(() => Object.fromEntries(list.map(rc => [rc.id, {
     on: true,
     premium: rc.allstate_premium != null ? String(Math.round(rc.allstate_premium * termOf(rc) / 12 * 100) / 100) : '',
-    policy: rc.policy_number ? String(rc.policy_number).slice(0, 40) : '',
+    policy: '', // the new Allstate policy's number, not the one they're leaving
   }])));
   const bind = useBindHousehold();
   const set = (id, k, v) => setRows(m => ({ ...m, [id]: { ...m[id], [k]: v } }));
@@ -57,10 +66,13 @@ function Bound({ household, leadId }) {
         const t = termOf(rc);
         return (
           <div key={rc.id} className="rounded-xl p-4" style={{ ...card, opacity: r.on ? 1 : 0.6 }}>
-            <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
-              <input type="checkbox" checked={r.on} onChange={e => set(rc.id, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
-              <T>{policyTypeLabel(rc.policy_type)}</T>
-            </label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
+                <input type="checkbox" checked={r.on} onChange={e => set(rc.id, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
+                <T>{`${policyTypeLabel(rc.policy_type)} New Business`}</T>
+              </label>
+              <AllstateMark />
+            </div>
             {r.on && (
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="block text-xs font-semibold" style={{ color: 'var(--qs-bright)' }}>
@@ -113,10 +125,13 @@ function LeadBound({ lead, agencyId, openQuote }) {
         const label = LABEL[l.product] || l.product;
         return (
           <div key={l.key} className="rounded-xl p-4" style={{ ...card, opacity: r.on ? 1 : 0.6 }}>
-            <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
-              <input type="checkbox" checked={r.on} onChange={e => set(l.key, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
-              <T>{label}</T>
-            </label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
+                <input type="checkbox" checked={r.on} onChange={e => set(l.key, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
+                <T>{`${label} New Business`}</T>
+              </label>
+              <AllstateMark />
+            </div>
             {r.on && (
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="block text-xs font-semibold" style={{ color: 'var(--qs-bright)' }}>
