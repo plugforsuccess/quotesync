@@ -46,8 +46,8 @@ export function ConsumerNav({ current }) {
       <div className="flex items-center gap-1">
         <nav aria-label="insuredbycam" className="hidden items-center gap-1 whitespace-nowrap text-sm font-semibold sm:flex">
           {PAGES.map(([key, to, label]) => (key === current
-            ? <span key={key} aria-current="page" className="rounded-full bg-white/10 px-3 py-1.5 text-white">{label}</span>
-            : <Link key={key} to={to} className="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">{label}</Link>))}
+            ? <span key={key} aria-current="page" className="rounded-full bg-white/10 px-3 py-1.5 text-white"><T k={`nav.${key}`}>{label}</T></span>
+            : <Link key={key} to={to} className="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white"><T k={`nav.${key}`}>{label}</T></Link>))}
         </nav>
         <EditPagePencil />
         <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}
@@ -71,14 +71,14 @@ export function ConsumerNav({ current }) {
               {PAGES.map(([key, to, label]) => (
                 <Link key={key} to={to} onClick={() => setOpen(false)} aria-current={key === current ? 'page' : undefined}
                   className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-lg font-bold ${key === current ? 'bg-white/10 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white'}`}>
-                  {label}
+                  <T k={`nav.${key}`}>{label}</T>
                   {key === current && <span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" />}
                 </Link>
               ))}
             </nav>
             <div className="mt-auto px-5 pb-8">
               <Link to={rateCheckStart({ drivers: 'drivers_ed', news: 'newsroom' }[current] || 'menu')} onClick={() => setOpen(false)} className="qb qb-gold qb-md w-full">
-                Check My Rate
+                <T k="nav.cta">Check My Rate</T>
               </Link>
             </div>
           </div>
@@ -108,19 +108,19 @@ export function RateCheckFooter({ padForBar = false, wide = false }) {
   return (
     <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'} ${wide ? 'sm:max-w-6xl lg:px-8' : ''}`}>
       <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
-        <Link to="/courses" className="font-semibold text-slate-600 underline">Drivers Ed</Link>
-        <Link to="/news" className="font-semibold text-slate-600 underline">Newsroom</Link>
+        <Link to="/courses" className="font-semibold text-slate-600 underline"><T k="footer.drivers-ed">Drivers Ed</T></Link>
+        <Link to="/news" className="font-semibold text-slate-600 underline"><T k="footer.newsroom">Newsroom</T></Link>
       </nav>
       <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legal">
-        <Link to="/ratecheck-privacy" className="underline">Rate Check privacy notice</Link>
-        <Link to="/privacy" className="underline">Privacy policy</Link>
-        <Link to="/terms" className="underline">Terms</Link>
+        <Link to="/ratecheck-privacy" className="underline"><T k="footer.rc-privacy">Rate Check privacy notice</T></Link>
+        <Link to="/privacy" className="underline"><T k="footer.privacy">Privacy policy</T></Link>
+        <Link to="/terms" className="underline"><T k="footer.terms">Terms</T></Link>
       </nav>
       {/* TODO(compliance): confirm the Allstate agency disclosure wording before launch. */}
       <p>
         <T k="rc.footer.disclosure">{`${AGENCY.name} is an Allstate Insurance Agency. Quotes and savings vary and are subject to underwriting and eligibility; not all applicants qualify.`}</T>
       </p>
-      <p className="mt-1">Agency Resident License #: {AGENCY.license}</p>
+      <p className="mt-1"><T k="footer.license">Agency Resident License #:</T> {AGENCY.license}</p>
     </footer>
   );
 }

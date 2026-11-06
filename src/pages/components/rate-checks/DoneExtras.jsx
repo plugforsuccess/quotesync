@@ -50,7 +50,7 @@ export function NextTimeline({ texting, opensAt }) {
   const steps = [
     { key: 'got', state: 'done', title: <T k="rc.done.step1">Policy received</T>, line: <T k="rc.done.step1.line">Safely with Cam’s office.</T> },
     { key: 'price', state: 'now', title: <T k="rc.done.step2">Pricing the same coverage with Allstate</T>,
-      line: opensAt ? <><T k="rc.done.step2.closed">Starts when the office opens</T> {opensAt}.</> : <T k="rc.done.step2.line">A licensed agent is on it.</T> },
+      line: opensAt ? <><T k="rc.done.step2.closed">Starts when the office opens</T> <span data-copy="fixed">{opensAt}</span>.</> : <T k="rc.done.step2.line">A licensed agent is on it.</T> },
     { key: 'text', state: 'next', title: texting ? <T k="rc.done.step3.text">Cam texts you the number</T> : <T k="rc.done.step3.reach">Cam’s team reaches out</T>,
       line: <T k="rc.done.step3.line">If we can’t get you a cheaper rate, we’ll say so.</T> },
   ];
@@ -97,7 +97,7 @@ export function CamCard({ photo }) {
     <div className="qc-rise mt-5 flex items-center gap-3 rounded-2xl bg-white p-3.5 text-left ring-1 ring-slate-200" style={{ animationDelay: '520ms' }}>
       <img src={photo} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[#F5D061]" />
       <div className="min-w-0 flex-1">
-        <p className="font-bold leading-tight text-[#0F2D6B]">Cam Wiley</p>
+        <p className="font-bold leading-tight text-[#0F2D6B]"><T k="rc.done.cam.name">Cam Wiley</T></p>
         <p className="text-sm leading-snug text-slate-500"><T k="rc.done.cam.line">Save my number so my text doesn’t look like spam.</T></p>
       </div>
       <button type="button" onClick={() => { saveContact(); setSaved(true); }} className="qb qb-outline qb-md shrink-0 px-3.5 text-sm">
@@ -122,7 +122,7 @@ export function ShareLine() {
     <p className="qc-rise mt-5 text-center text-sm text-slate-500" style={{ animationDelay: '620ms' }}>
       <T k="rc.done.share.line">Know someone who might be overpaying?</T>{' '}
       <button type="button" onClick={share} className="inline-flex items-center gap-1 font-semibold text-blue-700 underline-offset-4 hover:underline">
-        <Share2 className="h-3.5 w-3.5" aria-hidden="true" /> {copied ? 'Link Copied' : <T k="rc.done.share.cta">Share It</T>}
+        <Share2 className="h-3.5 w-3.5" aria-hidden="true" /> {copied ? <T k="rc.done.share.copied">Link Copied</T> : <T k="rc.done.share.cta">Share It</T>}
       </button>
     </p>
   );

@@ -165,3 +165,66 @@ test('an edit saves without tapping away: after a pause, and on Done editing', a
   await expect.poll(() => writes.length).toBe(2);
   expect(writes[1].body).toMatchObject({ key: 'rc.products.heading', value: 'Products We Insure today!' });
 });
+
+// Every line a customer reads on the way through Rate Check can be edited. Walks the
+// flow with the editor on and lists any visible text that isn't an editable line.
+// Left out on purpose (data-copy="fixed"): the logo name, the editor's own controls, and the text-consent wording
+// (fixed: it's versioned with each customer's recorded consent).
+const notEditable = (page) => page.evaluate(() => {
+  const out = [];
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (w.nextNode()) {
+    const t = w.currentNode.textContent.trim();
+    const el = w.currentNode.parentElement;
+    if (!/[A-Za-z]{2}/.test(t) || !el) continue;
+    if (el.closest('[contenteditable], [data-copy="fixed"], script, style, [aria-hidden="true"], .sr-only, [class*="z-[90]"]')) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width && r.height) out.push(t);
+  }
+  return [...new Set(out)];
+});
+
+test('every screen of the upload flow can be edited', async ({ page }) => {
+  await mock(page, { loggedIn: true });
+  await page.route('**/functions/v1/rate-check', (route) => {
+    const body = route.request().postDataJSON();
+    if (body?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ policy_type: 'home', confidence: 'high', expiration_date: '2025-01-01' }) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'received', rate_check_id: 'r1', carrier: 'GEICO', policy_type: 'home', annual_premium: 1400 }) });
+  });
+  const check = async (screen) => {
+    await page.getByRole('button', { name: 'Edit this page' }).first().click();
+    await expect(page.getByRole('button', { name: 'Done editing' })).toBeVisible();
+    expect(await notEditable(page), `${screen}: text that can't be edited`).toEqual([]);
+    await page.getByRole('button', { name: 'Done editing' }).click();
+  };
+
+  await page.goto('/');
+  await check('landing');
+  await page.goto('/?start=1');
+  await check('pick');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 2/ }).click();
+  await check('upload');
+
+  // A home policy in the Auto slot that already ended: the moved card, then the expired one.
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
+  await chooser.setFiles({ name: 'dec.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
+  await expect(page.getByText(/This file is/)).toBeVisible();
+  await check('moved card');
+  await page.getByRole('button', { name: 'Got It' }).click();
+  await check('expired card');
+  await page.getByRole('button', { name: 'It’s Current' }).click();
+  await page.getByRole('button', { name: /Continue With What I Have/ }).click();
+
+  await check('contact');
+  await page.getByLabel('First Name').fill('Dana');
+  await page.getByLabel('Last Name').fill('Reyes');
+  await page.getByLabel('Mobile Number').fill('4045551212');
+  await page.getByLabel('Email').fill('dana@example.com');
+  await page.getByLabel('ZIP Code').fill('30013'); // the policy didn't show one
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
+  await page.getByRole('button', { name: /No Thanks/ }).click();
+  await expect(page.getByRole('heading', { name: /Cam is on it/ })).toBeVisible({ timeout: 15000 });
+  await check('confirmation');
+});

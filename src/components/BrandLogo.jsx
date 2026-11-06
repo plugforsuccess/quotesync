@@ -42,7 +42,7 @@ export default function BrandLogo({ tone = 'dark', tagline = false, className = 
       <SealMark className={`${mark} shrink-0`} />
       <span className="flex min-w-0 flex-col leading-none">
         <span className={`whitespace-nowrap font-extrabold tracking-tight ${name} ${dark ? 'text-white' : 'text-[#0F2D6B]'}`}
-          style={{ fontFamily: "var(--font-display, 'Plus Jakarta Sans', Inter, sans-serif)" }}>Cam Wiley Agency</span>
+          data-copy="fixed" style={{ fontFamily: "var(--font-display, 'Plus Jakarta Sans', Inter, sans-serif)" }}>Cam Wiley Agency</span>
         {tagline && (
           <span className={`mt-1 whitespace-nowrap text-[11.5px] font-medium ${dark ? 'text-blue-200' : 'text-slate-500'}`}>
             <T k="brand.tagline">Allstate Agent · Serving all of Georgia</T>
