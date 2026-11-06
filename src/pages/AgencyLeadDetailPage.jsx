@@ -21,6 +21,7 @@ import {
   useDisposeLead
 } from '../hooks/useAgencyLeads';
 import DispositionModal from './components/DispositionModal';
+import { LeadSalesCard } from './components/sales/SalesForms';
 import LeadDeclarationCard from './components/LeadDeclarationCard';
 import { getScoreColor, formatScoreFactors, RISK_FLAG_CONFIG } from '../lib/leadScoring';
 import { supabase } from '../lib/supabase';
@@ -481,6 +482,9 @@ const AgencyLeadDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Quotes & binds: drives the lead's status and the producer's numbers */}
+            <LeadSalesCard lead={lead} agencyId={agencyId} />
+
             {/* Lead Identity */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyleaddetailpage.a9ea07">Lead Details</T></h2>
