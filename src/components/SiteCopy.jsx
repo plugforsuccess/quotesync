@@ -321,7 +321,7 @@ export function CopyImage({ k, src, alt, className, fallback = null }) {
     <span className="relative inline-flex items-center">
       <label className="relative inline-flex cursor-pointer items-center rounded-md outline-dashed outline-2 outline-offset-4 outline-amber-300" title={`Upload a logo for ${alt}`}>
         {img}
-        <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-amber-400 px-1.5 text-[10px] font-bold text-slate-900">Change</span>
+        <span data-copy="fixed" className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-amber-400 px-1.5 text-[10px] font-bold text-slate-900">Change</span>
         <input type="file" accept={IMAGE_TYPES.join(',')} className="sr-only"
           onChange={e => { const f = e.target.files?.[0]; if (f) upload(k, f); e.target.value = ''; }} />
       </label>
