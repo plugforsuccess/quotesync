@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { CalendarClock, Check, ShieldCheck, X } from 'lucide-react';
 import { T } from '../../../components/SiteCopy';
-import { carrierLabel, policyTypeLabel } from '../rate-checks/format';
+import { policyTypeLabel } from '../rate-checks/format';
 import { money } from '../rate-checks/ui';
 import { parseMoney, sanitizeMoneyInput } from '../../../lib/money';
 import { LOST } from '../../../lib/sales';
@@ -38,7 +38,7 @@ function Bound({ household, leadId }) {
   const [rows, setRows] = useState(() => Object.fromEntries(list.map(rc => [rc.id, {
     on: true,
     premium: rc.allstate_premium != null ? String(Math.round(rc.allstate_premium * termOf(rc) / 12 * 100) / 100) : '',
-    policy: '',
+    policy: rc.policy_number ? String(rc.policy_number).slice(0, 40) : '',
   }])));
   const bind = useBindHousehold();
   const set = (id, k, v) => setRows(m => ({ ...m, [id]: { ...m[id], [k]: v } }));
@@ -59,7 +59,7 @@ function Bound({ household, leadId }) {
           <div key={rc.id} className="rounded-xl p-4" style={{ ...card, opacity: r.on ? 1 : 0.6 }}>
             <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
               <input type="checkbox" checked={r.on} onChange={e => set(rc.id, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
-              {carrierLabel(rc) ? <><T k="sales.close.was">Was</T> {carrierLabel(rc)}</> : null} <T>{policyTypeLabel(rc.policy_type)}</T>
+              <T>{policyTypeLabel(rc.policy_type)}</T>
             </label>
             {r.on && (
               <div className="mt-3 grid grid-cols-2 gap-2">

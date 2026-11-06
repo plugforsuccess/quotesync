@@ -80,7 +80,7 @@ async function mock(page, state) {
 const old = new Date(Date.now() - 14 * 86400000).toISOString();
 const base = { agency_id: AG, lead_id: 'L1', first_name: 'Stephen', phone: '6785550107', email: 'stephen@example.com', status: 'extracted', created_at: old, consent_given_at: old, is_test: false, extract_confidence: 'high', duplicate_of: null, insured_address: '1 Main St, Covington, GA 30014' };
 const rows = [
-  { ...base, id: 'a1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 6980, current_premium: 3490, term_months: 6, extracted: { insured_name: 'Stephen Pearson' } },
+  { ...base, id: 'a1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 6980, current_premium: 3490, term_months: 6, policy_number: 'SF-4421-907', extracted: { insured_name: 'Stephen Pearson' } },
   { ...base, id: 'h1', carrier: 'State Farm', policy_type: 'home', annual_premium: 2936, current_premium: 2936, term_months: 12, extracted: { insured_name: 'Stephen Pearson' } },
 ];
 test('log a household quote: per-policy term rates, saved as annual, then Quote Saved', async ({ page }) => {
@@ -154,7 +154,9 @@ test('close: mark bound writes each policy bound with Allstate at its annual pre
   const writes = await openClose(page, quotedRows);
   await page.getByRole('button', { name: 'Bound', exact: true }).click();
   await expect(page.getByLabel('Auto bound premium')).toHaveValue('2950'); // 6-month, from the saved quote
-  await page.getByLabel('Auto policy number').fill('804 123 456');
+  await expect(page.getByLabel('Auto policy number')).toHaveValue('SF-4421-907'); // from the upload
+  await expect(page.getByLabel('Home policy number')).toHaveValue(''); // none read
+  await expect(page.getByText(/Was State Farm/)).toHaveCount(0);
   await page.getByRole('button', { name: /Mark Bound · 2 Policies/ }).click();
   await expect(page.getByText(/Bound\. The lead is closed as Won/)).toBeVisible();
   const bound = writes.filter(w => w.table === 'rate_checks' && w.body.status === 'bound');
