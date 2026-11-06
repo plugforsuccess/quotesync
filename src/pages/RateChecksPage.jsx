@@ -741,9 +741,11 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
               return (
                 <button key={x.v} type="button" disabled={x.soon} onClick={() => setStep(x.v)} aria-current={on ? 'step' : undefined}
                   title={x.soon ? 'Coming in the next step' : undefined}
-                  className={`flex min-h-[40px] flex-auto items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2 text-[13px] font-semibold sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`flex min-h-[48px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-1 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
                   style={on ? undefined : { color: 'var(--qs-bright)' }}>
-                  {done ? <span aria-hidden="true">✓</span> : <span className="hidden tabular-nums sm:inline">{i + 1}</span>} <T>{x.label}</T>
+                  {/* The step number (or ✓ once done), small and light, above the name. */}
+                  <span className="text-[10px] font-medium tabular-nums opacity-70" aria-hidden="true">{done ? '✓' : i + 1}</span>
+                  <T>{x.label}</T>
                 </button>
               );
             })}
