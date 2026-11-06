@@ -67,7 +67,7 @@ const FunnelDashboardPage = () => {
               <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.funneldashboardpage.4ad5af">Funnel Dashboard</T></h1>
             </div>
             <div className="flex items-center gap-4 mt-2">
-              <p style={{ color: 'var(--qs-dim)' }}>{currentAgency.agencies?.name || 'Agency'}</p>
+              <p style={{ color: 'var(--qs-dim)' }}>{currentAgency.agencies?.name || <T k="pages.funneldashboardpage.5c47e2">{'Agency'}</T>}</p>
               <Link
                 to="/agency/leads"
                 className="text-sm text-primary-600 hover:text-primary-800 inline-flex items-center gap-1"
@@ -93,7 +93,7 @@ const FunnelDashboardPage = () => {
                 onMouseEnter={(e) => { if (timeRange !== key) e.currentTarget.style.background = 'var(--qs-elevated)'; }}
                 onMouseLeave={(e) => { if (timeRange !== key) e.currentTarget.style.background = ''; }}
               >
-                {label}
+                <T>{label}</T>
               </button>
             ))}
           </div>
@@ -258,11 +258,11 @@ function TeamAvailabilityPanel({ agencyId }) {
               }} />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>
-                  {member.profiles?.full_name || 'Unknown'}
+                  {member.profiles?.full_name || <T k="pages.funneldashboardpage.bc7819">{'Unknown'}</T>}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>
-                  {member.priority_tier === 0 ? 'Principal' : 'Producer'}
-                  {member.last_toggled_at ? ` · toggled ${timeSince(member.last_toggled_at)}` : ''}
+                  {member.priority_tier === 0 ? <T k="pages.funneldashboardpage.f3b86b">{'Principal'}</T> : <T k="pages.funneldashboardpage.7b7194">{'Producer'}</T>}
+                  {member.last_toggled_at ? <>{" "}<T k="pages.funneldashboardpage.fdf186">{"· toggled"}</T>{" "}{timeSince(member.last_toggled_at)}</> : ''}
                 </div>
               </div>
             </div>

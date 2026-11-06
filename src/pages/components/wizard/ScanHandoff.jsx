@@ -63,7 +63,7 @@ export function ScanHandoffCard({ answers, agentName }) {
     <div className="bg-white border border-gray-200 rounded-xl p-5">
       <h3 className="font-bold text-gray-900 mb-1"><T k="pages.components.wizard.scanhandoff.8573a4">Have Your Declarations Page?</T></h3>
       <p className="text-sm text-gray-500 mb-4">
-        <T k="pages.components.wizard.scanhandoff.8a4c77">Scan it and</T> {agentName || 'your agent'} <T k="pages.components.wizard.scanhandoff.f0c1c6">can quote your exact coverage instead of an estimate.</T>
+        <T k="pages.components.wizard.scanhandoff.8a4c77">Scan it and</T> {agentName || <T k="pages.components.wizard.scanhandoff.8b1c81">{'your agent'}</T>} <T k="pages.components.wizard.scanhandoff.f0c1c6">can quote your exact coverage instead of an estimate.</T>
       </p>
       <button
         type="button"

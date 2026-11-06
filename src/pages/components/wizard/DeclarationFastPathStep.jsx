@@ -95,7 +95,7 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
         {working ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span><T k="pages.components.wizard.declarationfastpathstep.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'Your Document'}…</span>
+            <span><T k="pages.components.wizard.declarationfastpathstep.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : <T k="pages.components.wizard.declarationfastpathstep.2dd31f">{'Your Document'}</T>}…</span>
           </>
         ) : hasItems ? (
           <>
@@ -105,7 +105,7 @@ export default function DeclarationFastPathStep({ onContinue, onSkip }) {
         ) : (
           <>
             <UploadCloud className="w-5 h-5" />
-            <span>{status === 'error' ? 'Try Another File' : 'Upload Declarations Page'}</span>
+            <span>{status === 'error' ? <T k="pages.components.wizard.declarationfastpathstep.4fb7e2">{'Try Another File'}</T> : <T k="pages.components.wizard.declarationfastpathstep.bb23c3">{'Upload Declarations Page'}</T>}</span>
           </>
         )}
       </button>

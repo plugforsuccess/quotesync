@@ -192,14 +192,14 @@ export default function SaveVelocityPanel({ agencyId }) {
                 const trendArrow = trend > 0 ? '▲' : trend < 0 ? '▼' : '–';
                 return (
                   <tr key={r.empId || 'unassigned'}>
-                    <td style={{ fontWeight: 600 }}>{empMap[r.empId] || 'Unattributed'}</td>
+                    <td style={{ fontWeight: 600 }}>{empMap[r.empId] || <T k="pages.components.retention.savevelocitypanel.610472">{'Unattributed'}</T>}</td>
                     <td style={{ fontWeight: 700, color: '#B07A0E' }}>{total}</td>
                     <td>{r.cancelSaves}</td>
                     <td>{r.renewalSaves}</td>
                     <td>{fmt$(r.premium)}</td>
                     <td><RepMethodChips methods={r.methods} /></td>
                     <td style={{ color: trendColor, fontWeight: 600 }}>
-                      {trendArrow} {Math.abs(trend)} {trend >= 0 ? 'vs prior 4wk' : 'vs prior 4wk'}
+                      {trendArrow} {Math.abs(trend)} {trend >= 0 ? <T k="pages.components.retention.savevelocitypanel.09aa5e">{'vs prior 4wk'}</T> : <T k="pages.components.retention.savevelocitypanel.09aa5e">{'vs prior 4wk'}</T>}
                     </td>
                   </tr>
                 );

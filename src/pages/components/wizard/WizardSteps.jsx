@@ -64,7 +64,7 @@ function InputField({ id, label, type = 'text', value, onChange, placeholder, er
     <div className={className}>
       {label && (
         <label htmlFor={id} className="block text-sm font-semibold text-gray-700 mb-1.5">
-          {label}
+          <T>{label}</T>
         </label>
       )}
       <input
@@ -294,8 +294,8 @@ export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isR
       <StepHeading><T k="pages.components.wizard.wizardsteps.14b741">What are you looking to insure?</T></StepHeading>
       <StepDescription>
         {isRenter
-          ? "We'll find you the best rate for your situation."
-          : 'Bundling auto + home typically saves the most.'}
+          ? <T k="pages.components.wizard.wizardsteps.9817c1">{"We'll find you the best rate for your situation."}</T>
+          : <T k="pages.components.wizard.wizardsteps.202f3f">{'Bundling auto + home typically saves the most.'}</T>}
       </StepDescription>
       <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
         {options.map((opt) => (
@@ -305,7 +305,7 @@ export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isR
             onClick={() => handleSelect(opt.value)}
           >
             <span className="block text-lg mb-0.5">{opt.emoji}</span>
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -431,7 +431,7 @@ function CarrierLogoCard({ carrier, selected, onClick }) {
           <span className={`text-xs font-bold px-2 py-1 rounded ${
             isAllstate && selected ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
           }`}>
-            {carrier.label}
+            <T>{carrier.label}</T>
           </span>
         )}
       </div>
@@ -440,7 +440,7 @@ function CarrierLogoCard({ carrier, selected, onClick }) {
           ? isAllstate ? 'text-purple-700' : 'text-primary-700'
           : 'text-gray-600'
       }`}>
-        {carrier.label}
+        <T>{carrier.label}</T>
       </span>
     </button>
   );
@@ -472,7 +472,7 @@ export function CarrierSelectionStep({ heading, topCarriers, secondTierLabels, v
 
   return (
     <div>
-      <StepHeading>{heading}</StepHeading>
+      <StepHeading><T>{heading}</T></StepHeading>
       <StepDescription><T k="pages.components.wizard.wizardsteps.84fe8f">This helps us compare apples to apples.</T></StepDescription>
 
       {/* Logo card grid */}
@@ -544,7 +544,7 @@ export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
             className="w-full pl-10 pr-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500"
           />
         </div>
-        {hint && <p className="mt-2 text-sm text-amber-600 text-center">{hint}</p>}
+        {hint && <p className="mt-2 text-sm text-amber-600 text-center"><T>{hint}</T></p>}
       </div>
       <div className="mt-4 text-center">
         <button
@@ -592,7 +592,7 @@ export function CurrentHomePremiumStep({ value, onChange, onSkip }) {
             className="w-full pl-10 pr-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500"
           />
         </div>
-        {hint && <p className="mt-2 text-sm text-amber-600 text-center">{hint}</p>}
+        {hint && <p className="mt-2 text-sm text-amber-600 text-center"><T>{hint}</T></p>}
       </div>
       <div className="mt-4 text-center">
         <button
@@ -634,7 +634,7 @@ export function CoverageLapseStep({ value, onChange, onAutoAdvance }) {
             selected={value === opt.value}
             onClick={() => handleSelect(opt.value)}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -730,14 +730,14 @@ function VehicleMakeLogoCard({ make, selected, onClick }) {
           />
         ) : (
           <span className="text-xs font-bold px-2 py-1 rounded bg-gray-100 text-gray-700">
-            {make.label}
+            <T>{make.label}</T>
           </span>
         )}
       </div>
       <span className={`text-xs font-semibold uppercase tracking-wide ${
         selected ? 'text-primary-700' : 'text-gray-600'
       }`}>
-        {make.label}
+        <T>{make.label}</T>
       </span>
     </button>
   );
@@ -855,7 +855,7 @@ export function VehicleUseStep({ vehicleLabel, value, onChange }) {
 
   return (
     <div>
-      <StepHeading><T k="pages.components.wizard.wizardsteps.321272">What do you use your</T> {vehicleLabel || 'vehicle'} <T k="pages.components.wizard.wizardsteps.450c90">for?</T></StepHeading>
+      <StepHeading><T k="pages.components.wizard.wizardsteps.321272">What do you use your</T> {vehicleLabel || <T k="pages.components.wizard.wizardsteps.0b0591">{'vehicle'}</T>} <T k="pages.components.wizard.wizardsteps.450c90">for?</T></StepHeading>
       <StepDescription><T k="pages.components.wizard.wizardsteps.88b96a">Select all that apply</T></StepDescription>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
         {VEHICLE_USE_OPTIONS.map((opt) => {
@@ -883,9 +883,9 @@ export function VehicleUseStep({ vehicleLabel, value, onChange }) {
                 </div>
                 <div>
                   <p className={`font-bold text-sm ${isSelected ? 'text-primary-700' : 'text-gray-800'}`}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{opt.description}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed"><T>{opt.description}</T></p>
                 </div>
               </div>
             </button>
@@ -920,7 +920,7 @@ export function AutoDrivingRecordStep({ value, onChange, onAutoAdvance }) {
             variant={value === opt.value && opt.value === '3+' ? 'warning' : 'default'}
             onClick={() => handleSelect(opt.value)}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -951,7 +951,7 @@ export function HomeClaimsHistoryStep({ value, onChange, onAutoAdvance }) {
             variant={value === opt.value && opt.value === '2+' ? 'warning' : 'default'}
             onClick={() => handleSelect(opt.value)}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -1128,7 +1128,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
           )}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5"><T k="pages.components.wizard.wizardsteps.46a2a4">State</T></label>
-            <div className={readOnlyClasses}>{stateCode || 'GA'}</div>
+            <div className={readOnlyClasses}>{stateCode || <T k="pages.components.wizard.wizardsteps.b840eb">{'GA'}</T>}</div>
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5"><T k="pages.components.wizard.wizardsteps.4348f9">ZIP</T></label>
@@ -1178,7 +1178,7 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
   return (
     <div>
       <StepHeading><T k="pages.components.wizard.wizardsteps.2800c6">Where should we send your personalized quote?</T></StepHeading>
-      <StepDescription>{agentName || 'Your agent'} <T k="pages.components.wizard.wizardsteps.e41da1">will personally review your info within minutes.</T></StepDescription>
+      <StepDescription>{agentName || <T k="pages.components.wizard.wizardsteps.007c6e">{'Your agent'}</T>} <T k="pages.components.wizard.wizardsteps.e41da1">will personally review your info within minutes.</T></StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <div className="grid grid-cols-2 gap-3">
           <InputField
@@ -1265,7 +1265,7 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
           </p>
         </div>
         <p className="text-xs text-gray-500 leading-relaxed">
-          <T k="pages.components.wizard.wizardsteps.8ce279">By clicking 'Get My Free Quote', you agree to be contacted by</T> {brandName || 'our agency'} <T k="pages.components.wizard.wizardsteps.f8e459">regarding insurance quotes via phone, SMS, and email at the number provided, including through automated technology. Consent is not a condition of purchase. Msg & data rates may apply. Reply STOP to opt out at any time.</T>
+          <T k="pages.components.wizard.wizardsteps.8ce279">By clicking 'Get My Free Quote', you agree to be contacted by</T> {brandName || <T k="pages.components.wizard.wizardsteps.6cc7f9">{'our agency'}</T>} <T k="pages.components.wizard.wizardsteps.f8e459">regarding insurance quotes via phone, SMS, and email at the number provided, including through automated technology. Consent is not a condition of purchase. Msg & data rates may apply. Reply STOP to opt out at any time.</T>
         </p>
       </div>
     </div>
@@ -1326,14 +1326,14 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           <T k="pages.components.wizard.wizardsteps.50d1f8">You're All Set!</T>
         </h2>
         <p className="text-gray-600">
-          {agentName || 'Your agent'} <T k="pages.components.wizard.wizardsteps.ae1008">will reach out within the next few minutes to walk you through your options.</T>
+          {agentName || <T k="pages.components.wizard.wizardsteps.007c6e">{'Your agent'}</T>} <T k="pages.components.wizard.wizardsteps.ae1008">will reach out within the next few minutes to walk you through your options.</T>
         </p>
       </div>
 
       {/* Savings estimate */}
       <div className="bg-success-50 border border-success-200 rounded-xl p-5 text-center">
         <p className="text-sm text-gray-600 mb-2">
-          <T k="pages.components.wizard.wizardsteps.846343">Based on your info,</T> {answers.ownsHome === true ? 'homeowners' : 'renters'} <T k="pages.components.wizard.wizardsteps.13b5bf">in</T>{' '}
+          <T k="pages.components.wizard.wizardsteps.846343">Based on your info,</T> {answers.ownsHome === true ? <T k="pages.components.wizard.wizardsteps.b358cf">{'homeowners'}</T> : <T k="pages.components.wizard.wizardsteps.393199">{'renters'}</T>} <T k="pages.components.wizard.wizardsteps.13b5bf">in</T>{' '}
           <span className="font-semibold text-gray-900">{answers.zip}</span> <T k="pages.components.wizard.wizardsteps.8cd0d3">typically save:</T>
         </p>
         <p className="text-3xl font-black bg-gradient-to-r from-success-600 to-success-700 bg-clip-text text-transparent mb-2">
@@ -1354,7 +1354,7 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           </h3>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          <T k="pages.components.wizard.wizardsteps.a26181">Connect your current policy and</T> {agentName || 'your agent'} <T k="pages.components.wizard.wizardsteps.59a945">can have your comparison ready before the call.</T>
+          <T k="pages.components.wizard.wizardsteps.a26181">Connect your current policy and</T> {agentName || <T k="pages.components.wizard.wizardsteps.8b1c81">{'your agent'}</T>} <T k="pages.components.wizard.wizardsteps.59a945">can have your comparison ready before the call.</T>
         </p>
         <div className="space-y-2 mb-4">
           {[
@@ -1392,9 +1392,9 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
             <span className="text-xl font-bold text-primary-600">{(agentName || 'A').charAt(0)}</span>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900"><T k="pages.components.wizard.wizardsteps.8f7f4c">About</T> {agentName || 'Your Agent'}</h3>
+            <h3 className="font-bold text-gray-900"><T k="pages.components.wizard.wizardsteps.8f7f4c">About</T> {agentName || <T k="pages.components.wizard.wizardsteps.0dfa27">{'Your Agent'}</T>}</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              {brandName || 'Your agency'} <T k="pages.components.wizard.wizardsteps.2cb3c9">— licensed insurance agent who personally reviews every quote.</T>
+              {brandName || <T k="pages.components.wizard.wizardsteps.d93d83">{'Your agency'}</T>} <T k="pages.components.wizard.wizardsteps.2cb3c9">— licensed insurance agent who personally reviews every quote.</T>
             </p>
           </div>
         </div>
@@ -1452,7 +1452,7 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-6 py-3.5 rounded-xl">
             <Zap className="relative z-10 w-5 h-5 text-white" />
             <span className="relative z-10 text-white font-bold text-base">
-              {syncing ? 'Opening...' : 'Connect My Policy'}
+              {syncing ? <T k="pages.components.wizard.wizardsteps.3337b7">{'Opening...'}</T> : <T k="pages.components.wizard.wizardsteps.a91547">{'Connect My Policy'}</T>}
             </span>
           </div>
         </button>
@@ -1492,7 +1492,7 @@ export function HomeInsuranceStatusStep({ value, onChange, onAutoAdvance }) {
             onClick={() => handleSelect(opt.value)}
           >
             <span className="mr-2">{opt.emoji}</span>
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>
@@ -1526,7 +1526,7 @@ export function HomeOccupancyTypeStep({ value, onChange, onAutoAdvance }) {
             onClick={() => handleSelect(opt.value)}
           >
             <span className="mr-2">{opt.emoji}</span>
-            {opt.label}
+            <T>{opt.label}</T>
           </ChoiceButton>
         ))}
       </div>

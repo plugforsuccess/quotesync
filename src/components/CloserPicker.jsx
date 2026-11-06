@@ -6,6 +6,7 @@
 // the one thing the set can't say — which tactic actually closed it. Selecting
 // the active chip again clears it (skip → headline auto-derives upstream).
 
+import { T } from './SiteCopy';
 import { useInterventionTypes } from '../hooks/useInterventionTypes';
 
 export default function CloserPicker({ codes, value, onChange, label, required = false }) {
@@ -16,7 +17,7 @@ export default function CloserPicker({ codes, value, onChange, label, required =
   return (
     <div style={{ marginBottom: 4 }}>
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', marginBottom: 8 }}>
-        {label}
+        <T>{label}</T>
         {required && <span style={{ color: '#F87171', marginLeft: 2 }}>*</span>}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

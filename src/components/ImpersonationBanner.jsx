@@ -2,6 +2,7 @@
 // Banner shown when admin is impersonating a user
 // Displays prominent warning and provides quick exit
 
+import { T } from './SiteCopy';
 import { useAuth } from '../contexts/AuthContext';
 
 export function ImpersonationBanner() {
@@ -64,11 +65,11 @@ export function ImpersonationBanner() {
           <line x1="12" y1="9" x2="12" y2="13" />
           <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
-        <strong>IMPERSONATING</strong>
+        <strong><T k="components.impersonationbanner.fd574a">IMPERSONATING</T></strong>
       </span>
 
       <span>
-        Viewing as agency: <strong>{targetAgency?.agencies?.name || 'Unknown'}</strong>
+        <T k="components.impersonationbanner.aa8c26">Viewing as agency:</T> <strong>{targetAgency?.agencies?.name || <T k="components.impersonationbanner.bc7819">{'Unknown'}</T>}</strong>
       </span>
 
       {impersonationSession.actions_disabled && (
@@ -80,12 +81,12 @@ export function ImpersonationBanner() {
             fontSize: '12px'
           }}
         >
-          READ-ONLY MODE
+          <T k="components.impersonationbanner.511d7e">READ-ONLY MODE</T>
         </span>
       )}
 
       <span style={{ opacity: 0.8, fontSize: '12px' }}>
-        All actions are being logged
+        <T k="components.impersonationbanner.55cafe">All actions are being logged</T>
       </span>
 
       <button
@@ -101,7 +102,7 @@ export function ImpersonationBanner() {
           fontSize: '13px'
         }}
       >
-        Exit Impersonation
+        <T k="components.impersonationbanner.11ba8a">Exit Impersonation</T>
       </button>
     </div>
   );

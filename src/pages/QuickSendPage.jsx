@@ -4,6 +4,7 @@
 // and "Keep me signed in" keeps this phone signed in. Uploads land in the Rate Checks
 // inbox credited to the producer. Not indexed.
 
+import { T } from '../components/SiteCopy';
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, Loader2, QrCode, Send, X } from 'lucide-react';
@@ -59,13 +60,13 @@ export default function QuickSendPage() {
       <main className="mx-auto max-w-md px-4 pb-10 pt-6">
         <header className="mb-6 flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">insuredbycam</p>
-            <h1 className="mt-0.5 text-[28px] font-extrabold leading-none tracking-tight text-slate-900">Quick Send</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="pages.quicksendpage.2756f7">insuredbycam</T></p>
+            <h1 className="mt-0.5 text-[28px] font-extrabold leading-none tracking-tight text-slate-900"><T k="pages.quicksendpage.0d7a88">Quick Send</T></h1>
           </div>
           {screen === 'ready' && (
             <p className="flex items-center gap-2 text-sm text-slate-500">
               {me?.producer_first && <><span className="font-semibold text-slate-700">{me.producer_first}</span><span aria-hidden="true">·</span></>}
-              <button type="button" onClick={signOut} className="font-semibold text-blue-700">Sign Out</button>
+              <button type="button" onClick={signOut} className="font-semibold text-blue-700"><T k="pages.quicksendpage.61fd08">Sign Out</T></button>
             </p>
           )}
         </header>
@@ -96,7 +97,7 @@ function SignIn({ onDone }) {
 
   return (
     <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" onSubmit={e => { e.preventDefault(); if (pin.length === 4) signIn(pin); }}>
-      <label htmlFor="qs-pin" className="block text-lg font-bold text-slate-900">Your Quick Send PIN</label>
+      <label htmlFor="qs-pin" className="block text-lg font-bold text-slate-900"><T k="pages.quicksendpage.12bf8e">Your Quick Send PIN</T></label>
       <input id="qs-pin" inputMode="numeric" autoComplete="one-time-code" maxLength={4} value={pin} autoFocus
         onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 4); setPin(v); if (v.length === 4) signIn(v); }}
         className={`${field} mt-3 text-center font-mono text-3xl tracking-[0.6em]`} placeholder="••••" aria-describedby="qs-pin-error" disabled={busy} />
@@ -104,8 +105,8 @@ function SignIn({ onDone }) {
       <label className="mt-4 flex cursor-pointer items-start gap-3">
         <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
         <span>
-          <span className="block font-semibold text-slate-900">Keep me signed in</span>
-          <span className="block text-sm text-slate-500">On your own phone. Leave it off on a shared one, and it signs out when you close it.</span>
+          <span className="block font-semibold text-slate-900"><T k="pages.quicksendpage.5955c1">Keep me signed in</T></span>
+          <span className="block text-sm text-slate-500"><T k="pages.quicksendpage.ebf1dd">On your own phone. Leave it off on a shared one, and it signs out when you close it.</T></span>
         </span>
       </label>
     </form>
@@ -166,17 +167,17 @@ function SendForm({ onSignedOut }) {
     <div className="space-y-6">
       {result ? <SendResult result={result} onAnother={another} /> : (
         <form onSubmit={send} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Ask first</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.quicksendpage.1aeb84">Ask first</T></p>
           <p className="mt-2 border-l-4 border-blue-200 pl-3 text-[15px] leading-relaxed text-slate-700">“{SCRIPT}”</p>
 
           <div className="mt-5 space-y-4">
             <label className="block">
-              <span className={label}>Name</span>
+              <span className={label}><T k="pages.quicksendpage.709a23">Name</T></span>
               <input ref={nameInput} className={field} autoComplete="off" autoCapitalize="words" maxLength={80}
                 value={name} onChange={e => setName(e.target.value)} placeholder="First name" />
             </label>
             <label className="block">
-              <span className={label}>Mobile Number</span>
+              <span className={label}><T k="pages.quicksendpage.5968ac">Mobile Number</T></span>
               <input className={field} type="tel" inputMode="tel" autoComplete="off" value={phone}
                 onChange={e => setPhone(formatPhoneInput(e.target.value))} placeholder="(404) 555-1212" />
             </label>
@@ -185,26 +186,26 @@ function SendForm({ onSignedOut }) {
           <button type="submit" disabled={!ok || busy}
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-4 text-lg font-bold text-white shadow-sm active:bg-blue-800 disabled:bg-slate-300 disabled:shadow-none">
             {busy ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <Send className="h-5 w-5" aria-hidden="true" />}
-            Send Requested DEC Link
+            <T k="pages.quicksendpage.81d271">Send Requested DEC Link</T>
           </button>
-          <p className="mt-3 text-center text-xs text-slate-500">Only send if they said yes. Sending records that they asked for this text.</p>
+          <p className="mt-3 text-center text-xs text-slate-500"><T k="pages.quicksendpage.b6f082">Only send if they said yes. Sending records that they asked for this text.</T></p>
         </form>
       )}
 
       {recent.length > 0 && (
         <section aria-labelledby="qs-recent">
-          <h2 id="qs-recent" className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Recent</h2>
+          <h2 id="qs-recent" className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.quicksendpage.76eec7">Recent</T></h2>
           <ul className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
             {recent.map(inv => {
               const p = sendProgress(inv);
               return (
                 <li key={inv.id} className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-slate-900">{inv.first_name || 'No name'}</p>
+                    <p className="truncate font-semibold text-slate-900">{inv.first_name || <T k="pages.quicksendpage.b78fd2">{'No name'}</T>}</p>
                     <p className="whitespace-nowrap text-sm tabular-nums text-slate-500">{formatPhoneInput(inv.phone)} · {shortAgo(inv.created_at)}</p>
                   </div>
                   <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-slate-700">
-                    <span className={`h-2 w-2 rounded-full ${DOT[p.tone]}`} aria-hidden="true" />{p.short}
+                    <span className={`h-2 w-2 rounded-full ${DOT[p.tone]}`} aria-hidden="true" /><T>{p.short}</T>
                   </span>
                 </li>
               );
@@ -267,17 +268,17 @@ function SendResult({ result, onAnother }) {
         </ol>
       )}
 
-      <p className="mt-4 text-sm leading-relaxed text-slate-600">{note}</p>
+      <p className="mt-4 text-sm leading-relaxed text-slate-600"><T>{note}</T></p>
 
       {showQr && <canvas ref={canvas} className="mx-auto mt-4 block rounded-lg border border-slate-200" aria-label="QR code for the upload link" />}
 
-      <button type="button" onClick={onAnother} className="mt-5 w-full rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800">Send Another</button>
+      <button type="button" onClick={onAnother} className="mt-5 w-full rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800"><T k="pages.quicksendpage.cc3308">Send Another</T></button>
       <div className="mt-3 flex items-center justify-center gap-6 text-sm font-semibold text-blue-700">
         <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 py-1">
-          {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}{copied ? 'Copied' : 'Copy Link'}
+          {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}{copied ? <T k="pages.quicksendpage.8e3df4">{'Copied'}</T> : <T k="pages.quicksendpage.672d82">{'Copy Link'}</T>}
         </button>
         <button type="button" onClick={() => setShowQr(v => !v)} aria-expanded={showQr} className="inline-flex items-center gap-1.5 py-1">
-          <QrCode className="h-4 w-4" aria-hidden="true" />{showQr ? 'Hide QR Code' : 'Show QR Code'}
+          <QrCode className="h-4 w-4" aria-hidden="true" />{showQr ? <T k="pages.quicksendpage.dd1d29">{'Hide QR Code'}</T> : <T k="pages.quicksendpage.aac078">{'Show QR Code'}</T>}
         </button>
       </div>
     </div>

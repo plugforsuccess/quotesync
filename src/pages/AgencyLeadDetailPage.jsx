@@ -79,8 +79,8 @@ function ReferredByField({ lead, leadId, agencyId }) {
                   }`}
                 >
                   {(linked.state || '').toUpperCase() === 'GA'
-                    ? 'GA · eligible'
-                    : 'not eligible to win'}
+                    ? <T k="pages.agencyleaddetailpage.535ca9">{'GA · eligible'}</T>
+                    : <T k="pages.agencyleaddetailpage.e9bed4">{'not eligible to win'}</T>}
                 </span>
               )}
             </span>
@@ -92,7 +92,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
             onClick={() => setEditing((v) => !v)}
             className="ml-3 text-xs text-primary-600 hover:text-primary-700"
           >
-            {editing ? 'Cancel' : linked ? 'Change' : 'Link Referrer'}
+            {editing ? <T k="pages.agencyleaddetailpage.77dfd2">{'Cancel'}</T> : linked ? <T k="pages.agencyleaddetailpage.64fbd9">{'Change'}</T> : <T k="pages.agencyleaddetailpage.8e2d68">{'Link Referrer'}</T>}
           </button>
         </dd>
       </div>
@@ -131,7 +131,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
             disabled={setReferrer.isPending}
             className="w-full px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md disabled:opacity-50"
           >
-            {setReferrer.isPending ? 'Saving…' : 'Save Referrer'}
+            {setReferrer.isPending ? <T k="pages.agencyleaddetailpage.56a228">{'Saving…'}</T> : <T k="pages.agencyleaddetailpage.7f7b08">{'Save Referrer'}</T>}
           </button>
           <p className="text-[11px] text-gray-400">
             <T k="pages.agencyleaddetailpage.1224e2">Only Georgia-resident referrers are eligible to win; anyone may refer.</T>
@@ -388,7 +388,7 @@ const AgencyLeadDetailPage = () => {
                 <h1 className="text-xl font-bold text-gray-900">
                   {(lead.first_name || lead.last_name)
                     ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim()
-                    : `Lead ${lead.zip || ''} / ${lead.state || ''}`}
+                    : <><T k="pages.agencyleaddetailpage.c6f71d">{"Lead"}</T>{" "}{lead.zip || ''}{" / "}{lead.state || ''}</>}
                 </h1>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
                   ${lead.status === 'new' ? 'bg-primary-100 text-primary-700' : ''}
@@ -406,7 +406,7 @@ const AgencyLeadDetailPage = () => {
                   return cfg ? (
                     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${cfg.bg} ${cfg.text}`}>
                       <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                      {cfg.label} <T k="pages.agencyleaddetailpage.c6142b">risk</T>
+                      <T>{cfg.label}</T> <T k="pages.agencyleaddetailpage.c6142b">risk</T>
                     </div>
                   ) : null;
                 })()}
@@ -499,7 +499,7 @@ const AgencyLeadDetailPage = () => {
                   <dt className="text-sm text-gray-500 flex items-center gap-1">
                     <Tag className="w-4 h-4" /> <T k="pages.agencyleaddetailpage.e37178">Product Intent</T>
                   </dt>
-                  <dd className="text-gray-900 font-medium">{lead.product_intent || 'Not specified'}</dd>
+                  <dd className="text-gray-900 font-medium">{lead.product_intent || <T k="pages.agencyleaddetailpage.60f1e9">{'Not specified'}</T>}</dd>
                 </div>
                 {lead.current_auto_carrier && (
                   <div>
@@ -554,8 +554,8 @@ const AgencyLeadDetailPage = () => {
                       lead.auto_driving_record === '3+' ? 'text-red-600' :
                       lead.auto_driving_record === '1-2' ? 'text-amber-600' : 'text-green-600'
                     }`}>
-                      {lead.auto_driving_record === 'clean' ? 'Clean' :
-                       lead.auto_driving_record === '1-2' ? '1\u20132 incidents' : '3+ incidents'}
+                      {lead.auto_driving_record === 'clean' ? <T k="pages.agencyleaddetailpage.fa893d">{'Clean'}</T> :
+                       lead.auto_driving_record === '1-2' ? <T k="pages.agencyleaddetailpage.ea5060">{'1\u20132 incidents'}</T> : <T k="pages.agencyleaddetailpage.959b7c">{'3+ incidents'}</T>}
                     </dd>
                   </div>
                 )}
@@ -565,7 +565,7 @@ const AgencyLeadDetailPage = () => {
                     <dd className={`font-medium ${
                       lead.home_claims_history === '2+' ? 'text-red-600' : 'text-green-600'
                     }`}>
-                      {lead.home_claims_history === '0-1' ? '0\u20131 claims' : '2+ claims'}
+                      {lead.home_claims_history === '0-1' ? <T k="pages.agencyleaddetailpage.d35544">{'0\u20131 claims'}</T> : <T k="pages.agencyleaddetailpage.169a87">{'2+ claims'}</T>}
                     </dd>
                   </div>
                 )}
@@ -592,7 +592,7 @@ const AgencyLeadDetailPage = () => {
                   <div>
                     <dt className="text-gray-500 text-sm"><T k="pages.agencyleaddetailpage.e73344">Multiple Drivers</T></dt>
                     <dd className="font-medium text-gray-900">
-                      {lead.multiple_drivers ? 'Yes' : 'No'}
+                      {lead.multiple_drivers ? <T k="pages.agencyleaddetailpage.5397e0">{'Yes'}</T> : <T k="pages.agencyleaddetailpage.816c52">{'No'}</T>}
                     </dd>
                   </div>
                 )}
@@ -602,7 +602,7 @@ const AgencyLeadDetailPage = () => {
                     <dd className={`font-medium ${
                       lead.veteran_status === 'yes' ? 'text-blue-600' : 'text-gray-900'
                     }`}>
-                      {lead.veteran_status === 'yes' ? '\u2713 Yes \u2014 discount eligible' : 'No'}
+                      {lead.veteran_status === 'yes' ? <T k="pages.agencyleaddetailpage.451e24">{'\u2713 Yes \u2014 discount eligible'}</T> : <T k="pages.agencyleaddetailpage.816c52">{'No'}</T>}
                     </dd>
                   </div>
                 )}
@@ -630,7 +630,7 @@ const AgencyLeadDetailPage = () => {
                     <dd className={`font-bold ${
                       lead.risk_flag === 'red' ? 'text-red-600' : 'text-amber-600'
                     }`}>
-                      {lead.risk_flag === 'red' ? '\uD83D\uDD34 Exceeds carrier limits' : '\uD83D\uDFE1 Needs review'}
+                      {lead.risk_flag === 'red' ? <T k="pages.agencyleaddetailpage.a3cfc5">{'\uD83D\uDD34 Exceeds carrier limits'}</T> : <T k="pages.agencyleaddetailpage.4d37b8">{'\uD83D\uDFE1 Needs review'}</T>}
                     </dd>
                   </div>
                 )}
@@ -642,7 +642,7 @@ const AgencyLeadDetailPage = () => {
                     ) : lead.utm_source ? (
                       lead.utm_source
                     ) : (
-                      'Direct'
+                      <T k="pages.agencyleaddetailpage.bc8152">{'Direct'}</T>
                     )}
                   </dd>
                 </div>
@@ -664,7 +664,7 @@ const AgencyLeadDetailPage = () => {
                 <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
                   <p className="text-sm text-emerald-800">
                     ♻ <span className="font-semibold"><T k="pages.agencyleaddetailpage.c2c4b5">Former customer</T></span> <T k="pages.agencyleaddetailpage.3002e2">— generated from termination history. Contact comes from their Allstate record:</T>
-                    {lead.phone ? <span className="font-medium"> {lead.phone}</span> : ' no phone on file'}
+                    {lead.phone ? <span className="font-medium"> {lead.phone}</span> : <T k="pages.agencyleaddetailpage.6d0467">{' no phone on file'}</T>}
                     {lead.email ? <> · <span className="font-medium">{lead.email}</span></> : null}
                   </p>
                   {lead.callback_note && (
@@ -748,9 +748,9 @@ const AgencyLeadDetailPage = () => {
                     <FileText className={`w-5 h-5 ${quoteData.has_documents ? 'text-green-600' : 'text-gray-400'}`} />
                     <span className={quoteData.has_documents ? 'text-green-700' : 'text-gray-500'}>
                       {quoteData.has_documents ? (
-                        <><T k="pages.agencyleaddetailpage.97417b">Documents available (</T>{quoteSummary.document_count || 'multiple'})</>
+                        <><T k="pages.agencyleaddetailpage.97417b">Documents available (</T>{quoteSummary.document_count || <T k="pages.agencyleaddetailpage.88fc77">{'multiple'}</T>})</>
                       ) : (
-                        'No documents'
+                        <T k="pages.agencyleaddetailpage.8386fe">{'No documents'}</T>
                       )}
                     </span>
                   </div>
@@ -767,7 +767,7 @@ const AgencyLeadDetailPage = () => {
                   )}
 
                   <div className="text-xs text-gray-400 mt-2">
-                    <T k="pages.agencyleaddetailpage.0f6024">Enriched:</T> {quoteData.enriched_at ? formatTimeAgo(quoteData.enriched_at) : 'Pending'}
+                    <T k="pages.agencyleaddetailpage.0f6024">Enriched:</T> {quoteData.enriched_at ? formatTimeAgo(quoteData.enriched_at) : <T k="pages.agencyleaddetailpage.96f608">{'Pending'}</T>}
                   </div>
                 </div>
               ) : (
@@ -881,7 +881,7 @@ const AgencyLeadDetailPage = () => {
                       <div>
                         <dt className="text-gray-500 text-xs"><T k="pages.agencyleaddetailpage.adf678">Callback Requested</T></dt>
                         <dd className="text-gray-900 font-medium">
-                          {blandCallLog.variables.callback_time_preference || 'Yes — no time specified'}
+                          {blandCallLog.variables.callback_time_preference || <T k="pages.agencyleaddetailpage.f0a745">{'Yes — no time specified'}</T>}
                         </dd>
                       </div>
                     )}
@@ -895,7 +895,7 @@ const AgencyLeadDetailPage = () => {
                         className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                       >
                         {transcriptOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        {transcriptOpen ? 'Hide' : 'Show'} <T k="pages.agencyleaddetailpage.f24f9b">Transcript</T>
+                        {transcriptOpen ? <T k="pages.agencyleaddetailpage.34d8b6">{'Hide'}</T> : <T k="pages.agencyleaddetailpage.d97d1e">{'Show'}</T>} <T k="pages.agencyleaddetailpage.f24f9b">Transcript</T>
                       </button>
                       {transcriptOpen && (
                         <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
@@ -1025,7 +1025,7 @@ const AgencyLeadDetailPage = () => {
                       disabled:opacity-50
                     `}
                   >
-                    {action.label}
+                    <T>{action.label}</T>
                   </button>
                 ))}
               </div>
@@ -1058,7 +1058,7 @@ const AgencyLeadDetailPage = () => {
                     <span className={`text-sm font-semibold ${
                       lead.status === 'closed_won' ? 'text-green-700' : 'text-gray-600'
                     }`}>
-                      {lead.status === 'closed_won' ? 'Converted — Quoted in Lead Manager' : 'Closed'}
+                      {lead.status === 'closed_won' ? <T k="pages.agencyleaddetailpage.4716ac">{'Converted — Quoted in Lead Manager'}</T> : <T k="pages.agencyleaddetailpage.88d86b">{'Closed'}</T>}
                     </span>
                   </div>
                   {lead.disposition_reason && lead.disposition_reason !== 'quoted_in_lm' && (

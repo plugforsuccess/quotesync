@@ -61,13 +61,14 @@ test('limits read like money', () => {
 test('auto coverages are grouped, and vehicle-specific ones move to the vehicle', () => {
   const [liab, every] = autoCoverageGroups(auto);
   assert.deepEqual(liab.rows.map(r => [r.label, r.value]), [
-    ['Bodily injury', '$250k / $500k'],
-    ['Property damage', '$100,000'],
-    ['Medical payments', 'None listed'],
-    ['Uninsured motorist', '$250k / $500k / $100k'],
+    ['Bodily Injury', '$250k / $500k'],
+    ['Uninsured Motorist BI', '$250k / $500k / $100k'],
+    ['Property Damage', '$100,000'],
+    ['Medical Payments', 'None listed'],
+    ['Uninsured Motorist PD', null], // always listed when there's UM
   ]);
   const withDed = autoCoverageGroups({ ...auto, coverages: { ...auto.coverages, um_uim: '250000/500000/100000 (PD Deductible $250)' } })[0];
-  assert.deepEqual([withDed.rows[3].value, withDed.rows[3].note], ['$250k / $500k / $100k', 'Deductible $250']);
+  assert.deepEqual([withDed.rows[1].value, withDed.rows[1].note], ['$250k / $500k / $100k', 'Deductible $250']);
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
   assert.deepEqual(vehicleCoverages(auto, 0), []);
@@ -136,7 +137,7 @@ test('drivers with the same name are told apart; discounts are short tags', () =
 
 test('home: coverages A–F, % deductible, property facts and endorsements', () => {
   assert.deepEqual(homeCoverageRows(home).map(r => r.label), [
-    'Dwelling (A)', 'Other structures (B)', 'Personal property (C)', 'Loss of use (D)', 'Personal liability (E)', 'Medical payments (F)', 'Deductible',
+    'Dwelling (A)', 'Other Structures (B)', 'Personal Property (C)', 'Loss of Use (D)', 'Personal Liability (E)', 'Medical Payments (F)', 'Deductible',
   ]);
   assert.equal(homeCoverageRows(home).find(r => r.key === 'deductible').note, '1% of dwelling');
   const p = propertyFacts(home);

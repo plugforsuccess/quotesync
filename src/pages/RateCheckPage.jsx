@@ -1393,7 +1393,7 @@ function Prompt({ tone = 'ask', icon: Icon = AlertTriangle, title, children, act
           <Icon className="h-4 w-4" strokeWidth={2.5} />
         </span>
         <div className="min-w-0 flex-1 pt-1">
-          <p className={`text-[15px] font-semibold leading-snug text-[#0F2D6B] ${badge ? 'pr-12' : ''}`}>{title}</p>
+          <p className={`text-[15px] font-semibold leading-snug text-[#0F2D6B] ${badge ? 'pr-12' : ''}`}><T>{title}</T></p>
           {children && <p className="mt-1 text-sm leading-relaxed text-slate-600">{children}</p>}
         </div>
       </div>
@@ -1480,8 +1480,8 @@ function ResultRow({ item, index, onRetake, onRetry }) {
         ? <Monogram name={carrier || line || 'Policy'} />
         : <Thumb item={item} scanning={active} small />}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-slate-900">{title}</p>
-        <p className="truncate text-sm">{detail}</p>
+        <p className="truncate font-semibold text-slate-900"><T>{title}</T></p>
+        <p className="truncate text-sm"><T>{detail}</T></p>
       </div>
       {item.status === 'read' && (
         <span className="qc-badge qc-badge-sm shrink-0" aria-label="Received">
@@ -1528,7 +1528,7 @@ function Carousel({ slides, className = '', label = 'Your rate check' }) {
         {slides.map((s, i) => (
           <div key={s.key} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}: ${s.name || s.label}`}
             className={`${many ? 'w-[88%]' : 'w-full'} shrink-0 snap-start rounded-2xl border border-slate-200 bg-white shadow-sm ${s.bare ? 'overflow-hidden' : 'p-4'}`}>
-            {!s.untitled && <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{s.label}</p>}
+            {!s.untitled && <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T>{s.label}</T></p>}
             {s.content}
           </div>
         ))}
@@ -1602,7 +1602,7 @@ function ActionBar({ children, hint }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="mx-auto max-w-md px-4 pt-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-        {hint && <p className="mb-2 text-center text-xs text-slate-500" aria-live="polite">{hint}</p>}
+        {hint && <p className="mb-2 text-center text-xs text-slate-500" aria-live="polite"><T>{hint}</T></p>}
         <div className="flex gap-2">{children}</div>
       </div>
     </div>
@@ -1747,7 +1747,7 @@ function CodeSheet({ channel, target, send, check, onVerified, onClose }) {
 function Field({ label, htmlFor, children }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-semibold text-slate-800">{label}</label>
+      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-semibold text-slate-800"><T>{label}</T></label>
       {children}
     </div>
   );
@@ -2063,7 +2063,7 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
           <ConsumerNav current="rate" />
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
             <div>
-              {note}
+              <T>{note}</T>
               <h1 className="text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#F5D061]">
                 <T k="rc.headline">Get a **cheaper rate** on your insurance **today**.</T>
               </h1>

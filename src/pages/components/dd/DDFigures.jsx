@@ -4,6 +4,7 @@
 // animate with CSS (index.css, "ddc-fig"), which stops for readers who ask for reduced
 // motion. Each one teaches a single idea from the lesson it sits in. Facts in them come
 // from the lesson text itself (src/data/ddCourseContent.js).
+import { T } from '../../../components/SiteCopy';
 import {
   Check, X as XIcon, Hand, CloudRain, Car as CarIcon, Bike, PersonStanding,
   Disc3, CircleGauge, Lightbulb, Droplets, Coffee, Clock, Wind,
@@ -60,7 +61,7 @@ function Sipde() {
           </g>
         );
       })}
-      <Label x={cx} y={cy + 4} size={11} color={C.muted}>every few seconds</Label>
+      <Label x={cx} y={cy + 4} size={11} color={C.muted}><T k="pages.components.dd.ddfigures.098831">every few seconds</T></Label>
     </svg>
   );
 }
@@ -73,10 +74,10 @@ function Distraction() {
       {[0, 1, 2, 3, 4, 5].map(i => <line key={i} x1={30 + i * 52} y1="48" x2={30 + i * 52} y2="94" stroke={C.line} strokeWidth="1.5" />)}
       <line x1="14" y1="71" x2="306" y2="71" stroke={C.line} strokeWidth="2" strokeDasharray="10 8" />
       <Car x={14} y={63} className="ddc-fig-cross" />
-      <Label x={30} y={40} anchor="start" size={11} color={C.muted}>Eyes on the phone…</Label>
-      <Label x={290} y={40} anchor="end" size={11} color={C.muted}>…5 seconds later</Label>
-      <Label x={160} y={118} size={13} weight={800} color={C.ink}>≈ 100 yards at 55 mph, driving blind</Label>
-      <Label x={160} y={136} size={11} color={C.muted}>about the length of a football field</Label>
+      <Label x={30} y={40} anchor="start" size={11} color={C.muted}><T k="pages.components.dd.ddfigures.63b99c">Eyes on the phone…</T></Label>
+      <Label x={290} y={40} anchor="end" size={11} color={C.muted}><T k="pages.components.dd.ddfigures.8d8500">…5 seconds later</T></Label>
+      <Label x={160} y={118} size={13} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.db5449">≈ 100 yards at 55 mph, driving blind</T></Label>
+      <Label x={160} y={136} size={11} color={C.muted}><T k="pages.components.dd.ddfigures.d9a3e8">about the length of a football field</T></Label>
     </svg>
   );
 }
@@ -106,11 +107,11 @@ function Following() {
       <line x1="0" y1="74" x2="320" y2="74" stroke={C.line} strokeWidth="2" strokeDasharray="10 8" />
       <line x1="200" y1="30" x2="200" y2="52" stroke={C.ink} strokeWidth="3" />
       <rect x="186" y="16" width="28" height="16" rx="3" fill={C.go} />
-      <Label x={200} y={110} size={11} color={C.muted}>fixed point</Label>
+      <Label x={200} y={110} size={11} color={C.muted}><T k="pages.components.dd.ddfigures.9d8886">fixed point</T></Label>
       <Car x={0} y={66} color={C.muted} className="ddc-fig-lead" />
       <Car x={0} y={66} className="ddc-fig-follow" />
       <g className="ddc-fig-count">
-        <Label x={160} y={138} size={14} weight={800} color={C.ink}>one-one-thousand · two · three</Label>
+        <Label x={160} y={138} size={14} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.a95c8a">one-one-thousand · two · three</T></Label>
       </g>
     </svg>
   );
@@ -122,13 +123,13 @@ function Stopping() {
     <svg viewBox="0 0 320 130" role="img" aria-label="Total stopping distance is the distance you travel while reacting plus the distance it takes to brake">
       <rect className="ddc-fig-grow" x="10" y="40" width="110" height="22" rx="4" fill={C.amber} />
       <rect className="ddc-fig-grow" style={{ animationDelay: '.5s' }} x="120" y="40" width="190" height="22" rx="4" fill={C.blue} />
-      <Label x={65} y={32} size={11}>Reacting</Label>
-      <Label x={215} y={32} size={11}>Braking</Label>
-      <Label x={65} y={84} size={10} color={C.muted}>you haven’t touched</Label>
-      <Label x={65} y={97} size={10} color={C.muted}>the brake yet</Label>
-      <Label x={215} y={84} size={10} color={C.muted}>grows much faster</Label>
-      <Label x={215} y={97} size={10} color={C.muted}>than your speed</Label>
-      <Label x={160} y={122} size={12} weight={800} color={C.ink}>Total stopping distance</Label>
+      <Label x={65} y={32} size={11}><T k="pages.components.dd.ddfigures.c0df04">Reacting</T></Label>
+      <Label x={215} y={32} size={11}><T k="pages.components.dd.ddfigures.2cd9b5">Braking</T></Label>
+      <Label x={65} y={84} size={10} color={C.muted}><T k="pages.components.dd.ddfigures.6bff1f">you haven’t touched</T></Label>
+      <Label x={65} y={97} size={10} color={C.muted}><T k="pages.components.dd.ddfigures.29f30f">the brake yet</T></Label>
+      <Label x={215} y={84} size={10} color={C.muted}><T k="pages.components.dd.ddfigures.f7828d">grows much faster</T></Label>
+      <Label x={215} y={97} size={10} color={C.muted}><T k="pages.components.dd.ddfigures.bed522">than your speed</T></Label>
+      <Label x={160} y={122} size={12} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.798c71">Total stopping distance</T></Label>
     </svg>
   );
 }
@@ -144,10 +145,10 @@ function TruckZones() {
       <rect className="ddc-fig-pulse" x="80" y="110" width="130" height="36" rx="4" fill={C.red} opacity=".35" />
       <rect x="58" y="66" width="120" height="38" rx="3" fill={C.muted} />
       <rect x="180" y="68" width="30" height="34" rx="5" fill={C.ink} />
-      <Label x={244} y={56} size={10} weight={700} color={C.ink}>front</Label>
-      <Label x={32} y={56} size={10} weight={700} color={C.ink}>rear</Label>
-      <Label x={141} y={20} size={10} weight={700} color={C.ink}>left side</Label>
-      <Label x={145} y={162} size={10} weight={700} color={C.ink}>right side (largest)</Label>
+      <Label x={244} y={56} size={10} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.1b78eb">front</T></Label>
+      <Label x={32} y={56} size={10} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.0f0213">rear</T></Label>
+      <Label x={141} y={20} size={10} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.f1a1f6">left side</T></Label>
+      <Label x={145} y={162} size={10} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.3b2166">right side (largest)</T></Label>
     </svg>
   );
 }
@@ -156,11 +157,11 @@ function TruckZones() {
 function Wet() {
   return (
     <svg viewBox="0 0 320 120" role="img" aria-label="On wet pavement your stopping distance can be about twice as long as on dry pavement">
-      <Label x={10} y={22} anchor="start" size={11}>Dry road</Label>
+      <Label x={10} y={22} anchor="start" size={11}><T k="pages.components.dd.ddfigures.763b4f">Dry road</T></Label>
       <rect className="ddc-fig-grow" x="10" y="28" width="140" height="18" rx="4" fill={C.blue} />
-      <Label x={10} y={70} anchor="start" size={11}>Wet road</Label>
+      <Label x={10} y={70} anchor="start" size={11}><T k="pages.components.dd.ddfigures.c68534">Wet road</T></Label>
       <rect className="ddc-fig-grow" style={{ animationDelay: '.4s' }} x="10" y="76" width="280" height="18" rx="4" fill={C.amber} />
-      <Label x={300} y={112} anchor="end" size={12} weight={800} color={C.ink}>can be about twice as far</Label>
+      <Label x={300} y={112} anchor="end" size={12} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.b9dee3">can be about twice as far</T></Label>
     </svg>
   );
 }
@@ -178,8 +179,8 @@ function MoveOver() {
         <rect className="ddc-fig-blink-b" x="21" y="-4" width="5" height="5" fill={C.blue} />
       </g>
       <Car x={0} y={98} className="ddc-fig-moveover" />
-      <Label x={160} y={22} size={12} weight={800} color={C.ink}>Move over a lane, or slow down</Label>
-      <Label x={226} y={156} size={10} color={C.muted}>stopped, lights flashing</Label>
+      <Label x={160} y={22} size={12} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.9f667a">Move over a lane, or slow down</T></Label>
+      <Label x={226} y={156} size={10} color={C.muted}><T k="pages.components.dd.ddfigures.2e4ade">stopped, lights flashing</T></Label>
     </svg>
   );
 }
@@ -226,7 +227,7 @@ function Cards({ cards, big = false }) {
         return (
           <div key={card.title} className="ddc-fig-pop rounded-lg p-3" style={{ animationDelay: `${i * 0.35}s`, background: t.bg, border: `1px solid ${t.bd}` }}>
             <p className="flex items-center gap-1.5 font-bold ddc-sm" style={{ color: t.c }}>
-              {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />}{card.title}
+              {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />}<T>{card.title}</T>
             </p>
             {card.value && <p className={`mt-1 font-black ddc-heading ${big ? 'ddc-h2' : 'ddc-lg'}`}>{card.value}</p>}
             {card.items && (
@@ -286,7 +287,7 @@ function PointsMeter() {
       })}
       <line x1="300" y1="30" x2="300" y2="72" stroke={C.red} strokeWidth="3" />
       <Label x={300} y={22} size={11} weight={800} color={C.red}>15</Label>
-      <Label x={160} y={114} size={12} weight={800} color={C.ink}>13 points so far. Two more in 24 months: suspended.</Label>
+      <Label x={160} y={114} size={12} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.51b85a">13 points so far. Two more in 24 months: suspended.</T></Label>
     </svg>
   );
 }
@@ -301,10 +302,10 @@ function VisionScan() {
         <path d="M160 140 L132 20 L188 20 Z" fill={C.go} opacity=".22" />
       </g>
       <Car x={151} y={128} w={18} h={30} />
-      <Label x={250} y={34} size={11} weight={700} color={C.ink}>Look 12–15</Label>
-      <Label x={250} y={48} size={11} weight={700} color={C.ink}>seconds ahead</Label>
-      <Label x={70} y={140} size={11} weight={700} color={C.ink}>Mirrors every</Label>
-      <Label x={70} y={154} size={11} weight={700} color={C.ink}>5–8 seconds</Label>
+      <Label x={250} y={34} size={11} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.6f4b26">Look 12–15</T></Label>
+      <Label x={250} y={48} size={11} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.5e7058">seconds ahead</T></Label>
+      <Label x={70} y={140} size={11} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.d1d8c1">Mirrors every</T></Label>
+      <Label x={70} y={154} size={11} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.cfbd00">5–8 seconds</T></Label>
     </svg>
   );
 }
@@ -319,9 +320,9 @@ function Intersection() {
       <path className="ddc-fig-look1" d="M160 124 L60 90" stroke={C.go} strokeWidth="4" strokeLinecap="round" />
       <path className="ddc-fig-look2" d="M160 124 L260 90" stroke={C.go} strokeWidth="4" strokeLinecap="round" />
       <path className="ddc-fig-look3" d="M160 124 L60 90" stroke={C.go} strokeWidth="4" strokeLinecap="round" />
-      <Label x={50} y={78} size={13} weight={800} color={C.ink}>1 · Left</Label>
-      <Label x={270} y={78} size={13} weight={800} color={C.ink}>2 · Right</Label>
-      <Label x={60} y={146} size={13} weight={800} color={C.ink}>3 · Left again</Label>
+      <Label x={50} y={78} size={13} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.ec3842">1 · Left</T></Label>
+      <Label x={270} y={78} size={13} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.15191e">2 · Right</T></Label>
+      <Label x={60} y={146} size={13} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.685bf3">3 · Left again</T></Label>
     </svg>
   );
 }
@@ -336,10 +337,10 @@ function SeatBelt() {
       <rect x="132" y="126" width="56" height="34" rx="8" fill={C.muted} />
       <line className="ddc-fig-draw" x1="186" y1="68" x2="134" y2="128" stroke={C.go} strokeWidth="8" strokeLinecap="round" />
       <line className="ddc-fig-draw" style={{ animationDelay: '.6s' }} x1="128" y1="134" x2="192" y2="134" stroke={C.go} strokeWidth="8" strokeLinecap="round" />
-      <Label x={250} y={84} size={11} weight={700} color={C.ink}>Shoulder belt:</Label>
-      <Label x={250} y={98} size={11} color={C.text}>across the chest</Label>
-      <Label x={60} y={130} size={11} weight={700} color={C.ink}>Lap belt:</Label>
-      <Label x={60} y={144} size={11} color={C.text}>low on the hips</Label>
+      <Label x={250} y={84} size={11} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.37be63">Shoulder belt:</T></Label>
+      <Label x={250} y={98} size={11} color={C.text}><T k="pages.components.dd.ddfigures.08ca42">across the chest</T></Label>
+      <Label x={60} y={130} size={11} weight={700} color={C.ink}><T k="pages.components.dd.ddfigures.577aa4">Lap belt:</T></Label>
+      <Label x={60} y={144} size={11} color={C.text}><T k="pages.components.dd.ddfigures.9df7eb">low on the hips</T></Label>
     </svg>
   );
 }
@@ -356,11 +357,11 @@ function SchoolBus() {
       <g className="ddc-fig-arm" style={{ transformOrigin: '150px 86px' }}>
         <line x1="150" y1="86" x2="128" y2="86" stroke={C.ink} strokeWidth="3" />
         <polygon points="104,76 114,66 128,66 138,76 138,90 128,100 114,100 104,90" fill={C.red} />
-        <Label x={121} y={87} size={8} weight={800} color="#fff">STOP</Label>
+        <Label x={121} y={87} size={8} weight={800} color="#fff"><T k="pages.components.dd.ddfigures.3259ad">STOP</T></Label>
       </g>
       <Car x={30} y={100} />
-      <Label x={47} y={150} size={11} weight={800} color={C.ink}>stopped</Label>
-      <Label x={160} y={30} size={12} weight={800} color={C.ink}>Red lights + stop arm: stay stopped</Label>
+      <Label x={47} y={150} size={11} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.5acf41">stopped</T></Label>
+      <Label x={160} y={30} size={12} weight={800} color={C.ink}><T k="pages.components.dd.ddfigures.113def">Red lights + stop arm: stay stopped</T></Label>
     </svg>
   );
 }
@@ -453,7 +454,7 @@ export default function DDFigure({ name, caption }) {
   return (
     <figure className="ddc-fig rounded-xl border ddc-bd ddc-card p-4">
       <div className="mx-auto max-w-md"><Fig /></div>
-      {caption && <figcaption className="mt-2 text-center ddc-sm ddc-muted">{caption}</figcaption>}
+      {caption && <figcaption className="mt-2 text-center ddc-sm ddc-muted"><T>{caption}</T></figcaption>}
     </figure>
   );
 }
@@ -468,7 +469,7 @@ export function DDVideo({ youtube, src, caption, title = 'Lesson video' }) {
               allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
           : <video className="absolute inset-0 h-full w-full" src={src} controls playsInline preload="metadata" />}
       </div>
-      {caption && <figcaption className="px-4 py-3 ddc-sm ddc-muted">{caption}</figcaption>}
+      {caption && <figcaption className="px-4 py-3 ddc-sm ddc-muted"><T>{caption}</T></figcaption>}
     </figure>
   );
 }

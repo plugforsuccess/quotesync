@@ -46,7 +46,7 @@ export default function DefensiveOverviewPage() {
     return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6"><T k="pages.defensiveoverviewpage.0f2fdf">You don’t have access to this dashboard.</T></div>;
   }
   if (error || !data) {
-    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6">{error || 'No data.'}</div>;
+    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6">{error || <T k="pages.defensiveoverviewpage.944a5b">{'No data.'}</T>}</div>;
   }
 
   const c = data.counts || {};
@@ -77,7 +77,7 @@ export default function DefensiveOverviewPage() {
           {kpis.map((k) => (
             <div key={k.label} className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
               <p className="text-2xl font-bold">{k.value ?? 0}</p>
-              <p className="text-[11px] uppercase tracking-wider text-gray-500 mt-1">{k.label}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500 mt-1"><T>{k.label}</T></p>
             </div>
           ))}
         </div>

@@ -11,7 +11,7 @@ import { getCommissionRate, getFirstYearMultiplier } from '../../../lib/commissi
 function StatRow({ label, value, highlight }) {
   return (
     <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</span>
+      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></span>
       <span className="text-sm font-semibold" style={{ color: highlight || 'var(--qs-bright)' }}>{value}</span>
     </div>
   );
@@ -21,7 +21,7 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
   return (
     <div className="py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
       <div className="flex justify-between items-center">
-        <label className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</label>
+        <label className="text-sm" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></label>
         <div className="relative">
           {prefix && <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--qs-subtle)' }}>{prefix}</span>}
           <input
@@ -36,7 +36,7 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
           {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--qs-subtle)' }}>{suffix}</span>}
         </div>
       </div>
-      {description && <p className="text-xs mt-0.5" style={{ color: 'var(--qs-subtle)' }}>{description}</p>}
+      {description && <p className="text-xs mt-0.5" style={{ color: 'var(--qs-subtle)' }}><T>{description}</T></p>}
     </div>
   );
 }

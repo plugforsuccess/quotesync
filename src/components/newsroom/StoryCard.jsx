@@ -148,7 +148,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
 
       {/* Headline - Primary visual anchor */}
       <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 leading-tight">
-        {story.title}
+        <T>{story.title}</T>
       </h2>
 
       {/* Author Byline */}

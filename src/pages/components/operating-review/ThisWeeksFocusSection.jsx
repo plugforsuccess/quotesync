@@ -101,10 +101,10 @@ function FocusColumn({ title, subtitle, items, emptyLabel }) {
     <div style={columnStyle}>
       <div>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-          {title}
+          <T>{title}</T>
         </h3>
         <p style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 0 }}>
-          {subtitle}
+          <T>{subtitle}</T>
         </p>
       </div>
       {items.length === 0 ? (
@@ -114,8 +114,8 @@ function FocusColumn({ title, subtitle, items, emptyLabel }) {
       ) : (
         items.map((item) => (
           <a key={item.id} href={item.href} style={itemStyle}>
-            <div style={itemTitleStyle}>{item.title}</div>
-            <div style={itemDetailStyle}>{item.detail}</div>
+            <div style={itemTitleStyle}><T>{item.title}</T></div>
+            <div style={itemDetailStyle}><T>{item.detail}</T></div>
           </a>
         ))
       )}

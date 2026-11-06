@@ -394,19 +394,19 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
             }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>
-                  {c.customer_name || 'Unknown'}{' '}
+                  {c.customer_name || <T k="pages.components.retention.retentionimport.bc7819">{'Unknown'}</T>}{' '}
                   <span style={{ fontWeight: 400, color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace", fontSize: 11 }}>
                     {c.policy_no}
                   </span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
                   {c.product?.toUpperCase()} · {fmt$(c.premium_at_risk)} <T k="pages.components.retention.retentionimport.f26e46">at risk · Cancel</T> {c.cancel_effective_date} <T k="pages.components.retention.retentionimport.eeb556">· Last seen</T> {c.last_seen_on}
-                  {c.attempt_count > 0 && ` · ${c.attempt_count} attempts`}
+                  {c.attempt_count > 0 && <>{" · "}{c.attempt_count}{" "}<T k="pages.components.retention.retentionimport.05cf9c">{"attempts"}</T></>}
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--qs-muted)', marginTop: 2 }}>
                   {c.autoReason === 'no_contact_missing'
-                    ? '⚠ Never contacted — verify in Allstate: paid or lapsed?'
-                    : `⚠ ${c.attempt_count} attempt${c.attempt_count !== 1 ? 's' : ''} made — verify outcome in Allstate`
+                    ? <T k="pages.components.retention.retentionimport.fff50f">{'⚠ Never contacted — verify in Allstate: paid or lapsed?'}</T>
+                    : <>{"⚠ "}{c.attempt_count}{" "}<T k="pages.components.retention.retentionimport.38e4e4">{"attempt"}</T>{c.attempt_count !== 1 ? 's' : ''}{" "}<T k="pages.components.retention.retentionimport.ff67c0">{"made — verify outcome in Allstate"}</T></>
                   }
                 </div>
               </div>
@@ -425,7 +425,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
                         ? opt.on
                         : { background: 'transparent', border: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }),
                     }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </button>
                 ))}
               </div>
@@ -474,7 +474,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           onChange={e => onFileSelect(e.target.files[0])} />
         <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
         <div style={{ fontSize: 14, color: "var(--qs-dim)", fontWeight: 500 }}>
-          {uploadFile ? uploadFile.name : "Drop report here or click to browse"}
+          {uploadFile ? uploadFile.name : <T k="pages.components.retention.retentionimport.9ac1ba">{"Drop report here or click to browse"}</T>}
         </div>
         {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}><T k="pages.components.retention.retentionimport.7bf9ca">Parsing\u2026</T></div>}
       </div>
@@ -500,7 +500,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               { label: 'Needs Review',    value: diffResult.toReview.length,  color: 'var(--qs-bright)' },
             ].filter(item => item.value > 0).map(({ label, value, color }) => (
               <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
-                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4 }}><T>{label}</T></div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -589,7 +589,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             borderTop: "1px solid var(--qs-border)",
           }}>
             <button className="btn-primary" onClick={onCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing…" : "Commit Upload"}
+              {isCommitting ? <T k="pages.components.retention.retentionimport.a4a6f1">{"Committing…"}</T> : <T k="pages.components.retention.retentionimport.6f4f18">{"Commit Upload"}</T>}
             </button>
             <button className="btn-ghost" onClick={onCancel}>
               <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
@@ -1135,7 +1135,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           onChange={e => handleFileSelect(e.target.files[0])} />
         <div style={{ fontSize: 32, marginBottom: 8 }}>{"\uD83D\uDCC4"}</div>
         <div style={{ fontSize: 14, color: "var(--qs-dim)", fontWeight: 500 }}>
-          {uploadFile ? uploadFile.name : "Drop renewal report here or click to browse"}
+          {uploadFile ? uploadFile.name : <T k="pages.components.retention.retentionimport.e93538">{"Drop renewal report here or click to browse"}</T>}
         </div>
         {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}><T k="pages.components.retention.retentionimport.8b08e5">Parsing</T>{"\u2026"}</div>}
       </div>
@@ -1144,8 +1144,8 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       {parsedRows && producers.length > 0 && (
         <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 12, marginBottom: 12 }}>
           {producers.length === 1
-            ? `All new cases will be assigned to ${producers[0].preferred_name || producers[0].first_name}`
-            : `New cases will be distributed across ${producers.length} service reps (workload-balanced)`
+            ? <><T k="pages.components.retention.retentionimport.040916">{"All new cases will be assigned to"}</T>{" "}{producers[0].preferred_name || producers[0].first_name}</>
+            : <><T k="pages.components.retention.retentionimport.86849c">{"New cases will be distributed across"}</T>{" "}{producers.length}{" "}<T k="pages.components.retention.retentionimport.ff69a9">{"service reps (workload-balanced)"}</T></>
           }
         </div>
       )}
@@ -1173,7 +1173,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing…" : "Confirm & Commit"}
+              {isCommitting ? <T k="pages.components.retention.retentionimport.a4a6f1">{"Committing…"}</T> : <T k="pages.components.retention.retentionimport.7dfb49">{"Confirm & Commit"}</T>}
             </button>
             <button className="btn-ghost" onClick={() => { setParsedRows(null); setExcludedCount(0); setUploadFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
               <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
@@ -1475,7 +1475,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
         <div style={{ marginTop: 16 }}>
           <input ref={lapseFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleFileSelect} />
           <button className="btn-ghost" onClick={() => lapseFileRef.current?.click()}>
-            {lapseFile ? `\uD83D\uDCC4 ${lapseFile.name}` : "Choose File"}
+            {lapseFile ? `\uD83D\uDCC4 ${lapseFile.name}` : <T k="pages.components.retention.retentionimport.54a2a8">{"Choose File"}</T>}
           </button>
         </div>
         <label style={{
@@ -1506,7 +1506,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing…" : "Confirm & Commit"}
+              {isCommitting ? <T k="pages.components.retention.retentionimport.a4a6f1">{"Committing…"}</T> : <T k="pages.components.retention.retentionimport.7dfb49">{"Confirm & Commit"}</T>}
             </button>
             <button className="btn-ghost" onClick={() => { setParsedRows(null); setLapseFile(null); }}>
               <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
@@ -1559,7 +1559,7 @@ function ImportTab({
             <div key={s.step} style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ textAlign: 'center', padding: '0 12px' }}>
                 <div style={{ fontSize: 16, color: 'var(--qs-dim)' }}>{s.step}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-text)', marginTop: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-text)', marginTop: 2 }}><T>{s.label}</T></div>
                 <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>{s.sublabel}</div>
               </div>
               {i < arr.length - 1 && (

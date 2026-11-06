@@ -21,7 +21,7 @@ const fmtRate = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}
 function CohortCard({ title, c, accent, highlight }) {
   return (
     <div className="card" style={{ borderLeft: `3px solid ${accent}`, flex: 1, minWidth: 220 }}>
-      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 600, marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 600, marginBottom: 6 }}><T>{title}</T></div>
       <div style={{ fontSize: 30, fontWeight: 800, color: highlight ? accent : 'var(--qs-text)', lineHeight: 1.05 }}>
         {fmtPct(c.retainRate)}
       </div>
@@ -43,8 +43,8 @@ function ReadyRow({ ok, label, detail }) {
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 12.5, marginBottom: 6 }}>
       <span style={{ color: ok ? '#10B981' : '#F59E0B', fontWeight: 700 }}>{ok ? '✓' : '⏳'}</span>
-      <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>{label}</span>
-      <span style={{ color: 'var(--qs-dim)' }}>{detail}</span>
+      <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}><T>{label}</T></span>
+      <span style={{ color: 'var(--qs-dim)' }}><T>{detail}</T></span>
     </div>
   );
 }
@@ -69,7 +69,7 @@ function ProofReadiness({ agencyId, capture }) {
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
         letterSpacing: '0.06em', marginBottom: 4 }}><T k="pages.components.retention.retentionliftreport.cb2dce">Build readiness · per-rep tactic save-rate view</T></div>
       <div style={{ fontSize: 13, fontWeight: 800, color: ready ? '#10B981' : 'var(--qs-text)', marginBottom: 10 }}>
-        {ready ? 'Ready to build — the data can support it' : 'Not yet — keep capturing'}
+        {ready ? <T k="pages.components.retention.retentionliftreport.f394f0">{'Ready to build — the data can support it'}</T> : <T k="pages.components.retention.retentionliftreport.99242f">{'Not yet — keep capturing'}</T>}
       </div>
 
       <ReadyRow ok={captureOk}
@@ -94,8 +94,8 @@ function ProofReadiness({ agencyId, capture }) {
 
       <div style={{ fontSize: 11.5, color: 'var(--qs-muted)', marginTop: 10 }}>
         {ready
-          ? 'Both gates are green: the per-rep, per-tactic save-rate grid is worth building now.'
-          : 'When both rows turn green, the per-rep, per-tactic save-rate grid becomes a small build — this is the number to watch instead of guessing the timing.'}
+          ? <T k="pages.components.retention.retentionliftreport.4cb254">{'Both gates are green: the per-rep, per-tactic save-rate grid is worth building now.'}</T>
+          : <T k="pages.components.retention.retentionliftreport.c4045e">{'When both rows turn green, the per-rep, per-tactic save-rate grid becomes a small build — this is the number to watch instead of guessing the timing.'}</T>}
       </div>
     </div>
   );
@@ -136,7 +136,7 @@ export default function RetentionLiftReport({ agencyId }) {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 34, fontWeight: 800, color: '#B07A0E', lineHeight: 1 }}>
-            {liftPoints == null ? '—' : `${liftPoints >= 0 ? '+' : ''}${Math.round(liftPoints)} pts`}
+            {liftPoints == null ? '—' : <>{liftPoints >= 0 ? '+' : ''}{Math.round(liftPoints)}{" "}<T k="pages.components.retention.retentionliftreport.4abdfc">{"pts"}</T></>}
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}><T k="pages.components.retention.retentionliftreport.74df0e">worked − untouched retain rate</T></div>
         </div>
@@ -182,7 +182,7 @@ export default function RetentionLiftReport({ agencyId }) {
             <li><strong style={{ color: '#F59E0B' }}><T k="pages.components.retention.retentionliftreport.b55b22">Selection bias.</T></strong> <T k="pages.components.retention.retentionliftreport.f5d913">The worked cohort faced a smaller average increase (</T>{fmtRate(worked.avgRateChange)} <T k="pages.components.retention.retentionliftreport.f4842d">vs</T> {fmtRate(untouched.avgRateChange)}<T k="pages.components.retention.retentionliftreport.83c815">) — easier saves, so some of the lift is which cases got called, not the call itself.</T></li>
           )}
           <li><strong><T k="pages.components.retention.retentionliftreport.69109a">No control group.</T></strong> <T k="pages.components.retention.retentionliftreport.a69789">One agency, no randomized hold-out — this is a within-book comparison, not a controlled trial. It shows correlation strongly; it doesn't prove causation alone.</T></li>
-          <li><strong><T k="pages.components.retention.retentionliftreport.7b4952">Tactic capture is</T> {capture?.captureRate == null ? 'still ramping' : `${fmtPct(capture.captureRate)}`}.</strong>{' '}
+          <li><strong><T k="pages.components.retention.retentionliftreport.7b4952">Tactic capture is</T> {capture?.captureRate == null ? <T k="pages.components.retention.retentionliftreport.df5bd4">{'still ramping'}</T> : `${fmtPct(capture.captureRate)}`}.</strong>{' '}
             {capture && capture.total > 0
               ? <><T k="pages.components.retention.retentionliftreport.839246">Only</T> {capture.withTactic} <T k="pages.components.retention.retentionliftreport.8bf885">of</T> {capture.total} <T k="pages.components.retention.retentionliftreport.627c85">reached calls recorded what was offered, so we can say worked cases retain better — but not yet</T> <em><T k="pages.components.retention.retentionliftreport.8b7af5">which</T></em> <T k="pages.components.retention.retentionliftreport.e6fdc7">tactic did it. That answer fills in as capture climbs.</T></>
               : <><T k="pages.components.retention.retentionliftreport.505429">Until reached calls record the save tactic, we can show the lift but not which tactic drove it.</T></>}

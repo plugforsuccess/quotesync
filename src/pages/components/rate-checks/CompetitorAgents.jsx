@@ -16,7 +16,7 @@ import AgentsMap from './AgentsMap';
 
 export function OwnershipChip({ value }) {
   const o = BOOK_OWNERSHIP[value] || BOOK_OWNERSHIP.check;
-  return <span title={o.hint} className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${o.cls}`}>{o.label}</span>;
+  return <span title={o.hint} className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${o.cls}`}><T>{o.label}</T></span>;
 }
 
 export default function CompetitorAgents({ agencyId, scans = [] }) {
@@ -105,7 +105,7 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
         <div className="p-8 text-center text-red-600"><T k="pages.components.ratechecks.competitoragents.2cbe15">Error loading competing agents.</T></div>
       ) : rows.length === 0 ? (
         <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-          {data.length === 0 ? 'No agents yet. They show up here when a policy lists the customer’s agent.' : 'No agents match these filters.'}
+          {data.length === 0 ? <T k="pages.components.ratechecks.competitoragents.66eeed">{'No agents yet. They show up here when a policy lists the customer’s agent.'}</T> : <T k="pages.components.ratechecks.competitoragents.9fe773">{'No agents match these filters.'}</T>}
         </div>
       ) : (
         <>
@@ -171,12 +171,12 @@ function AgentCard({ r, open, onToggle, update }) {
             <span className="max-w-[45%] shrink-0 text-right text-sm" style={{ color: 'var(--qs-text)' }}>{r.carrier}</span>
           </div>
           <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-            {o.label}{(r.zips || []).length ? ` · ${r.zips.join(', ')}` : ''} · <b style={{ color: 'var(--qs-bright)' }}>{plural(r.rate_checks, 'customer')}</b>
+            <T>{o.label}</T>{(r.zips || []).length ? ` · ${r.zips.join(', ')}` : ''} · <b style={{ color: 'var(--qs-bright)' }}>{plural(r.rate_checks, 'customer')}</b>
           </p>
           {(Number(r.quoted) > 0 || r.avg_annual_premium != null) && (
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-              {r.avg_annual_premium != null && `Avg ${money(r.avg_annual_premium)}/yr`}
-              {Number(r.quoted) > 0 && ` · We win ${r.wins} of ${r.quoted}`}
+              {r.avg_annual_premium != null && <><T k="pages.components.ratechecks.competitoragents.cdc931">{"Avg"}</T>{" "}{money(r.avg_annual_premium)}{"/yr"}</>}
+              {Number(r.quoted) > 0 && <>{" "}<T k="pages.components.ratechecks.competitoragents.b8f1cb">{"· We win"}</T>{" "}{r.wins}{" "}<T k="pages.components.ratechecks.competitoragents.de04fa">{"of"}</T>{" "}{r.quoted}</>}
               {r.avg_savings_when_won != null && <span className="text-green-600"> <T k="pages.components.ratechecks.competitoragents.b28734">· saves</T> {money(r.avg_savings_when_won)}</span>}
             </p>
           )}
@@ -252,7 +252,7 @@ function AgentDetails({ r, update }) {
           className="w-full rounded px-2 py-1.5" style={inputStyle}>
           {Object.entries(BOOK_OWNERSHIP).map(([k, o]) => <option key={k} value={k}>{o.label}</option>)}
         </select>
-        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{(BOOK_OWNERSHIP[r.book_ownership] || BOOK_OWNERSHIP.check).hint}</span>
+        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{(BOOK_OWNERSHIP[r.book_ownership] || BOOK_OWNERSHIP.check).hint}</T></span>
       </label>
       <div className="space-y-1">
         <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.competitoragents.f4c6f8">Notes</T></span>

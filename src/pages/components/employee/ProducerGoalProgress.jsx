@@ -82,9 +82,9 @@ function Ring({ pct, color, label, sub }) {
         alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{ fontSize: 28, fontWeight: 800, color, fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
-          {label}
+          <T>{label}</T>
         </div>
-        {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 3 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 3 }}><T>{sub}</T></div>}
       </div>
     </div>
   );
@@ -169,7 +169,7 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
                 <Bar pct={pct} color={ringColor} />
               </div>
               <span style={{ fontSize: 12, color: onPace ? 'var(--qs-success)' : 'var(--qs-warning)', fontWeight: 600, flexShrink: 0 }}>
-                {onPace ? 'On pace' : 'Behind'} · {remaining}<T k="pages.components.employee.producergoalprogress.d26339">d left</T>
+                {onPace ? <T k="pages.components.employee.producergoalprogress.278836">{'On pace'}</T> : <T k="pages.components.employee.producergoalprogress.8dd3ec">{'Behind'}</T>} · {remaining}<T k="pages.components.employee.producergoalprogress.d26339">d left</T>
               </span>
             </>
           ) : (
@@ -241,7 +241,7 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
                 ? <TrendingUp className="w-4 h-4" style={{ color: 'var(--qs-success)' }} />
                 : <TrendingDown className="w-4 h-4" style={{ color: 'var(--qs-warning)' }} />}
               <span style={{ fontSize: 13, color: onPace ? 'var(--qs-success)' : 'var(--qs-warning)', fontWeight: 600 }}>
-                {onPace ? 'On pace' : 'Behind pace'}
+                {onPace ? <T k="pages.components.employee.producergoalprogress.278836">{'On pace'}</T> : <T k="pages.components.employee.producergoalprogress.578f00">{'Behind pace'}</T>}
               </span>
               <span style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
                 <T k="pages.components.employee.producergoalprogress.09e397">· projected</T> {money(projected)} ({Math.round(projectedPct * 100)}%) · {remaining} <T k="pages.components.employee.producergoalprogress.b101dd">workday</T>{remaining === 1 ? '' : 's'} <T k="pages.components.employee.producergoalprogress.811882">left</T>

@@ -45,13 +45,13 @@ export default function DeclarationUpload({ leadId, agentName }) {
       <div className="flex items-center gap-2 mb-3">
         <FileText className="w-5 h-5 text-primary-500" />
         <h3 className="font-bold text-gray-900">
-          {hasItems ? 'Add Another Policy?' : 'Have Your Current Policy Handy?'}
+          {hasItems ? <T k="pages.components.wizard.declarationupload.448e2d">{'Add Another Policy?'}</T> : <T k="pages.components.wizard.declarationupload.3ed6dc">{'Have Your Current Policy Handy?'}</T>}
         </h3>
       </div>
       <p className="text-sm text-gray-600 mb-4">
         {hasItems
-          ? `Upload another declarations page if you have one (e.g. your ${items.some(i => i.policy_type === 'auto') ? 'home' : 'auto'} policy).`
-          : `Upload your declarations page (PDF preferred — a clear photo works too) and we'll read your current coverage and premium automatically, so ${agentName || 'your agent'} can build an apples-to-apples comparison.`}
+          ? <><T k="pages.components.wizard.declarationupload.eab8ce">{"Upload another declarations page if you have one (e.g. your"}</T>{" "}{items.some(i => i.policy_type === 'auto') ? 'home' : 'auto'}{" "}<T k="pages.components.wizard.declarationupload.e79865">{"policy)."}</T></>
+          : <><T k="pages.components.wizard.declarationupload.998f5e">{"Upload your declarations page (PDF preferred — a clear photo works too) and we'll read your current coverage and premium automatically, so"}</T>{" "}{agentName || 'your agent'}{" "}<T k="pages.components.wizard.declarationupload.c80fff">{"can build an apples-to-apples comparison."}</T></>}
       </p>
 
       {/* Uploaded so far */}
@@ -80,7 +80,7 @@ export default function DeclarationUpload({ leadId, agentName }) {
         {status === 'working' ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span><T k="pages.components.wizard.declarationupload.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : 'Your Document'}…</span>
+            <span><T k="pages.components.wizard.declarationupload.26fccd">Reading</T> {pendingName ? `"${pendingName}"` : <T k="pages.components.wizard.declarationupload.2dd31f">{'Your Document'}</T>}…</span>
           </>
         ) : hasItems ? (
           <>
@@ -90,7 +90,7 @@ export default function DeclarationUpload({ leadId, agentName }) {
         ) : (
           <>
             <UploadCloud className="w-5 h-5" />
-            <span>{status === 'error' ? 'Try Another File' : 'Choose File'}</span>
+            <span>{status === 'error' ? <T k="pages.components.wizard.declarationupload.4fb7e2">{'Try Another File'}</T> : <T k="pages.components.wizard.declarationupload.54a2a8">{'Choose File'}</T>}</span>
           </>
         )}
       </button>

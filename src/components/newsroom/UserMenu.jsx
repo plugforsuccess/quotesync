@@ -1,4 +1,5 @@
 // src/components/newsroom/UserMenu.jsx
+import { T } from '../SiteCopy';
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -160,7 +161,7 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 transition-colors"
               >
                 <ArrowLeftRight className="w-4 h-4" />
-                {isAdminView ? 'Switch to Consumer' : 'Switch to Admin'}
+                {isAdminView ? <T k="components.newsroom.usermenu.58821d">{'Switch to Consumer'}</T> : <T k="components.newsroom.usermenu.31dbb2">{'Switch to Admin'}</T>}
               </button>
               <div className="mx-3 my-1 border-t border-white/10"></div>
             </>
@@ -171,7 +172,7 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            Log Out
+            <T k="components.newsroom.usermenu.4e8131">Log Out</T>
           </button>
         </div>
       )}

@@ -262,7 +262,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">
-            {record ? 'Edit Consent Record' : 'Add Consent Record'}
+            {record ? <T k="pages.consentmanagementpage.97c36e">{'Edit Consent Record'}</T> : <T k="pages.consentmanagementpage.a77ba0">{'Add Consent Record'}</T>}
           </h3>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
             <X className="w-5 h-5" />
@@ -432,7 +432,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
               disabled={isSaving}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg disabled:opacity-50"
             >
-              {isSaving ? 'Saving...' : record ? 'Update' : 'Add Record'}
+              {isSaving ? <T k="pages.consentmanagementpage.ae7e88">{'Saving...'}</T> : record ? <T k="pages.consentmanagementpage.fb91e2">{'Update'}</T> : <T k="pages.consentmanagementpage.26e7da">{'Add Record'}</T>}
             </button>
           </div>
         </form>

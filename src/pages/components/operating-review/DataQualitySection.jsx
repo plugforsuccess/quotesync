@@ -31,7 +31,7 @@ function Stat({ label, rate, sample, tone }) {
   return (
     <div style={{ minWidth: 150 }}>
       <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--qs-subtle)', fontWeight: 600, marginBottom: 4 }}>
-        {label}
+        <T>{label}</T>
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <span style={{ fontSize: 30, fontWeight: 700, lineHeight: 1, color }}>
@@ -112,7 +112,7 @@ export default function DataQualitySection({ agencyId }) {
         {improvement != null && improvement !== 0 && (
           <div style={{ alignSelf: 'center' }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: improvement > 0 ? 'var(--qs-success)' : 'var(--qs-danger)' }}>
-              {improvement > 0 ? '▼' : '▲'} {Math.abs(improvement).toFixed(0)} <T k="pages.components.operatingreview.dataqualitysection.8c9a70">pts</T> {improvement > 0 ? 'improved' : 'worse'}
+              {improvement > 0 ? '▼' : '▲'} {Math.abs(improvement).toFixed(0)} <T k="pages.components.operatingreview.dataqualitysection.8c9a70">pts</T> {improvement > 0 ? <T k="pages.components.operatingreview.dataqualitysection.2ecffa">{'improved'}</T> : <T k="pages.components.operatingreview.dataqualitysection.4f8180">{'worse'}</T>}
             </span>
           </div>
         )}

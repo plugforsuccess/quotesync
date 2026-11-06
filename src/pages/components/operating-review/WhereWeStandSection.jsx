@@ -101,7 +101,7 @@ function StatCard({ label, value, delta, deltaLabel, subline }) {
   const hasDelta = delta != null;
   return (
     <div style={cardStyle}>
-      <div style={cardLabelStyle}>{label}</div>
+      <div style={cardLabelStyle}><T>{label}</T></div>
       <div style={cardValueStyle}>{value}</div>
       {hasDelta && (
         <div style={cardDeltaStyle(delta)}>

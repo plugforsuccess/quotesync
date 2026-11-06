@@ -50,9 +50,9 @@ export default function OfferOutcomesPanel({ agencyId }) {
       background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
       borderRadius: 10, padding: '10px 14px', minWidth: 150, flex: '1 1 150px',
     }}>
-      <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>{label}</div>
+      <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}><T>{label}</T></div>
       <div style={{ fontSize: 18, fontWeight: 700, color: color || 'var(--qs-bright)' }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}><T>{sub}</T></div>}
     </div>
   );
 
@@ -118,7 +118,7 @@ export default function OfferOutcomesPanel({ agencyId }) {
                 <div style={{ color: 'var(--qs-dim)' }}>
                   {c.quotes} <T k="pages.components.retention.offeroutcomespanel.7a674c">quote</T>{c.quotes === 1 ? '' : 's'}
                   {c.avgGap != null && (
-                    <> · {c.avgGap < 0 ? 'undercuts us ' : 'above us '}{fmt$(Math.abs(c.avgGap))} <T k="pages.components.retention.offeroutcomespanel.e322d4">avg</T></>
+                    <> · {c.avgGap < 0 ? <T k="pages.components.retention.offeroutcomespanel.357bc6">{'undercuts us '}</T> : <T k="pages.components.retention.offeroutcomespanel.467fcb">{'above us '}</T>}{fmt$(Math.abs(c.avgGap))} <T k="pages.components.retention.offeroutcomespanel.e322d4">avg</T></>
                   )}
                 </div>
                 <div style={{ color: 'var(--qs-dim)' }}>{c.saved} <T k="pages.components.retention.offeroutcomespanel.11e6fa">held ·</T> {c.lost} <T k="pages.components.retention.offeroutcomespanel.1c9a44">lost</T></div>

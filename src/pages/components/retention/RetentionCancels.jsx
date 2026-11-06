@@ -97,7 +97,7 @@ function SortTh({ col, label, sortCol, sortDir, onSort }) {
   const active = sortCol === col;
   return (
     <th onClick={() => onSort(col)} style={{ cursor: "pointer", userSelect: "none" }}>
-      {label} {active ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : ""}
+      <T>{label}</T> {active ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : ""}
     </th>
   );
 }
@@ -130,13 +130,13 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount, clickable, onC
       )}
       <div style={{ fontSize: 11, color: 'var(--qs-subtle)', fontWeight: 600,
         textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
-        {label}
+        <T>{label}</T>
       </div>
       <div style={{ fontSize: 26, fontWeight: 700, color,
         fontFamily: "'DM Mono', monospace" }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}><T>{sub}</T></div>}
     </div>
   );
 }
@@ -160,7 +160,7 @@ function CustomerDrilldownModal({ event, onClose }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--qs-bright)" }}>
-              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+              {maskCustomerName(event.customer_name) || <T k="pages.components.retention.retentioncancels.359416">{"Unknown Customer"}</T>}
             </div>
             <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
               <T k="pages.components.retention.retentioncancels.c70c2b">Policy #</T>{event.policy_no || "\u2014"}
@@ -188,7 +188,7 @@ function CustomerDrilldownModal({ event, onClose }) {
             { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "var(--qs-dim)" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
-              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}><T>{label}</T></div>
               <div style={{ fontSize: 13, fontWeight: 600, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
             </div>
           ))}
@@ -266,14 +266,14 @@ function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
         return c.active ? (
           <span key={c.id} aria-current="true" style={{ ...tab, cursor: 'default',
             background: t.bg, borderColor: t.color, color: t.color }}>
-            {label}
+            <T>{label}</T>
           </span>
         ) : (
           <button key={c.id} type="button" onClick={() => onOpen(c)} disabled={busyId === c.id}
             title={`Open the ${productLabel(c.product) || c.product} ${c.type} case — same customer, same call`}
             style={{ ...tab, cursor: 'pointer', fontFamily: 'inherit',
               background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)', color: 'var(--qs-text)' }}>
-            {busyId === c.id ? 'Opening…' : label}
+            {busyId === c.id ? <T k="pages.components.retention.retentioncancels.b1b853">{'Opening…'}</T> : label}
           </button>
         );
       })}
@@ -299,7 +299,7 @@ function OtherCasesWarning({ cases }) {
     }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-warning)',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-        <T k="pages.components.retention.retentioncancels.34430d">⚠ Same customer has</T> {cases.length} <T k="pages.components.retention.retentioncancels.e7b7ef">other active</T> {cases.length === 1 ? 'case' : 'cases'}
+        <T k="pages.components.retention.retentioncancels.34430d">⚠ Same customer has</T> {cases.length} <T k="pages.components.retention.retentioncancels.e7b7ef">other active</T> {cases.length === 1 ? <T k="pages.components.retention.retentioncancels.640651">{'case'}</T> : <T k="pages.components.retention.retentioncancels.f9063c">{'cases'}</T>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {cases.map(c => (
@@ -310,8 +310,8 @@ function OtherCasesWarning({ cases }) {
               ...NEUTRAL_CHIP, color: 'var(--qs-text)',
             }}>
               {c.type === 'cancel'
-                ? (c.stage === 'cancelled' ? '🚫 Lapsed' : '⚠ Pending Cancel')
-                : '🔄 Renewal'}
+                ? (c.stage === 'cancelled' ? <T k="pages.components.retention.retentioncancels.6d61aa">{'🚫 Lapsed'}</T> : <T k="pages.components.retention.retentioncancels.c7730e">{'⚠ Pending Cancel'}</T>)
+                : <T k="pages.components.retention.retentioncancels.e454ce">{'🔄 Renewal'}</T>}
             </span>
             <span style={{ color: 'var(--qs-dim)' }}>{c.policy_no}</span>
             <span>{c.product}</span>
@@ -354,7 +354,7 @@ function AlreadyPaidAction({ onConfirm, busy }) {
           flex: 1, padding: "8px", borderRadius: 8, border: "none", background: busy ? "var(--qs-card)" : "var(--qs-info)",
           color: busy ? "var(--qs-muted)" : "#fff", fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit",
         }}>
-          {busy ? "Clearing…" : "Yes, Mark Paid"}
+          {busy ? <T k="pages.components.retention.retentioncancels.bc7a2b">{"Clearing…"}</T> : <T k="pages.components.retention.retentioncancels.146da1">{"Yes, Mark Paid"}</T>}
         </button>
         <button type="button" onClick={() => setConfirming(false)} style={{
           flex: 1, padding: "8px", borderRadius: 8, border: "1px solid var(--qs-border)", background: "var(--qs-card)",
@@ -769,7 +769,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         }}>
           <div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
-              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+              {maskCustomerName(event.customer_name) || <T k="pages.components.retention.retentioncancels.359416">{"Unknown Customer"}</T>}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
               <T k="pages.components.retention.retentioncancels.51359e">Policy</T> {event.policy_no} · {productLabel(event.product)} <T k="pages.components.retention.retentioncancels.fc0083">· Cycle</T> {event.cycle}
@@ -864,7 +864,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   fontSize: 11, fontWeight: 600, color: "var(--qs-subtle)",
                   textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
                 }}>
-                  {label}
+                  <T>{label}</T>
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 700, color,
@@ -963,7 +963,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 background: "var(--qs-info)", color: "#fff", fontWeight: 700,
                 cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
                 opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
-              }}>{cbSaving ? "Scheduling…" : "📅 Schedule"}</button>
+              }}>{cbSaving ? <T k="pages.components.retention.retentioncancels.3e4624">{"Scheduling…"}</T> : <T k="pages.components.retention.retentioncancels.268fca">{"📅 Schedule"}</T>}</button>
             </div>
             {event.callback_at && (
               <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 6 }}>
@@ -1009,7 +1009,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       borderColor: on ? "var(--qs-info)" : "var(--qs-border)",
                       background: on ? "var(--qs-info-subtle)" : "var(--qs-elevated)",
                       color: on ? "var(--qs-info)" : "var(--qs-dim)", fontFamily: "inherit" }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </button>
                 );
               })}
@@ -1091,7 +1091,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 transition: "background 0.15s",
               }}
             >
-              {loggingAttempt ? "Logging…" : "+ Log Call"}
+              {loggingAttempt ? <T k="pages.components.retention.retentioncancels.89805f">{"Logging…"}</T> : <T k="pages.components.retention.retentioncancels.928d87">{"+ Log Call"}</T>}
             </button>
           </div>
 
@@ -1136,7 +1136,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       )}
                       {a.note && (
                         <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
-                          {a.note}
+                          <T>{a.note}</T>
                         </div>
                       )}
                     </div>
@@ -1319,7 +1319,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       <T k="pages.components.retention.retentioncancels.62b5b3">vs at-risk:</T>{" "}
                       <strong style={{ color: "var(--qs-text)" }}>
                         {diff === 0
-                          ? "unchanged"
+                          ? <T k="pages.components.retention.retentioncancels.8012ff">{"unchanged"}</T>
                           : `${diff > 0 ? "+" : "−"}${fmtFull$(Math.abs(diff))} (${pct.toFixed(0)}%) ${diff < 0 ? "concession" : "above"}`}
                       </strong>
                     </div>
@@ -1449,7 +1449,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   marginTop: 4,
                 }}
               >
-                {saving ? "Saving…" : resolveLabel}
+                {saving ? <T k="pages.components.retention.retentioncancels.56a228">{"Saving…"}</T> : resolveLabel}
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center" }}>
@@ -2017,7 +2017,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         }}>
           <div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
-              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+              {maskCustomerName(event.customer_name) || <T k="pages.components.retention.retentioncancels.359416">{"Unknown Customer"}</T>}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
               <T k="pages.components.retention.retentioncancels.51359e">Policy</T> {event.policy_no} · {productLabel(event.product)}
@@ -2064,9 +2064,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 color: banner.color, borderRadius: 10, padding: "10px 14px", marginBottom: 16,
                 fontSize: 13, fontWeight: 700,
               }}>
-                <span>{banner.label}</span>
+                <span><T>{banner.label}</T></span>
                 {banner.sub && (
-                  <span style={{ fontWeight: 400, color: "var(--qs-subtle)" }}>· {banner.sub}</span>
+                  <span style={{ fontWeight: 400, color: "var(--qs-subtle)" }}>· <T>{banner.sub}</T></span>
                 )}
               </div>
             );
@@ -2113,7 +2113,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   fontSize: 11, fontWeight: 600, color: "var(--qs-subtle)",
                   textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
                 }}>
-                  {label}
+                  <T>{label}</T>
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 700, color: color || "var(--qs-text)",
@@ -2139,7 +2139,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 <T k="pages.components.retention.retentioncancels.7d92d4">⚠ This customer has an active pending cancel</T>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                <T k="pages.components.retention.retentioncancels.1fb40a">Their</T> <strong>{productLabel(event.active_cancel?.product) || 'other'}</strong> <T k="pages.components.retention.retentioncancels.f4af8b">policy</T>
+                <T k="pages.components.retention.retentioncancels.1fb40a">Their</T> <strong>{productLabel(event.active_cancel?.product) || <T k="pages.components.retention.retentioncancels.d0941e">{'other'}</T>}</strong> <T k="pages.components.retention.retentioncancels.f4af8b">policy</T>
                 {' '}<T k="pages.components.retention.retentioncancels.678ed9">is in pending cancel. Address that first — do not lead with the renewal or a cross-sell pitch until the cancel issue is resolved.</T>
               </div>
             </div>
@@ -2235,7 +2235,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
                   opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
                 }}>
-                {cbSaving ? "Scheduling…" : "📅 Schedule"}
+                {cbSaving ? <T k="pages.components.retention.retentioncancels.3e4624">{"Scheduling…"}</T> : <T k="pages.components.retention.retentioncancels.268fca">{"📅 Schedule"}</T>}
               </button>
             </div>
             {event.callback_at && (
@@ -2284,7 +2284,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       borderColor: on ? "var(--qs-info)" : "var(--qs-border)",
                       background: on ? "var(--qs-info-subtle)" : "var(--qs-elevated)",
                       color: on ? "var(--qs-info)" : "var(--qs-dim)", fontFamily: "inherit" }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </button>
                 );
               })}
@@ -2366,7 +2366,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 transition: "background 0.15s",
               }}
             >
-              {loggingAttempt ? "Logging…" : "+ Log Call"}
+              {loggingAttempt ? <T k="pages.components.retention.retentioncancels.89805f">{"Logging…"}</T> : <T k="pages.components.retention.retentioncancels.928d87">{"+ Log Call"}</T>}
             </button>
           </div>
 
@@ -2411,7 +2411,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       )}
                       {a.note && (
                         <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
-                          {a.note}
+                          <T>{a.note}</T>
                         </div>
                       )}
                     </div>
@@ -2632,7 +2632,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   marginTop: 4,
                 }}
               >
-                {saving ? "Saving…" : resolveLabel}
+                {saving ? <T k="pages.components.retention.retentioncancels.56a228">{"Saving…"}</T> : resolveLabel}
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center" }}>
@@ -2768,7 +2768,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   })() },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -2784,7 +2784,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   color: 'var(--qs-dim)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -2835,7 +2835,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                 { label: 'Attempts', value: r.renewal_attempts || 0 },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -2874,7 +2874,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   color: 'var(--qs-text)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}><T>{label}</T></div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -3497,7 +3497,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
         ].map(f => (
           <button key={f.key} className={`btn-ghost ${riskFilter === f.key ? 'active' : ''}`}
             onClick={() => { setRiskFilter(f.key); setKpiFilter(null); onClearUrgentFilter?.(); }}>
-            {f.label}
+            <T>{f.label}</T>
           </button>
         ))}
 
@@ -3508,11 +3508,11 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--qs-info)',
           }}>
             <T k="pages.components.retention.retentioncancels.55f690">Filtered:</T> {
-              kpiFilter === 'renewal'        ? 'Renewals'        :
-              kpiFilter === 'pending_cancel' ? 'Pending Cancel'  :
-              kpiFilter === 'dual_risk'      ? 'Dual Risk'       :
-              kpiFilter === 'multi_line'     ? 'Multi-Line'      :
-              kpiFilter === 'uncovered21'    ? 'Untouched inside 21d' : kpiFilter
+              kpiFilter === 'renewal'        ? <T k="pages.components.retention.retentioncancels.1c2680">{'Renewals'}</T>        :
+              kpiFilter === 'pending_cancel' ? <T k="pages.components.retention.retentioncancels.07a019">{'Pending Cancel'}</T>  :
+              kpiFilter === 'dual_risk'      ? <T k="pages.components.retention.retentioncancels.822d6d">{'Dual Risk'}</T>       :
+              kpiFilter === 'multi_line'     ? <T k="pages.components.retention.retentioncancels.e07e46">{'Multi-Line'}</T>      :
+              kpiFilter === 'uncovered21'    ? <T k="pages.components.retention.retentioncancels.d29352">{'Untouched inside 21d'}</T> : kpiFilter
             }
             <button
               onClick={() => setKpiFilter(null)}
@@ -3650,7 +3650,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                     <td>
                       {row.cancel_effective_date ? (
                         <span style={{ color: urgencyColor(cancelDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                          {cancelDays <= 0 ? 'PAST DUE' : `${cancelDays}d`}
+                          {cancelDays <= 0 ? <T k="pages.components.retention.retentioncancels.29c1c8">{'PAST DUE'}</T> : `${cancelDays}d`}
                         </span>
                       ) : <span style={{ color: 'var(--qs-muted)' }}>—</span>}
                     </td>
@@ -3668,7 +3668,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                     <td>
                       {row.renewal_date ? (
                         <span style={{ color: renewalUrgencyColor(renewalDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                          {renewalDays <= 0 ? 'PAST' : `${renewalDays}d`}
+                          {renewalDays <= 0 ? <T k="pages.components.retention.retentioncancels.db05b6">{'PAST'}</T> : `${renewalDays}d`}
                         </span>
                       ) : <span style={{ color: 'var(--qs-muted)' }}>—</span>}
                     </td>
@@ -3783,7 +3783,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                   fontWeight: assignedFilter === opt.value ? 700 : 500,
                 }}
               >
-                {opt.label}
+                <T>{opt.label}</T>
               </button>
             ))}
             {assigneeOptions.length > 0 && (

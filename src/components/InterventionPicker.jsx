@@ -13,6 +13,7 @@
 //   interventions: string[], offeredPremium, competitorName, competitorQuote, discountNote
 // }
 
+import { T } from './SiteCopy';
 import { useInterventionTypes } from '../hooks/useInterventionTypes';
 import { EMPTY_INTERVENTION, HAPPY_CODES } from '../lib/interventions';
 
@@ -92,7 +93,7 @@ export default function InterventionPicker({ value, onChange, context, filter, r
   const groupLabel = (text, hint) => (
     <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)', margin: '2px 0 6px' }}>
       {text}
-      {hint && <span style={{ fontWeight: 400, fontStyle: 'italic' }}> · {hint}</span>}
+      {hint && <span style={{ fontWeight: 400, fontStyle: 'italic' }}> · <T>{hint}</T></span>}
     </div>
   );
   const chipRow = (types, kind, mb) => (
@@ -106,10 +107,10 @@ export default function InterventionPicker({ value, onChange, context, filter, r
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', marginBottom: 8 }}>
-        {includeLoss ? 'What happened on this call?' : 'What did you do to save them?'}{' '}
+        {includeLoss ? <T k="components.interventionpicker.1e4ce7">{'What happened on this call?'}</T> : <T k="components.interventionpicker.1366ed">{'What did you do to save them?'}</T>}{' '}
         {required
           ? <span style={{ fontWeight: 700, color: '#F87171' }} title="required">*</span>
-          : <span style={{ fontWeight: 400 }}>(optional)</span>}
+          : <span style={{ fontWeight: 400 }}><T k="components.interventionpicker.b16c7a">(optional)</T></span>}
       </div>
 
       {/* Save tactics (multi-select) */}
@@ -159,8 +160,8 @@ export default function InterventionPicker({ value, onChange, context, filter, r
             />
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginBottom: 8 }}>
-            Kept even if the call ends lost — it's the price that didn't save them (Offers report).
-            On a save it pre-fills the close screen, so you won't retype it.
+            <T k="components.interventionpicker.2109b0">Kept even if the call ends lost — it's the price that didn't save them (Offers report).
+            On a save it pre-fills the close screen, so you won't retype it.</T>
           </div>
         </>
       )}

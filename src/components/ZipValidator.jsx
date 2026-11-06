@@ -1,4 +1,5 @@
 // src/components/ZipValidator.jsx
+import { T } from './SiteCopy';
 import React, { useState, useCallback } from 'react';
 
 const ZipValidator = ({ onValidZip, onClose }) => {
@@ -65,10 +66,10 @@ const ZipValidator = ({ onValidZip, onClose }) => {
             <span className="text-white text-2xl">📍</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            What's Your ZIP Code?
+            <T k="components.zipvalidator.48fa6b">What's Your ZIP Code?</T>
           </h2>
           <p className="text-gray-600">
-            I need to make sure I can write policies in your area
+            <T k="components.zipvalidator.ceeec5">I need to make sure I can write policies in your area</T>
           </p>
         </div>
 
@@ -97,13 +98,13 @@ const ZipValidator = ({ onValidZip, onClose }) => {
             disabled={isValidating || zip.length !== 5}
             className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-primary-700 hover:to-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
           >
-            {isValidating ? 'Checking...' : 'Continue'}
+            {isValidating ? <T k="components.zipvalidator.494d0f">{'Checking...'}</T> : <T k="components.zipvalidator.2e0262">{'Continue'}</T>}
           </button>
         </form>
 
         {/* Info text */}
         <p className="mt-4 text-xs text-gray-500 text-center">
-          Currently serving Georgia residents only
+          <T k="components.zipvalidator.cba472">Currently serving Georgia residents only</T>
         </p>
       </div>
     </div>

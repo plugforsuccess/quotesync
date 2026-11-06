@@ -6,6 +6,7 @@
 //            the bundle type (worked out, can be changed), policy numbers optional.
 //   Lost   — Price, No response, or Not eligible.
 // Credit goes to whoever logs it. Lead status follows (Quoted, Won, Lost).
+import { T } from '../../../components/SiteCopy';
 import { useMemo, useState } from 'react';
 import { Check, FileText, X } from 'lucide-react';
 import { useLeadSales, useLogBind, useLogQuote, useMarkLost } from '../../../hooks/useSales';
@@ -24,7 +25,7 @@ function ProductChips({ selected, onToggle }) {
           <button key={key} type="button" onClick={() => onToggle(key)} aria-pressed={on}
             className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold ${on ? 'bg-primary-600 text-white' : ''}`}
             style={on ? undefined : box}>
-            {on && <Check className="h-4 w-4" aria-hidden="true" />}{label}
+            {on && <Check className="h-4 w-4" aria-hidden="true" />}<T>{label}</T>
           </button>
         );
       })}
@@ -38,7 +39,7 @@ function TermSwitch({ value, onChange, label }) {
       {[6, 12].map(t => (
         <button key={t} type="button" role="radio" aria-checked={value === t} onClick={() => onChange(t)}
           className={`h-8 rounded-md px-2.5 text-xs font-semibold ${value === t ? 'bg-primary-600 text-white' : ''}`}>
-          {t} mo
+          {t} <T k="pages.components.sales.salesforms.6adbae">mo</T>
         </button>
       ))}
     </div>
@@ -48,7 +49,7 @@ function TermSwitch({ value, onChange, label }) {
 function PremiumInput({ value, onChange, label }) {
   return (
     <label className="relative block min-w-0 flex-1">
-      <span className="sr-only">{label}</span>
+      <span className="sr-only"><T>{label}</T></span>
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--qs-subtle)' }}>$</span>
       <input inputMode="decimal" value={value} onChange={e => onChange(e.target.value)} placeholder="0"
         aria-label={label} className="h-10 w-full rounded-lg pl-7 pr-3 text-sm tabular-nums" style={box} />
@@ -63,8 +64,8 @@ function Sheet({ title, sub, onClose, children, footer }) {
       <div className="relative flex max-h-[92vh] w-full max-w-lg flex-col rounded-t-2xl sm:rounded-2xl" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
         <div className="flex items-start justify-between gap-3 px-5 pb-2 pt-5">
           <div>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{title}</h2>
-            {sub && <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{sub}</p>}
+            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T>{title}</T></h2>
+            {sub && <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T>{sub}</T></p>}
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5" style={{ color: 'var(--qs-subtle)' }}><X className="h-5 w-5" /></button>
         </div>
@@ -88,16 +89,16 @@ function QuoteForm({ lead, agencyId, onClose }) {
   return (
     <Sheet title="Log a quote" sub={nameOf(lead)} onClose={onClose}
       footer={<>
-        {logQuote.error && <p className="mb-2 text-sm text-red-600" role="alert">Couldn’t save: {logQuote.error.message}</p>}
+        {logQuote.error && <p className="mb-2 text-sm text-red-600" role="alert"><T k="pages.components.sales.salesforms.b736fa">Couldn’t save:</T> {logQuote.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!ready || logQuote.isPending} onClick={save}>
-          {logQuote.isPending ? 'Saving…' : lines.length ? `Save Quote · ${lines.length} ${lines.length === 1 ? 'Policy' : 'Policies'}` : 'Pick What You Quoted'}
+          {logQuote.isPending ? <T k="pages.components.sales.salesforms.56a228">{'Saving…'}</T> : lines.length ? <><T k="pages.components.sales.salesforms.9c0e76">{"Save Quote ·"}</T>{" "}{lines.length}{" "}{lines.length === 1 ? 'Policy' : 'Policies'}</> : <T k="pages.components.sales.salesforms.8ce97e">{'Pick What You Quoted'}</T>}
         </button>
       </>}>
-      <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>What did you quote?</p>
+      <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.ee3167">What did you quote?</T></p>
       <ProductChips selected={lines.map(l => l.product)} onToggle={toggle} />
       {lines.length > 0 && (
         <div className="mt-4 space-y-2.5">
-          <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Quoted premium, as Allstate shows it</p>
+          <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.25da57">Quoted premium, as Allstate shows it</T></p>
           {lines.map(l => (
             <div key={l.product} className="flex items-center gap-2">
               <span className="w-24 shrink-0 text-sm font-semibold">{LABEL[l.product]}</span>
@@ -133,12 +134,12 @@ function BindForm({ lead, agencyId, openQuote, onClose }) {
   return (
     <Sheet title="Mark bound" sub={nameOf(lead)} onClose={onClose}
       footer={<>
-        {logBind.error && <p className="mb-2 text-sm text-red-600" role="alert">Couldn’t save: {logBind.error.message}</p>}
+        {logBind.error && <p className="mb-2 text-sm text-red-600" role="alert"><T k="pages.components.sales.salesforms.b736fa">Couldn’t save:</T> {logBind.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!ready || logBind.isPending} onClick={save}>
-          {logBind.isPending ? 'Saving…' : lines.length ? `Save Bind · ${items} ${items === 1 ? 'Item' : 'Items'}` : 'Pick What You Wrote'}
+          {logBind.isPending ? <T k="pages.components.sales.salesforms.56a228">{'Saving…'}</T> : lines.length ? <><T k="pages.components.sales.salesforms.e805d9">{"Save Bind ·"}</T>{" "}{items}{" "}{items === 1 ? 'Item' : 'Items'}</> : <T k="pages.components.sales.salesforms.66a7e8">{'Pick What You Wrote'}</T>}
         </button>
       </>}>
-      <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>What did you write?</p>
+      <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.540d60">What did you write?</T></p>
       <ProductChips selected={lines.map(l => l.product)} onToggle={toggle} />
 
       {lines.length > 0 && (
@@ -149,14 +150,14 @@ function BindForm({ lead, agencyId, openQuote, onClose }) {
                 <span className="text-sm font-bold" style={{ color: 'var(--qs-bright)' }}>{LABEL[l.product]}</span>
                 {l.product === 'auto' ? (
                   <span className="inline-flex items-center gap-2 text-sm">
-                    <span style={{ color: 'var(--qs-subtle)' }}>Cars</span>
+                    <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.sales.salesforms.6e3153">Cars</T></span>
                     <span className="inline-flex items-center rounded-lg" style={{ border: '1px solid var(--qs-border)' }}>
                       <button type="button" aria-label="One fewer car" className="h-8 w-8 font-bold" onClick={() => set('auto', { items: Math.max(1, (Number(l.items) || 1) - 1) })}>−</button>
                       <span className="w-6 text-center font-semibold tabular-nums" aria-live="polite">{l.items}</span>
                       <button type="button" aria-label="One more car" className="h-8 w-8 font-bold" onClick={() => set('auto', { items: (Number(l.items) || 1) + 1 })}>+</button>
                     </span>
                   </span>
-                ) : <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>1 item</span>}
+                ) : <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.sales.salesforms.19884f">1 item</T></span>}
               </div>
               <div className="mt-2.5 flex items-center gap-2">
                 <PremiumInput value={l.premium} onChange={v => set(l.product, { premium: v })} label={`${LABEL[l.product]} bound premium`} />
@@ -165,20 +166,20 @@ function BindForm({ lead, agencyId, openQuote, onClose }) {
               <input value={l.policy_number} onChange={e => set(l.product, { policy_number: e.target.value })} placeholder="Policy number (optional)"
                 aria-label={`${LABEL[l.product]} policy number`} className="mt-2 h-10 w-full rounded-lg px-3 text-sm" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }} />
               {l.product === 'auto' && (
-                <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>You own this policy until its first renewal.</p>
+                <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.sales.salesforms.77ab9b">You own this policy until its first renewal.</T></p>
               )}
             </div>
           ))}
 
           <div>
-            <p className="mb-1.5 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Bundle</p>
+            <p className="mb-1.5 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.23ed73">Bundle</T></p>
             <div className="grid grid-cols-3 gap-1 rounded-xl p-1" style={box} role="radiogroup" aria-label="Bundle type">
               {Object.entries(BUNDLE).map(([k, label]) => (
                 <button key={k} type="button" role="radio" aria-checked={bundleType === k} onClick={() => setBundle(k === auto ? null : k)}
-                  className={`h-9 rounded-lg px-1 text-xs font-semibold sm:text-sm ${bundleType === k ? 'bg-primary-600 text-white' : ''}`}>{label}</button>
+                  className={`h-9 rounded-lg px-1 text-xs font-semibold sm:text-sm ${bundleType === k ? 'bg-primary-600 text-white' : ''}`}><T>{label}</T></button>
               ))}
             </div>
-            {bundle && bundle !== auto && <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>Changed by you (worked out as {BUNDLE[auto]}).</p>}
+            {bundle && bundle !== auto && <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.sales.salesforms.d8a9de">Changed by you (worked out as</T> {BUNDLE[auto]}).</p>}
           </div>
         </div>
       )}
@@ -193,18 +194,18 @@ function LostForm({ lead, openQuotes, onClose }) {
   return (
     <Sheet title="Mark lost" sub={nameOf(lead)} onClose={onClose}
       footer={<>
-        {markLost.error && <p className="mb-2 text-sm text-red-600" role="alert">Couldn’t save: {markLost.error.message}</p>}
+        {markLost.error && <p className="mb-2 text-sm text-red-600" role="alert"><T k="pages.components.sales.salesforms.b736fa">Couldn’t save:</T> {markLost.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!reason || markLost.isPending}
           onClick={() => markLost.mutate({ lead, quoteIds: openQuotes.map(q => q.id), reason }, { onSuccess: onClose })}>
-          {markLost.isPending ? 'Saving…' : 'Mark Lost'}
+          {markLost.isPending ? <T k="pages.components.sales.salesforms.56a228">{'Saving…'}</T> : <T k="pages.components.sales.salesforms.4439ed">{'Mark Lost'}</T>}
         </button>
       </>}>
-      <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Why?</p>
+      <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.d77989">Why?</T></p>
       <div className="space-y-2" role="radiogroup" aria-label="Reason">
         {LOST.map(([k, label, hint]) => (
           <button key={k} type="button" role="radio" aria-checked={reason === k} onClick={() => setReason(k)}
             className={`flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left ${reason === k ? 'ring-2 ring-primary-600' : ''}`} style={box}>
-            <span><span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}>{label}</span><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{hint}</span></span>
+            <span><span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}><T>{label}</T></span><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{hint}</T></span></span>
             {reason === k && <Check className="h-5 w-5 text-primary-600" aria-hidden="true" />}
           </button>
         ))}
@@ -239,13 +240,13 @@ export function LeadSalesCard({ lead, agencyId }) {
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-gray-900"><FileText className="h-5 w-5" aria-hidden="true" /> Quotes & Binds</h2>
-      <p className="mb-4 text-sm text-gray-500">Counts toward whoever logs it.</p>
+      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-gray-900"><FileText className="h-5 w-5" aria-hidden="true" /> <T k="pages.components.sales.salesforms.769f0c">Quotes & Binds</T></h2>
+      <p className="mb-4 text-sm text-gray-500"><T k="pages.components.sales.salesforms.a36967">Counts toward whoever logs it.</T></p>
 
       <div className="grid grid-cols-3 gap-2">
-        <button type="button" onClick={() => setMode('quote')} className={`${btn} border border-gray-300 text-gray-800 hover:bg-gray-50`}>Quote</button>
-        <button type="button" onClick={() => setMode('bind')} className={`${btn} bg-primary-600 text-white hover:bg-primary-700`}>Bound</button>
-        <button type="button" onClick={() => setMode('lost')} disabled={!open.length} className={`${btn} border border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-40`}>Lost</button>
+        <button type="button" onClick={() => setMode('quote')} className={`${btn} border border-gray-300 text-gray-800 hover:bg-gray-50`}><T k="pages.components.sales.salesforms.309028">Quote</T></button>
+        <button type="button" onClick={() => setMode('bind')} className={`${btn} bg-primary-600 text-white hover:bg-primary-700`}><T k="pages.components.sales.salesforms.2c346a">Bound</T></button>
+        <button type="button" onClick={() => setMode('lost')} disabled={!open.length} className={`${btn} border border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-40`}><T k="pages.components.sales.salesforms.75a7bf">Lost</T></button>
       </div>
 
       {(quotes.length > 0 || binds.length > 0) && (
@@ -258,11 +259,11 @@ export function LeadSalesCard({ lead, agencyId }) {
                 <div className="min-w-0 text-sm">
                   <p className="font-semibold text-gray-900">
                     <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: STATUS.bound[1] }} aria-hidden="true" />
-                    Bound · {items} {items === 1 ? 'item' : 'items'} · {BUNDLE[b.bundle_type]}
+                    <T k="pages.components.sales.salesforms.887ab4">Bound ·</T> {items} {items === 1 ? <T k="pages.components.sales.salesforms.3a7d97">{'item'}</T> : <T k="pages.components.sales.salesforms.7316c8">{'items'}</T>} · {BUNDLE[b.bundle_type]}
                   </p>
                   <p className="text-xs text-gray-500">
                     {(b.bound_items || []).map(i => `${LABEL[i.product] || i.product}${i.item_count > 1 ? ` ×${i.item_count}` : ''}`).join(' + ')} · {new Date(`${b.bound_on}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-                    {auto?.first_renewal_on && ` · first renewal ${new Date(`${auto.first_renewal_on}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+                    {auto?.first_renewal_on && <>{" "}<T k="pages.components.sales.salesforms.9fe89c">{"· first renewal"}</T>{" "}{new Date(`${auto.first_renewal_on}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>}
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-bold tabular-nums text-green-700" title="Annual">{money(b.bound_premium)}<span className="text-xs font-normal text-gray-400">/yr</span></span>
@@ -274,11 +275,11 @@ export function LeadSalesCard({ lead, agencyId }) {
               <div className="min-w-0 text-sm">
                 <p className="font-semibold text-gray-900">
                   <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: STATUS[q.status][1] }} aria-hidden="true" />
-                  Quote · {STATUS[q.status][0]}{q.status === 'lost' && q.lost_reason ? ` (${lostLabel[q.lost_reason]}${q.auto_closed ? ', after 30 days' : ''})` : ''}
+                  <T k="pages.components.sales.salesforms.13a115">Quote ·</T> {STATUS[q.status][0]}{q.status === 'lost' && q.lost_reason ? ` (${lostLabel[q.lost_reason]}${q.auto_closed ? ', after 30 days' : ''})` : ''}
                 </p>
                 <p className="text-xs text-gray-500">
                   {(q.products || []).map(p => LABEL[p] || p).join(' + ')} · {new Date(`${q.quoted_on}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-                  {q.rate_check_id && ' · from Rate Check'}
+                  {q.rate_check_id && <T k="pages.components.sales.salesforms.60250e">{' · from Rate Check'}</T>}
                 </p>
               </div>
               <span className="shrink-0 text-sm font-bold tabular-nums text-green-700" title="Annual">{money(q.quoted_premium)}<span className="text-xs font-normal text-gray-400">/yr</span></span>

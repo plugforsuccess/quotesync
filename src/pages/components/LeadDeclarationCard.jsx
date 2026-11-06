@@ -26,7 +26,7 @@ function Field({ label, value }) {
   if (value == null || value === '') return null;
   return (
     <div>
-      <dt className="text-gray-500 text-sm">{label}</dt>
+      <dt className="text-gray-500 text-sm"><T>{label}</T></dt>
       <dd className="font-medium text-gray-900">{value}</dd>
     </div>
   );
@@ -59,10 +59,10 @@ function DeclarationEntry({ entry }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <h3 className="font-semibold text-gray-900"><T>{title}</T></h3>
           {entry.confidence && (
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CONFIDENCE_STYLES[entry.confidence] || 'bg-gray-100 text-gray-600'}`}>
-              {entry.confidence === 'low' ? 'low confidence' : `${entry.confidence} confidence`}
+              {entry.confidence === 'low' ? <T k="pages.components.leaddeclarationcard.327641">{'low confidence'}</T> : <>{entry.confidence}{" "}<T k="pages.components.leaddeclarationcard.016568">{"confidence"}</T></>}
             </span>
           )}
         </div>
@@ -112,7 +112,7 @@ function DeclarationEntry({ entry }) {
           <ul className="space-y-1.5">
             {entry.mortgagees.map((m, i) => (
               <li key={i} className="text-sm text-gray-900">
-                <span className="font-medium">{m.lender_name || 'Lender'}</span>
+                <span className="font-medium">{m.lender_name || <T k="pages.components.leaddeclarationcard.850f3d">{'Lender'}</T>}</span>
                 {m.position && <span className="text-gray-400 font-normal"> · {m.position}</span>}
                 {m.loan_number && <span className="text-gray-400 font-normal"> <T k="pages.components.leaddeclarationcard.c9e032">· Loan</T> {m.loan_number}</span>}
                 {m.address && <div className="text-xs text-gray-500">{m.address}</div>}
@@ -152,7 +152,7 @@ function DeclarationEntry({ entry }) {
           <ul className="space-y-1.5">
             {entry.vehicles.map((v, i) => (
               <li key={i} className="text-sm text-gray-900">
-                <span className="font-medium">{[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'}</span>
+                <span className="font-medium">{[v.year, v.make, v.model].filter(Boolean).join(' ') || <T k="pages.components.leaddeclarationcard.9bb28c">{'Vehicle'}</T>}</span>
                 {v.vin && <span className="text-gray-400 font-normal"> <T k="pages.components.leaddeclarationcard.e54c56">· VIN</T> {v.vin}</span>}
                 {(v.lienholder || v.finance_type || v.primary_use || v.annual_mileage != null) && (
                   <div className="text-xs text-gray-500">
@@ -176,7 +176,7 @@ function DeclarationEntry({ entry }) {
           <ul className="space-y-1">
             {entry.drivers.map((d, i) => (
               <li key={i} className="text-sm font-medium text-gray-900">
-                {d.name || 'Driver'}
+                {d.name || <T k="pages.components.leaddeclarationcard.b5c7d8">{'Driver'}</T>}
                 {d.date_of_birth && <span className="text-gray-400 font-normal"> <T k="pages.components.leaddeclarationcard.3159a0">· DOB</T> {d.date_of_birth}</span>}
                 {d.relationship && <span className="text-gray-400 font-normal"> · {d.relationship}</span>}
               </li>
@@ -199,7 +199,7 @@ function DeclarationEntry({ entry }) {
                     </td>
                     <td className="px-3 py-2 text-gray-900 font-medium text-right">{c.limit || '-'}</td>
                     <td className="px-3 py-2 text-gray-500 text-right whitespace-nowrap">
-                      {c.deductible ? `${c.deductible} ded.` : ''}
+                      {c.deductible ? <>{c.deductible}{" "}<T k="pages.components.leaddeclarationcard.05e367">{"ded."}</T></> : ''}
                       {c.premium != null && <span className="block text-xs text-gray-400">{fmtMoney(c.premium)}</span>}
                     </td>
                   </tr>
@@ -230,7 +230,7 @@ export default function LeadDeclarationCard({ lead }) {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
         <FileText className="w-5 h-5 text-primary-500" />
-        {declarations.length > 1 ? 'Declarations Pages' : 'Declarations Page'}
+        {declarations.length > 1 ? <T k="pages.components.leaddeclarationcard.327ae9">{'Declarations Pages'}</T> : <T k="pages.components.leaddeclarationcard.af5d89">{'Declarations Page'}</T>}
       </h2>
 
       {status === 'failed' && (

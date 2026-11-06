@@ -10,7 +10,7 @@ import { totalCostMonthly } from '../../../utils/compModelCalculations';
 function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
   return (
     <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-      <label className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</label>
+      <label className="text-sm" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></label>
       <div className="flex items-center gap-1">
         <input
           type="number"
@@ -30,7 +30,7 @@ function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
 function OutputRow({ label, value, color }) {
   return (
     <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</span>
+      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></span>
       <span className="text-sm font-semibold" style={{ color: color || 'var(--qs-bright)' }}>{value}</span>
     </div>
   );
@@ -272,8 +272,8 @@ export default function StaffingCapacity({
         <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-1"><T k="pages.components.dashboard.staffingcapacity.aa21f4">Staffing Scenarios</T></h3>
         <p className="text-xs mb-3" style={{ color: 'var(--qs-subtle)' }}>
           {ytdAvgPremium
-            ? `Using YTD actuals: $${Math.round(ytdAvgPremium).toLocaleString()} avg premium · ${ytdCommissionRate.toFixed(1)}% blended rate`
-            : 'Using planner estimates — add revenue entries for actual rates'}
+            ? <><T k="pages.components.dashboard.staffingcapacity.396fd5">{"Using YTD actuals: $"}</T>{Math.round(ytdAvgPremium).toLocaleString()}{" "}<T k="pages.components.dashboard.staffingcapacity.c2f7f6">{"avg premium ·"}</T>{" "}{ytdCommissionRate.toFixed(1)}<T k="pages.components.dashboard.staffingcapacity.bd8232">{"% blended rate"}</T></>
+            : <T k="pages.components.dashboard.staffingcapacity.03a694">{'Using planner estimates — add revenue entries for actual rates'}</T>}
         </p>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">

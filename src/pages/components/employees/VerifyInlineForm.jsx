@@ -1,6 +1,7 @@
 // src/pages/components/employees/VerifyInlineForm.jsx
 // Small inline form for marking an employee as verified.
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 
@@ -27,7 +28,7 @@ export default function VerifyInlineForm({ onVerify, saving }) {
         className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
       >
         <CheckCircle className="w-3.5 h-3.5" />
-        {saving ? 'Saving...' : 'Mark Verified'}
+        {saving ? <T k="pages.components.employees.verifyinlineform.ae7e88">{'Saving...'}</T> : <T k="pages.components.employees.verifyinlineform.68c4e6">{'Mark Verified'}</T>}
       </button>
     </form>
   );

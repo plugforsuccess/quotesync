@@ -1,5 +1,6 @@
 // components/Layout.jsx - ULTRA ADVANCED VERSION
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
+import { T, useCopyEditor } from './SiteCopy';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon, Bell, LogOut, Pencil } from 'lucide-react';
@@ -256,10 +257,10 @@ function Layout({ forcePlane = null }) {
               </div>
               <div>
                 <div className="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent group-hover:from-emerald-400 group-hover:via-teal-400 group-hover:to-cyan-400 transition-all duration-300">
-                  insuredbycam
+                  <T k="components.layout.2756f7">insuredbycam</T>
                 </div>
                 <div className="text-xs sm:text-sm text-gray-400">
-                  Insurance shopping, simplified
+                  <T k="components.layout.963126">Insurance shopping, simplified</T>
                 </div>
               </div>
             </NavLink>
@@ -270,7 +271,7 @@ function Layout({ forcePlane = null }) {
                 href={`tel:${import.meta.env.VITE_BLAND_INBOUND_NUMBER_E164 || import.meta.env.VITE_BLAND_INBOUND_NUMBER}`}
                 className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
               >
-                <span className="hidden sm:inline text-gray-400 font-normal">Call an agent now:</span>
+                <span className="hidden sm:inline text-gray-400 font-normal"><T k="components.layout.887f82">Call an agent now:</T></span>
                 <span className="font-black text-white">
                   {import.meta.env.VITE_BLAND_INBOUND_NUMBER}
                 </span>
@@ -303,7 +304,7 @@ function Layout({ forcePlane = null }) {
                 <span className="text-sm font-semibold whitespace-nowrap">
                   {import.meta.env.VITE_BLAND_INBOUND_NUMBER}
                 </span>
-                <span className="hidden lg:inline text-xs text-gray-400 font-normal">Call for a Quote</span>
+                <span className="hidden lg:inline text-xs text-gray-400 font-normal"><T k="components.layout.ab52e3">Call for a Quote</T></span>
               </a>
             )}
 
@@ -417,7 +418,7 @@ function Layout({ forcePlane = null }) {
             {primaryNav.length > 0 && secondaryNav.length > 0 && (
               <div className="w-full max-w-sm flex items-center gap-3 my-2">
                 <div className="flex-1 h-px bg-white/20"></div>
-                <span className="text-xs text-white/40 uppercase tracking-wider font-medium">More</span>
+                <span className="text-xs text-white/40 uppercase tracking-wider font-medium"><T k="components.layout.4bab2d">More</T></span>
                 <div className="flex-1 h-px bg-white/20"></div>
               </div>
             )}
@@ -464,7 +465,7 @@ function Layout({ forcePlane = null }) {
           >
             {/* Drawer header */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
-              <span className="text-sm font-semibold text-white">More</span>
+              <span className="text-sm font-semibold text-white"><T k="components.layout.4bab2d">More</T></span>
               <button
                 onClick={() => setDrawerOpen(false)}
                 className="p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
@@ -477,7 +478,7 @@ function Layout({ forcePlane = null }) {
                 hats on mobile (on desktop it lives in the header nav).
                 Self-hides for single-hat users. */}
             <div className="px-4 py-3 border-b border-white/10 empty:hidden">
-              <PersonaSwitcher fullWidth onDark />
+              <PersonaSwitcher fullWidth onLight />
             </div>
 
             {/* Drawer nav groups */}
@@ -487,7 +488,7 @@ function Layout({ forcePlane = null }) {
                   {/* Section header */}
                   <div className="px-4 py-2">
                     <span className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--qs-muted)]">
-                      {group.label}
+                      <T>{group.label}</T>
                     </span>
                   </div>
 
@@ -506,7 +507,7 @@ function Layout({ forcePlane = null }) {
                       }
                     >
                       {item.lucideIcon && <item.lucideIcon className="w-5 h-5 flex-shrink-0" strokeWidth={1.8} />}
-                      <span>{item.label}</span>
+                      <span><T>{item.label}</T></span>
                     </NavLink>
                   ))}
                 </div>
@@ -522,10 +523,10 @@ function Layout({ forcePlane = null }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-white truncate">
-                    {profile?.full_name || user?.email || 'User'}
+                    {profile?.full_name || user?.email || <T k="components.layout.9f8a23">{'User'}</T>}
                   </div>
                   <div className="text-xs text-gray-400 capitalize">
-                    {roleLabel || 'User'}
+                    {roleLabel || <T k="components.layout.9f8a23">{'User'}</T>}
                   </div>
                 </div>
               </div>
@@ -537,7 +538,7 @@ function Layout({ forcePlane = null }) {
                   className="flex items-center gap-2 mt-3 px-2 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 >
                   <Settings className="w-4 h-4" />
-                  <span>Admin Tools</span>
+                  <span><T k="components.layout.b5b674">Admin Tools</T></span>
                 </NavLink>
               )}
 
@@ -547,7 +548,7 @@ function Layout({ forcePlane = null }) {
                 className="flex w-full items-center gap-2 mt-2 px-2 py-2.5 text-sm font-medium text-red-300 hover:text-red-200 hover:bg-white/10 rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
+                <span><T k="components.layout.61fd08">Sign Out</T></span>
               </button>
             </div>
           </div>
@@ -611,6 +612,7 @@ const EDIT_PAGES = [
 
 function EditWebsiteButton() {
   const [open, setOpen] = useState(false);
+  const { canStartEditing, startEditing } = useCopyEditor();
   const wrap = useRef(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -634,12 +636,19 @@ function EditWebsiteButton() {
       {open && (
         <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl shadow-xl"
           style={{ background: '#FFFFFF', border: '1px solid #D8E1F0' }}>
-          <p className="px-4 pb-1 pt-3 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: '#546280' }}>Edit which page?</p>
+          <p className="px-4 pb-1 pt-3 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: '#546280' }}><T k="components.layout.568806">Edit which page?</T></p>
+          {canStartEditing && (
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); startEditing(); }}
+              className="block w-full px-4 py-2.5 text-left hover:bg-blue-50" style={{ borderBottom: '1px solid #E5EBF5' }}>
+              <span className="block text-sm font-semibold" style={{ color: '#0F2D6B' }}>This Screen</span>
+              <span className="block text-xs" style={{ color: '#546280' }}>Edit the words on the screen you're on</span>
+            </button>
+          )}
           {EDIT_PAGES.map(([to, label, hint]) => (
             <NavLink key={to} to={to} role="menuitem" onClick={() => setOpen(false)}
               className="block px-4 py-2.5 hover:bg-blue-50">
-              <span className="block text-sm font-semibold" style={{ color: '#0F2D6B' }}>{label}</span>
-              <span className="block text-xs" style={{ color: '#546280' }}>{hint}</span>
+              <span className="block text-sm font-semibold" style={{ color: '#0F2D6B' }}><T>{label}</T></span>
+              <span className="block text-xs" style={{ color: '#546280' }}><T>{hint}</T></span>
             </NavLink>
           ))}
         </div>
@@ -702,7 +711,7 @@ function TabLink({ to, label, end, scrollToQuote, isPrimary }) {
         isActive ? 'bg-white text-[#0F2D6B] shadow-sm' : isPrimary ? 'bg-white/15 text-white hover:bg-white/25' : 'text-blue-50 hover:bg-white/10 hover:text-white',
       ].join(' ')}
     >
-      {label}
+      <T>{label}</T>
     </NavLink>
   );
 }
@@ -754,7 +763,7 @@ function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
             <span className="text-3xl">{icon}</span>
 
             {/* Label */}
-            <span className="flex-1">{label}</span>
+            <span className="flex-1"><T>{label}</T></span>
 
             {/* Arrow indicator */}
             <svg

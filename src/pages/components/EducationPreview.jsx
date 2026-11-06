@@ -76,12 +76,12 @@ const EducationPreview = () => {
 
                 {/* Title */}
                 <h3 className="text-xl font-bold text-white mb-4 leading-tight group-hover:text-accent-300 transition-colors">
-                  {guide.title}
+                  <T>{guide.title}</T>
                 </h3>
 
                 {/* Description */}
                 <p className="text-sm text-white/70 mb-6 leading-relaxed">
-                  {guide.description}
+                  <T>{guide.description}</T>
                 </p>
 
                 {/* Read Time */}

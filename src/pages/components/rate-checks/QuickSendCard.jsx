@@ -20,13 +20,13 @@ export default function QuickSendCard({ agencyId }) {
       <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
         <T k="pages.components.ratechecks.quicksendcard.e827b4">Text someone the upload link while you're talking to them. Open</T> <span className="font-mono"><T k="pages.components.ratechecks.quicksendcard.13b64e">insuredbycam.com/qs</T></span> <T k="pages.components.ratechecks.quicksendcard.5dc1d0">on your phone and sign in with your Quick Send PIN, no QuoteSync login. PINs are set on the Team page.</T>
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Link to="/qs" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Link to="/qs" className="inline-flex min-h-[44px] items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
           <ExternalLink className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.876873">Open Quick Send</T>
         </Link>
         <button type="button" onClick={() => setShowPhones(v => !v)} aria-expanded={showPhones}
-          className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
-          <Smartphone className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.f90fd6">Signed-in Phones (</T>{devices.length})
+          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
+          <Smartphone className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.phones">Phones</T> ({devices.length})
         </button>
       </div>
 
@@ -38,10 +38,10 @@ export default function QuickSendCard({ agencyId }) {
             {devices.map(d => (
               <li key={d.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)' }}>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{d.producer_name || 'Producer'} <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>· {d.label || 'Phone'}</span></p>
+                  <p className="truncate text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{d.producer_name || <T k="pages.components.ratechecks.quicksendcard.7b7194">{'Producer'}</T>} <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>· {d.label || <T k="pages.components.ratechecks.quicksendcard.77064d">{'Phone'}</T>}</span></p>
                   <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                    {d.expires_at ? `Shared phone · signs out ${new Date(d.expires_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : `Signed in ${formatDate(d.created_at)}`}
-                    {d.last_used_at ? ` · last used ${formatDate(d.last_used_at)}` : ''}
+                    {d.expires_at ? <><T k="pages.components.ratechecks.quicksendcard.810760">{"Shared phone · signs out"}</T>{" "}{new Date(d.expires_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</> : <><T k="pages.components.ratechecks.quicksendcard.1b6c52">{"Signed in"}</T>{" "}{formatDate(d.created_at)}</>}
+                    {d.last_used_at ? <>{" "}<T k="pages.components.ratechecks.quicksendcard.c93ba7">{"· last used"}</T>{" "}{formatDate(d.last_used_at)}</> : ''}
                   </p>
                 </div>
                 <button type="button" onClick={() => { if (window.confirm(`Sign out ${d.producer_name || 'this'}’s ${d.label || 'phone'}? They’ll need their PIN to sign in again.`)) remove.mutate(d.id); }}

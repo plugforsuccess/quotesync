@@ -86,7 +86,7 @@ export default function DefensiveDrivingPage() {
               <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white"><T k="pages.defensivedrivingpage.3401c4">← Drivers Ed</T></Link>
               <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: GOLD }}><T k="pages.defensivedrivingpage.9496f3">Defensive Driving · Georgia</T></p>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4">
-                {course.title}
+                <T>{course.title}</T>
               </h1>
               <p className="text-lg text-blue-100 max-w-xl mb-6">
                 <T k="pages.defensivedrivingpage.4cdffd">A self-paced online defensive driving course built to help you earn an auto-insurance premium discount. Complete the modules, pass the final exam, and your certificate is forwarded to the agency automatically.</T>
@@ -247,7 +247,7 @@ function ModuleCard({ m, index }) {
         <T k="pages.defensivedrivingpage.e55f75">Module</T> {m.ordinal || index + 1}
         {georgia && <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.1em]" style={{ background: 'rgba(57,255,136,0.18)', color: DEEP }}><T k="pages.defensivedrivingpage.1426fa">Georgia law</T></span>}
       </p>
-      <h3 className="text-lg font-extrabold leading-snug tracking-tight text-[#0F2D6B]">{m.title}</h3>
+      <h3 className="text-lg font-extrabold leading-snug tracking-tight text-[#0F2D6B]"><T>{m.title}</T></h3>
       {content?.summary && <p className="mt-2.5 pb-5 text-sm leading-relaxed text-slate-600">{content.summary}</p>}
       {lessons.length > 0 && (
         <div className="mt-auto border-t border-slate-100 pt-4">
@@ -398,7 +398,7 @@ function EnrollForm({ course, defaultName }) {
       {error && <p className="flex items-start gap-2 text-xs font-medium text-red-700"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
       <button type="submit" disabled={submitting}
         className="qb qb-blue qb-lg w-full">
-        {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingpage.15f045">Redirecting…</T></> : 'Enroll & Pay'}
+        {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingpage.15f045">Redirecting…</T></> : <T k="pages.defensivedrivingpage.8eeeab">{'Enroll & Pay'}</T>}
       </button>
       <p className="text-[11px] text-slate-500 text-center"><T k="pages.defensivedrivingpage.21180b">Secure checkout with Stripe.</T></p>
     </form>
@@ -473,11 +473,11 @@ function AuthPanel() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <p className="text-base font-bold text-[#0F2D6B]">{isCreate ? 'Create your account to start' : 'Sign in to continue'}</p>
+      <p className="text-base font-bold text-[#0F2D6B]">{isCreate ? <T k="pages.defensivedrivingpage.657cf0">{'Create your account to start'}</T> : <T k="pages.defensivedrivingpage.9a7843">{'Sign in to continue'}</T>}</p>
       <p className="text-xs text-slate-500">
         {isCreate
-          ? 'Just an email and a password — no codes to look up.'
-          : 'Enter the email and password you set up.'}
+          ? <T k="pages.defensivedrivingpage.4a4e75">{'Just an email and a password — no codes to look up.'}</T>
+          : <T k="pages.defensivedrivingpage.413af6">{'Enter the email and password you set up.'}</T>}
       </p>
 
       {isCreate && (
@@ -500,7 +500,7 @@ function AuthPanel() {
           />
           <button type="button" onClick={() => setShowPw((s) => !s)}
             className="absolute inset-y-0 right-2 my-auto h-7 px-2 text-xs font-semibold text-slate-500 hover:text-[#0F2D6B]">
-            {showPw ? 'Hide' : 'Show'}
+            {showPw ? <T k="pages.defensivedrivingpage.34d8b6">{'Hide'}</T> : <T k="pages.defensivedrivingpage.d97d1e">{'Show'}</T>}
           </button>
         </div>
         {isCreate && <span className="mt-1 block text-[11px] text-slate-500"><T k="pages.defensivedrivingpage.832a90">At least 6 characters. Write it down somewhere safe.</T></span>}
@@ -511,16 +511,16 @@ function AuthPanel() {
       <div className="pt-2 flex justify-center">
         <button type="submit" disabled={busy}
           className="qb qb-blue qb-lg px-8">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (isCreate ? 'Create Account & Start' : 'Sign In')}
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (isCreate ? <T k="pages.defensivedrivingpage.522b34">{'Create Account & Start'}</T> : <T k="pages.defensivedrivingpage.f8492c">{'Sign In'}</T>)}
         </button>
       </div>
 
       <p className="text-xs text-slate-500 text-center">
-        {isCreate ? 'Already have an account?' : 'New here?'}{' '}
+        {isCreate ? <T k="pages.defensivedrivingpage.855903">{'Already have an account?'}</T> : <T k="pages.defensivedrivingpage.b81f2e">{'New here?'}</T>}{' '}
         <button type="button"
           onClick={() => { setMode(isCreate ? 'signin' : 'create'); setError(null); }}
           className="text-blue-700 font-semibold underline underline-offset-2">
-          {isCreate ? 'Sign In' : 'Create an Account'}
+          {isCreate ? <T k="pages.defensivedrivingpage.f8492c">{'Sign In'}</T> : <T k="pages.defensivedrivingpage.d48e66">{'Create an Account'}</T>}
         </button>
       </p>
       <p className="text-xs text-slate-500 text-center pt-1"><T k="pages.defensivedrivingpage.0e2384">Need help? Call</T> <a href="tel:+17707861616" className="text-blue-700 font-semibold">(770) 786-1616</a></p>
@@ -531,7 +531,7 @@ function AuthPanel() {
 function Field({ label, value, onChange, type = 'text', placeholder, autoComplete }) {
   return (
     <label className="block">
-      <span className="block text-xs font-semibold text-slate-600 mb-1">{label}</span>
+      <span className="block text-xs font-semibold text-slate-600 mb-1"><T>{label}</T></span>
       <input
         type={type}
         value={value}

@@ -37,7 +37,7 @@ export default function UploadReminderBanner({ reminders }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Bell className="w-4 h-4" style={{ color: hasOverdue ? '#EF4444' : '#F59E0B' }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>
-            {hasOverdue ? 'Overdue uploads' : 'Uploads due'}
+            {hasOverdue ? <T k="pages.components.retention.uploadreminderbanner.e0c225">{'Overdue uploads'}</T> : <T k="pages.components.retention.uploadreminderbanner.14e961">{'Uploads due'}</T>}
             {' — '}
             <span style={{ fontWeight: 400, color: 'var(--qs-subtle)' }}>
               <T k="pages.components.retention.uploadreminderbanner.a84aef">upload in the order shown below</T>
@@ -69,10 +69,10 @@ export default function UploadReminderBanner({ reminders }) {
                 </span>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>
-                    {r.label}
+                    <T>{r.label}</T>
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--qs-dim)', marginLeft: 8 }}>
-                    {r.description}
+                    <T>{r.description}</T>
                   </span>
                 </div>
                 <span style={{
@@ -80,7 +80,7 @@ export default function UploadReminderBanner({ reminders }) {
                   background: cfg.bg, border: `1px solid ${cfg.border}`,
                   borderRadius: 4, padding: '2px 6px',
                 }}>
-                  {cfg.label}
+                  <T>{cfg.label}</T>
                 </span>
               </div>
             );

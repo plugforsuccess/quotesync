@@ -55,8 +55,8 @@ const SmarterFasterSection = ({ isVisible }) => {
               >
                 <Icon className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{benefit.title}</h3>
-              <p className="text-gray-600 leading-relaxed text-sm">{benefit.desc}</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3"><T>{benefit.title}</T></h3>
+              <p className="text-gray-600 leading-relaxed text-sm"><T>{benefit.desc}</T></p>
             </div>
           );
         })}

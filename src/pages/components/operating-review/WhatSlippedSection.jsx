@@ -236,10 +236,10 @@ function SlipRow({ slip, dismissed, onDismiss, onUndismiss }) {
       <div style={slipIconStyle(slip.severity)} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
-          {slip.title}
+          <T>{slip.title}</T>
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-text)', marginTop: 2 }}>
-          {slip.detail}
+          <T>{slip.detail}</T>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
@@ -256,7 +256,7 @@ function SlipRow({ slip, dismissed, onDismiss, onUndismiss }) {
               textDecoration: 'none',
             }}
           >
-            {slip.cta.label}
+            <T>{slip.cta.label}</T>
           </a>
         )}
         {!dismissed && onDismiss && (

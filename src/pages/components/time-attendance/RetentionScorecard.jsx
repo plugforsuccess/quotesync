@@ -6,11 +6,11 @@ function MetricRow({ label, value, sub, color = 'var(--qs-text)', warn = false }
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--qs-border)' }}>
       <span style={{ fontSize: 13, color: 'var(--qs-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
         {warn && <AlertTriangle className="w-3 h-3 text-amber-500" />}
-        {label}
+        <T>{label}</T>
       </span>
       <div className="text-right">
         <span style={{ fontSize: 13, fontWeight: 600, color }}>{value}</span>
-        {sub && <p style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>{sub}</p>}
+        {sub && <p style={{ fontSize: 11, color: 'var(--qs-subtle)' }}><T>{sub}</T></p>}
       </div>
     </div>
   );

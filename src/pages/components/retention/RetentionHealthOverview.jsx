@@ -48,9 +48,9 @@ function StatCard({ label, value, sub, color, accent, onClick }) {
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default', position: 'relative',
         borderLeft: accent ? `3px solid ${accent}` : undefined }}>
-      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 500, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 500, marginBottom: 6 }}><T>{label}</T></div>
       <div style={{ fontSize: 22, fontWeight: 700, color: color || 'var(--qs-text)' }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}><T>{sub}</T></div>}
       {onClick && (
         <div style={{ position: 'absolute', top: 10, right: 12, fontSize: 11, color: 'var(--qs-muted)' }}>→</div>
       )}
@@ -137,9 +137,9 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
         <div style={{ width: 14, height: 14, borderRadius: 7, background: status.color, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: status.color }}>
-            <T k="pages.components.retention.retentionhealthoverview.6ef4e2">Retention health —</T> {status.label}
+            <T k="pages.components.retention.retentionhealthoverview.6ef4e2">Retention health —</T> <T>{status.label}</T>
           </div>
-          <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 2 }}>{status.note}</div>
+          <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 2 }}><T>{status.note}</T></div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 26, fontWeight: 800, color: status.color, lineHeight: 1 }}>
@@ -213,7 +213,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
       {/* Book-level health */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
-          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.a10b6e">Book health</T> {book?.latestMonth ? `· as of ${book.latestMonth}` : ''}</div>
+          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.a10b6e">Book health</T> {book?.latestMonth ? <><T k="pages.components.retention.retentionhealthoverview.dcef14">{"· as of"}</T>{" "}{book.latestMonth}</> : ''}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
           <StatCard label="Net Retention" value={fmtBookPct(netRet)}
             sub="rewrites counted as kept" color={netRet != null && netRet >= NET_RETENTION_TARGET ? 'var(--qs-success)' : 'var(--qs-warning)'}

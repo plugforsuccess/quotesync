@@ -1,4 +1,5 @@
 // src/components/ProductCard.jsx
+import { T } from './SiteCopy';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, TrendingUp, FileText } from 'lucide-react';
@@ -34,17 +35,17 @@ const ProductCard = ({ product }) => {
           {bestseller && (
             <div className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-accent-500 to-accent-600 rounded-full text-xs font-bold text-white">
               <Star className="w-3 h-3 fill-current" />
-              Bestseller
+              <T k="components.productcard.df042d">Bestseller</T>
             </div>
           )}
           {isFree && (
             <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
-              FREE
+              <T k="components.productcard.4a9768">FREE</T>
             </div>
           )}
           {discount > 0 && !isFree && (
             <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
-              {discount}% OFF
+              {discount}<T k="components.productcard.b277f9">% OFF</T>
             </div>
           )}
         </div>
@@ -60,10 +61,10 @@ const ProductCard = ({ product }) => {
             {name}
           </h3>
           <p className="text-sm text-accent-400 font-semibold mb-3">
-            {tagline}
+            <T>{tagline}</T>
           </p>
           <p className="text-sm text-white/70 leading-relaxed line-clamp-3">
-            {description}
+            <T>{description}</T>
           </p>
         </div>
 
@@ -74,9 +75,9 @@ const ProductCard = ({ product }) => {
             {format}
           </span>
           <span>•</span>
-          <span>{pages} pages</span>
+          <span>{pages} <T k="components.productcard.eec654">pages</T></span>
           <span>•</span>
-          <span>Instant download</span>
+          <span><T k="components.productcard.a6ee79">Instant download</T></span>
         </div>
 
         {/* Price & CTA */}
@@ -88,11 +89,11 @@ const ProductCard = ({ product }) => {
               </span>
             )}
             <span className="text-2xl font-black text-white">
-              {isFree ? 'Free' : `$${price}`}
+              {isFree ? <T k="components.productcard.75f527">{'Free'}</T> : `$${price}`}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm font-semibold text-accent-400 group-hover:text-accent-300 transition-colors">
-            <span>View Details</span>
+            <span><T k="components.productcard.907b3b">View Details</T></span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </div>
         </div>

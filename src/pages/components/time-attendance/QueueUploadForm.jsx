@@ -373,9 +373,9 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8,
           }}>
             {currentMonday === toMonday(new Date())
-              ? 'Upload Status \u2014 This Week'
-              : `Upload Status \u2014 Week of ${new Date(currentMonday + 'T00:00:00')
-                  .toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
+              ? <T k="pages.components.timeattendance.queueuploadform.e84bea">{'Upload Status \u2014 This Week'}</T>
+              : <><T k="pages.components.timeattendance.queueuploadform.f79071">{"Upload Status — Week of"}</T>{" "}{new Date(currentMonday + 'T00:00:00')
+                  .toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</>
             }
           </p>
           <div style={{ display: 'flex', gap: 6 }}>
@@ -413,7 +413,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
                       : missing ? '#EF4444'
                       : 'var(--qs-muted)',
                   }}>
-                    {day.label}
+                    <T>{day.label}</T>
                   </div>
                   <div style={{ fontSize: 16 }}>
                     {uploaded ? (highAbandon ? '\u26A0' : '\u2713') : missing ? '!' : '\u2014'}
@@ -507,8 +507,8 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
             <div className="mt-3 flex items-center gap-2 text-sm text-amber-300 bg-amber-900/20 border border-amber-700/40 rounded-lg p-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {totalAbandonRate >= 100
-                ? '100% abandon rate \u2014 no calls answered'
-                : `${totalAbandonRate.toFixed(0)}% abandon rate \u2014 check staffing levels`}
+                ? <T k="pages.components.timeattendance.queueuploadform.c7cb01">{'100% abandon rate \u2014 no calls answered'}</T>
+                : <>{totalAbandonRate.toFixed(0)}<T k="pages.components.timeattendance.queueuploadform.03ef77">{"% abandon rate — check staffing levels"}</T></>}
             </div>
           )}
 
@@ -539,7 +539,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
               className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
-              {uploading ? 'Uploading...' : 'Confirm Upload'}
+              {uploading ? <T k="pages.components.timeattendance.queueuploadform.070e32">{'Uploading...'}</T> : <T k="pages.components.timeattendance.queueuploadform.8b7898">{'Confirm Upload'}</T>}
             </button>
             <button
               onClick={() => {

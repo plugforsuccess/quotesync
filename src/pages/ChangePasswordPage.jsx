@@ -147,7 +147,7 @@ export default function ChangePasswordPage() {
             opacity: saving || !password || !confirm ? 0.5 : 1,
           }}
         >
-          {saving ? 'Saving...' : 'Set Password & Continue'}
+          {saving ? <T k="pages.changepasswordpage.ae7e88">{'Saving...'}</T> : <T k="pages.changepasswordpage.a04757">{'Set Password & Continue'}</T>}
         </button>
       </div>
     </div>

@@ -27,7 +27,7 @@ export function Section({ title, aside, ruled = false, children }) {
   return (
     <section>
       <div className="mb-1 flex items-baseline justify-between gap-3">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>{title}</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{title}</T></h3>
         {aside}
       </div>
       {ruled ? <div className="pt-3" style={{ borderTop: '1px solid var(--qs-border)' }}>{children}</div> : children}
@@ -73,7 +73,7 @@ function Rows({ rows }) {
       )}
       <dl>
         {rest.map(r => (
-          <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} addOn={r.addOn} wide />
+          <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} addOn={r.addOn} wide joined={!!r.joined} />
         ))}
       </dl>
     </>
@@ -90,7 +90,7 @@ function TileLabel({ children }) {
     </p>
   );
 }
-const TILE_NAME = { comp_deductible: 'Comp deductible', coll_deductible: 'Collision deductible' };
+const TILE_NAME = { comp_deductible: 'Comp Deductible', coll_deductible: 'Collision Deductible' };
 const LEVEL_TONE = {
   full: { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' },
   liability: { color: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)' },
@@ -133,7 +133,7 @@ function CoverageTile({ c, setup, total, wide }) {
   const deductible = c.key === 'comp_deductible' || c.key === 'coll_deductible';
   const rows = setup.vehicles.filter(x => !(deductible && x.level === 'liability'));
   // Glass reads "$0 · Glass deductible" when it's an amount, "Glass" when it's words ("Full glass").
-  const name = c.key === 'glass' ? (c.groups.every(g => /^\$/.test(g.value)) ? 'Glass deductible' : 'Glass') : (TILE_NAME[c.key] || c.label);
+  const name = c.key === 'glass' ? (c.groups.every(g => /^\$/.test(g.value)) ? 'Glass Deductible' : 'Glass') : (TILE_NAME[c.key] || c.label);
   const everyCar = c.same && c.count === total;
   const withIt = setup.vehicles.filter(x => c.groups[0]?.indexes.includes(x.index));
   return (
@@ -216,7 +216,7 @@ function VehicleCard({ rc, v, index, level, n }) {
   const hasGapRow = gap.pills.length > 0 || Boolean(gap.flag);
   const gapRow = (mt) => hasGapRow && (
     <div className={`${mt} flex flex-wrap items-center gap-1.5 pl-[34px]`}>
-      {gap.pills.map(p => <span key={p.key} className={PILL} style={GAP_PILL}>{p.label}</span>)}
+      {gap.pills.map(p => <span key={p.key} className={PILL} style={GAP_PILL}><T>{p.label}</T></span>)}
       {gap.flag === 'no_gap' && <span className={PILL} style={FLAG_PILL}><T k="pages.components.ratechecks.policysheet.845366">No Gap</T></span>}
       {gap.flag === 'no_lien' && (
         <span className={`${PILL} gap-1`} style={FLAG_PILL}>
@@ -231,7 +231,7 @@ function VehicleCard({ rc, v, index, level, n }) {
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums"
           style={VEHICLE_TONE} aria-hidden="true">{n}</span>
-        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
+        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-bright)' }}>
           <span className="sr-only"><T k="pages.components.ratechecks.policysheet.d6af9c">Vehicle</T> {n}: </span>{vehicleTitle(v)}
         </p>
         {level && (
@@ -248,6 +248,7 @@ function VehicleCard({ rc, v, index, level, n }) {
         </p>
       )}
       {vinWarn && <p className="pl-[34px] text-xs text-yellow-600">{vinWarn}</p>}
+      {(lien || hasGapRow) && <div className="ml-[34px] mt-3 h-px w-20" style={{ background: 'var(--qs-border)' }} aria-hidden="true" />}
       {lien && (
         <>
           <p className="mt-3 flex items-center gap-1 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
@@ -264,7 +265,7 @@ function VehicleCard({ rc, v, index, level, n }) {
       {!lien && gapRow('mt-3')}
       {extras.map((r, i) => (
         <p key={r.key} className={`${i === 0 && !lien && !hasGapRow ? 'mt-3' : 'mt-1.5'} pl-[34px] text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
-          {r.label} {r.value}
+          <T>{r.label}</T> {r.value}
         </p>
       ))}
     </li>
@@ -287,12 +288,12 @@ export default function PolicySheet({ rc, warning }) {
   const levelOf = (index) => setup?.coverages.length ? setup.vehicles.find(s => s.index === index) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="qs-sheet space-y-6">
       <Section title="Insured">
         <dl>
           <Field label="Name on policy" value={insured} copy />
           <Field label="Address" value={rc.insured_address ? caps(rc.insured_address) : (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address ? caps(rc.insured_address) : rc.zip} />
-          {rc.email && <Field label="Email" value={rc.email} copy />}
+          <Field label="Email" value={rc.email || null} copy={!!rc.email} emptyText={<T k="ratechecks.sheet.email-none">Not given</T>} />
           {rc.housing_situation && <Field label="Lives" value={HOUSING_LABEL[rc.housing_situation] || rc.housing_situation} />}
         </dl>
       </Section>
@@ -432,7 +433,7 @@ function AutoEndorsements({ rc }) {
             <TileValue value={e.limit || 'Yes'} addOn size={String(e.limit || '').length > 9 ? 'text-base leading-7' : 'text-xl'} />
             <div className="mt-1 flex min-h-[24px] items-center">
               <span className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>
-                {cars > 1 ? `All ${cars} vehicles` : cars === 1 ? 'This vehicle' : 'Whole policy'}
+                {cars > 1 ? <><T k="pages.components.ratechecks.policysheet.6a7208">{"All"}</T>{" "}{cars}{" "}<T k="pages.components.ratechecks.policysheet.3ca8f5">{"vehicles"}</T></> : cars === 1 ? <T k="pages.components.ratechecks.policysheet.bc6f48">{'This vehicle'}</T> : <T k="pages.components.ratechecks.policysheet.bb21dd">{'Whole policy'}</T>}
               </span>
             </div>
           </li>

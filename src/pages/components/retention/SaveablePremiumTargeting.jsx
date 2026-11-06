@@ -38,7 +38,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
       }}>
         <T k="pages.components.retention.saveablepremiumtargeting.b5f878">Ranked by</T> <strong><T k="pages.components.retention.saveablepremiumtargeting.f04814">expected saveable premium</T></strong> <T k="pages.components.retention.saveablepremiumtargeting.7affa2">= annual premium × churn risk × save rate.</T>{' '}
         {observed ? (
-          <><T k="pages.components.retention.saveablepremiumtargeting.8374a4">Churn risk uses your</T> <strong><T k="pages.components.retention.saveablepremiumtargeting.8bce1b">observed retention</T></strong>{asOfMonth ? ` (as of ${fmtMonth(asOfMonth)})` : ''} <T k="pages.components.retention.saveablepremiumtargeting.741f7c">by product & tenure.</T></>
+          <><T k="pages.components.retention.saveablepremiumtargeting.8374a4">Churn risk uses your</T> <strong><T k="pages.components.retention.saveablepremiumtargeting.8bce1b">observed retention</T></strong>{asOfMonth ? <>{" "}<T k="pages.components.retention.saveablepremiumtargeting.ffdc7e">{"(as of"}</T>{" "}{fmtMonth(asOfMonth)}{")"}</> : ''} <T k="pages.components.retention.saveablepremiumtargeting.741f7c">by product & tenure.</T></>
         ) : (
           <><T k="pages.components.retention.saveablepremiumtargeting.329327">Churn risk is using</T> <strong><T k="pages.components.retention.saveablepremiumtargeting.e6f51c">default priors</T></strong> <T k="pages.components.retention.saveablepremiumtargeting.b904f1">— upload the Premium & Profitability report to ground it in your real retention.</T></>
         )}{' '}
@@ -66,7 +66,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
               <tbody>
                 {tactics.map((t) => (
                   <tr key={t.tactic}>
-                    <td>{t.label}</td>
+                    <td><T>{t.label}</T></td>
                     <td style={{ textAlign: 'right', fontWeight: 700, color: t.sufficient ? '#10B981' : 'var(--qs-dim)' }}>
                       {t.saveRate == null ? '—' : `${Math.round(t.saveRate * 100)}%`}
                       {!t.sufficient && <span style={{ fontSize: 10, color: 'var(--qs-subtle)' }}> <T k="pages.components.retention.saveablepremiumtargeting.c06848">(low n)</T></span>}
@@ -120,7 +120,7 @@ export default function SaveablePremiumTargeting({ agencyId }) {
                 <tr key={c.id} className="triage-row">
                   <td style={{ color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace" }}>{i + 1}</td>
                   <td>
-                    {c.customer_name || 'Unknown'}
+                    {c.customer_name || <T k="pages.components.retention.saveablepremiumtargeting.bc7819">{'Unknown'}</T>}
                     <span style={{ color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace", fontSize: 11, marginLeft: 6 }}>{c.policy_no}</span>
                   </td>
                   <td style={{ textTransform: 'uppercase', fontSize: 11, color: 'var(--qs-dim)' }}>{c.product}</td>

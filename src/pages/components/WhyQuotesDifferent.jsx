@@ -36,8 +36,8 @@ const WhyQuotesDifferent = () => {
                 <span className="text-white font-bold text-xl">✓</span>
               </div>
               <div>
-                <h3 className="text-white text-lg font-semibold mb-2">{item.title}</h3>
-                <p className="text-white/85 text-base leading-relaxed">{item.desc}</p>
+                <h3 className="text-white text-lg font-semibold mb-2"><T>{item.title}</T></h3>
+                <p className="text-white/85 text-base leading-relaxed"><T>{item.desc}</T></p>
               </div>
             </div>
           ))}

@@ -201,7 +201,7 @@ export default function BonusPlanEditor({
                 disabled={saving}
                 className="text-sm font-medium px-4 py-2 rounded-md bg-primary-600 hover:bg-primary-500 text-white disabled:opacity-60"
               >
-                {saving ? 'Saving…' : 'Save Plan'}
+                {saving ? <T k="pages.components.timeattendance.bonusplaneditor.56a228">{'Saving…'}</T> : <T k="pages.components.timeattendance.bonusplaneditor.53e337">{'Save Plan'}</T>}
               </button>
               <button
                 onClick={() => setEditing(false)}
@@ -249,9 +249,9 @@ export default function BonusPlanEditor({
               <div className="flex items-center justify-between rounded-md border border-emerald-700/40 bg-emerald-900/20 px-4 py-3 mb-3">
                 <div className="flex items-center gap-2 text-sm text-emerald-300">
                   <CheckCircle2 className="w-4 h-4" />
-                  {ledger.status === 'paid' ? 'Paid' : 'Finalized'} · $
+                  {ledger.status === 'paid' ? <T k="pages.components.timeattendance.bonusplaneditor.dc9d45">{'Paid'}</T> : <T k="pages.components.timeattendance.bonusplaneditor.876126">{'Finalized'}</T>} · $
                   {Number(ledger.bonus_amount).toLocaleString()} ({ledger.verified_count}{' '}
-                  {meta.short})
+                  <T>{meta.short}</T>)
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -282,7 +282,7 @@ export default function BonusPlanEditor({
                   disabled={finalizing}
                   className="text-xs px-3 py-1.5 rounded-md bg-primary-600 hover:bg-primary-500 text-white disabled:opacity-60"
                 >
-                  {finalizing ? 'Closing…' : 'Close Month'}
+                  {finalizing ? <T k="pages.components.timeattendance.bonusplaneditor.0f0a55">{'Closing…'}</T> : <T k="pages.components.timeattendance.bonusplaneditor.626f60">{'Close Month'}</T>}
                 </button>
               </div>
             )}
@@ -301,7 +301,7 @@ function Stat({ value, label, accent }) {
       <div className={`text-2xl font-bold ${accent ? 'text-emerald-400' : 'text-qs-bright'}`}>
         {value}
       </div>
-      <div className="text-xs text-qs-subtle mt-1">{label}</div>
+      <div className="text-xs text-qs-subtle mt-1"><T>{label}</T></div>
     </div>
   );
 }

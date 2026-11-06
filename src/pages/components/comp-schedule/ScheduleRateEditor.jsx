@@ -133,7 +133,7 @@ export default function ScheduleRateEditor({ scheduleId }) {
             className="flex items-center gap-2 px-3 py-1.5 rounded bg-[var(--qs-info)] text-white text-xs font-medium hover:opacity-90 disabled:opacity-50"
           >
             <Save size={14} />
-            {saveRates.isPending ? 'Saving…' : 'Save Rates'}
+            {saveRates.isPending ? <T k="pages.components.compschedule.schedulerateeditor.56a228">{'Saving…'}</T> : <T k="pages.components.compschedule.schedulerateeditor.4505b7">{'Save Rates'}</T>}
           </button>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function ScheduleRateEditor({ scheduleId }) {
               <th className="text-left px-2 py-2 font-medium"><T k="pages.components.compschedule.schedulerateeditor.deb105">Product</T></th>
               {visibleTiers.map(t => (
                 <th key={t.tier_key} className="text-right px-2 py-2 font-medium">
-                  {t.label}
+                  <T>{t.label}</T>
                 </th>
               ))}
             </tr>
@@ -153,7 +153,7 @@ export default function ScheduleRateEditor({ scheduleId }) {
           <tbody>
             {visibleProducts.map(p => (
               <tr key={p.product_key} className="border-t border-[var(--qs-border)]">
-                <td className="px-2 py-2 text-[var(--qs-text)]">{p.label}</td>
+                <td className="px-2 py-2 text-[var(--qs-text)]"><T>{p.label}</T></td>
                 {visibleTiers.map(t => {
                   const value = edits[p.product_key]?.[t.tier_key] ?? '';
                   const errKey = `${p.product_key}-${t.tier_key}`;

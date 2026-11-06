@@ -68,7 +68,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
                 id="modal-title"
                 className="text-2xl font-black tracking-tight leading-snug"
               >
-                {detail.title}
+                <T>{detail.title}</T>
               </h3>
               <p className="text-indigo-100 text-sm mt-1"><T k="pages.components.stepmodal.48c7c4">Step</T> {step} <T k="pages.components.stepmodal.f6729a">of 7</T></p>
             </div>
@@ -90,7 +90,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
         >
           <div className="p-6 space-y-6">
             <div className="bg-gradient-to-br from-primary-50 to-indigo-50 rounded-2xl p-5 border border-indigo-100 shadow-sm">
-              <p className="text-gray-700 leading-relaxed">{detail.description}</p>
+              <p className="text-gray-700 leading-relaxed"><T>{detail.description}</T></p>
             </div>
 
             {/* Screens */}

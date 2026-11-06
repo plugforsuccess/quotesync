@@ -92,7 +92,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
 
               {/* Title */}
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-                {story.title}
+                <T>{story.title}</T>
               </h1>
 
               {/* Meta */}
@@ -161,7 +161,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                   <T k="components.newsroom.storymodal.aa8aa0">Why This Matters</T>
                 </h2>
                 <p className="text-gray-700 leading-relaxed">
-                  {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
+                  {getCategoryContextMessage(story.category) || <T k="components.newsroom.storymodal.afbb60">{'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}</T>}
                 </p>
               </div>
 

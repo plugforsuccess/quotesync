@@ -74,7 +74,7 @@ function OutboundYesterdayModule({ employeeId, agencyId }) {
           color: met ? '#10B981' : '#EF4444',
           background: met ? '#10B98111' : '#EF444411',
         }}>
-          {met ? 'MET' : `${target - count} short`}
+          {met ? <T k="pages.cadenceagendapage.831452">{'MET'}</T> : <>{target - count}{" "}<T k="pages.cadenceagendapage.a0f4ea">{"short"}</T></>}
         </span>
       </div>
     </ModuleCard>
@@ -167,7 +167,7 @@ function PTOBalanceModule({ employeeId }) {
             <div style={{ fontSize: 22, fontWeight: 700, color,
               fontFamily: "'DM Mono', monospace" }}>{val}</div>
             <div style={{ fontSize: 10, color: 'var(--qs-muted)',
-              textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+              textTransform: 'uppercase', letterSpacing: '0.05em' }}><T>{label}</T></div>
           </div>
         ))}
       </div>
@@ -215,11 +215,11 @@ function OpenCommitmentsModule({ employeeId, agencyId }) {
                 border: `1px solid ${isOverdue ? '#EF444433' : 'var(--qs-border)'}`,
               }}>
                 <div style={{ fontSize: 12, color: 'var(--qs-text)', marginBottom: 3 }}>
-                  {c.description}
+                  <T>{c.description}</T>
                 </div>
                 <div style={{ fontSize: 11, color: isOverdue ? '#EF4444' : 'var(--qs-muted)' }}>
                   <T k="pages.cadenceagendapage.d03639">Due</T> {c.due_date}
-                  {isOverdue && ' · OVERDUE'}
+                  {isOverdue && <T k="pages.cadenceagendapage.07868a">{' · OVERDUE'}</T>}
                 </div>
               </div>
             );
@@ -262,7 +262,7 @@ function ModuleCard({ label, children }) {
         fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10,
       }}>
-        {label}
+        <T>{label}</T>
       </div>
       {children}
     </div>
@@ -424,9 +424,9 @@ export default function CadenceAgendaPage() {
           <T k="pages.cadenceagendapage.86bc5a">Meeting Logged</T>
         </h2>
         <p style={{ fontSize: 14, color: 'var(--qs-muted)' }}>
-          {template?.label} <T k="pages.cadenceagendapage.23a58b">with</T> {empName} <T k="pages.cadenceagendapage.c6f793">has been recorded.</T>
+          <T>{template?.label}</T> <T k="pages.cadenceagendapage.23a58b">with</T> {empName} <T k="pages.cadenceagendapage.c6f793">has been recorded.</T>
           {commitments.filter(c => c.description.trim()).length > 0 &&
-            ` ${commitments.filter(c => c.description.trim()).length} commitment(s) tracked.`}
+            <>{" "}{commitments.filter(c => c.description.trim()).length}{" "}<T k="pages.cadenceagendapage.d6f76d">{"commitment(s) tracked."}</T></>}
         </p>
         <button
           onClick={() => window.history.back()}
@@ -500,7 +500,7 @@ export default function CadenceAgendaPage() {
                 border: `1px solid ${sentiment === opt.value ? `${opt.color}44` : 'var(--qs-border)'}`,
                 color: sentiment === opt.value ? opt.color : 'var(--qs-dim)',
               }}>
-              {opt.label}
+              <T>{opt.label}</T>
             </button>
           ))}
         </div>
@@ -599,7 +599,7 @@ export default function CadenceAgendaPage() {
           fontSize: 15, fontWeight: 700, cursor: 'pointer',
           opacity: completing ? 0.6 : 1,
         }}>
-        {completing ? 'Logging Meeting...' : 'Complete Meeting'}
+        {completing ? <T k="pages.cadenceagendapage.439b5e">{'Logging Meeting...'}</T> : <T k="pages.cadenceagendapage.47bdc6">{'Complete Meeting'}</T>}
       </button>
     </div>
   );

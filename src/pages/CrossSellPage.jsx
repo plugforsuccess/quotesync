@@ -191,7 +191,7 @@ export default function CrossSellPage() {
                 fontSize: 14, fontWeight: 600, cursor: 'pointer',
               }}
             >
-              {winbackBusy ? 'Generating…' : '♻ Generate Winback Leads'}
+              {winbackBusy ? <T k="pages.crosssellpage.11edad">{'Generating…'}</T> : <T k="pages.crosssellpage.746637">{'♻ Generate Winback Leads'}</T>}
             </button>
           )}
           <button
@@ -232,7 +232,7 @@ export default function CrossSellPage() {
             background: tab === t.key ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
             color: tab === t.key ? '#3B82F6' : 'var(--qs-dim)',
           }}>
-            {t.label}
+            <T>{t.label}</T>
           </button>
         ))}
         <label style={{

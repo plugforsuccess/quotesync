@@ -30,7 +30,8 @@ const NEWS = /^\/news(\/[^/]+)?$/;
 const PORTAL = /^\/partner\/[^/]+$/;
 const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, PORTAL, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
 // Pages without the consumer nav (and its pencil) get a corner button.
-const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, INTERNAL, PORTAL];
+// Agency screens use the header pencil ("This Screen"), so no corner button there.
+const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, PORTAL];
 // The last copy seen on this device, so edited text shows at once instead of flashing the default.
 const CACHE = 'qs_site_copy_v1';
 const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE) || 'null') || undefined; } catch { return undefined; } };
@@ -72,13 +73,15 @@ export function SiteCopyProvider({ children }) {
   const onEditablePage = EDITABLE.some(re => re.test(pathname));
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (askedToEdit && canEdit) setEditing(true); }, [askedToEdit, canEdit]);
-  // While editing, a button or link whose label is editable text doesn't act: tapping
-  // or typing a space in its label would otherwise open the camera, a file picker, a page.
+  // While editing, tapping the outlined words of a button or link edits them instead of
+  // pressing it (it would otherwise open the camera, a file picker, a page). Tapping the
+  // rest of the button (its icon, its edges) still works, so dialogs, drawers and tabs
+  // can be opened and edited too.
   useEffect(() => {
     if (!editing) return undefined;
     const block = (e) => {
-      const host = e.target instanceof Element ? e.target.closest('button, a, label') : null;
-      if (host && host.querySelector('[role="textbox"][contenteditable]')) { e.preventDefault(); e.stopPropagation(); }
+      const onText = e.target instanceof Element && e.target.closest('[role="textbox"][contenteditable]');
+      if (onText && onText.closest('button, a, label')) { e.preventDefault(); e.stopPropagation(); }
     };
     document.addEventListener('click', block, true);
     return () => document.removeEventListener('click', block, true);
@@ -163,7 +166,7 @@ export function SiteCopyProvider({ children }) {
   return (
     <Ctx.Provider value={{ values, editing: on, save, upload, fail: setError, canStartEditing: canEdit && onEditablePage && !on, startEditing: () => setEditing(true) }}>
       {children}
-      {(on || notice) && barHeight > 0 && <style>{`body{padding-top:${barHeight}px}.qs-copy-editing .rc-marquee{animation-play-state:paused}`}</style>}
+      {(on || notice) && barHeight > 0 && <style>{`body{padding-top:${barHeight}px}.qs-copy-editing .rc-marquee{animation-play-state:paused}.qs-copy-editing .truncate:has([contenteditable]),.qs-copy-editing .overflow-hidden:has(>[contenteditable]){overflow:visible}`}</style>}
       {notice && (
         <div ref={bar} className="fixed inset-x-0 top-0 z-[90] bg-[#0F2D6B] px-4 py-2.5 text-center text-sm text-white shadow-lg">
           {user ? 'Only the agency principal can edit the website.' : <>To edit the website, <Link to="/admin-access-8by2X" className="font-semibold text-amber-300 underline">log in</Link> as the agency principal on this site, then choose <b>Edit website</b> in the menu.</>}
@@ -175,7 +178,7 @@ export function SiteCopyProvider({ children }) {
             <p className="min-w-0 flex-1 text-xs leading-snug text-slate-200" aria-live="polite">
               {showSaved
                 ? <span className="inline-flex items-center gap-1 font-semibold text-emerald-300"><Check className="h-3.5 w-3.5" aria-hidden="true" /> Saved. It’s live.</span>
-                : <>Tap outlined text to edit. It saves when you tap away.<span className="hidden sm:inline"> Clear a line to bring back the original. **Two asterisks** make text bold.</span></>}
+                : <>Tap outlined text to edit; tap a button’s icon or edge to use it. Saves when you tap away.<span className="hidden sm:inline"> Clear a line to bring back the original. **Two asterisks** make text bold.</span></>}
             </p>
             <button type="button" onClick={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setEditing(false); }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-sm font-bold text-slate-900">
@@ -204,6 +207,12 @@ export function SiteCopyProvider({ children }) {
 /** The saved text for `key` (or `fallback`), kept current as edits save. For values
  * that aren't shown as text, like the agency's texting number. */
 // eslint-disable-next-line react-refresh/only-export-components
+/** For the header pencil: can this screen be edited right now, and start editing it. */
+export function useCopyEditor() {
+  const { canStartEditing, startEditing } = useContext(Ctx);
+  return { canStartEditing, startEditing };
+}
+
 export function useCopyValue(key, fallback = '') {
   const { values } = useContext(Ctx);
   const v = values?.[key];
@@ -232,6 +241,8 @@ const textKey = (s) => {
  * text itself, so the same wording edited once changes everywhere it appears. */
 export function T({ k: key, children }) {
   const { values, editing, save, fail } = useContext(Ctx);
+  // Only plain text can be edited; anything else (an element, nothing) shows as is.
+  if (typeof children !== 'string' || !/[A-Za-z]/.test(children)) return <>{children}</>;
   const fallback = typeof children === 'string' ? children : String(children ?? '');
   const k = key || textKey(fallback);
   const text = values[k] ?? fallback;

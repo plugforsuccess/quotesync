@@ -62,7 +62,7 @@ export default function ReferralPartners({ agencyId }) {
             <input className={`${field} md:col-span-2`} style={inputStyle} placeholder="Notes" value={form.notes} onChange={e => set('notes', e.target.value)} />
             <div className="flex items-center gap-2">
               <button type="submit" disabled={save.isPending} className="rounded bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
-                {save.isPending ? 'Saving…' : 'Save'}
+                {save.isPending ? <T k="pages.components.ratechecks.referralpartners.56a228">{'Saving…'}</T> : <T k="pages.components.ratechecks.referralpartners.efc007">{'Save'}</T>}
               </button>
               <button type="button" onClick={() => setEditing(null)} className="rounded px-3 py-1.5 text-sm" style={inputStyle}><T k="pages.components.ratechecks.referralpartners.ea4788">Cancel</T></button>
               {save.isError && <span className="text-sm text-red-600">{save.error.message}</span>}
@@ -98,7 +98,7 @@ export default function ReferralPartners({ agencyId }) {
                 <div className="flex shrink-0 gap-2">
                   <button onClick={() => start(p)} className="min-h-[40px] rounded-lg px-3 font-semibold text-primary-600" style={inputStyle}><T k="pages.components.ratechecks.referralpartners.7dce12">Edit</T></button>
                   <button onClick={() => save.mutate({ id: p.id, agencyId, values: { active: !p.active } })} className="min-h-[40px] rounded-lg px-3" style={{ ...inputStyle, color: 'var(--qs-subtle)' }}>
-                    {p.active ? 'Deactivate' : 'Reactivate'}
+                    {p.active ? <T k="pages.components.ratechecks.referralpartners.d65ded">{'Deactivate'}</T> : <T k="pages.components.ratechecks.referralpartners.cd28a1">{'Reactivate'}</T>}
                   </button>
                 </div>
               </li>

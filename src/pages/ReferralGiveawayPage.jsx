@@ -5,6 +5,7 @@
 // last initial only). An info icon opens the rules & limitations.
 // Route: /giveaway   (optional ?agency=slug, mirroring the funnel)
 
+import { T } from '../components/SiteCopy';
 import { useEffect, useMemo, useState } from 'react';
 import { Gift, Trophy, Sparkles, Info, X } from 'lucide-react';
 import { useReferralGiveaway } from '../hooks/useReferralRewards';
@@ -55,7 +56,7 @@ function CountdownBlock({ deadline }) {
             {String(val).padStart(2, '0')}
           </div>
           <div className="text-[10px] sm:text-xs uppercase tracking-wide text-primary-100 mt-1">
-            {label}
+            <T>{label}</T>
           </div>
         </div>
       ))}
@@ -124,7 +125,7 @@ function RulesModal({ brand, floor, ceiling, rulesHref, onClose }) {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-lg font-bold text-gray-900">
-            Rules & Limitations
+            <T k="pages.referralgiveawaypage.39da29">Rules & Limitations</T>
           </h2>
           <button
             type="button"
@@ -137,13 +138,13 @@ function RulesModal({ brand, floor, ceiling, rulesHref, onClose }) {
         </div>
         <div className="px-6 py-5 space-y-4">
           <p className="text-sm text-gray-500">
-            {brand} Monthly Referral Giveaway
+            {brand} <T k="pages.referralgiveawaypage.492ed7">Monthly Referral Giveaway</T>
           </p>
           <dl className="space-y-4">
             {rules.map(([term, desc]) => (
               <div key={term}>
                 <dt className="text-sm font-semibold text-gray-900">{term}</dt>
-                <dd className="text-sm text-gray-600 mt-0.5">{desc}</dd>
+                <dd className="text-sm text-gray-600 mt-0.5"><T>{desc}</T></dd>
               </div>
             ))}
           </dl>
@@ -151,7 +152,7 @@ function RulesModal({ brand, floor, ceiling, rulesHref, onClose }) {
             href={rulesHref}
             className="inline-block text-sm font-medium text-primary-600 hover:text-primary-700 underline underline-offset-2"
           >
-            Read the full official rules
+            <T k="pages.referralgiveawaypage.130905">Read the full official rules</T>
           </a>
         </div>
       </div>
@@ -175,11 +176,11 @@ export default function ReferralGiveawayPage() {
         <div className="text-center max-w-md">
           <Gift className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-900 mb-2">
-            Giveaway Unavailable
+            <T k="pages.referralgiveawaypage.452af0">Giveaway Unavailable</T>
           </h1>
           <p className="text-gray-500">
-            We couldn&apos;t load the referral giveaway right now. Please check
-            back soon.
+            <T k="pages.referralgiveawaypage.a9b9fc">We couldn't load the referral giveaway right now. Please check
+            back soon.</T>
           </p>
         </div>
       </div>
@@ -203,7 +204,7 @@ export default function ReferralGiveawayPage() {
         <div className="flex justify-center mb-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-primary-100 text-sm font-medium">
             <Sparkles className="w-4 h-4" />
-            {brand} Monthly Referral Giveaway
+            {brand} <T k="pages.referralgiveawaypage.492ed7">Monthly Referral Giveaway</T>
             <button
               type="button"
               onClick={() => setRulesOpen(true)}
@@ -216,30 +217,30 @@ export default function ReferralGiveawayPage() {
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white mb-4">
-          Refer family or friends. Win the draw.
+          <T k="pages.referralgiveawaypage.e48437">Refer family or friends. Win the draw.</T>
         </h1>
         <p className="text-primary-100 max-w-xl mx-auto mb-8">
-          Every Georgia referral we quote this month is entered into the{' '}
-          {formatPeriod(data.current_period)} cash drawing. One winner is picked
-          at random at the start of next month.
+          <T k="pages.referralgiveawaypage.8d6b60">Every Georgia referral we quote this month is entered into the</T>{' '}
+          {formatPeriod(data.current_period)} <T k="pages.referralgiveawaypage.769cab">cash drawing. One winner is picked
+          at random at the start of next month.</T>
         </p>
 
         {/* Live escalating jackpot */}
         <div className="mb-10">
           <p className="text-sm uppercase tracking-wide text-primary-100 mb-1">
-            This month&apos;s jackpot
+            <T k="pages.referralgiveawaypage.e8a51a">This month's jackpot</T>
           </p>
           <p className="text-5xl sm:text-7xl font-extrabold text-amber-300 tabular-nums drop-shadow">
             {money(jackpotCents)}
           </p>
           <p className="text-primary-100 text-sm mt-2">
-            Grows $20 with every referral · up to {money(ceilingCents)}{' '}
+            <T k="pages.referralgiveawaypage.6cd813">Grows $20 with every referral · up to</T> {money(ceilingCents)}{' '}
             <button
               type="button"
               onClick={() => setRulesOpen(true)}
               className="underline underline-offset-2 hover:text-white"
             >
-              See Rules
+              <T k="pages.referralgiveawaypage.25bacc">See Rules</T>
             </button>
           </p>
         </div>
@@ -260,7 +261,7 @@ export default function ReferralGiveawayPage() {
               {entryCount}
             </span>
             <span className="text-[10px] sm:text-xs uppercase tracking-wide text-primary-200">
-              {entryCount === 1 ? 'Entry' : 'Entries'}
+              {entryCount === 1 ? <T k="pages.referralgiveawaypage.19172e">{'Entry'}</T> : <T k="pages.referralgiveawaypage.f056d0">{'Entries'}</T>}
             </span>
           </div>
           {/* Pointer */}
@@ -268,11 +269,11 @@ export default function ReferralGiveawayPage() {
         </div>
 
         <p className="text-sm uppercase tracking-wide text-primary-100 mb-4">
-          Next draw in
+          <T k="pages.referralgiveawaypage.93cdf0">Next draw in</T>
         </p>
         <CountdownBlock deadline={deadline} />
         <p className="text-primary-100 text-sm mt-4">
-          Drawing held {formatDrawDate(deadline)}
+          <T k="pages.referralgiveawaypage.f83b53">Drawing held</T> {formatDrawDate(deadline)}
         </p>
 
         {/* Latest winner */}
@@ -281,21 +282,21 @@ export default function ReferralGiveawayPage() {
             <div className="inline-flex flex-col items-center bg-white rounded-2xl px-8 py-6 shadow-xl">
               <Trophy className="w-8 h-8 text-amber-500 mb-2" />
               <p className="text-xs uppercase tracking-wide text-gray-400">
-                {formatPeriod(lastWinner.period)} winner
+                {formatPeriod(lastWinner.period)} <T k="pages.referralgiveawaypage.85f940">winner</T>
               </p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
                 {lastWinner.display_name}
               </p>
               <p className="text-xs text-gray-400 mt-2">
-                Won {money(lastWinner.jackpot_cents)} · chosen at random from{' '}
+                <T k="pages.referralgiveawaypage.b273fb">Won</T> {money(lastWinner.jackpot_cents)} <T k="pages.referralgiveawaypage.701eb6">· chosen at random from</T>{' '}
                 {lastWinner.entry_count}{' '}
-                {lastWinner.entry_count === 1 ? 'entry' : 'entries'}
+                {lastWinner.entry_count === 1 ? <T k="pages.referralgiveawaypage.61c412">{'entry'}</T> : <T k="pages.referralgiveawaypage.c2e311">{'entries'}</T>}
               </p>
             </div>
           ) : (
             <p className="text-primary-100 text-sm">
-              The first winner will be announced here after this month&apos;s
-              draw.
+              <T k="pages.referralgiveawaypage.cf2d22">The first winner will be announced here after this month's
+              draw.</T>
             </p>
           )}
         </div>

@@ -1,6 +1,7 @@
 // src/pages/LoginPage.jsx
 // Login page for platform staff and agency users
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -137,8 +138,8 @@ const LoginPage = () => {
           <SealMark className="h-16 w-16" />
           <span className="absolute -inset-2 animate-spin rounded-full border-2 border-transparent border-t-[#F5D061]" style={{ animationDuration: '1.2s' }} aria-hidden="true" />
         </div>
-        <p className="text-lg font-bold text-white">Verifying Your Account</p>
-        <p className="mt-1 text-sm text-blue-100">Setting up your workspace…</p>
+        <p className="text-lg font-bold text-white"><T k="pages.loginpage.3c7a3c">Verifying Your Account</T></p>
+        <p className="mt-1 text-sm text-blue-100"><T k="pages.loginpage.0b3c07">Setting up your workspace…</T></p>
       </div>
     );
   }
@@ -147,8 +148,8 @@ const LoginPage = () => {
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10" style={bg}>
       <div className="mb-6"><BrandLogo /></div>
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl shadow-blue-950/30 sm:p-8">
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#0F2D6B]">{mode === 'login' ? 'Sign In' : 'Reset Your Password'}</h1>
-        <p className="mt-1 text-sm text-slate-500">{mode === 'login' ? 'Agency workspace' : 'We’ll email you a link to set a new one.'}</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-[#0F2D6B]">{mode === 'login' ? <T k="pages.loginpage.f8492c">{'Sign In'}</T> : <T k="pages.loginpage.20553f">{'Reset Your Password'}</T>}</h1>
+        <p className="mt-1 text-sm text-slate-500">{mode === 'login' ? <T k="pages.loginpage.97ad22">{'Agency workspace'}</T> : <T k="pages.loginpage.e584f6">{'We’ll email you a link to set a new one.'}</T>}</p>
 
         {error && <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
         {resetSuccess && <p className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800" role="status">{resetSuccess}</p>}
@@ -156,36 +157,36 @@ const LoginPage = () => {
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div>
-              <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold text-slate-800">Email</label>
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold text-slate-800"><T k="pages.loginpage.84add5">Email</T></label>
               <input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={field} placeholder="you@example.com" />
             </div>
             <div>
               <div className="mb-1.5 flex items-baseline justify-between">
-                <label htmlFor="login-password" className="block text-sm font-semibold text-slate-800">Password</label>
-                <button type="button" onClick={() => { setMode('reset'); setError(''); setResetSuccess(''); }} className={linkBtn}>Forgot Password?</button>
+                <label htmlFor="login-password" className="block text-sm font-semibold text-slate-800"><T k="pages.loginpage.8be3c9">Password</T></label>
+                <button type="button" onClick={() => { setMode('reset'); setError(''); setResetSuccess(''); }} className={linkBtn}><T k="pages.loginpage.1cc8d1">Forgot Password?</T></button>
               </div>
               <input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required className={field} placeholder="Your password" />
             </div>
             <button type="submit" disabled={loading} className="qb qb-blue qb-lg mt-2 w-full">
-              {loading ? (<><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" /> Signing In…</>) : 'Sign In'}
+              {loading ? (<><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" /> <T k="pages.loginpage.ad53ee">Signing In…</T></>) : <T k="pages.loginpage.f8492c">{'Sign In'}</T>}
             </button>
           </form>
         ) : (
           <form onSubmit={handleResetPassword} className="mt-6 space-y-4">
             <div>
-              <label htmlFor="reset-email" className="mb-1.5 block text-sm font-semibold text-slate-800">Email</label>
+              <label htmlFor="reset-email" className="mb-1.5 block text-sm font-semibold text-slate-800"><T k="pages.loginpage.84add5">Email</T></label>
               <input id="reset-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={field} placeholder="you@example.com" />
             </div>
-            <button type="submit" disabled={loading} className="qb qb-blue qb-lg mt-2 w-full">{loading ? 'Sending…' : 'Send Reset Link'}</button>
+            <button type="submit" disabled={loading} className="qb qb-blue qb-lg mt-2 w-full">{loading ? <T k="pages.loginpage.cf7655">{'Sending…'}</T> : <T k="pages.loginpage.987be4">{'Send Reset Link'}</T>}</button>
             <p className="text-center">
-              <button type="button" onClick={() => { setMode('login'); setError(''); setResetSuccess(''); }} className={linkBtn}>Back to Sign In</button>
+              <button type="button" onClick={() => { setMode('login'); setError(''); setResetSuccess(''); }} className={linkBtn}><T k="pages.loginpage.c65048">Back to Sign In</T></button>
             </p>
           </form>
         )}
 
-        <p className="mt-6 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">If sign-in fails, turn off ad blockers or privacy extensions for this site.</p>
+        <p className="mt-6 border-t border-slate-100 pt-4 text-center text-xs text-slate-500"><T k="pages.loginpage.56ca6c">If sign-in fails, turn off ad blockers or privacy extensions for this site.</T></p>
       </div>
-      <p className="mt-6 text-xs text-blue-200">© {new Date().getFullYear()} Cam Wiley Agency, Inc.</p>
+      <p className="mt-6 text-xs text-blue-200">© {new Date().getFullYear()} <T k="pages.loginpage.33f5c7">Cam Wiley Agency, Inc.</T></p>
     </div>
   );
 };

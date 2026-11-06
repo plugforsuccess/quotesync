@@ -151,7 +151,7 @@ function ScheduleListTable({ schedules, expandedId, onToggleExpanded, onEdit, on
                         color: status.colorToken,
                       }}
                     >
-                      {status.label}
+                      <T>{status.label}</T>
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">

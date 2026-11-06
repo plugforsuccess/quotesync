@@ -1,6 +1,7 @@
 // src/components/ErrorBoundary.jsx
 // Error boundary to catch React errors and provide recovery options
 
+import { T } from './SiteCopy';
 import { Component } from 'react';
 import { AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
 import { getBuildString } from '../utils/cacheVersion';
@@ -104,29 +105,29 @@ class ErrorBoundary extends Component {
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Something Went Wrong
+                  <T k="components.errorboundary.9cd1f1">Something Went Wrong</T>
                 </h1>
                 <p className="text-gray-600 mb-4">
-                  The application encountered an unexpected error. This might be due to:
+                  <T k="components.errorboundary.e30030">The application encountered an unexpected error. This might be due to:</T>
                 </p>
                 <ul className="list-disc list-inside text-gray-600 mb-4 space-y-1">
-                  <li>Corrupted local cache or storage</li>
-                  <li>Expired authentication session</li>
-                  <li>Network connectivity issues</li>
-                  <li>Incompatible cached data from a previous version</li>
+                  <li><T k="components.errorboundary.09e032">Corrupted local cache or storage</T></li>
+                  <li><T k="components.errorboundary.e50c71">Expired authentication session</T></li>
+                  <li><T k="components.errorboundary.ec9a72">Network connectivity issues</T></li>
+                  <li><T k="components.errorboundary.4a7ed9">Incompatible cached data from a previous version</T></li>
                 </ul>
               </div>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Error Details:</h3>
+              <h3 className="font-semibold text-gray-900 mb-2"><T k="components.errorboundary.a18513">Error Details:</T></h3>
               <pre className="text-sm text-red-600 overflow-auto max-h-32">
                 {this.state.error?.toString()}
               </pre>
               {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900">
-                    Stack Trace
+                    <T k="components.errorboundary.bfdb53">Stack Trace</T>
                   </summary>
                   <pre className="text-xs text-gray-600 overflow-auto max-h-64 mt-2">
                     {this.state.errorInfo.componentStack}
@@ -141,20 +142,20 @@ class ErrorBoundary extends Component {
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                Reload Page
+                <T k="components.errorboundary.6e41ee">Reload Page</T>
               </button>
               <button
                 onClick={this.handleClearCache}
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                Clear Cache & Reload
+                <T k="components.errorboundary.3abfb2">Clear Cache & Reload</T>
               </button>
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-xs text-gray-500">
-                Build: {getBuildString()} • If this persists, contact support
+                <T k="components.errorboundary.1cd428">Build:</T> {getBuildString()} <T k="components.errorboundary.562fb2">• If this persists, contact support</T>
               </p>
             </div>
           </div>

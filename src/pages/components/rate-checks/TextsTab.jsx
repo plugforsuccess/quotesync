@@ -20,7 +20,7 @@ function Template({ t }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>{t.name}</h4>
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: t.auto ? 'var(--qs-warning)' : 'var(--qs-subtle)' }}>
-          {t.auto ? 'Automatic' : 'You send it'}
+          {t.auto ? <T k="pages.components.ratechecks.textstab.ac9041">{'Automatic'}</T> : <T k="pages.components.ratechecks.textstab.826293">{'You send it'}</T>}
         </span>
       </div>
       <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{t.when}</p>
@@ -37,10 +37,10 @@ function Template({ t }) {
       ))}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-          Fills in: {t.blanks.join(', ')} · {(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/partner/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}
+          <T k="pages.components.ratechecks.textstab.bc8104">Fills in:</T> {t.blanks.join(', ')} · {(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/partner/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}
         </p>
         <CopyTextButton text={buildText(t.id, { ...sample, name: '', reviewLink: reviewUrl() })} className="h-8 rounded-full px-3 text-xs font-semibold text-primary-600" style={box}>
-          Copy
+          <T k="pages.components.ratechecks.textstab.af74f7">Copy</T>
         </CopyTextButton>
       </div>
     </article>
@@ -65,7 +65,7 @@ export default function TextsTab({ agencyId }) {
         <Dismissible id="texts.auto-off">
           <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle, rgba(245,158,11,.1))', border: '1px solid var(--qs-warning-border, rgba(245,158,11,.35))', color: 'var(--qs-text)' }} role="status">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
-            <span>Automatic texts are off: the agency has no texting number yet. Nothing marked Automatic goes out until one is set. You can still tap to send any of them from your phone.</span>
+            <span><T k="pages.components.ratechecks.textstab.8818ab">Automatic texts are off: the agency has no texting number yet. Nothing marked Automatic goes out until one is set. You can still tap to send any of them from your phone.</T></span>
           </p>
         </Dismissible>
       )}
@@ -73,31 +73,31 @@ export default function TextsTab({ agencyId }) {
         <Dismissible id="texts.link-unset">
           <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle, rgba(245,158,11,.1))', border: '1px solid var(--qs-warning-border, rgba(245,158,11,.35))', color: 'var(--qs-text)' }} role="status">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
-            <span>Your Google review link isn’t set, so review texts link to a Google search for the agency. Paste your link below.</span>
+            <span><T k="pages.components.ratechecks.textstab.18d6b4">Your Google review link isn’t set, so review texts link to a Google search for the agency. Paste your link below.</T></span>
           </p>
         </Dismissible>
       )}
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-        The texts customers and partners get from Rate Checks. Turn on the pencil to edit any line. What you save is what goes out, whether it’s sent automatically or you tap to send it.
+        <T k="pages.components.ratechecks.textstab.a60c3a">The texts customers and partners get from Rate Checks. Turn on the pencil to edit any line. What you save is what goes out, whether it’s sent automatically or you tap to send it.</T>
       </p>
 
       <section className="dark-card" style={{ padding: 16 }} aria-label="Google review link">
-        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Your Google review link</p>
+        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.textstab.e82c6f">Your Google review link</T></p>
         <p className="mt-1 break-all rounded-lg p-2.5 font-mono text-[13px]" style={box}>
           <T k={REVIEW_LINK_KEY}>{REVIEW_LINK_FALLBACK}</T>
         </p>
         <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-          Paste yours with the pencil (Google Business Profile → Ask for reviews). It fills in [review link]. <a href={reviewUrl()} target="_blank" rel="noreferrer" className="underline">Test it</a>
+          <T k="pages.components.ratechecks.textstab.1468a3">Paste yours with the pencil (Google Business Profile → Ask for reviews). It fills in [review link].</T> <a href={reviewUrl()} target="_blank" rel="noreferrer" className="underline"><T k="pages.components.ratechecks.textstab.0b4483">Test it</T></a>
         </p>
       </section>
 
       <section className="dark-card" style={{ padding: 16 }} aria-label="Text us number">
-        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Your “Text us” number</p>
+        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.textstab.a475db">Your “Text us” number</T></p>
         <p className="mt-1 rounded-lg p-2.5 font-mono text-[13px]" style={box}>
           <T k={TEXT_NUMBER_KEY}>{TEXT_NUMBER_UNSET}</T>
         </p>
         <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-          The mobile number customers can text from the website. The Text us button shows once this is a 10-digit number.
+          <T k="pages.components.ratechecks.textstab.24fb48">The mobile number customers can text from the website. The Text us button shows once this is a 10-digit number.</T>
         </p>
       </section>
 
@@ -111,17 +111,17 @@ export default function TextsTab({ agencyId }) {
       ))}
 
       <section aria-label="Quick Send">
-        <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>Quick Send</h3>
+        <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.textstab.0d7a88">Quick Send</T></h3>
         <article className="dark-card" style={{ padding: 16 }}>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>Upload Link</h4>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}><Lock className="h-3 w-3" aria-hidden="true" /> Locked</span>
+            <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.textstab.601e62">Upload Link</T></h4>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}><Lock className="h-3 w-3" aria-hidden="true" /> <T k="pages.components.ratechecks.textstab.a79888">Locked</T></span>
           </div>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-            Sent from the /qs page after the person says yes on the phone. It’s kept word for word with the record of what they agreed to, so it can’t be edited here.
+            <T k="pages.components.ratechecks.textstab.3bf5ca">Sent from the /qs page after the person says yes on the phone. It’s kept word for word with the record of what they agreed to, so it can’t be edited here.</T>
           </p>
           <p className="mt-3 rounded-lg p-3 text-[15px] leading-relaxed" style={box}>
-            insuredbycam.com (Cam Wiley Agency, Inc.): Here is the secure link you requested to upload your dec page for an agent-prepared quote: [link] {STOP_LINE}
+            <T k="pages.components.ratechecks.textstab.d1ef90">insuredbycam.com (Cam Wiley Agency, Inc.): Here is the secure link you requested to upload your dec page for an agent-prepared quote: [link]</T> {STOP_LINE}
           </p>
         </article>
       </section>

@@ -32,7 +32,7 @@ export default function CrossSellQueue({ cases, tab, onUpdate, onOpenCase, empty
   if (!cases || cases.length === 0) {
     return (
       <div style={{ textAlign: 'center', color: 'var(--qs-muted)', padding: '48px 0' }}>
-        {emptyLabel || 'No cases.'}
+        {emptyLabel || <T k="pages.components.crosssell.crosssellqueue.8026a5">{'No cases.'}</T>}
       </div>
     );
   }
@@ -121,7 +121,7 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
             <T k="pages.components.crosssell.crosssellqueue.5d4303">Has:</T> {PRODUCT_LABELS[cs.current_product] || cs.current_product || '—'}
             {cs.policy_no && ` · ${cs.policy_no}`}
-            {cs.opportunity_tier && ` · Tier ${cs.opportunity_tier}`}
+            {cs.opportunity_tier && <>{" "}<T k="pages.components.crosssell.crosssellqueue.dcfd5f">{"· Tier"}</T>{" "}{cs.opportunity_tier}</>}
           </div>
         </div>
 
@@ -167,7 +167,7 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
             }}
           >
             <T k="pages.components.crosssell.crosssellqueue.de3c52">⚠ Open Cancel:</T> {cancel.product?.toUpperCase()} <T k="pages.components.crosssell.crosssellqueue.9a1ee9">· Due</T> {cancel.cancel_effective_date}
-            {cancel.amount_due ? ` · $${Number(cancel.amount_due).toLocaleString()} Owed` : ''} →
+            {cancel.amount_due ? <>{" · $"}{Number(cancel.amount_due).toLocaleString()}{" "}<T k="pages.components.crosssell.crosssellqueue.89e255">{"Owed"}</T></> : ''} →
           </button>
         )}
         {cs.match_type === 'new_lead' && cs.lead_id && (

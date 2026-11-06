@@ -176,25 +176,26 @@ export function formatCoverage(raw, key, vehicles) {
 // ── Coverages, in the order they're quoted ────────────────────────────────────
 
 const NAMES = {
-  bi: 'Bodily injury', bi_per_person: 'Bodily injury (per person)', bi_per_accident: 'Bodily injury (per accident)',
-  pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist PD', med_pay: 'Medical payments',
-  pip: 'Personal injury protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
-  rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap Coverage', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
-  custom_equipment: 'Custom equipment', sound_equipment: 'Sound equipment', glass: 'Glass',
-  dwelling: 'Dwelling (A)', other_structures: 'Other structures (B)', personal_property: 'Personal property (C)',
-  loss_of_use: 'Loss of use (D)', liability: 'Personal liability (E)', home_med_pay: 'Medical payments (F)',
-  deductible: 'Deductible', wind_hail_deductible: 'Wind / hail deductible', hurricane_deductible: 'Hurricane deductible',
-  aggregate: 'Aggregate', property: 'Property', business_income: 'Business income', hired_non_owned: 'Hired / non-owned auto',
-  workers_comp: "Workers' comp",
+  bi: 'Bodily Injury', bi_per_person: 'Bodily Injury (Per Person)', bi_per_accident: 'Bodily Injury (Per Accident)',
+  pd: 'Property Damage', um_uim: 'Uninsured Motorist BI', umpd: 'Uninsured Motorist PD', med_pay: 'Medical Payments',
+  pip: 'Personal Injury Protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
+  rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap Coverage', loan_lease: 'Loan / Lease Gap', rideshare: 'Rideshare',
+  custom_equipment: 'Custom Equipment', sound_equipment: 'Sound Equipment', glass: 'Glass',
+  dwelling: 'Dwelling (A)', other_structures: 'Other Structures (B)', personal_property: 'Personal Property (C)',
+  loss_of_use: 'Loss of Use (D)', liability: 'Personal Liability (E)', home_med_pay: 'Medical Payments (F)',
+  deductible: 'Deductible', wind_hail_deductible: 'Wind / Hail Deductible', hurricane_deductible: 'Hurricane Deductible',
+  aggregate: 'Aggregate', property: 'Property', business_income: 'Business Income', hired_non_owned: 'Hired / Non-Owned Auto',
+  workers_comp: "Workers' Comp",
 };
 export function coverageName(key) {
   if (NAMES[key]) return NAMES[key];
-  const s = String(key).replace(/_/g, ' ');
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  const SMALL = new Set(['a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on']);
+  return String(key).replace(/_/g, ' ').split(' ')
+    .map((w, i) => (i > 0 && SMALL.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
 }
 
-// Allstate's coverage screen order: BI, PD, med pay, UM BI, UM PD (then comp, collision, add-ons).
-const AUTO_LIABILITY = ['pd', 'med_pay', 'pip', 'um_uim', 'umpd'];
+// Order on the sheet: BI, UM BI, PD, med pay, UM PD (then comp, collision, add-ons).
+const AUTO_LIABILITY = ['um_uim', 'pd', 'med_pay', 'pip', 'umpd'];
 const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside', 'glass'];
 const HOME_ORDER = ['dwelling', 'other_structures', 'personal_property', 'loss_of_use', 'liability', 'med_pay', 'deductible', 'wind_hail_deductible', 'hurricane_deductible'];
 
@@ -221,9 +222,9 @@ export function autoCoverageGroups(rc) {
 
   const pp = parseAmount(cov.bi_per_person);
   const pa = cov.bi_per_accident;
-  if (pa && String(pa).includes('/')) liability.push(row('bi', pa, vehicles, 'Bodily injury'));
+  if (pa && String(pa).includes('/')) liability.push(row('bi', pa, vehicles, 'Bodily Injury'));
   else if (pp != null || parseAmount(pa) != null) {
-    liability.push({ key: 'bi', label: 'Bodily injury', value: [pp, parseAmount(pa)].filter(n => n != null).map(short).join(' / '), note: null });
+    liability.push({ key: 'bi', label: 'Bodily Injury', value: [pp, parseAmount(pa)].filter(n => n != null).map(short).join(' / '), note: null });
   }
   for (const k of AUTO_LIABILITY) {
     used.add(k);
@@ -232,6 +233,10 @@ export function autoCoverageGroups(rc) {
     // "(PD Deductible $250)" on the UM line → "Deductible $250".
     if (k === 'um_uim' && r?.note) r.note = r.note.replace(/^PD\s+deductible/i, 'Deductible');
     liability.push(r || { key: k, label: coverageName(k), value: 'None listed', muted: true });
+  }
+  // Uninsured Motorist PD always has a row (after medical payments), when the policy has UM.
+  if (liability.some(r => r?.key === 'um_uim') && !liability.some(r => r?.key === 'umpd')) {
+    liability.push({ key: 'umpd', label: coverageName('umpd'), value: null });
   }
 
   const physical = [];

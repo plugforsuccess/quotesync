@@ -82,7 +82,7 @@ function Section({ icon: Icon, title, children }) {
         }}>
           <Icon size={14} style={{ color: 'var(--qs-info)' }} />
         </div>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{title}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}><T>{title}</T></span>
       </div>
       {children}
     </div>
@@ -92,7 +92,7 @@ function Section({ icon: Icon, title, children }) {
 function Field({ label, children, span }) {
   return (
     <div style={{ gridColumn: span === 2 ? 'span 2' : undefined }}>
-      {label && <label style={labelStyle}>{label}</label>}
+      {label && <label style={labelStyle}><T>{label}</T></label>}
       {children}
     </div>
   );
@@ -307,7 +307,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
             </div>
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-                {isEdit ? 'Edit Employee' : 'Add Employee'}
+                {isEdit ? <T k="pages.components.employees.employeeformmodal.60bdcf">{'Edit Employee'}</T> : <T k="pages.components.employees.employeeformmodal.f58f79">{'Add Employee'}</T>}
               </h2>
               {isEdit && (
                 <p style={{ fontSize: 12, color: 'var(--qs-dim)', margin: 0 }}>
@@ -426,7 +426,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                             }}
                             style={{ accentColor: 'var(--qs-info)', width: 14, height: 14 }}
                           />
-                          {opt.label}
+                          <T>{opt.label}</T>
                         </label>
                       );
                     })}
@@ -680,7 +680,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                 transition: 'all 0.15s',
               }}
             >
-              {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Save Employee'}
+              {saving ? <T k="pages.components.employees.employeeformmodal.56a228">{'Saving…'}</T> : isEdit ? <T k="pages.components.employees.employeeformmodal.fa2984">{'Save Changes'}</T> : <T k="pages.components.employees.employeeformmodal.7b156d">{'Save Employee'}</T>}
             </button>
           </div>
         </form>

@@ -120,7 +120,7 @@ function WorkedRows({ worked, k, onCustomer }) {
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
           background: w.kind === 'cancel' ? '#EF444422' : '#3B82F622',
           color: w.kind === 'cancel' ? '#F87171' : '#60A5FA' }}>
-          {w.kind === 'cancel' ? 'CANCEL' : 'RENEWAL'}
+          {w.kind === 'cancel' ? <T k="pages.myactivitypage.1507c4">{'CANCEL'}</T> : <T k="pages.myactivitypage.23cbf4">{'RENEWAL'}</T>}
         </span>
         {nm
           ? <button type="button" onClick={() => onCustomer?.(w.name)} title="Open customer"
@@ -133,7 +133,7 @@ function WorkedRows({ worked, k, onCustomer }) {
         {w.saved
           ? <span style={{ color: '#34D399', fontWeight: 600 }}><T k="pages.myactivitypage.a02001">✓ saved</T>{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
           : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
-        {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
+        {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“<T>{w.note}</T>”</span>}
       </td>
     </tr>
     );
@@ -147,7 +147,7 @@ function TaskDoneRows({ tasks, k }) {
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
           background: '#10B98122', color: '#34D399' }}><T k="pages.myactivitypage.1e9906">TASK ✓</T></span>
-        <span style={{ color: 'var(--qs-text)' }}>{t.title}</span>
+        <span style={{ color: 'var(--qs-text)' }}><T>{t.title}</T></span>
         {t.customer_name ? ` · ${titleCaseName(t.customer_name)}` : ''}
       </td>
     </tr>
@@ -243,7 +243,7 @@ export default function MyActivityPage() {
             <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
               <strong style={{ color: '#B07A0E' }}>{data.totals.saves}</strong> <T k="pages.myactivitypage.c94a10">saves ·</T>{' '}
               <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> ·{' '}
-              {data.totals.attempts} <T k="pages.myactivitypage.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.myactivitypage.2cb1ad">tasks</T>
+              {data.totals.attempts} <T k="pages.myactivitypage.f2bb91">calls</T>{data.totals.attempts ? <>{" ("}{Math.round((data.totals.reached / data.totals.attempts) * 100)}<T k="pages.myactivitypage.8a5546">{"% reached)"}</T></> : ''} · {data.totals.tasksDone} <T k="pages.myactivitypage.2cb1ad">tasks</T>
             </div>
           )}
         </div>
@@ -314,13 +314,13 @@ function Stat({ label, value, sub, color }) {
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-dim)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-        {label}
+        <T>{label}</T>
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace",
         color: color || 'var(--qs-bright)', marginTop: 2 }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 11, color: '#F87171', fontWeight: 600 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: '#F87171', fontWeight: 600 }}><T>{sub}</T></div>}
     </div>
   );
 }

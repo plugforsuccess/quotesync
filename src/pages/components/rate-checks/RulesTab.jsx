@@ -109,7 +109,7 @@ export default function RulesTab({ agencyId, canEdit }) {
           {LADDER.map(([label, cls], i) => (
             <li key={label} className="flex items-center gap-1">
               {i > 0 && <span aria-hidden="true" style={{ color: 'var(--qs-subtle)' }}>›</span>}
-              <span className={`whitespace-nowrap rounded px-2 py-0.5 font-medium ${cls}`}>{label}</span>
+              <span className={`whitespace-nowrap rounded px-2 py-0.5 font-medium ${cls}`}><T>{label}</T></span>
             </li>
           ))}
         </ol>
@@ -129,7 +129,7 @@ export default function RulesTab({ agencyId, canEdit }) {
           <div className="flex gap-2">
             {rules.length === 0 && (
               <button onClick={() => seed.mutate(agencyId)} disabled={seed.isPending} className="min-h-[40px] rounded-lg px-3 text-sm" style={inputStyle}>
-                {seed.isPending ? 'Adding…' : 'Add the Starter Rules'}
+                {seed.isPending ? <T k="pages.components.ratechecks.rulestab.ffb2e6">{'Adding…'}</T> : <T k="pages.components.ratechecks.rulestab.ab2ddf">{'Add the Starter Rules'}</T>}
               </button>
             )}
             <button onClick={() => { setEditing('new'); setMenu(null); }} className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
@@ -171,13 +171,13 @@ export default function RulesTab({ agencyId, canEdit }) {
                   <div className={`min-w-0 flex-1 py-3 ${canEdit ? 'pr-2' : 'px-4'}`}>
                     <div className="flex items-center gap-2">
                       <span className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-subtle)', border: '1px solid var(--qs-border)' }}>
-                        {r.line ? POLICY_TYPE_LABEL[r.line] || r.line : 'Any'}
+                        {r.line ? POLICY_TYPE_LABEL[r.line] || r.line : <T k="pages.components.ratechecks.rulestab.322444">{'Any'}</T>}
                       </span>
-                      <span className={`ml-auto truncate rounded px-2 py-0.5 text-xs font-medium ${o.cls}`}>{o.label}</span>
+                      <span className={`ml-auto truncate rounded px-2 py-0.5 text-xs font-medium ${o.cls}`}><T>{o.label}</T></span>
                     </div>
                     <p className="mt-1.5 font-semibold" style={{ color: 'var(--qs-bright)' }}>{r.name}</p>
                     <p className="font-mono text-sm" style={{ color: 'var(--qs-text)' }}>{ruleFormula(r, kind)}</p>
-                    {r.note && <p className="mt-0.5 text-sm italic" style={{ color: 'var(--qs-subtle)' }}>“{r.note}”</p>}
+                    {r.note && <p className="mt-0.5 text-sm italic" style={{ color: 'var(--qs-subtle)' }}>“<T>{r.note}</T>”</p>}
                     {confirmDelete === r.id && (
                       <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg p-2.5 text-sm" style={{ background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)', color: 'var(--qs-bright)' }}>
                         <span className="flex-1"><T k="pages.components.ratechecks.rulestab.d83490">Delete this rule?</T></span>
@@ -206,7 +206,7 @@ export default function RulesTab({ agencyId, canEdit }) {
                       ['Delete…', () => setConfirmDelete(r.id), 'text-red-500'],
                     ].map(([label, act, cls]) => (
                       <button key={label} type="button" role="menuitem" onClick={() => { act(); setMenu(null); }}
-                        className={`block min-h-[44px] w-full px-4 text-left text-sm ${cls || ''}`} style={cls ? undefined : { color: 'var(--qs-bright)' }}>{label}</button>
+                        className={`block min-h-[44px] w-full px-4 text-left text-sm ${cls || ''}`} style={cls ? undefined : { color: 'var(--qs-bright)' }}><T>{label}</T></button>
                     ))}
                   </div>
                 )}
@@ -254,12 +254,12 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
   };
 
   const field = 'w-full rounded-lg px-3 py-2 text-sm';
-  const label = (t) => <span className="mb-1 block text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>{t}</span>;
+  const label = (t) => <span className="mb-1 block text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T>{t}</T></span>;
 
   return (
     <form onSubmit={submit} className="dark-card space-y-3" style={{ padding: 16 }}>
       <div className="flex items-center justify-between gap-3">
-        <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{initial.id ? 'Edit rule' : 'New rule'}</span>
+        <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{initial.id ? <T k="pages.components.ratechecks.rulestab.1f53b2">{'Edit rule'}</T> : <T k="pages.components.ratechecks.rulestab.b9ac14">{'New rule'}</T>}</span>
         <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--qs-text)' }}>
           <T k="pages.components.ratechecks.rulestab.222ae5">Rule Active</T> <Switch on={form.enabled} label="Rule active" onChange={(on) => set('enabled', on)} />
         </label>
@@ -319,7 +319,7 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
       <div className="rounded-lg p-3" style={{ background: 'var(--qs-elevated)', border: '1px dashed var(--qs-border)' }}>
         <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.31fde7">Preview</T></p>
         <p className="text-sm" style={{ color: 'var(--qs-bright)' }}>
-          <span className={`mr-1.5 rounded px-1.5 py-0.5 text-xs font-medium ${o.cls}`}>{o.label}</span>
+          <span className={`mr-1.5 rounded px-1.5 py-0.5 text-xs font-medium ${o.cls}`}><T>{o.label}</T></span>
           {form.note.trim() || <span style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.6f08ba">Add the message staff will see</T></span>}
         </p>
         <p className="mt-1 font-mono text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.rulestab.4e97ae">When</T> {ruleFormula(preview, kind)}</p>
@@ -327,7 +327,7 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" disabled={save.isPending || !form.name.trim()} className="min-h-[44px] rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white disabled:opacity-50">
-          {save.isPending ? 'Saving…' : 'Save Rule'}
+          {save.isPending ? <T k="pages.components.ratechecks.rulestab.56a228">{'Saving…'}</T> : <T k="pages.components.ratechecks.rulestab.62556d">{'Save Rule'}</T>}
         </button>
         <button type="button" onClick={onCancel} className="min-h-[44px] rounded-lg px-4 text-sm" style={inputStyle}><T k="pages.components.ratechecks.rulestab.ea4788">Cancel</T></button>
         {save.isError && <span className="text-sm text-red-600">{save.error.message}</span>}

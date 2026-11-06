@@ -2,6 +2,7 @@
 // Shows green when active, grey when inactive. Prompts for transfer phone
 // if not yet set. Auto-reset info shown when available.
 
+import { T } from './SiteCopy';
 import { useState, useCallback } from 'react';
 import { Phone } from 'lucide-react';
 import { useMyAvailability, useToggleAvailability, useSetTransferPhone, validateE164 } from '../hooks/useAgentAvailability';
@@ -90,7 +91,7 @@ export default function AvailabilityToggle() {
         padding: '16px 20px',
         marginBottom: 16,
       }}>
-        <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>Loading availability...</div>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}><T k="components.availabilitytoggle.84c55b">Loading availability...</T></div>
       </div>
     );
   }
@@ -121,11 +122,11 @@ export default function AvailabilityToggle() {
                 fontWeight: 700,
                 color: isAvailable ? '#22C55E' : 'var(--qs-dim)',
               }}>
-                {isAvailable ? 'Available for Transfers' : 'Unavailable'}
+                {isAvailable ? <T k="components.availabilitytoggle.8b3bf0">{'Available for Transfers'}</T> : <T k="components.availabilitytoggle.2c9c1f">{'Unavailable'}</T>}
               </div>
               {isAvailable && availability?.auto_reset_at && (
                 <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>
-                  Auto-resets at 8:00 PM ET
+                  <T k="components.availabilitytoggle.70f246">Auto-resets at 8:00 PM ET</T>
                 </div>
               )}
             </div>
@@ -173,7 +174,7 @@ export default function AvailabilityToggle() {
             gap: 4,
           }}>
             <Phone style={{ width: 12, height: 12 }} />
-            Transfer line: {maskPhone(availability.transfer_phone)}
+            <T k="components.availabilitytoggle.24026a">Transfer line:</T> {maskPhone(availability.transfer_phone)}
           </div>
         )}
       </div>
@@ -199,10 +200,10 @@ export default function AvailabilityToggle() {
             border: '1px solid var(--qs-border)',
           }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
-              Set Your Transfer Number
+              <T k="components.availabilitytoggle.a80920">Set Your Transfer Number</T>
             </h3>
             <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-              Enter your direct phone number for live call transfers. This is the number Bland AI will transfer qualified leads to.
+              <T k="components.availabilitytoggle.c64a52">Enter your direct phone number for live call transfers. This is the number Bland AI will transfer qualified leads to.</T>
             </p>
             <input
               type="tel"
@@ -224,7 +225,7 @@ export default function AvailabilityToggle() {
                 className="btn-ghost"
                 style={{ fontSize: 13 }}
               >
-                Cancel
+                <T k="components.availabilitytoggle.77dfd2">Cancel</T>
               </button>
               <button
                 onClick={handlePhoneSubmit}
@@ -241,7 +242,7 @@ export default function AvailabilityToggle() {
                   opacity: !phoneInput.trim() ? 0.5 : 1,
                 }}
               >
-                Save & Go Available
+                <T k="components.availabilitytoggle.674ff1">Save & Go Available</T>
               </button>
             </div>
           </div>

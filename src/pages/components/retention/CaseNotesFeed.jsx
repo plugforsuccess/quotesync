@@ -48,7 +48,7 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
           <button onClick={submit} disabled={!body.trim() || add.isPending}
             style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: '#3B82F6', color: '#fff',
               fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: (!body.trim() || add.isPending) ? 0.5 : 1 }}>
-            {add.isPending ? 'Saving…' : 'Add Comment'}
+            {add.isPending ? <T k="pages.components.retention.casenotesfeed.56a228">{'Saving…'}</T> : <T k="pages.components.retention.casenotesfeed.d89450">{'Add Comment'}</T>}
           </button>
         </div>
         {err && <div style={{ fontSize: 12, color: '#EF4444' }}>{err}</div>}
@@ -81,7 +81,7 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
                   </button>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: 'var(--qs-text)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{n.body}</div>
+              <div style={{ fontSize: 13, color: 'var(--qs-text)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}><T>{n.body}</T></div>
               <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 4 }}>{n.author_name || '—'} · {fmtTime(n.created_at)}</div>
             </div>
           ))}

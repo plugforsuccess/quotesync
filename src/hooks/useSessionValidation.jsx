@@ -1,6 +1,7 @@
 // src/hooks/useSessionValidation.js
 // Hook to validate Supabase session and handle auth errors
 
+import { T } from '../components/SiteCopy';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -163,20 +164,20 @@ export const withSessionValidation = (Component, requiredRole = null) => {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
             <div className="text-red-600 text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Session Error</h2>
-            <p className="text-gray-600 mb-6">{error || 'Your session is invalid or expired.'}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4"><T k="hooks.usesessionvalidation.c5f32b">Session Error</T></h2>
+            <p className="text-gray-600 mb-6">{error || <T k="hooks.usesessionvalidation.02bc4c">{'Your session is invalid or expired.'}</T>}</p>
             <div className="flex flex-col gap-3">
               <button
                 onClick={retry}
                 className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
               >
-                Retry
+                <T k="hooks.usesessionvalidation.9f5cd8">Retry</T>
               </button>
               <button
                 onClick={handleSignOut}
                 className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors"
               >
-                Sign Out & Log In Again
+                <T k="hooks.usesessionvalidation.f2a5af">Sign Out & Log In Again</T>
               </button>
             </div>
           </div>

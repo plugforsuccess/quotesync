@@ -64,7 +64,7 @@ const AgencySettingsPage = () => {
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.agencysettingspage.c41898">Error Loading Agency</T></h2>
-          <p style={{ color: 'var(--qs-dim)' }}>{error?.message || 'Agency not found.'}</p>
+          <p style={{ color: 'var(--qs-dim)' }}>{error?.message || <T k="pages.agencysettingspage.7223ac">{'Agency not found.'}</T>}</p>
         </div>
       </div>
     );
@@ -95,7 +95,7 @@ const AgencySettingsPage = () => {
               style={activeTab !== key ? { color: 'var(--qs-subtle)' } : undefined}
             >
               <Icon className="w-4 h-4" />
-              {label}
+              <T>{label}</T>
             </button>
           ))}
         </div>
@@ -297,7 +297,7 @@ function TeamTab({ agencyId, isAgent }) {
                       fontSize: 11, fontWeight: 700, padding: '3px 8px',
                       borderRadius: 4, color: roleCfg.color, background: roleCfg.bg,
                     }}>
-                      {roleCfg.label}
+                      <T>{roleCfg.label}</T>
                     </span>
                   </td>
 
@@ -392,7 +392,7 @@ function TeamTab({ agencyId, isAgent }) {
                   </p>
                   <p style={{ fontSize: 11, color: 'var(--qs-muted)',
                     margin: '2px 0 0' }}>
-                    {emp.roles?.length > 0 ? emp.roles.join(', ') : 'No roles assigned'}
+                    {emp.roles?.length > 0 ? emp.roles.join(', ') : <T k="pages.agencysettingspage.d4b9b0">{'No roles assigned'}</T>}
                     {' · '}<T k="pages.agencysettingspage.f68951">No QuoteSync login</T>
                   </p>
                 </div>
@@ -552,7 +552,7 @@ function MyRepWorkspace({ agencyId }) {
                 cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
               }}
             >
-              {saving ? 'Setting Up…' : 'Set Up Rep Workspace'}
+              {saving ? <T k="pages.agencysettingspage.1cba2b">{'Setting Up…'}</T> : <T k="pages.agencysettingspage.67e9a3">{'Set Up Rep Workspace'}</T>}
             </button>
           </div>
         </div>
@@ -582,10 +582,10 @@ function MyRepWorkspace({ agencyId }) {
                 />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)' }}>
-                    {opt.label}
+                    <T>{opt.label}</T>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 1 }}>
-                    {opt.desc}
+                    <T>{opt.desc}</T>
                   </div>
                 </div>
               </label>
@@ -770,7 +770,7 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
                   cursor: logoUploading ? 'not-allowed' : 'pointer',
                   opacity: logoUploading ? 0.6 : 1,
                 }}>
-                  {logoUploading ? 'Uploading...' : 'Upload Logo'}
+                  {logoUploading ? <T k="pages.agencysettingspage.070e32">{'Uploading...'}</T> : <T k="pages.agencysettingspage.8a048c">{'Upload Logo'}</T>}
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/svg+xml,image/webp"
@@ -824,7 +824,7 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
           </div>
           <div className="flex gap-2 pt-2">
             <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
-              <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save Changes'}
+              <Save className="w-4 h-4" />{saving ? <T k="pages.agencysettingspage.ae7e88">{'Saving...'}</T> : <T k="pages.agencysettingspage.fa2984">{'Save Changes'}</T>}
             </button>
             <button onClick={() => setEditing(false)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
           </div>
@@ -897,7 +897,7 @@ function NotificationsTab({ agency, agencyId, isAgent, queryClient }) {
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.178542">This is where speed-to-call will ring and where forwarded SMS messages will go.</T></p>
             <div className="flex gap-2 pt-2">
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
-                <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save'}
+                <Save className="w-4 h-4" />{saving ? <T k="pages.agencysettingspage.ae7e88">{'Saving...'}</T> : <T k="pages.agencysettingspage.efc007">{'Save'}</T>}
               </button>
               <button onClick={() => setEditing(false)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
             </div>
@@ -1084,7 +1084,7 @@ function CommissionTab({ agencyId, isAgent }) {
                   disabled={savingGoals}
                   className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" />{savingGoals ? 'Saving...' : 'Save Goals'}
+                  <Save className="w-4 h-4" />{savingGoals ? <T k="pages.agencysettingspage.ae7e88">{'Saving...'}</T> : <T k="pages.agencysettingspage.ac99ec">{'Save Goals'}</T>}
                 </button>
                 <button onClick={() => setEditGoals(null)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
               </div>
@@ -1120,7 +1120,7 @@ function CommissionTab({ agencyId, isAgent }) {
                 disabled={upsertRates.isPending}
                 className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
               >
-                {upsertRates.isPending ? 'Setting Up...' : 'Set Up Commission Rates'}
+                {upsertRates.isPending ? <T k="pages.agencysettingspage.70cdb5">{'Setting Up...'}</T> : <T k="pages.agencysettingspage.8f4358">{'Set Up Commission Rates'}</T>}
               </button>
             )}
           </div>
@@ -1162,7 +1162,7 @@ function CommissionTab({ agencyId, isAgent }) {
             <p className="text-xs mt-2" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.a9cc42">Enter rates as decimals (e.g. 0.25 = 25%)</T></p>
             <div className="flex gap-2 mt-4">
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
-                <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save Rates'}
+                <Save className="w-4 h-4" />{saving ? <T k="pages.agencysettingspage.ae7e88">{'Saving...'}</T> : <T k="pages.agencysettingspage.4505b7">{'Save Rates'}</T>}
               </button>
               <button onClick={() => setEditRates(null)} className="btn-ghost"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
             </div>
@@ -1277,7 +1277,7 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
             disabled={savingStates}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
           >
-            <Save className="w-4 h-4" />{savingStates ? 'Saving...' : 'Save Licensed States'}
+            <Save className="w-4 h-4" />{savingStates ? <T k="pages.agencysettingspage.ae7e88">{'Saving...'}</T> : <T k="pages.agencysettingspage.f293de">{'Save Licensed States'}</T>}
           </button>
         )}
       </div>
@@ -1321,7 +1321,7 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={createRule.isPending} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50 text-sm">
-                {createRule.isPending ? 'Creating...' : 'Create Rule'}
+                {createRule.isPending ? <T k="pages.agencysettingspage.28ea76">{'Creating...'}</T> : <T k="pages.agencysettingspage.90a7ac">{'Create Rule'}</T>}
               </button>
               <button type="button" onClick={() => setShowAddRule(false)} className="btn-ghost text-sm"><T k="pages.agencysettingspage.ea4788">Cancel</T></button>
             </div>
@@ -1344,7 +1344,7 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
               {rules.map(rule => (
                 <tr key={rule.id} style={{ borderTop: '1px solid var(--qs-border)' }}>
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--qs-bright)' }}>{rule.state}</td>
-                  <td className="px-4 py-3" style={{ color: 'var(--qs-text)' }}>{rule.zip_prefix || 'All'}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--qs-text)' }}>{rule.zip_prefix || <T k="pages.agencysettingspage.6a7208">{'All'}</T>}</td>
                   <td className="px-4 py-3" style={{ color: 'var(--qs-text)' }}>{rule.priority_tier}</td>
                   <td className="px-4 py-3">
                     <span
@@ -1356,7 +1356,7 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
                         background: 'var(--qs-elevated)', color: 'var(--qs-subtle)'
                       } : undefined}
                     >
-                      {rule.status === 'pending_approval' ? 'Pending' : rule.status || 'Active'}
+                      {rule.status === 'pending_approval' ? <T k="pages.agencysettingspage.96f608">{'Pending'}</T> : rule.status || <T k="pages.agencysettingspage.a733b8">{'Active'}</T>}
                     </span>
                   </td>
                 </tr>
@@ -1458,10 +1458,10 @@ function TransferPhoneTab({ agencyId, isAgent }) {
                     }} />
                     <div>
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
-                        {member.profiles?.full_name || 'Unknown'}
+                        {member.profiles?.full_name || <T k="pages.agencysettingspage.bc7819">{'Unknown'}</T>}
                       </span>
                       <span style={{ fontSize: 12, color: 'var(--qs-subtle)', marginLeft: 8 }}>
-                        {member.priority_tier === 0 ? 'Principal' : 'Producer'}
+                        {member.priority_tier === 0 ? <T k="pages.agencysettingspage.f3b86b">{'Principal'}</T> : <T k="pages.agencysettingspage.7b7194">{'Producer'}</T>}
                       </span>
                     </div>
                   </div>
@@ -1646,10 +1646,10 @@ function ProducerGoalCard({ producerName, savedTargets }) {
             <h3 className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{producerName}</h3>
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
               {savedTargets.premium_monthly > 0
-                ? `Premium goal $${Number(savedTargets.premium_monthly).toLocaleString()}/mo`
+                ? <><T k="pages.agencysettingspage.c07b62">{"Premium goal $"}</T>{Number(savedTargets.premium_monthly).toLocaleString()}{"/mo"}</>
                 : savedTargets.updated_at
-                ? `Last updated ${new Date(savedTargets.updated_at).toLocaleDateString()}`
-                : 'Using defaults'}
+                ? <><T k="pages.agencysettingspage.583c9e">{"Last updated"}</T>{" "}{new Date(savedTargets.updated_at).toLocaleDateString()}</>
+                : <T k="pages.agencysettingspage.49157b">{'Using defaults'}</T>}
             </p>
           </div>
         </div>
@@ -1664,13 +1664,13 @@ function ProducerGoalCard({ producerName, savedTargets }) {
             {TARGET_FIELDS.map(f => (
               <div key={f.key}>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>
-                  {f.label}
+                  <T>{f.label}</T>
                 </label>
                 <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>
                   {f.key === 'premium_monthly' && currentValues[f.key] > 0
                     ? `$${currentValues[f.key].toLocaleString()}`
                     : f.key === 'premium_monthly' && currentValues[f.key] === 0
-                    ? 'Not tracked'
+                    ? <T k="pages.agencysettingspage.e4b325">{'Not tracked'}</T>
                     : currentValues[f.key]}
                 </p>
               </div>
@@ -1687,7 +1687,7 @@ function ProducerGoalCard({ producerName, savedTargets }) {
 function Field({ label, type = 'text', value, onChange, placeholder }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>{label}</label>
+      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}><T>{label}</T></label>
       <input
         type={type}
         value={value}
@@ -1702,7 +1702,7 @@ function Field({ label, type = 'text', value, onChange, placeholder }) {
 function ReadOnly({ label, value }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-subtle)' }}>{label}</label>
+      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></label>
       <p style={{ color: 'var(--qs-bright)' }}>{value || '-'}</p>
     </div>
   );
@@ -1773,7 +1773,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
           <div style={{ fontSize: 10, color: 'var(--qs-muted)' }}>
             {commissionGoal > 0 && premiumGoal > 0
               ? `${fmt$(commissionGoal)} ÷ ${fmt$(premiumGoal)}`
-              : 'Set both goals'}
+              : <T k="pages.agencysettingspage.73507a">{'Set both goals'}</T>}
           </div>
         </div>
         <div>
@@ -1785,8 +1785,8 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
           </div>
           <div style={{ fontSize: 10, color: 'var(--qs-muted)' }}>
             {trailingStats?.hasData
-              ? `${trailingStats.totalPolicies} policies · ${fmt$(trailingStats.totalPremium)} premium`
-              : 'No historical data yet'}
+              ? <>{trailingStats.totalPolicies}{" "}<T k="pages.agencysettingspage.178723">{"policies ·"}</T>{" "}{fmt$(trailingStats.totalPremium)}{" "}<T k="pages.agencysettingspage.5c0a4f">{"premium"}</T></>
+              : <T k="pages.agencysettingspage.5455f9">{'No historical data yet'}</T>}
           </div>
         </div>
         <div>
@@ -1794,12 +1794,12 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
             <T k="pages.agencysettingspage.466b98">Gap</T>
           </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: gapColor, fontFamily: "'DM Mono', monospace" }}>
-            {gapPts != null ? `${gapPts >= 0 ? '+' : ''}${gapPts.toFixed(1)}pt` : '—'}
+            {gapPts != null ? <>{gapPts >= 0 ? '+' : ''}{gapPts.toFixed(1)}<T k="pages.agencysettingspage.bc8112">{"pt"}</T></> : '—'}
           </div>
           <div style={{ fontSize: 10, color: 'var(--qs-muted)' }}>
-            {gapClass === 'stretch'      ? 'Stretch — requires mix shift'
-           : gapClass === 'conservative' ? 'Conservative vs history'
-           : gapPts != null              ? 'In line with history'
+            {gapClass === 'stretch'      ? <T k="pages.agencysettingspage.6920c8">{'Stretch — requires mix shift'}</T>
+           : gapClass === 'conservative' ? <T k="pages.agencysettingspage.86eb89">{'Conservative vs history'}</T>
+           : gapPts != null              ? <T k="pages.agencysettingspage.62bbca">{'In line with history'}</T>
                                          : ''}
           </div>
         </div>
@@ -1848,7 +1848,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
                                                            : 'var(--qs-muted)';
                   return (
                     <tr key={row.key} style={{ borderTop: '1px solid var(--qs-border)' }}>
-                      <td style={{ padding: '4px 8px', color: 'var(--qs-dim)' }}>{row.label}</td>
+                      <td style={{ padding: '4px 8px', color: 'var(--qs-dim)' }}><T>{row.label}</T></td>
                       <td style={{ padding: '4px 8px', textAlign: 'right', color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace" }}>
                         {fmt$(row.premium)}
                       </td>
@@ -1859,7 +1859,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
                         {fmtPct(row.effectiveRate)}
                       </td>
                       <td style={{ padding: '4px 8px', color: liftColor, fontFamily: "'DM Mono', monospace" }}>
-                        {liftPts != null ? `${liftPts >= 0 ? '+' : ''}${liftPts.toFixed(1)}pt` : '—'}
+                        {liftPts != null ? <>{liftPts >= 0 ? '+' : ''}{liftPts.toFixed(1)}<T k="pages.agencysettingspage.bc8112">{"pt"}</T></> : '—'}
                       </td>
                     </tr>
                   );
@@ -1874,7 +1874,7 @@ function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, prod
             return (
               <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 8, lineHeight: 1.5 }}>
                 <T k="pages.agencysettingspage.cbb99d">To close the</T> {gapPts.toFixed(1)}<T k="pages.agencysettingspage.90ec85">pt gap, shift mix toward</T>{' '}
-                <span style={{ color: 'var(--qs-bright)', fontWeight: 600 }}>{topLever.label}</span>
+                <span style={{ color: 'var(--qs-bright)', fontWeight: 600 }}><T>{topLever.label}</T></span>
                 {' '}({fmtPct(topLever.effectiveRate)} <T k="pages.agencysettingspage.fc5563">effective rate, currently</T> {fmtPct(topLever.share)} <T k="pages.agencysettingspage.d2c335">of premium).</T>
               </p>
             );

@@ -3,6 +3,7 @@
 // a dual-role (sales + service) employee. Selection persists in localStorage
 // and changes the default landing page; it does NOT change permissions.
 
+import { T } from './SiteCopy';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -91,7 +92,7 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false, on
               whiteSpace: 'nowrap',
             }}
           >
-            {opt.label}
+            <T>{opt.label}</T>
           </button>
         );
       })}

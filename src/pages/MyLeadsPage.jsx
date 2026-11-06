@@ -42,7 +42,7 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze, onSales }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright, #fff)' }}>
-            {name || (lead.product_intent ? `${lead.product_intent} lead` : 'New lead')}
+            {name || (lead.product_intent ? <>{lead.product_intent}{" "}<T k="pages.myleadspage.8cb33b">{"lead"}</T></> : <T k="pages.myleadspage.129297">{'New lead'}</T>)}
             {lead.source === 'winback' && (
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4, marginLeft: 8,
@@ -91,8 +91,8 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze, onSales }) {
         <button onClick={() => onLog(lead)} style={btn('primary')}><T k="pages.myleadspage.60866b">Log Touch</T></button>
         <button onClick={() => onFollowup(lead)} style={btn()}><T k="pages.myleadspage.d0a869">📅 Follow-Up</T></button>
         <button onClick={() => onSnooze(lead)} style={btn()}><T k="pages.myleadspage.3dd493">💤 Snooze</T></button>
-        <button onClick={() => onSales(lead, 'quote')} style={btn()}>Quote</button>
-        <button onClick={() => onSales(lead, 'bind')} style={btn()}>Bound</button>
+        <button onClick={() => onSales(lead, 'quote')} style={btn()}><T k="pages.myleadspage.309028">Quote</T></button>
+        <button onClick={() => onSales(lead, 'bind')} style={btn()}><T k="pages.myleadspage.2c346a">Bound</T></button>
         <Link to={`/agency/leads/${lead.id}`} style={{ ...btn(), textDecoration: 'none', display: 'inline-block' }}><T k="pages.myleadspage.a96b08">Open →</T></Link>
       </div>
     </div>
@@ -159,7 +159,7 @@ export default function MyLeadsPage() {
                   border: '1px solid', borderColor: logForm.result === o.value ? 'var(--qs-info)' : 'var(--qs-border)',
                   background: logForm.result === o.value ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
                   color: logForm.result === o.value ? 'var(--qs-info)' : 'var(--qs-dim)',
-                }}>{o.label}</button>
+                }}><T>{o.label}</T></button>
             ))}
           </div>
           <input className="dark-input" placeholder="Optional note…" value={logForm.note}
@@ -194,7 +194,7 @@ function Overlay({ title, children, onClose }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--qs-card, #1a1a1a)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 420 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright, #fff)', marginBottom: 14 }}>{title}</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright, #fff)', marginBottom: 14 }}><T>{title}</T></div>
         {children}
       </div>
     </div>

@@ -42,7 +42,7 @@ export default function WinMap({ agencyId }) {
           <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.winmaptab.16b6c2">Building Your Win Map</T></h2>
           <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             {closest
-              ? <>{have} <T k="pages.components.ratechecks.winmaptab.8bf885">of</T> {MIN_QUOTES} <T k="pages.components.ratechecks.winmaptab.0dc602">quotes toward your first ZIP</T> <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}>({closest.zip5} · {closest.carrier || 'Unknown'}{closest.policy_type ? ` ${policyTypeLabel(closest.policy_type).toLowerCase()}` : ''})</span></>
+              ? <>{have} <T k="pages.components.ratechecks.winmaptab.8bf885">of</T> {MIN_QUOTES} <T k="pages.components.ratechecks.winmaptab.0dc602">quotes toward your first ZIP</T> <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}>({closest.zip5} · {closest.carrier || <T k="pages.components.ratechecks.winmaptab.bc7819">{'Unknown'}</T>}{closest.policy_type ? ` ${policyTypeLabel(closest.policy_type).toLowerCase()}` : ''})</span></>
               : <><T k="pages.components.ratechecks.winmaptab.726bd9">Enter Allstate's price on</T> {MIN_QUOTES} <T k="pages.components.ratechecks.winmaptab.5592f0">rate checks from the same carrier and ZIP to see your first win rate.</T></>}
           </p>
           <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: 'var(--qs-elevated)' }} role="progressbar" aria-valuemin={0} aria-valuemax={MIN_QUOTES} aria-valuenow={have}>
@@ -83,7 +83,7 @@ export default function WinMap({ agencyId }) {
               <li key={`${r.carrier}-${r.policy_type}-${r.zip5}`} className="flex items-center justify-between gap-3 px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
                 <span className="min-w-0">
                   <span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}>{r.carrier || '—'} <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>{policyTypeLabel(r.policy_type)}</span></span>
-                  <span className="block text-sm" style={{ color: 'var(--qs-subtle)' }}>{r.zip5 || '—'} · {r.wins} <T k="pages.components.ratechecks.winmaptab.8bf885">of</T> {r.quoted} <T k="pages.components.ratechecks.winmaptab.7b63d1">won</T>{r.avg_savings_when_won != null ? ` · saves ${money(r.avg_savings_when_won)}` : ''}</span>
+                  <span className="block text-sm" style={{ color: 'var(--qs-subtle)' }}>{r.zip5 || '—'} · {r.wins} <T k="pages.components.ratechecks.winmaptab.8bf885">of</T> {r.quoted} <T k="pages.components.ratechecks.winmaptab.7b63d1">won</T>{r.avg_savings_when_won != null ? <>{" "}<T k="pages.components.ratechecks.winmaptab.db0a5d">{"· saves"}</T>{" "}{money(r.avg_savings_when_won)}</> : ''}</span>
                 </span>
                 <span className="shrink-0 text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{r.win_rate_pct != null ? `${Math.round(r.win_rate_pct)}%` : '—'}</span>
               </li>

@@ -1,3 +1,4 @@
+import { T } from './SiteCopy';
 import React from 'react';
 
 /**
@@ -71,10 +72,10 @@ export default function DraftRestoreModal({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Unsaved Draft Found
+                  <T k="components.draftrestoremodal.a41df2">Unsaved Draft Found</T>
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Last saved {timeAgo} ({source === 'local' ? 'locally' : 'on server'})
+                  <T k="components.draftrestoremodal.1b761b">Last saved</T> {timeAgo} ({source === 'local' ? <T k="components.draftrestoremodal.22f8da">{'locally'}</T> : <T k="components.draftrestoremodal.b25f4e">{'on server'}</T>})
                 </p>
               </div>
               <button
@@ -97,10 +98,10 @@ export default function DraftRestoreModal({
               {hasTitle && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Title
+                    <T k="components.draftrestoremodal.768e0c">Title</T>
                   </label>
                   <p className="text-base font-semibold text-gray-900 truncate">
-                    {draft.title}
+                    <T>{draft.title}</T>
                   </p>
                 </div>
               )}
@@ -109,11 +110,11 @@ export default function DraftRestoreModal({
               {hasBody && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Content Preview ({contentLength} Characters)
+                    <T k="components.draftrestoremodal.024e1f">Content Preview (</T>{contentLength} <T k="components.draftrestoremodal.c3d924">Characters)</T>
                   </label>
                   <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                     <p className="text-sm text-gray-700 line-clamp-6">
-                      {draft.body}
+                      <T>{draft.body}</T>
                     </p>
                   </div>
                 </div>
@@ -123,19 +124,19 @@ export default function DraftRestoreModal({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {draft.category && (
                   <div>
-                    <span className="font-medium text-gray-500">Category:</span>{' '}
+                    <span className="font-medium text-gray-500"><T k="components.draftrestoremodal.61b920">Category:</T></span>{' '}
                     <span className="text-gray-900 capitalize">{draft.category}</span>
                   </div>
                 )}
                 {draft.region && (
                   <div>
-                    <span className="font-medium text-gray-500">Region:</span>{' '}
+                    <span className="font-medium text-gray-500"><T k="components.draftrestoremodal.25cdc1">Region:</T></span>{' '}
                     <span className="text-gray-900">{draft.region}</span>
                   </div>
                 )}
                 {draft.tags && draft.tags.length > 0 && (
                   <div className="col-span-2">
-                    <span className="font-medium text-gray-500">Tags:</span>{' '}
+                    <span className="font-medium text-gray-500"><T k="components.draftrestoremodal.b5ddd4">Tags:</T></span>{' '}
                     <span className="text-gray-900">{draft.tags.join(', ')}</span>
                   </div>
                 )}
@@ -145,7 +146,7 @@ export default function DraftRestoreModal({
               {!hasTitle && !hasBody && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
                   <p className="text-sm text-yellow-800">
-                    This draft appears to be empty. You may want to discard it.
+                    <T k="components.draftrestoremodal.162adc">This draft appears to be empty. You may want to discard it.</T>
                   </p>
                 </div>
               )}
@@ -159,7 +160,7 @@ export default function DraftRestoreModal({
               onClick={onDiscard}
               className="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition"
             >
-              Discard Draft
+              <T k="components.draftrestoremodal.965902">Discard Draft</T>
             </button>
 
             {/* Restore & Cancel Buttons */}
@@ -168,13 +169,13 @@ export default function DraftRestoreModal({
                 onClick={onCancel}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition"
               >
-                Start Fresh
+                <T k="components.draftrestoremodal.b279a0">Start Fresh</T>
               </button>
               <button
                 onClick={onRestore}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition"
               >
-                Restore Draft
+                <T k="components.draftrestoremodal.3a0549">Restore Draft</T>
               </button>
             </div>
           </div>

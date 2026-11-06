@@ -34,7 +34,7 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
   };
 
   const field = 'w-full rounded-md px-3 py-2 text-sm';
-  const label = (t) => <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{t}</span>;
+  const label = (t) => <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{t}</T></span>;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Send a Rate Check link">
@@ -43,9 +43,9 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
         style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{invite ? 'Link Ready' : 'Send a Link'}</h2>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{invite ? <T k="pages.components.ratechecks.invitedialog.6315d0">{'Link Ready'}</T> : <T k="pages.components.ratechecks.invitedialog.1c1560">{'Send a Link'}</T>}</h2>
             <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-              {invite ? 'Send it from your own phone. Their upload comes back tagged to you.' : 'For someone who doesn’t have their policy on them.'}
+              {invite ? <T k="pages.components.ratechecks.invitedialog.3a79ed">{'Send it from your own phone. Their upload comes back tagged to you.'}</T> : <T k="pages.components.ratechecks.invitedialog.30438d">{'For someone who doesn’t have their policy on them.'}</T>}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1.5" style={inputStyle}><X className="w-4 h-4" /></button>
@@ -59,10 +59,10 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
               <datalist id="rc-events">{events.map(ev => <option key={ev.event_name} value={ev.event_name} />)}</datalist>
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <label>{label('First name')}
+              <label>{label('First Name')}
                 <input className={field} style={inputStyle} value={firstName} onChange={e => setFirstName(e.target.value)} maxLength={60} autoFocus />
               </label>
-              <label>{label('Mobile (optional)')}
+              <label>{label('Mobile (Optional)')}
                 <input className={field} style={inputStyle} type="tel" inputMode="tel" placeholder="(404) 555-1212"
                   value={phone} onChange={e => setPhone(formatPhoneInput(e.target.value))} />
               </label>
@@ -74,7 +74,7 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
             <div className="flex justify-end gap-2">
               <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm" style={inputStyle}><T k="pages.components.ratechecks.invitedialog.ea4788">Cancel</T></button>
               <button type="submit" disabled={!canSubmit} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                {create.isPending ? 'Creating…' : 'Create Link'}
+                {create.isPending ? <T k="pages.components.ratechecks.invitedialog.94d7d8">{'Creating…'}</T> : <T k="pages.components.ratechecks.invitedialog.dc18b6">{'Create Link'}</T>}
               </button>
             </div>
           </form>
@@ -113,7 +113,7 @@ export function InviteShare({ invite, producerName, onDone }) {
       <div className="flex items-center gap-4">
         <canvas ref={canvas} className="rounded-lg bg-white p-1" aria-label="QR code for the link" />
         <div className="min-w-0 text-sm">
-          <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{invite.first_name || 'Customer'}{invite.phone ? ` · ${formatPhone(invite.phone)}` : ''}</p>
+          <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{invite.first_name || <T k="pages.components.ratechecks.invitedialog.0e8574">{'Customer'}</T>}{invite.phone ? ` · ${formatPhone(invite.phone)}` : ''}</p>
           {invite.event_name && <p style={{ color: 'var(--qs-subtle)' }}>{invite.event_name}</p>}
           <p className="mt-2 select-all break-all font-mono text-xs" style={{ color: 'var(--qs-text)' }}>{url}</p>
           <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.invitedialog.8cec95">They can also scan this if they’re with you. Expires in 30 days.</T></p>
@@ -137,13 +137,13 @@ export function InviteShare({ invite, producerName, onDone }) {
       {/* Tablets that can't text: the producer scans this with their own phone and Messages opens, text written. */}
       <div>
         <button type="button" onClick={() => setShowSmsQr(v => !v)} className="text-sm text-primary-600 hover:underline">
-          {showSmsQr ? 'Hide' : 'On a tablet? Text it from your phone instead'}
+          {showSmsQr ? <T k="pages.components.ratechecks.invitedialog.34d8b6">{'Hide'}</T> : <T k="pages.components.ratechecks.invitedialog.59616f">{'On a tablet? Text it from your phone instead'}</T>}
         </button>
         {showSmsQr && (
           <div className="mt-2 flex items-center gap-4">
             <canvas ref={smsCanvas} className="rounded-lg bg-white p-1" aria-label="QR code that opens Messages on your phone" />
             <p className="text-sm" style={{ color: 'var(--qs-text)' }}>
-              <T k="pages.components.ratechecks.invitedialog.730703">Point your phone’s camera at this. Messages opens with the text already written</T>{invite.phone ? ' and addressed' : ''} <T k="pages.components.ratechecks.invitedialog.ba6cea">— just hit send.</T>
+              <T k="pages.components.ratechecks.invitedialog.730703">Point your phone’s camera at this. Messages opens with the text already written</T>{invite.phone ? <T k="pages.components.ratechecks.invitedialog.27124a">{' and addressed'}</T> : ''} <T k="pages.components.ratechecks.invitedialog.ba6cea">— just hit send.</T>
             </p>
           </div>
         )}

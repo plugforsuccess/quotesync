@@ -1,6 +1,7 @@
 // src/pages/AgencyApplyPage.jsx
 // Public agency application form - "Easy to apply, hard to qualify"
 
+import { T } from '../components/SiteCopy';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Building2, Send } from 'lucide-react';
@@ -113,16 +114,16 @@ const AgencyApplyPage = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Application Submitted</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4"><T k="pages.agencyapplypage.0a39ef">Application Submitted</T></h1>
           <p className="text-gray-600 mb-6">
-            Thank you for your interest in partnering with us. Our team will review your
-            application and contact you within 2-3 business days.
+            <T k="pages.agencyapplypage.926a0b">Thank you for your interest in partnering with us. Our team will review your
+            application and contact you within 2-3 business days.</T>
           </p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
           >
-            Return Home
+            <T k="pages.agencyapplypage.27fae2">Return Home</T>
           </Link>
         </div>
       </div>
@@ -137,9 +138,9 @@ const AgencyApplyPage = () => {
           <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-primary-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Agency Partnership Application</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2"><T k="pages.agencyapplypage.db2c23">Agency Partnership Application</T></h1>
           <p className="text-gray-600">
-            Join our network of trusted insurance professionals
+            <T k="pages.agencyapplypage.84c901">Join our network of trusted insurance professionals</T>
           </p>
         </div>
 
@@ -154,11 +155,11 @@ const AgencyApplyPage = () => {
 
           {/* Agency Info */}
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Agency Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyapplypage.b69bc5">Agency Information</T></h2>
             <div className="grid gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Legal Agency Name <span className="text-red-500">*</span>
+                  <T k="pages.agencyapplypage.dcd946">Legal Agency Name</T> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -172,7 +173,7 @@ const AgencyApplyPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Display/Brand Name (Optional)
+                  <T k="pages.agencyapplypage.d323b2">Display/Brand Name (Optional)</T>
                 </label>
                 <input
                   type="text"
@@ -188,11 +189,11 @@ const AgencyApplyPage = () => {
 
           {/* Contact Info */}
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Primary Contact</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyapplypage.e020c4">Primary Contact</T></h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Name <span className="text-red-500">*</span>
+                  <T k="pages.agencyapplypage.8a42a5">Contact Name</T> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -206,7 +207,7 @@ const AgencyApplyPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email <span className="text-red-500">*</span>
+                  <T k="pages.agencyapplypage.84add5">Email</T> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -220,7 +221,7 @@ const AgencyApplyPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone <span className="text-red-500">*</span>
+                  <T k="pages.agencyapplypage.77064d">Phone</T> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -237,8 +238,8 @@ const AgencyApplyPage = () => {
 
           {/* States Licensed */}
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">States Licensed <span className="text-red-500">*</span></h2>
-            <p className="text-sm text-gray-500 mb-4">Select all states where your agency holds active licenses</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2"><T k="pages.agencyapplypage.c79a9b">States Licensed</T> <span className="text-red-500">*</span></h2>
+            <p className="text-sm text-gray-500 mb-4"><T k="pages.agencyapplypage.272a46">Select all states where your agency holds active licenses</T></p>
             <div className="flex flex-wrap gap-2">
               {US_STATES.map(state => (
                 <button
@@ -257,14 +258,14 @@ const AgencyApplyPage = () => {
             </div>
             {formData.statesLicensed.length > 0 && (
               <p className="mt-2 text-sm text-primary-600">
-                Selected: {formData.statesLicensed.join(', ')}
+                <T k="pages.agencyapplypage.2e0844">Selected:</T> {formData.statesLicensed.join(', ')}
               </p>
             )}
           </div>
 
           {/* Lines of Business */}
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Lines of Business <span className="text-red-500">*</span></h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2"><T k="pages.agencyapplypage.f3f99b">Lines of Business</T> <span className="text-red-500">*</span></h2>
             <div className="grid grid-cols-2 gap-3">
               {LINES_OF_BUSINESS.map(lob => (
                 <button
@@ -277,7 +278,7 @@ const AgencyApplyPage = () => {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {lob.label}
+                  <T>{lob.label}</T>
                 </button>
               ))}
             </div>
@@ -285,10 +286,10 @@ const AgencyApplyPage = () => {
 
           {/* License Info */}
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">License Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyapplypage.6e1e47">License Information</T></h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                License Identifiers (NPN, State License Numbers)
+                <T k="pages.agencyapplypage.cf8db6">License Identifiers (NPN, State License Numbers)</T>
               </label>
               <textarea
                 name="licenseIdentifiers"
@@ -303,10 +304,10 @@ const AgencyApplyPage = () => {
 
           {/* Desired Territories */}
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Territory Preferences</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4"><T k="pages.agencyapplypage.c26474">Territory Preferences</T></h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Desired Territories (ZIP Codes, Cities, or Regions)
+                <T k="pages.agencyapplypage.4ce9e5">Desired Territories (ZIP Codes, Cities, or Regions)</T>
               </label>
               <textarea
                 name="desiredTerritories"
@@ -317,7 +318,7 @@ const AgencyApplyPage = () => {
                 placeholder="Dallas-Fort Worth metro area&#10;ZIP codes: 75001-75099&#10;Houston, TX"
               />
               <p className="mt-1 text-sm text-gray-500">
-                This helps us understand your preferred coverage areas. Territory assignments are subject to approval.
+                <T k="pages.agencyapplypage.9faa42">This helps us understand your preferred coverage areas. Territory assignments are subject to approval.</T>
               </p>
             </div>
           </div>
@@ -331,21 +332,21 @@ const AgencyApplyPage = () => {
             {submitting ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Submitting...
+                <T k="pages.agencyapplypage.46a1a6">Submitting...</T>
               </>
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                Submit Application
+                <T k="pages.agencyapplypage.f32663">Submit Application</T>
               </>
             )}
           </button>
 
           <p className="mt-4 text-center text-sm text-gray-500">
-            By submitting, you agree to our{' '}
-            <Link to="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
+            <T k="pages.agencyapplypage.561b59">By submitting, you agree to our</T>{' '}
+            <Link to="/terms" className="text-primary-600 hover:underline"><T k="pages.agencyapplypage.0c8a9a">Terms of Service</T></Link>
+            {' '}<T k="pages.agencyapplypage.cffa50">and</T>{' '}
+            <Link to="/privacy" className="text-primary-600 hover:underline"><T k="pages.agencyapplypage.9db108">Privacy Policy</T></Link>
           </p>
         </form>
       </div>

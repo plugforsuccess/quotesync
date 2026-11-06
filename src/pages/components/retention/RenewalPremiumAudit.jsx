@@ -19,9 +19,9 @@ function signed(d) { return `${d > 0 ? '+' : d < 0 ? '−' : ''}${fmt$(Math.abs(
 function Stat({ label, value, sub, color }) {
   return (
     <div className="card">
-      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 500, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, color: 'var(--qs-subtle)', fontWeight: 500, marginBottom: 6 }}><T>{label}</T></div>
       <div style={{ fontSize: 22, fontWeight: 700, color: color || 'var(--qs-text)' }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}><T>{sub}</T></div>}
     </div>
   );
 }
@@ -110,7 +110,7 @@ export default function RenewalPremiumAudit({ agencyId }) {
                 </td>
                 <td style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-muted)' }}>{r.policy_no || '—'}</td>
                 <td>{fmtDate(r.resolution_date)}</td>
-                <td style={{ color: 'var(--qs-dim)' }}>{r.autoResolved ? 'Auto' : (r.rep || '—')}</td>
+                <td style={{ color: 'var(--qs-dim)' }}>{r.autoResolved ? <T k="pages.components.retention.renewalpremiumaudit.c614ba">{'Auto'}</T> : (r.rep || '—')}</td>
                 <td>{fmt$(r.offer)}</td>
                 <td>{fmt$(r.paid)}</td>
                 <td style={{ fontWeight: 700, color: diffColor(r.diff) }}>

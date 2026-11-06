@@ -2,6 +2,7 @@
 // One-click copy for anything an agent re-keys elsewhere (address, policy #,
 // VINs, phone) — and the whole policy as a sheet for the Allstate quote.
 
+import { T } from '../../../components/SiteCopy';
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
@@ -60,25 +61,25 @@ export function CopyTextButton({ text, children, className = '', style }) {
   return (
     <button type="button" onClick={() => copy(text)} disabled={!text} className={`inline-flex items-center gap-1.5 ${className}`} style={style}>
       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-      {copied ? 'Copied' : children}
+      {copied ? <T k="pages.components.ratechecks.copyable.8e3df4">{'Copied'}</T> : children}
     </button>
   );
 }
 
 // Label / value row with a copy button. Value stays plain selectable text.
 // `addOn` marks something the producer must match on the quote (shown in yellow).
-export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone, addOn = false }) {
+export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone, addOn = false, emptyText = null, joined = false }) {
   const empty = value == null || value === '';
   return (
-    <div className="flex items-start justify-between gap-3 py-2" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      <dt className={`${wide ? 'w-36 sm:w-52' : 'w-32'} shrink-0 text-sm`} style={{ color: 'var(--qs-subtle)' }}>{label}</dt>
+    <div className={`flex items-start justify-between gap-3 ${joined ? '-mt-1 pb-2' : 'py-2'}`} style={joined ? undefined : { borderTop: '1px solid var(--qs-border)' }}>
+      <dt className={`${wide ? 'w-44 sm:w-52' : 'w-32'} shrink-0 text-sm`} style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></dt>
       <dd className="flex min-w-0 flex-1 items-start justify-end gap-1 text-right text-sm">
         <span className="min-w-0">
           <span className={`select-text break-words ${mono ? 'font-mono' : ''} ${addOn && !empty ? ADD_ON_CLS : ''}`}
             style={addOn && !empty ? ADD_ON_STYLE : { color: empty ? 'var(--qs-subtle)' : 'var(--qs-bright)' }}>
-            {empty ? 'Not on page' : value}
+            {empty ? (emptyText || <T k="pages.components.ratechecks.copyable.e2e93c">{'Not on page'}</T>) : value}
           </span>
-          {hint && <span className={`block text-xs ${hintTone === 'warn' ? 'text-yellow-600' : ''}`} style={hintTone === 'warn' ? undefined : { color: 'var(--qs-subtle)' }}>{hint}</span>}
+          {hint && <span className={`block text-xs ${hintTone === 'warn' ? 'text-yellow-600' : ''}`} style={hintTone === 'warn' ? undefined : { color: 'var(--qs-subtle)' }}><T>{hint}</T></span>}
         </span>
         {copy && !empty && <CopyButton text={typeof copy === 'string' ? copy : String(value)} label={`Copy ${label.toLowerCase()}`} />}
       </dd>

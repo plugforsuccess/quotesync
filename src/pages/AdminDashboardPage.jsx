@@ -12,9 +12,9 @@ import DataIngestionHealth from './components/admin/DataIngestionHealth';
 
 const KpiCard = ({ label, value, sub, color = 'var(--qs-bright)' }) => (
   <div className="dark-card" style={{ flex: 1 }}>
-    <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{label}</p>
+    <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}><T>{label}</T></p>
     <p style={{ fontSize: 28, fontWeight: 700, color }}>{value ?? '—'}</p>
-    {sub && <p style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 4 }}>{sub}</p>}
+    {sub && <p style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 4 }}><T>{sub}</T></p>}
   </div>
 );
 

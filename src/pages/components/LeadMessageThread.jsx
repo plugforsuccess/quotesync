@@ -126,7 +126,7 @@ export default function LeadMessageThread({ messages = [], isLoading, leadId, le
               className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm
                          font-medium rounded-lg transition-colors disabled:opacity-50"
             >
-              {sending ? 'Sending…' : 'Send'}
+              {sending ? <T k="pages.components.leadmessagethread.cf7655">{'Sending…'}</T> : <T k="pages.components.leadmessagethread.9bc257">{'Send'}</T>}
             </button>
           </div>
         )}

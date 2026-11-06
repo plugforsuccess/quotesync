@@ -113,6 +113,29 @@ export const useUpdateRateCheck = () => {
 };
 
 // Enter the Allstate quote → rate-check-outcome (won/lost, lead update, SMS).
+// Sales workspace: log the household's Allstate quote. Each policy's rate (annual) is
+// saved on its rate check as the signed-in producer; the database works out win / loss,
+// adds the quote to the producer's numbers and moves the lead to Quoted.
+export const useLogHouseholdQuote = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (rows) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      for (const r of rows) {
+        const { error } = await supabase.from('rate_checks')
+          .update({ allstate_premium: r.allstatePremium, quoted_by: user?.id ?? null })
+          .eq('id', r.id);
+        if (error) throw error;
+      }
+      return rows;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads.all() });
+    },
+  });
+};
+
 export const useEnterRateCheckQuote = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -589,11 +612,16 @@ export const useRecruiters = (agencyId) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agency_memberships')
-        .select('user_id, agency_role, status, recruit_code, profiles(full_name, email)')
+        .select('user_id, agency_role, status, recruit_code')
         .eq('agency_id', agencyId)
         .eq('status', 'active');
       if (error) throw error;
-      return (data || []).map(m => ({ userId: m.user_id, role: m.agency_role, code: m.recruit_code, name: m.profiles?.full_name || m.profiles?.email || 'Team member' }));
+      const ids = (data || []).map(m => m.user_id);
+      const { data: people } = ids.length
+        ? await supabase.from('profiles').select('id, full_name, email').in('id', ids)
+        : { data: [] };
+      const byId = Object.fromEntries((people || []).map(p => [p.id, p]));
+      return (data || []).map(m => ({ userId: m.user_id, role: m.agency_role, code: m.recruit_code, name: byId[m.user_id]?.full_name || byId[m.user_id]?.email || 'Team member' }));
     },
     enabled: !!agencyId,
   });

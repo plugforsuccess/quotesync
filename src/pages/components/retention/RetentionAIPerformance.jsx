@@ -1,5 +1,6 @@
 // src/pages/components/retention/RetentionAIPerformance.jsx
 
+import { T } from '../../../components/SiteCopy';
 import { useState } from 'react';
 import AiPerformanceDashboard from '../renewals/AiPerformanceDashboard';
 
@@ -32,7 +33,7 @@ export default function RetentionAIPerformance({ agencyId }) {
               transition: 'all 0.15s',
             }}
           >
-            {label}
+            <T>{label}</T>
           </button>
         ))}
       </div>

@@ -111,7 +111,7 @@ function UncategorizedTable({ uncategorized, categories, agencyId }) {
         {uncategorized.map(u => (
           <tr key={u.raw_reason} style={{ borderTop: '1px solid var(--qs-border)' }}>
             <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: 12 }}>
-              {u.raw_reason || '(empty)'}
+              {u.raw_reason || <T k="pages.terminationaliasespage.48b2f0">{'(empty)'}</T>}
             </td>
             <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600 }}>{u.count}</td>
             <td style={{ ...tdStyle, textAlign: 'right' }}>

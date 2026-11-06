@@ -61,9 +61,9 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
         )}
         <button type="button" onClick={() => fileInput.current?.click()} disabled={upload.isPending}
           className="w-full rounded-lg border-2 border-dashed px-4 py-4 text-sm font-semibold" style={{ borderColor: 'var(--qs-border)', color: 'var(--qs-bright)' }}>
-          {files.length ? `+ Add Page ${files.length + 1}` : 'Choose Photos or PDF'}
+          {files.length ? <><T k="pages.components.ratechecks.agentuploaddialog.94e82d">{"+ Add Page"}</T>{" "}{files.length + 1}</> : <T k="pages.components.ratechecks.agentuploaddialog.081135">{'Choose Photos or PDF'}</T>}
           <span className="block text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>
-            {files.length ? 'More pages of the same policy' : 'Pick every page of the policy; they’re read together'}
+            {files.length ? <T k="pages.components.ratechecks.agentuploaddialog.c72cce">{'More pages of the same policy'}</T> : <T k="pages.components.ratechecks.agentuploaddialog.e4121b">{'Pick every page of the policy; they’re read together'}</T>}
           </span>
         </button>
 
@@ -96,7 +96,7 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={upload.isPending} className="rounded-lg px-4 py-2 text-sm" style={inputStyle}><T k="pages.components.ratechecks.agentuploaddialog.ea4788">Cancel</T></button>
           <button type="submit" disabled={!canSubmit} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            {upload.isPending ? 'Reading Dec Page…' : 'Upload & Scan'}
+            {upload.isPending ? <T k="pages.components.ratechecks.agentuploaddialog.89bdbf">{'Reading Dec Page…'}</T> : <T k="pages.components.ratechecks.agentuploaddialog.19aaab">{'Upload & Scan'}</T>}
           </button>
         </div>
       </form>

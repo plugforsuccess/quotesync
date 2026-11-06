@@ -15,19 +15,19 @@ const tone = (delta) => (delta > 0 ? 'var(--qs-success)' : 'var(--qs-warning)');
 const policyName = (p) => [carrierLabel(p), policyTypeLabel(p.policy_type)].filter(Boolean).join(' ') || 'Not read yet';
 
 /** "Beat $9,916/yr · 1 of 2 quoted · Saves $5,660 so far" — a quote saves; nothing is saved until it binds. */
-export function GoalHeader({ household }) {
+export function GoalHeader({ household, className = 'mt-3', showSaved = true }) {
   const g = householdGoal(household);
   if (g.target == null) return null;
   return (
-    <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }} aria-label="Quote goal">
+    <p className={`${className} flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm`} style={{ color: 'var(--qs-subtle)' }} aria-label="Quote goal">
       <span><T k="pages.components.ratechecks.quotecards.2bb46c">Beat</T> <b style={{ color: 'var(--qs-bright)' }}>{money(g.target)}<T k="pages.components.ratechecks.quotecards.6d8fef">/yr</T></b></span>
       <span aria-hidden="true">·</span>
       <span>{g.quoted} <T k="pages.components.ratechecks.quotecards.8bf885">of</T> {g.total} <T k="pages.components.ratechecks.quotecards.c77184">quoted</T></span>
-      {g.saved != null && (
+      {showSaved && g.saved != null && (
         <>
           <span aria-hidden="true">·</span>
           <span style={{ color: tone(g.saved) }} className="font-semibold">
-            {g.saved > 0 ? `Saves ${money(g.saved)}/yr so far` : g.saved < 0 ? `${money(-g.saved)} more so far` : 'Even so far'}
+            {g.saved > 0 ? <><T k="pages.components.ratechecks.quotecards.6a29f0">{"Saves"}</T>{" "}{money(g.saved)}{"/yr so far"}</> : g.saved < 0 ? <>{money(-g.saved)}{" "}<T k="pages.components.ratechecks.quotecards.f73eb9">{"more so far"}</T></> : <T k="pages.components.ratechecks.quotecards.053946">{'Even so far'}</T>}
           </span>
         </>
       )}
@@ -41,7 +41,7 @@ export function LiveDelta({ current, price, className = '' }) {
   if (!s) return null;
   return (
     <p className={`text-lg font-extrabold ${className}`} style={{ color: tone(s.delta) }} aria-live="polite">
-      {s.delta > 0 ? `Saves them ${money(s.delta)}/yr` : s.delta < 0 ? `${money(-s.delta)}/yr more than they pay` : 'Same as they pay'}
+      {s.delta > 0 ? <><T k="pages.components.ratechecks.quotecards.2e438f">{"Saves them"}</T>{" "}{money(s.delta)}{"/yr"}</> : s.delta < 0 ? `${money(-s.delta)}/yr more than they pay` : <T k="pages.components.ratechecks.quotecards.400a0b">{'Same as they pay'}</T>}
       {s.pct != null && s.delta !== 0 && <span className="font-semibold"> ({Math.abs(s.pct)}%)</span>}
     </p>
   );

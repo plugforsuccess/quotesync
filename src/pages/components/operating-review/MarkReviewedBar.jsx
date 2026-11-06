@@ -90,8 +90,8 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
         <div>
           <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
             {isReviewed
-              ? `${formatWeekLabel(reviewWeekStart)} — reviewed`
-              : `${formatWeekLabel(reviewWeekStart)} — not yet reviewed`}
+              ? <>{formatWeekLabel(reviewWeekStart)}{" "}<T k="pages.components.operatingreview.markreviewedbar.adc6f8">{"— reviewed"}</T></>
+              : <>{formatWeekLabel(reviewWeekStart)}{" "}<T k="pages.components.operatingreview.markreviewedbar.ab7e8c">{"— not yet reviewed"}</T></>}
           </div>
           {streak > 0 && (
             <div style={{ fontSize: 12, color: 'var(--qs-success)', marginTop: 2, fontWeight: 600 }}>
@@ -203,7 +203,7 @@ export default function MarkReviewedBar({ agencyId, reviewWeekStart }) {
                   style={{ ...btnPrimary, opacity: markReviewed.isPending ? 0.5 : 1 }}
                 >
                   <Check size={14} />
-                  {markReviewed.isPending ? 'Saving…' : 'Confirm'}
+                  {markReviewed.isPending ? <T k="pages.components.operatingreview.markreviewedbar.56a228">{'Saving…'}</T> : <T k="pages.components.operatingreview.markreviewedbar.04a212">{'Confirm'}</T>}
                 </button>
               </div>
             </div>
@@ -295,7 +295,7 @@ function HistoryModal({ completions, onClose }) {
                   </div>
                   {c.note && (
                     <div style={{ fontSize: 13, color: 'var(--qs-text)', marginTop: 6 }}>
-                      {c.note}
+                      <T>{c.note}</T>
                     </div>
                   )}
                 </div>

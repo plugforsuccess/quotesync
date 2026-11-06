@@ -119,7 +119,7 @@ export default function PartialRecovery({ partials }) {
                     <td className="py-2 pr-4 pl-5" style={{ color: 'var(--qs-dim)' }}>{formatTimeAgo(p.createdAt)}</td>
                     <td className="py-2 px-4 font-medium" style={{ color: 'var(--qs-bright)' }}>{p.zip || '-'}</td>
                     <td className="py-2 px-4" style={{ color: 'var(--qs-dim)' }}>
-                      {p.ownsHome === true ? 'Owner' : p.ownsHome === false ? 'Renter' : '-'}
+                      {p.ownsHome === true ? <T k="pages.components.dashboard.partialrecovery.89ff31">{'Owner'}</T> : p.ownsHome === false ? <T k="pages.components.dashboard.partialrecovery.2f4598">{'Renter'}</T> : '-'}
                     </td>
                     <td className="py-2 px-4 capitalize" style={{ color: 'var(--qs-dim)' }}>{p.intent || '-'}</td>
                     <td className="py-2 px-4" style={{ color: 'var(--qs-dim)' }}>{p.carrier || '-'}</td>

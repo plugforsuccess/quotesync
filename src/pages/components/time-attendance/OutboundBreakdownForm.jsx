@@ -122,7 +122,7 @@ export default function OutboundBreakdownForm({
                 <div key={cat.key}>
                   <label className="block text-xs font-medium text-qs-dim mb-1">
                     <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: CATEGORY_COLORS[cat.key] ?? ct.data.slate }} />
-                    {cat.label}
+                    <T>{cat.label}</T>
                   </label>
                   <input
                     type="number"
@@ -138,7 +138,7 @@ export default function OutboundBreakdownForm({
             <div className="flex items-center justify-between pt-2 border-t border-qs-border">
               <p className={`text-sm ${formTotal !== totalOutbound ? 'text-amber-400' : 'text-qs-dim'}`}>
                 <T k="pages.components.timeattendance.outboundbreakdownform.822295">Sum:</T> {formTotal} / {totalOutbound || '?'} <T k="pages.components.timeattendance.outboundbreakdownform.aaaf6e">total outbound</T>
-                {formTotal !== totalOutbound && totalOutbound > 0 && ' (mismatch)'}
+                {formTotal !== totalOutbound && totalOutbound > 0 && <T k="pages.components.timeattendance.outboundbreakdownform.2ecd96">{' (mismatch)'}</T>}
               </p>
               <div className="flex gap-2">
                 <button
@@ -153,7 +153,7 @@ export default function OutboundBreakdownForm({
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors disabled:opacity-50"
                 >
                   <Save className="w-3 h-3" />
-                  {saving ? 'Saving...' : 'Save'}
+                  {saving ? <T k="pages.components.timeattendance.outboundbreakdownform.ae7e88">{'Saving...'}</T> : <T k="pages.components.timeattendance.outboundbreakdownform.efc007">{'Save'}</T>}
                 </button>
               </div>
             </div>
@@ -183,7 +183,7 @@ export default function OutboundBreakdownForm({
                 form[cat.key] > 0 && (
                   <span key={cat.key} className="inline-flex items-center gap-1 text-qs-dim">
                     <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[cat.key] ?? ct.data.slate }} />
-                    {cat.label}: {form[cat.key]}
+                    <T>{cat.label}</T>: {form[cat.key]}
                   </span>
                 )
               ))}
@@ -191,7 +191,7 @@ export default function OutboundBreakdownForm({
 
             {topCategory && (
               <p className="text-sm text-qs-dim">
-                <T k="pages.components.timeattendance.outboundbreakdownform.0ea920">Top category:</T> <span className="font-medium text-qs-bright">{topCategory.label}</span> ({topCategory.pct}%)
+                <T k="pages.components.timeattendance.outboundbreakdownform.0ea920">Top category:</T> <span className="font-medium text-qs-bright"><T>{topCategory.label}</T></span> ({topCategory.pct}%)
               </p>
             )}
           </div>

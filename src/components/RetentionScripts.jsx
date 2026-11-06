@@ -2,6 +2,7 @@
 // Shared call + voicemail scripts for retention surfaces (the queue list and the
 // case work surface), so the same words appear wherever a rep works a case.
 // Builders are pure (easy to copy/test); the *Box components render them.
+import { T } from './SiteCopy';
 import { productLabel } from '../lib/productLabels';
 import { titleCaseName } from '../lib/names';
 
@@ -71,7 +72,7 @@ export function CallScriptBox({ label = 'Call script', children }) {
       borderRadius: 6, padding: '7px 10px', marginBottom: 8,
     }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--qs-info)',
-        textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+        textTransform: 'uppercase', marginBottom: 4 }}><T>{label}</T></div>
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
         {children}
       </div>
@@ -88,7 +89,7 @@ export function VoicemailScriptBox({ firstName, agentName, product }) {
     }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--qs-dim)',
         textTransform: 'uppercase', marginBottom: 4 }}>
-        📞 Voicemail — if no answer (read aloud)
+        <T k="components.retentionscripts.76d0c8">📞 Voicemail — if no answer (read aloud)</T>
       </div>
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
         "{text}"

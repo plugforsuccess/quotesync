@@ -768,9 +768,9 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)',
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
             {!isPastWeek
-              ? "This Week's Upload Status"
-              : `Upload Status — Week of ${new Date(weekStart + 'T00:00:00')
-                  .toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
+              ? <T k="pages.components.timeattendance.callloguploadform.ec1217">{"This Week's Upload Status"}</T>
+              : <><T k="pages.components.timeattendance.callloguploadform.f79071">{"Upload Status — Week of"}</T>{" "}{new Date(weekStart + 'T00:00:00')
+                  .toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</>
             }
           </p>
           <div style={{ display: 'flex', gap: 6 }}>
@@ -802,7 +802,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                   <div style={{ fontSize: 10, fontWeight: 600,
                     color: uploaded ? '#10B981' : missing ? '#EF4444' : 'var(--qs-muted)',
                     marginBottom: 2 }}>
-                    {day.label}
+                    <T>{day.label}</T>
                   </div>
                   <div style={{ fontSize: 16 }}>
                     {uploaded ? '✓' : missing ? '!' : day.isToday ? '·' : '—'}
@@ -825,7 +825,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           {/* Missing days callout */}
           {weekCoverage.some(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))) && (
             <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>
-              ⚠ {weekCoverage.filter(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))).length} <T k="pages.components.timeattendance.callloguploadform.fa77ae">day(s) missing uploads</T> {isPastWeek ? 'that week' : 'this week'}
+              ⚠ {weekCoverage.filter(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))).length} <T k="pages.components.timeattendance.callloguploadform.fa77ae">day(s) missing uploads</T> {isPastWeek ? <T k="pages.components.timeattendance.callloguploadform.a349b2">{'that week'}</T> : <T k="pages.components.timeattendance.callloguploadform.dae1e5">{'this week'}</T>}
             </p>
           )}
         </div>
@@ -877,8 +877,8 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
           {fileResults.length > 1
-            ? `${fileResults.length} Files Selected`
-            : 'Choose File(s)'}
+            ? <>{fileResults.length}{" "}<T k="pages.components.timeattendance.callloguploadform.74be14">{"Files Selected"}</T></>
+            : <T k="pages.components.timeattendance.callloguploadform.c589e3">{'Choose File(s)'}</T>}
           <input
             ref={fileRef}
             type="file"
@@ -900,7 +900,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         <div className="mt-3 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
           <p className="text-sm font-medium text-amber-300 mb-1">
             {validationErrors.length} <T k="pages.components.timeattendance.callloguploadform.f1965a">row</T>{validationErrors.length > 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.c7537d">rejected</T>
-            {skippedInternal > 0 && ` · ${skippedInternal} internal call${skippedInternal !== 1 ? 's' : ''} skipped`}:
+            {skippedInternal > 0 && <>{" · "}{skippedInternal}{" "}<T k="pages.components.timeattendance.callloguploadform.4e9add">{"internal call"}</T>{skippedInternal !== 1 ? 's' : ''}{" "}<T k="pages.components.timeattendance.callloguploadform.413a93">{"skipped"}</T></>}:
           </p>
           <ul className="text-xs text-amber-300 space-y-0.5 max-h-32 overflow-y-auto">
             {validationErrors.map((ve, i) => (
@@ -993,7 +993,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                         row.call_direction === 'Outbound' ? 'bg-primary-900/20 text-primary-300' : 'bg-emerald-900/20 text-emerald-300'
                       }`}>
-                        {row.call_direction === 'Outbound' ? 'Out' : 'In'}
+                        {row.call_direction === 'Outbound' ? <T k="pages.components.timeattendance.callloguploadform.220e06">{'Out'}</T> : <T k="pages.components.timeattendance.callloguploadform.aef365">{'In'}</T>}
                       </span>
                     </td>
                     <td className="px-3 py-2">
@@ -1002,7 +1002,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                         row.call_result === 'Not Connected' ? 'text-amber-400' :
                         row.call_result === 'Connected' ? 'text-primary-400' : 'text-emerald-400'
                       }`}>
-                        {row.call_result === 'VM/Missed' ? 'Missed' : row.call_result}
+                        {row.call_result === 'VM/Missed' ? <T k="pages.components.timeattendance.callloguploadform.b56400">{'Missed'}</T> : row.call_result}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right text-qs-dim font-mono">{row._duration}</td>
@@ -1024,7 +1024,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
-              {uploading ? 'Uploading...' : 'Confirm Upload'}
+              {uploading ? <T k="pages.components.timeattendance.callloguploadform.070e32">{'Uploading...'}</T> : <T k="pages.components.timeattendance.callloguploadform.8b7898">{'Confirm Upload'}</T>}
             </button>
             <button
               onClick={() => { setPreview(null); setValidationErrors([]); setFileResults([]); fileBuffersRef.current = new Map(); if (fileRef.current) fileRef.current.value = ''; }}
@@ -1094,7 +1094,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               </div>
               <div className="px-6 py-4">
                 <p className="text-sm text-qs-dim mb-3">
-                  {confirmModal.skippedCount} <T k="pages.components.timeattendance.callloguploadform.53b9e9">call</T>{confirmModal.skippedCount > 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.c8655a">will be skipped because</T> {confirmModal.unmatchedNames.length > 1 ? 'these agents don\u2019t' : 'this agent doesn\u2019t'} <T k="pages.components.timeattendance.callloguploadform.801857">match any known employee:</T>
+                  {confirmModal.skippedCount} <T k="pages.components.timeattendance.callloguploadform.53b9e9">call</T>{confirmModal.skippedCount > 1 ? 's' : ''} <T k="pages.components.timeattendance.callloguploadform.c8655a">will be skipped because</T> {confirmModal.unmatchedNames.length > 1 ? <T k="pages.components.timeattendance.callloguploadform.b9271f">{'these agents don\u2019t'}</T> : <T k="pages.components.timeattendance.callloguploadform.e9d14d">{'this agent doesn\u2019t'}</T>} <T k="pages.components.timeattendance.callloguploadform.801857">match any known employee:</T>
                 </p>
                 <ul className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
                   {confirmModal.unmatchedNames.map((name, i) => (

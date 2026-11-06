@@ -49,7 +49,7 @@ function Stat({ label, value }) {
   return (
     <div className="min-w-0 text-center">
       <p className="text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{value}</p>
-      <p className="truncate text-xs" style={{ color: 'var(--qs-subtle)' }}>{label}</p>
+      <p className="truncate text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></p>
     </div>
   );
 }
@@ -121,7 +121,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
             {[['all', 'All', invites.length], ['waiting', 'Waiting', waiting], ['uploaded', 'Uploaded', invites.filter(i => i.upload_count > 0).length]].map(([v, l, n]) => (
               <button key={v} onClick={() => setFilter(v)} className={`min-h-[36px] whitespace-nowrap rounded-md px-3 text-sm font-medium ${filter === v ? 'bg-primary-600 text-white' : ''}`}
                 style={filter === v ? undefined : { color: 'var(--qs-text)' }}>
-                {l} <span className={filter === v ? 'opacity-80' : ''} style={filter === v ? undefined : { color: 'var(--qs-subtle)' }}>{n}</span>
+                <T>{l}</T> <span className={filter === v ? 'opacity-80' : ''} style={filter === v ? undefined : { color: 'var(--qs-subtle)' }}>{n}</span>
               </button>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
           <div className="p-8 text-center text-red-600"><T k="pages.components.ratechecks.invitestab.3c6c93">Error loading links.</T></div>
         ) : matching.length === 0 ? (
           <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-            {invites.length === 0 ? 'No links sent yet. Use “Send a link” for someone who doesn’t have their policy with them.' : 'Nothing matches.'}
+            {invites.length === 0 ? <T k="pages.components.ratechecks.invitestab.34a451">{'No links sent yet. Use “Send a link” for someone who doesn’t have their policy with them.'}</T> : <T k="pages.components.ratechecks.invitestab.9f8576">{'Nothing matches.'}</T>}
           </div>
         ) : (
           <>
@@ -149,7 +149,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
             {expired.length > 0 && (
               <>
                 <button type="button" onClick={() => setShowExpired(v => !v)} className="min-h-[44px] w-full px-4 text-left text-sm font-semibold text-primary-600" style={{ borderTop: '1px solid var(--qs-border)' }}>
-                  {showExpired ? 'Hide Expired' : `Show Expired (${expired.length})`}
+                  {showExpired ? <T k="pages.components.ratechecks.invitestab.2fb10d">{'Hide Expired'}</T> : <><T k="pages.components.ratechecks.invitestab.0a3633">{"Show Expired ("}</T>{expired.length}{")"}</>}
                 </button>
                 {showExpired && <ul className="opacity-60">{expired.map(i => <InviteRow key={i.id} i={i} onOpen={onOpenRateCheck} />)}</ul>}
               </>
@@ -162,7 +162,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Resend link">
           <div className="absolute inset-0 bg-black/50" onClick={() => setResend(null)} />
           <div className="relative w-full max-w-md rounded-xl p-5 shadow-xl" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
-            <h2 className="mb-3 text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.invitestab.4a863f">Resend to</T> {resend.first_name || 'Customer'}</h2>
+            <h2 className="mb-3 text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.invitestab.4a863f">Resend to</T> {resend.first_name || <T k="pages.components.ratechecks.invitestab.0e8574">{'Customer'}</T>}</h2>
             <InviteShare invite={resend} producerName={resend.producer_name || producerName} onDone={() => setResend(null)} />
           </div>
         </div>
@@ -175,7 +175,7 @@ function InviteRow({ i, onOpen, onResend }) {
   const state = stateOf(i);
   const pill = PILL[state];
   const problem = textProblem(i);
-  const meta = [i.source === 'quick_send' ? 'Quick Send' : i.event_name || 'Direct link', i.producer_name && `sent by ${i.producer_name}`, short(i.created_at)].filter(Boolean).join(' · ');
+  const meta = [i.source === 'quick_send' ? 'Quick Send' : i.event_name || 'Direct link', i.producer_name && `Sent by ${i.producer_name}`, short(i.created_at)].filter(Boolean).join(' · ');
   const btn = 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-semibold';
   return (
     <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-5" style={{ borderTop: '1px solid var(--qs-border)' }}>
@@ -185,7 +185,7 @@ function InviteRow({ i, onOpen, onResend }) {
         </span>
         <div className="min-w-0">
           <p className="flex flex-wrap items-baseline gap-x-2 text-[15px] leading-tight">
-            <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{i.first_name || 'No name'}</span>
+            <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{i.first_name || <T k="pages.components.ratechecks.invitestab.b78fd2">{'No name'}</T>}</span>
             {i.phone && <span className="whitespace-nowrap tabular-nums" style={{ color: 'var(--qs-subtle)' }}>{formatPhone(i.phone)}</span>}
           </p>
           <p className="mt-1 text-xs sm:truncate" style={{ color: 'var(--qs-subtle)' }}>{meta}</p>

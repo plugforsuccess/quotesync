@@ -244,7 +244,7 @@ const NewsroomDashboardPage = () => {
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4"><T k="pages.newsroomdashboardpage.0a24f8">Failed to Load Dashboard</T></h2>
           <p className="text-gray-600 mb-2">
-            {errorMessage || 'An unexpected error occurred while loading the dashboard.'}
+            {errorMessage || <T k="pages.newsroomdashboardpage.7e3a6b">{'An unexpected error occurred while loading the dashboard.'}</T>}
           </p>
           <p className="text-sm text-gray-500 mb-6">
             <T k="pages.newsroomdashboardpage.727281">This could be due to network issues, expired session, or server problems.</T>
@@ -287,7 +287,7 @@ const NewsroomDashboardPage = () => {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900"><T k="pages.newsroomdashboardpage.7cdf81">Newsroom Dashboard</T></h1>
               <p className="text-gray-600 text-sm mt-1">
-                <T k="pages.newsroomdashboardpage.6340db">Role:</T> <span className="font-semibold capitalize">{isAdmin ? 'admin' : userRole}</span>
+                <T k="pages.newsroomdashboardpage.6340db">Role:</T> <span className="font-semibold capitalize">{isAdmin ? <T k="pages.newsroomdashboardpage.d033e2">{'admin'}</T> : userRole}</span>
                 {' • '}
                 <span className="text-xs text-gray-400">{getBuildString()}</span>
               </p>
@@ -426,8 +426,8 @@ const NewsroomDashboardPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.newsroomdashboardpage.43f3e8">No Stories Found</T></h2>
             <p className="text-gray-600 mb-6">
               {filter === 'all'
-                ? "Get started by creating your first story"
-                : `No stories with status "${filter}"`}
+                ? <T k="pages.newsroomdashboardpage.7f775e">{"Get started by creating your first story"}</T>
+                : <><T k="pages.newsroomdashboardpage.4067fe">{"No stories with status \""}</T>{filter}{"\""}</>}
             </p>
             <Link
               to="/news/editor"
@@ -473,7 +473,7 @@ const NewsroomDashboardPage = () => {
                           <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                         )}
                         <div>
-                          <div className="font-semibold text-gray-900">{story.title}</div>
+                          <div className="font-semibold text-gray-900"><T>{story.title}</T></div>
                           <div className="text-sm text-gray-500 line-clamp-1">
                             {story.preview_hook}
                           </div>
@@ -483,7 +483,7 @@ const NewsroomDashboardPage = () => {
                     <td className="px-6 py-4">
                       <div className="text-sm">
                         <div className="font-medium text-gray-900">
-                          {story.author_name || story.author_email || 'Unknown'}
+                          {story.author_name || story.author_email || <T k="pages.newsroomdashboardpage.bc7819">{'Unknown'}</T>}
                         </div>
                         {story.author_name && story.author_email && (
                           <div className="text-xs text-gray-500">{story.author_email}</div>
@@ -501,7 +501,7 @@ const NewsroomDashboardPage = () => {
                         story.status === 'in_review' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {story.status === 'in_review' ? 'in review' : story.status}
+                        {story.status === 'in_review' ? <T k="pages.newsroomdashboardpage.87e1ef">{'in review'}</T> : story.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">

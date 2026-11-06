@@ -47,6 +47,8 @@ import { GoalHeader, HouseholdCard, LiveDelta } from './components/rate-checks/Q
 import { looksTooLow, savings } from './components/rate-checks/quoteMath';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
+import LogQuote from './components/sales/LogQuote';
+import ContactStep from './components/sales/ContactStep';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -93,13 +95,13 @@ function Age({ rc, now }) {
   if (open && mins >= OVERDUE_MINUTES) {
     return <span className="font-semibold text-red-500" title="The page says we typically text within 30 minutes"><T k="pages.ratecheckspage.5706de">Waiting</T> {ageText(mins)}</span>;
   }
-  return <span style={{ color: 'var(--qs-text)' }}>{mins < 1 ? 'Just now' : `${ageText(mins)} ago`}</span>;
+  return <span style={{ color: 'var(--qs-text)' }}>{mins < 1 ? <T k="pages.ratecheckspage.a69f48">{'Just now'}</T> : <>{ageText(mins)}{" "}<T k="pages.ratecheckspage.f03c0a">{"ago"}</T></>}</span>;
 }
 
 function StatusChip({ status, quiet = false }) {
   const c = STATUS[status] || { label: status, cls: 'bg-gray-100 text-gray-600' };
-  if (quiet) return <span className="whitespace-nowrap text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}>{c.label}</span>;
-  return <span className={`inline-flex items-center whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${c.cls}`}>{c.label}</span>;
+  if (quiet) return <span className="whitespace-nowrap text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}><T>{c.label}</T></span>;
+  return <span className={`inline-flex items-center whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${c.cls}`}><T>{c.label}</T></span>;
 }
 
 // delta = current − Allstate, so positive means the customer saves.
@@ -154,7 +156,7 @@ function WaitPill({ rc, now }) {
   const mins = minutesSince(rc.created_at, now);
   return (
     <CardPill tone={mins >= OVERDUE_MINUTES ? 'red' : 'neutral'} title="How long they've been waiting on us for a quote" label={`Waiting on us for a quote: ${ageText(mins)}`}>
-      <Clock className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{mins < 1 ? 'Just now' : `Waiting ${ageText(mins)}`}
+      <Clock className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{mins < 1 ? <T k="pages.ratecheckspage.a69f48">{'Just now'}</T> : <><T k="pages.ratecheckspage.33d306">{"Waiting"}</T>{" "}{ageText(mins)}</>}
     </CardPill>
   );
 }
@@ -196,7 +198,7 @@ function WhoIsWho({ rcId, partnerFirst }) {
   if (!lines.length) return null;
   return (
     <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-      {lines.map((l, i) => <span key={i} className="block">{l}{data.contact_relationship === 'other' && i === 0 ? ' · confirm they can make changes' : ''}</span>)}
+      {lines.map((l, i) => <span key={i} className="block">{l}{data.contact_relationship === 'other' && i === 0 ? <T k="pages.ratecheckspage.7e70a2">{' · confirm they can make changes'}</T> : ''}</span>)}
     </p>
   );
 }
@@ -277,12 +279,12 @@ function TabBar({ tab, setTab }) {
         {WORK_TABS.map(({ v, label, short, Icon }) => (
           <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)} className={segment(tab === v)}
             style={tab === v ? undefined : { color: 'var(--qs-text)' }}>
-            <Icon className="hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" /> <span className="truncate sm:hidden">{short || label}</span><span className="hidden truncate sm:inline">{label}</span>
+            <Icon className="hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" /> <span className="truncate sm:hidden"><T>{short || label}</T></span><span className="hidden truncate sm:inline"><T>{label}</T></span>
           </button>
         ))}
         <button type="button" aria-haspopup="dialog" aria-expanded={sheet} onClick={() => setSheet(true)} className={segment(!!moreTab)}
           style={moreTab ? undefined : { color: 'var(--qs-text)' }}>
-          <span className="truncate">{moreTab ? moreTab.short || moreTab.label : 'More'}</span> <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="truncate">{moreTab ? <T>{moreTab.short || moreTab.label}</T> : <T k="pages.ratecheckspage.4bab2d">{'More'}</T>}</span> <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
         </button>
       </div>
       {sheet && (
@@ -291,15 +293,15 @@ function TabBar({ tab, setTab }) {
           <div className="relative w-full max-w-md rounded-t-2xl p-4 pb-8 sm:rounded-2xl sm:pb-4" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
             {MORE_GROUPS.map(g => (
               <div key={g.title} className="mb-3 last:mb-0">
-                <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>{g.title}</p>
+                <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{g.title}</T></p>
                 <div className="overflow-hidden rounded-xl" style={{ border: '1px solid var(--qs-border)' }}>
                   {g.tabs.map(({ v, label, hint, Icon }, i) => (
                     <button key={v} type="button" onClick={() => { setTab(v); setSheet(false); }}
                       className="flex min-h-[56px] w-full items-center gap-3 px-3 text-left" style={{ borderTop: i ? '1px solid var(--qs-border)' : undefined, background: tab === v ? 'var(--qs-elevated)' : undefined }}>
                       <Icon className="h-5 w-5 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
                       <span className="min-w-0 flex-1">
-                        <span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}>{label}</span>
-                        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{hint}</span>
+                        <span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}><T>{label}</T></span>
+                        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{hint}</T></span>
                       </span>
                       {tab === v ? <Check className="h-4 w-4 text-primary-600" aria-label="Current" /> : <ChevronRight className="h-4 w-4" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />}
                     </button>
@@ -327,7 +329,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {/* Who, and how long they've waited on us (top right). */}
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          {personName(h.lead.first_name, h.policies) || 'No name'}
+          {personName(h.lead.first_name, h.policies) || <T k="pages.ratecheckspage.b78fd2">{'No name'}</T>}
           {h.lead.upload_source === 'agent' && <StaffTag />}
         </p>
         {open && <span className="shrink-0"><WaitPill rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>}
@@ -345,7 +347,9 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
 
       {/* What they pay now (labeled), then the price with the text button and Start quote. */}
-      <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
+      {bundle
+        ? <div className="mb-2 mt-3"><CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill></div>
+        : <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>}
       <div className="mt-1 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-lg font-bold leading-6 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
@@ -360,17 +364,16 @@ function InboxCard({ h, now, onOpen, onPartner }) {
                 <MessageSquare className="h-5 w-5" aria-hidden="true" />
               </a>
             )}
-            <span className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.ratecheckspage.5002c4">Start quote</T></span>
+            <span className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.ratecheckspage.5002c4">Start Quote</T></span>
           </span>
         ) : <StatusChip status={h.status} quiet />}
       </div>
 
       {/* Status: red means we owe them a reply; the renewal is context (amber when close);
           the bundle is a neutral note. */}
-      {(renewal || bundle) && (
+      {renewal && (
         <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t pt-4" style={{ borderColor: 'var(--qs-border)' }}>
-          {renewal && <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>}
-          {bundle && <CardPill><T k="pages.ratecheckspage.6921b0">Bundle opportunity</T></CardPill>}
+          <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>
         </div>
       )}
     </li>
@@ -492,10 +495,14 @@ export default function RateChecksPage() {
               className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
               <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline"><T k="pages.ratecheckspage.d008bd">Upload Dec Page</T></span>
             </button>
-            <button onClick={() => setInviteOpen(true)}
-              className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
-              <Send className="h-4 w-4" aria-hidden="true" /> <T k="pages.ratecheckspage.176f56">Send a Link</T>
-            </button>
+            {/* Send a Link is hidden: it had producers text leads from their own numbers.
+                Quick Send (the agency's number) replaces it. */}
+            {SHOW_SEND_A_LINK && (
+              <button onClick={() => setInviteOpen(true)}
+                className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
+                <Send className="h-4 w-4" aria-hidden="true" /> <T k="pages.ratecheckspage.176f56">Send a Link</T>
+              </button>
+            )}
           </div>
         </div>
 
@@ -521,10 +528,10 @@ export default function RateChecksPage() {
                 <Clock className="h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
                 <span className="min-w-0 flex-1 font-medium">
                   {overdueOnly
-                    ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">Waiting 30+ min</T></>
-                    : <>{overdue} <T k="pages.ratecheckspage.f9362d">Waiting 30+ min For a Quote</T></>}
+                    ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">waiting 30+ minutes</T></>
+                    : <>{overdue} <T k="pages.ratecheckspage.f9362d">waiting 30+ minutes for a quote</T></>}
                 </span>
-                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show All' : 'Show'}</span>
+                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? <T k="pages.ratecheckspage.b3f854">{'Show All'}</T> : <T k="pages.ratecheckspage.d97d1e">{'Show'}</T>}</span>
               </button>
             )}
 
@@ -534,7 +541,7 @@ export default function RateChecksPage() {
                   <button key={f.value} onClick={() => { setFilter(f.value); setOverdueOnly(false); }}
                     className={`min-h-[36px] flex-auto whitespace-nowrap rounded-md px-2 text-[13px] font-medium sm:flex-none sm:px-3 sm:text-sm ${filter === f.value && !overdueOnly ? 'bg-primary-600 text-white' : ''}`}
                     style={filter === f.value && !overdueOnly ? undefined : { color: 'var(--qs-text)' }}>
-                    {f.short || f.label} <span className={filter === f.value && !overdueOnly ? 'opacity-80' : ''} style={filter === f.value && !overdueOnly ? undefined : { color: 'var(--qs-subtle)' }}>{counts[f.value]}</span>
+                    <T>{f.short || f.label}</T> <span className={filter === f.value && !overdueOnly ? 'opacity-80' : ''} style={filter === f.value && !overdueOnly ? undefined : { color: 'var(--qs-subtle)' }}>{counts[f.value]}</span>
                   </button>
                 ))}
               </div>
@@ -553,7 +560,7 @@ export default function RateChecksPage() {
                 <div className="p-8 text-center text-red-600"><T k="pages.ratecheckspage.c71c89">Error loading rate checks. Please try again.</T></div>
               ) : households.length === 0 ? (
                 <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-                  {search ? 'Nobody matches that search.' : filter === 'open' ? 'All caught up — nothing waiting for a quote.' : 'Nothing here yet.'}
+                  {search ? <T k="pages.ratecheckspage.51d8d3">{'Nobody matches that search.'}</T> : filter === 'open' ? <T k="pages.ratecheckspage.b3c2f6">{'All caught up — nothing waiting for a quote.'}</T> : <T k="pages.ratecheckspage.ede1ba">{'Nothing here yet.'}</T>}
                 </div>
               ) : (
                 <>
@@ -580,7 +587,7 @@ export default function RateChecksPage() {
                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
                             <td className="px-4 py-3 text-sm">
                               <div className="font-medium whitespace-nowrap" style={{ color: 'var(--qs-bright)' }}>
-                                {personName(h.lead.first_name, h.policies) || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} <T k="pages.ratecheckspage.94422f">policies</T></span>}{h.lead.upload_source === 'agent' && <StaffTag />}
+                                {personName(h.lead.first_name, h.policies) || <T k="pages.ratecheckspage.b78fd2">{'No name'}</T>}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} <T k="pages.ratecheckspage.94422f">policies</T></span>}{h.lead.upload_source === 'agent' && <StaffTag />}
                               </div>
                               {h.lead.phone && (
                                 <a href={`tel:+1${h.lead.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-primary-600 hover:underline whitespace-nowrap">
@@ -635,18 +642,25 @@ export default function RateChecksPage() {
 
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
-function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted }) {
-  // Prices saved in this drawer, so the chips and goal header update before the list refetches.
-  const [saved, setSaved] = useState({});
-  const household = rows.map(p => (p.id in saved ? { ...p, allstate_premium: saved[p.id] } : p));
-  const quoted = (res) => {
-    if (res?.allstate_premium != null) setSaved(m => ({ ...m, [rc.id]: res.allstate_premium }));
-    onQuoted(res);
-  };
+const SHOW_SEND_A_LINK = false;
+
+// The sales workspace: full screen, one household, in steps. Review the quote sheet,
+// save the Allstate quote, then contact them and close.
+const STEPS = [
+  { v: 'review', label: 'Review' },
+  { v: 'log', label: 'Quote' },
+  { v: 'tell', label: 'Contact' },
+  { v: 'close', label: 'Close', soon: true },
+];
+
+function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
+  const [step, setStep] = useState('review');
+  const [logged, setLogged] = useState(null);
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
   const multi = household.length > 1;
+  const live = household.filter(p => p.status !== 'declined');
   // The header (name, call, goal) slides away while scrolling down into the quote
   // sheet and comes back on any scroll up.
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -667,24 +681,24 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true" aria-label="Rate check detail">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div onScroll={onScroll} className="relative h-full w-full max-w-xl overflow-y-auto shadow-xl" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
-        {/* Who + how to reach them */}
-        <div ref={header} className="sticky top-0 z-10 px-5 pt-4 pb-3 transition-transform duration-200"
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Sales workspace">
+      <div onScroll={onScroll} className="relative h-full w-full overflow-y-auto" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
+        {/* Who + how to reach them, then the steps */}
+        <div ref={header} className="sticky top-0 z-10 transition-transform duration-200"
           style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)', transform: headerHidden ? 'translateY(-100%)' : 'none' }}>
+        <div className="mx-auto max-w-3xl px-5 pt-4 pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || 'Rate Check'}</h2>
+              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || <T k="pages.ratecheckspage.968f20">{'Rate Check'}</T>}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-                {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
+                {carrierLabel(rc) || rc.policy_type ? <Age rc={rc} now={now} /> : <><T k="pages.ratecheckspage.a656b7">{'Policy not read yet'}</T> · <Age rc={rc} now={now} /></>}
               </p>
               <OriginTag rc={rc} className="mt-0.5" />
               <WhoIsWho rcId={rc.id} partnerFirst={rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null} />
               {rc.resubmitted_at && (
                 <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
                   <T k="pages.ratecheckspage.01fa31">Sent again</T> {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                  {rc.resubmit_count > 1 ? ` · ${rc.resubmit_count} times` : ''}
+                  {rc.resubmit_count > 1 ? <>{" · "}{rc.resubmit_count}{" "}<T k="pages.ratecheckspage.7196b5">{"times"}</T></> : ''}
                 </p>
               )}
             </div>
@@ -698,50 +712,93 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               <a href={`tel:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 font-semibold text-white">
                 <Phone className="h-4 w-4" /> <T k="pages.ratecheckspage.c3755e">Call</T> {formatPhone(rc.phone)}
               </a>
-              <a href={`sms:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
-                <MessageSquare className="h-4 w-4" /> <T k="pages.ratecheckspage.9dffbf">Text</T>
+              {/* On phones Text and Email are icon buttons so Call, Text, Email and copy fit on one row. */}
+              <a href={`sms:+1${rc.phone}`} aria-label="Text" title="Text" className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-medium sm:px-3" style={inputStyle}>
+                <MessageSquare className="h-4 w-4" /> <span className="hidden sm:inline"><T k="pages.ratecheckspage.9dffbf">Text</T></span>
               </a>
               {rc.email && (
-                <a href={`mailto:${rc.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
-                  <Mail className="h-4 w-4" /> <T k="pages.ratecheckspage.ce8ae9">Email</T>
+                <a href={`mailto:${rc.email}`} aria-label="Email" title="Email" className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-medium sm:px-3" style={inputStyle}>
+                  <Mail className="h-4 w-4" /> <span className="hidden sm:inline"><T k="pages.ratecheckspage.ce8ae9">Email</T></span>
                 </a>
               )}
               <CopyButton text={formatPhone(rc.phone)} label="Copy phone number" className="p-2" />
-              {rc.lead_id && (
-                <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex items-center gap-1 text-primary-600 hover:underline">
-                  <T k="pages.ratecheckspage.9fc953">Lead record</T> <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
-              )}
             </div>
           )}
-          <GoalHeader household={household} />
+          {/* What to beat, and the lead's record, on one row. */}
+          <div className="mt-2.5 flex items-baseline justify-between gap-3">
+            <GoalHeader household={household} className="" showSaved={false} />
+            {rc.lead_id && (
+              <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex shrink-0 items-center gap-1 text-sm text-primary-600 hover:underline">
+                <T k="pages.ratecheckspage.9fc953">Lead Record</T> <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            )}
+          </div>
+          {/* Steps: Review → Log Quote → Tell Them → Close */}
+          <nav aria-label="Sales steps" className="mt-2.5 flex gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
+            {STEPS.map((x, i) => {
+              const on = step === x.v;
+              const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && !!logged);
+              return (
+                <button key={x.v} type="button" disabled={x.soon} onClick={() => setStep(x.v)} aria-current={on ? 'step' : undefined}
+                  title={x.soon ? 'Coming in the next step' : undefined}
+                  className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                  style={on ? undefined : { color: 'var(--qs-bright)' }}>
+                  {/* The step number (or ✓ once done), small and light, above the name. */}
+                  <span className="text-[10px] font-medium leading-none tabular-nums opacity-70" aria-hidden="true">{done ? '✓' : i + 1}</span>
+                  <T>{x.label}</T>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
         </div>
 
-        {/* Household, what to quote, the price — one swipe each; then the quote sheet and reference */}
-        <div className="pt-4">
-          {/* Slide 1: the household (when there's more than one policy) with the price right under it. Slide 2: what to quote. */}
-          <Carousel label="Quote this policy" slides={[
-            { key: 'price', label: multi ? 'Household and price' : 'Price', content: (
-              <div className="flex h-full flex-col gap-3">
-                {multi && <HouseholdCard rc={rc} household={household} onSelect={onSelect} />}
-                <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
-                {rc.upload_source === 'agent' && (
-                  <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.d03dfd">Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</T></p>
-                )}
+        {/* A household with more than one policy: one tab per policy. */}
+        {multi && step === 'review' && (
+          <div className="mx-auto flex max-w-3xl gap-2 overflow-x-auto px-5 pt-4" role="tablist" aria-label="Policies in this household">
+            {live.map(p => (
+              <button key={p.id} type="button" role="tab" aria-selected={p.id === rc.id} onClick={() => onSelect(p)}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ${p.id === rc.id ? 'bg-primary-600 text-white' : ''}`}
+                style={p.id === rc.id ? undefined : { background: 'var(--qs-elevated)', color: 'var(--qs-bright)', border: '1px solid var(--qs-border)' }}>
+                {carrierLabel(p) || <T k="pages.ratecheckspage.policy">Policy</T>} <T>{policyTypeLabel(p.policy_type)}</T>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {step === 'log' && (
+          <div className="mx-auto max-w-3xl space-y-4 p-5">
+            {logged ? (
+              <div className="rounded-xl p-4" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }} role="status">
+                <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.logged.title">Quote Saved</T></p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}><T k="sales.logged.line2">The lead is now Quoted and it counts on your scorecard.</T></p>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <button type="button" onClick={() => setStep('tell')} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-bold text-white">
+                    <T k="sales.logged.next">Next: Contact Them</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => setLogged(null)} className="text-sm font-semibold text-primary-600 underline"><T k="sales.logged.edit">Change the Rates</T></button>
+                </div>
               </div>
-            ) },
-            { key: 'decision', label: 'What to Quote', content: <DecisionCard rc={rc} household={household} /> },
-          ]} />
-        </div>
+            ) : (
+              <LogQuote household={live} onLogged={setLogged} />
+            )}
+          </div>
+        )}
 
-        <div className="space-y-6 p-5">
+        {step === 'tell' && (
+          <div className="mx-auto max-w-3xl p-5">
+            <ContactStep household={live} />
+          </div>
+        )}
+
+        {step === 'review' && <div className="mx-auto max-w-3xl space-y-6 p-5">
           {rc.extract_error && (
             <Notice tone="danger">
               <T k="pages.ratecheckspage.08f079">We couldn't read this photo. Look at it below and fill in the policy details by hand.</T>
               {canRescan && (
                 <button onClick={() => rescan.mutate({ rateCheckId: rc.id })} disabled={rescan.isPending}
                   className="ml-2 inline-flex items-center gap-1 font-semibold text-primary-600 hover:underline disabled:opacity-50">
-                  <RefreshCw className={`h-3.5 w-3.5 ${rescan.isPending ? 'animate-spin' : ''}`} /> {rescan.isPending ? 'Scanning…' : 'Scan Again'}
+                  <RefreshCw className={`h-3.5 w-3.5 ${rescan.isPending ? 'animate-spin' : ''}`} /> {rescan.isPending ? <T k="pages.ratecheckspage.36c4a0">{'Scanning…'}</T> : <T k="pages.ratecheckspage.8fd265">{'Scan Again'}</T>}
                 </button>
               )}
             </Notice>
@@ -749,10 +806,15 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
           {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info"><T k="pages.ratecheckspage.75068f">Scanned again — check the details below.</T></Notice>}
           <PolicyDetails rc={rc} warning={!rc.extract_error ? warning : null} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
+          <DecisionCard rc={rc} household={household} />
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
           {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
-        </div>
+          <button type="button" onClick={() => { setStep('log'); window.scrollTo?.(0, 0); }}
+            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white">
+            <T k="sales.review.next">Quoted It in Allstate? Save the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>}
       </div>
     </div>
   );
@@ -811,7 +873,7 @@ function QuoteBox({ rc, onQuoted }) {
         <>
           <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.318d2e">They pay now</T></p>
           <p className="mt-1 text-4xl font-bold leading-none" style={{ color: 'var(--qs-bright)' }}>
-            {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.6d8fef">/yr</T></span></> : 'Price not read yet'}
+            {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.6d8fef">/yr</T></span></> : <T k="pages.ratecheckspage.910ba9">{'Price not read yet'}</T>}
           </p>
           {Number(rc.term_months) === 6 && rc.current_premium != null && (
             <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} <T k="pages.ratecheckspage.cdd738">every 6 months</T></p>
@@ -822,13 +884,13 @@ function QuoteBox({ rc, onQuoted }) {
 
       {bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
-          <div className="text-xl font-extrabold text-green-600"><T k="pages.ratecheckspage.79ec67">Bound with</T> {boundInfo.bound_carrier || 'Allstate'}{boundInfo.bound_premium != null ? ` at ${money(boundInfo.bound_premium)}/yr` : ''}</div>
-          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
+          <div className="text-xl font-extrabold text-green-600"><T k="pages.ratecheckspage.79ec67">Bound with</T> {boundInfo.bound_carrier || <T k="pages.ratecheckspage.921d57">{'Allstate'}</T>}{boundInfo.bound_premium != null ? <>{" "}<T k="pages.ratecheckspage.27e90d">{"at"}</T>{" "}{money(boundInfo.bound_premium)}{"/yr"}</> : ''}</div>
+          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? <>{" "}<T k="pages.ratecheckspage.764f2d">{"· they were paying"}</T>{" "}{money(rc.annual_premium)}</> : ''}</p>
           <ReviewAsk rc={rc} review={boundInfo.review} />
         </div>
       )}
       {!bound && <form onSubmit={submit} className="mt-7 space-y-3">
-        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} <T k="pages.ratecheckspage.f9fce9">price Per Year</T></label>
+        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} <T k="pages.ratecheckspage.f9fce9">Price Per Year</T></label>
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
             {premium && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>}
@@ -837,9 +899,12 @@ function QuoteBox({ rc, onQuoted }) {
           </div>
           <button type="submit" disabled={enterQuote.isPending || !(parseMoney(premium) > 0) || declined}
             className="shrink-0 rounded-lg bg-primary-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400 disabled:opacity-60">
-            {enterQuote.isPending ? 'Saving…' : justSaved ? 'Saved ✓' : outcome ? 'Update' : 'Save'}
+            {enterQuote.isPending ? <T k="pages.ratecheckspage.56a228">{'Saving…'}</T> : justSaved ? <T k="pages.ratecheckspage.838a49">{'Saved ✓'}</T> : outcome ? <T k="pages.ratecheckspage.fb91e2">{'Update'}</T> : <T k="pages.ratecheckspage.efc007">{'Save'}</T>}
           </button>
         </div>
+        {!(parseMoney(premium) > 0) && !outcome && !declined && (
+          <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="ratechecks.quote.save-hint-a">Type the</T> {market} <T k="ratechecks.quote.save-hint-b">price for a year, then Save. It records the quote and tells you if it beats what they pay.</T></p>
+        )}
         {/* Live: what this price saves them, before Save (once saved, the result box below says it). */}
         {!(outcome && parseMoney(premium) === Number(result?.allstate_premium ?? rc.allstate_premium)) && (
           <LiveDelta current={rc.annual_premium} price={parseMoney(premium)} />
@@ -904,8 +969,8 @@ function PriceDrop({ current, price, market }) {
       </div>
       {s && (
         <p className="mt-2 text-lg font-extrabold" style={{ color: tone }}>
-          {s.delta > 0 ? `Saves ${money(s.delta)}/yr.` : s.delta < 0 ? `Costs ${money(-s.delta)}/yr more.` : 'Same as they pay.'}
-          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> <T k="pages.ratecheckspage.55453b">That's</T> {Math.abs(s.pct)}% {s.delta > 0 ? 'less!' : 'more.'}</span>}
+          {s.delta > 0 ? <><T k="pages.ratecheckspage.6a29f0">{"Saves"}</T>{" "}{money(s.delta)}{"/yr."}</> : s.delta < 0 ? <><T k="pages.ratecheckspage.799b3e">{"Costs"}</T>{" "}{money(-s.delta)}{"/yr more."}</> : <T k="pages.ratecheckspage.a24792">{'Same as they pay.'}</T>}
+          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> <T k="pages.ratecheckspage.55453b">That's</T> {Math.abs(s.pct)}% {s.delta > 0 ? <T k="pages.ratecheckspage.fc3dda">{'less!'}</T> : <T k="pages.ratecheckspage.4860e4">{'more.'}</T>}</span>}
         </p>
       )}
     </div>
@@ -952,7 +1017,7 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
         <input value={premium} onChange={e => setPremium(sanitizeMoneyInput(e.target.value))} inputMode="decimal" className="w-28 rounded-md px-2 py-1.5" style={inputStyle} />
       </label>
       <button type="submit" disabled={!chosen || bind.isPending} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
-        {bind.isPending ? 'Saving…' : 'Mark Bound'}
+        {bind.isPending ? <T k="pages.ratecheckspage.56a228">{'Saving…'}</T> : <T k="pages.ratecheckspage.0e6e8c">{'Mark Bound'}</T>}
       </button>
       {bind.isError && <span className="text-sm text-red-600">{bind.error.message}</span>}
     </form>
@@ -970,7 +1035,7 @@ function PolicyDetails({ rc, warning, onRescan, rescanning }) {
           <div className="flex items-center gap-3">
             {onRescan && (
               <button onClick={onRescan} disabled={rescanning} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline disabled:opacity-50">
-                <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? 'animate-spin' : ''}`} /> {rescanning ? 'Scanning…' : 'Scan Again'}
+                <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? 'animate-spin' : ''}`} /> {rescanning ? <T k="pages.ratecheckspage.36c4a0">{'Scanning…'}</T> : <T k="pages.ratecheckspage.8fd265">{'Scan Again'}</T>}
               </button>
             )}
             <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
@@ -1047,7 +1112,7 @@ function PolicyForm({ rc, onDone }) {
   };
 
   const field = 'w-full rounded-md px-2 py-1.5 text-sm';
-  const label = (text) => <span style={{ color: 'var(--qs-subtle)' }}>{text}</span>;
+  const label = (text) => <span style={{ color: 'var(--qs-subtle)' }}><T>{text}</T></span>;
   return (
     <div className="rounded-lg p-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
       <div className="grid grid-cols-2 gap-3 text-sm">
@@ -1089,7 +1154,7 @@ function PolicyForm({ rc, onDone }) {
       </p>
       <div className="mt-3 flex items-center gap-2">
         <button onClick={save} disabled={update.isPending} className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
-          {update.isPending ? 'Saving…' : 'Save'}
+          {update.isPending ? <T k="pages.ratecheckspage.56a228">{'Saving…'}</T> : <T k="pages.ratecheckspage.efc007">{'Save'}</T>}
         </button>
         <button onClick={onDone} disabled={update.isPending} className="rounded-lg px-3 py-1.5 text-sm" style={inputStyle}><T k="pages.ratecheckspage.ea4788">Cancel</T></button>
         {update.isError && <span className="text-sm text-red-600">{update.error.message}</span>}

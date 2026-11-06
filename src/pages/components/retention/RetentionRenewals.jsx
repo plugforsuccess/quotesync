@@ -192,7 +192,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
 
           {dueBadge && (
             <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 700, ...dueBadge.style }}>
-              {dueBadge.label}
+              <T>{dueBadge.label}</T>
             </span>
           )}
 
@@ -211,7 +211,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
 
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, ...consentStyle }}>
             <Phone className="w-3 h-3" />
-            {policy.consent?.autodial_consent ? 'Consented' : 'No consent'}
+            {policy.consent?.autodial_consent ? <T k="pages.components.retention.retentionrenewals.9e6e15">{'Consented'}</T> : <T k="pages.components.retention.retentionrenewals.a22c7e">{'No consent'}</T>}
           </span>
 
           {policy.human_only && policy.human_only_reason && (
@@ -305,7 +305,7 @@ function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen 
       >
         <div className="flex items-center gap-2">
           <Icon size={18} style={{ color: sc?.color || 'var(--qs-dim)' }} />
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>{title}</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}><T>{title}</T></h3>
           <span style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 22, height: 22, borderRadius: '50%', fontSize: 11, fontWeight: 700,
@@ -345,7 +345,7 @@ function StatCard({ label, value, color }) {
   const c = STAT_COLORS[color] || STAT_COLORS.blue;
   return (
     <div style={{ borderRadius: 8, border: `1px solid ${c.border}`, padding: 16, background: c.bg }}>
-      <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--qs-subtle)', marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--qs-subtle)', marginBottom: 4 }}><T>{label}</T></p>
       <p style={{ fontSize: 24, fontWeight: 700, color: c.text }}>{value}</p>
     </div>
   );

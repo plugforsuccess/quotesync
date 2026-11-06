@@ -132,7 +132,7 @@ const AgencyLeadsPage = () => {
         {/* Header */}
         <div className="dark-header rounded-xl mb-8">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>
-            {currentAgency.agencies?.name || 'Agency'} <T k="pages.agencyleadspage.aeaeae">Pipeline</T>
+            {currentAgency.agencies?.name || <T k="pages.agencyleadspage.5c47e2">{'Agency'}</T>} <T k="pages.agencyleadspage.aeaeae">Pipeline</T>
           </h1>
           <div className="flex items-center gap-4 mt-1">
             <p style={{ color: 'var(--qs-dim)' }}><T k="pages.agencyleadspage.1b3000">Manage and track your leads</T></p>
@@ -394,7 +394,7 @@ const AgencyLeadsPage = () => {
                             return cfg ? (
                               <span className={`ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                                {cfg.label}
+                                <T>{cfg.label}</T>
                               </span>
                             ) : null;
                           })()}

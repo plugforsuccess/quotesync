@@ -99,7 +99,7 @@ export default function LogServiceTaskButton({
       {done ? (
         <div>
           <div style={{ fontSize: 13, color: '#B07A0E', fontWeight: 600, padding: '6px 0' }}>
-            {onCall ? '✓ Handled on this call' : '✓ Queued to Service Batch'}
+            {onCall ? <T k="pages.components.retention.logservicetaskbutton.35b3c2">{'✓ Handled on this call'}</T> : <T k="pages.components.retention.logservicetaskbutton.a0eca1">{'✓ Queued to Service Batch'}</T>}
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
             <button type="button" onClick={() => setDone(false)} style={{
@@ -152,7 +152,7 @@ export default function LogServiceTaskButton({
                 </select>
               </label>
             )}
-            <label style={{ ...lbl, gridColumn: '1 / -1' }}>{onCall ? 'What Was Handled' : "What's Needed"}
+            <label style={{ ...lbl, gridColumn: '1 / -1' }}>{onCall ? <T k="pages.components.retention.logservicetaskbutton.990fd5">{'What Was Handled'}</T> : <T k="pages.components.retention.logservicetaskbutton.aa1c6c">{"What's Needed"}</T>}
               <input value={title} onChange={e => setTitle(e.target.value)} style={input}
                 placeholder={onCall ? 'e.g. Updated EFT to new account' : 'e.g. Customer to email new mortgagee letter'} />
             </label>
@@ -175,12 +175,12 @@ export default function LogServiceTaskButton({
             color: canSubmit ? '#fff' : 'var(--qs-muted)',
             fontSize: 13, fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
           }}>
-            {create.isPending ? 'Saving…' : onCall ? 'Mark Handled on Call' : 'Queue For Batch'}
+            {create.isPending ? <T k="pages.components.retention.logservicetaskbutton.56a228">{'Saving…'}</T> : onCall ? <T k="pages.components.retention.logservicetaskbutton.c4e7f5">{'Mark Handled on Call'}</T> : <T k="pages.components.retention.logservicetaskbutton.f22df3">{'Queue For Batch'}</T>}
           </button>
           {create.isError && (
             <div style={{ marginTop: 8, fontSize: 12, color: '#F87171', background: 'rgba(239,68,68,0.08)',
               border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 10px' }}>
-              <T k="pages.components.retention.logservicetaskbutton.da1a84">Couldn't save:</T> {create.error?.message || 'please try again'}
+              <T k="pages.components.retention.logservicetaskbutton.da1a84">Couldn't save:</T> {create.error?.message || <T k="pages.components.retention.logservicetaskbutton.68edec">{'please try again'}</T>}
             </div>
           )}
         </>

@@ -951,10 +951,10 @@ export default function SaveWizardPage() {
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
                       <span className="relative z-10 text-white font-black text-lg">
                         {isSubmitting
-                          ? 'Submitting...'
+                          ? <T k="pages.savewizardpage.46a1a6">{'Submitting...'}</T>
                           : isContactStep
-                            ? 'Get My Free Quote'
-                            : 'Continue'
+                            ? <T k="pages.savewizardpage.7cff6d">{'Get My Free Quote'}</T>
+                            : <T k="pages.savewizardpage.2e0262">{'Continue'}</T>
                         }
                       </span>
                       {!isSubmitting && (
@@ -988,7 +988,7 @@ export default function SaveWizardPage() {
               <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
                 <div className="flex items-center gap-2 text-white/80 text-sm">
                   <img src="/logos/allstate-logo.svg" alt="Allstate" className="h-5 opacity-80" onError={(e) => { e.target.style.display = 'none'; }} />
-                  <span className="font-semibold"><T k="pages.savewizardpage.82e3d4">Licensed</T> {funnelAgency?.licensed_states?.[0] || 'GA'} <T k="pages.savewizardpage.744605">Agent</T></span>
+                  <span className="font-semibold"><T k="pages.savewizardpage.82e3d4">Licensed</T> {funnelAgency?.licensed_states?.[0] || <T k="pages.savewizardpage.b840eb">{'GA'}</T>} <T k="pages.savewizardpage.744605">Agent</T></span>
                 </div>
                 <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
                 <span className="text-white/70 text-sm font-medium"><T k="pages.savewizardpage.873cf9">500+ Quotes Delivered</T></span>

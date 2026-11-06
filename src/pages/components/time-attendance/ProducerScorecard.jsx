@@ -54,7 +54,7 @@ function MetricRow({ label, target, actual, unit = '', inverse = false, fmt }) {
 
   return (
     <tr className="hover:bg-qs-elevated transition-colors">
-      <td className="px-4 py-3 text-sm text-qs-bright font-medium">{label}</td>
+      <td className="px-4 py-3 text-sm text-qs-bright font-medium"><T>{label}</T></td>
       <td className="px-4 py-3 text-sm text-qs-subtle">{targetDisplay}</td>
       <td className={`px-4 py-3 text-sm font-semibold ${met ? 'text-emerald-400' : 'text-red-400'}`}>
         {display}
@@ -106,7 +106,7 @@ export default function ProducerScorecard({
       <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${gradeConfig.bg} ${gradeConfig.border}`}>
         <div>
           <h3 className="text-lg font-semibold text-qs-bright"><T k="pages.components.timeattendance.producerscorecard.6ca23e">Producer Performance Grade</T></h3>
-          <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
+          <p className={`text-sm ${gradeConfig.color}`}><T>{gradeConfig.desc}</T></p>
           {employeeName && <p className="text-xs text-qs-subtle mt-1">{employeeName}</p>}
           <p className="text-xs text-qs-muted mt-0.5">
             <T k="pages.components.timeattendance.producerscorecard.4094ea">Composite: 60% monthly production · 40% weekly call activity</T>

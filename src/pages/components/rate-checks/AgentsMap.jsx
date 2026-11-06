@@ -174,7 +174,7 @@ export default function AgentsMap({ agents, scans, zip, onPickZip, tall = false 
     <div className={`px-3 pb-3 ${tall ? 'flex h-full flex-col' : ''}`}>
       <div className="flex items-center justify-between gap-2 py-2">
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-          {totals.customers ? <><b style={{ color: 'var(--qs-bright)' }}>{totals.customers}</b> <T k="pages.components.ratechecks.agentsmap.4b80d0">customers in</T> <b style={{ color: 'var(--qs-bright)' }}>{totals.zips}</b> <T k="pages.components.ratechecks.agentsmap.10e458">ZIPs</T></> : 'No customers with a Georgia ZIP yet'}
+          {totals.customers ? <><b style={{ color: 'var(--qs-bright)' }}>{totals.customers}</b> <T k="pages.components.ratechecks.agentsmap.4b80d0">customers in</T> <b style={{ color: 'var(--qs-bright)' }}>{totals.zips}</b> <T k="pages.components.ratechecks.agentsmap.10e458">ZIPs</T></> : <T k="pages.components.ratechecks.agentsmap.ec749f">{'No customers with a Georgia ZIP yet'}</T>}
         </p>
         <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--qs-elevated)' }} role="group" aria-label="Map area">
           {[[FULL_VIEW, 'Georgia'], [ATL_VIEW, 'Metro Atlanta']].map(([v, l]) => (
@@ -234,15 +234,15 @@ export default function AgentsMap({ agents, scans, zip, onPickZip, tall = false 
 
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>
         {RANK.map(t => (
-          <span key={t} className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: TONES[t].fill }} />{TONES[t].label}</span>
+          <span key={t} className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: TONES[t].fill }} /><T>{TONES[t].label}</T></span>
         ))}
-        <span className="basis-full">{zoomed ? 'Drag to move · more towns appear as you zoom' : 'Pinch, scroll or double-tap to zoom'}</span>
+        <span className="basis-full">{zoomed ? <T k="pages.components.ratechecks.agentsmap.adc0b8">{'Drag to move · more towns appear as you zoom'}</T> : <T k="pages.components.ratechecks.agentsmap.f98e90">{'Pinch, scroll or double-tap to zoom'}</T>}</span>
       </div>
 
       {zip && (
         <div className="mt-2 flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-bright)' }}>
           <span className="min-w-0">
-            <b>{zip}</b>{picked ? ` · ${picked.city} · ${picked.customers} customer${picked.customers === 1 ? '' : 's'}, ${picked.agents.length} agent${picked.agents.length === 1 ? '' : 's'}` : ''}
+            <b>{zip}</b>{picked ? <>{" · "}{picked.city}{" · "}{picked.customers}{" "}<T k="pages.components.ratechecks.agentsmap.b39f00">{"customer"}</T>{picked.customers === 1 ? '' : 's'}{", "}{picked.agents.length}{" "}<T k="pages.components.ratechecks.agentsmap.0608c4">{"agent"}</T>{picked.agents.length === 1 ? '' : 's'}</> : ''}
           </span>
           <button type="button" onClick={() => onPickZip('')} className="min-h-[36px] shrink-0 font-semibold text-primary-600"><T k="pages.components.ratechecks.agentsmap.eb9202">Show All</T></button>
         </div>

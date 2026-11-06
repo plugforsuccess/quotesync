@@ -359,10 +359,10 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                       {matchSummary[key]}
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-dim)', marginTop: 2 }}>
-                      {cfg.label}
+                      <T>{cfg.label}</T>
                     </div>
                     <div style={{ fontSize: 10, color: 'var(--qs-muted)', marginTop: 3 }}>
-                      {cfg.note}
+                      <T>{cfg.note}</T>
                     </div>
                   </div>
                 ))}
@@ -431,7 +431,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                             border: `1px solid ${cfg.color}33`,
                             borderRadius: 4, padding: '2px 7px',
                           }}>
-                            {cfg.label}
+                            <T>{cfg.label}</T>
                           </span>
                         </div>
                       </div>

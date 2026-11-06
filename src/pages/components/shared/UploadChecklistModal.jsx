@@ -57,8 +57,8 @@ export default function UploadChecklistModal({
             <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--qs-bright)',
               margin: 0, marginBottom: 4 }}>
               {totalActionable > 0
-                ? `${totalActionable} Item${totalActionable > 1 ? 's' : ''} Need${totalActionable === 1 ? 's' : ''} Your Attention`
-                : 'All Reports Current ✓'
+                ? <>{totalActionable}{" "}<T k="pages.components.shared.uploadchecklistmodal.ecdda5">{"Item"}</T>{totalActionable > 1 ? 's' : ''}{" "}<T k="pages.components.shared.uploadchecklistmodal.ed4855">{"Need"}</T>{totalActionable === 1 ? 's' : ''}{" "}<T k="pages.components.shared.uploadchecklistmodal.dcf01f">{"Your Attention"}</T></>
+                : <T k="pages.components.shared.uploadchecklistmodal.af9af9">{'All Reports Current ✓'}</T>
               }
             </h2>
             <p style={{ fontSize: 12, color: 'var(--qs-muted)', margin: 0 }}>
@@ -144,7 +144,7 @@ export default function UploadChecklistModal({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600,
                         color: 'var(--qs-bright)' }}>
-                        {label} — {empName}
+                        <T>{label}</T> — {empName}
                       </div>
                       <p style={{ fontSize: 11, color: '#EF4444', margin: 0, marginTop: 1 }}>
                         <T k="pages.components.shared.uploadchecklistmodal.d03639">Due</T> {c.next_due_at ? new Date(c.next_due_at).toLocaleDateString() : '—'}
@@ -179,7 +179,7 @@ export default function UploadChecklistModal({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600,
                         color: 'var(--qs-bright)' }}>
-                        <T k="pages.components.shared.uploadchecklistmodal.38e42a">Commitment:</T> {c.description}
+                        <T k="pages.components.shared.uploadchecklistmodal.38e42a">Commitment:</T> <T>{c.description}</T>
                       </div>
                       <p style={{ fontSize: 11, color: '#EF4444', margin: 0, marginTop: 1 }}>
                         {empName} <T k="pages.components.shared.uploadchecklistmodal.2157f6">· Due</T> {c.due_date}
@@ -213,7 +213,7 @@ export default function UploadChecklistModal({
               color: totalActionable > 0 ? 'var(--qs-text)' : '#10B981',
             }}
           >
-            {totalActionable > 0 ? 'Dismiss' : 'All Clear — Close'}
+            {totalActionable > 0 ? <T k="pages.components.shared.uploadchecklistmodal.70afe9">{'Dismiss'}</T> : <T k="pages.components.shared.uploadchecklistmodal.d20e9e">{'All Clear — Close'}</T>}
           </button>
         </div>
       </div>
@@ -226,9 +226,9 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, ag
     <div style={{ marginBottom: 20 }}>
       <div style={{ marginBottom: 10 }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-text)',
-          margin: 0 }}>{title}</p>
+          margin: 0 }}><T>{title}</T></p>
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', margin: 0 }}>
-          {subtitle}
+          <T>{subtitle}</T>
         </p>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -264,7 +264,7 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, ag
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 600,
                     color: isActionable ? 'var(--qs-bright)' : 'var(--qs-dim)' }}>
-                    {item.label}
+                    <T>{item.label}</T>
                   </span>
                   {item.optional && (
                     <span style={{ fontSize: 9, color: 'var(--qs-muted)',
@@ -283,12 +283,12 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, ag
                 </div>
                 <p style={{ fontSize: 11, color: cfg.color, margin: 0,
                   marginTop: 1 }}>
-                  {item.description}
+                  <T>{item.description}</T>
                 </p>
                 {item.detail && (
                   <p style={{ fontSize: 10, color: 'var(--qs-muted)',
                     margin: 0, marginTop: 2 }}>
-                    {item.detail}
+                    <T>{item.detail}</T>
                   </p>
                 )}
               </div>
@@ -321,7 +321,7 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, ag
                 fontSize: 10, fontWeight: 700, flexShrink: 0,
                 color: cfg.color, minWidth: 52, textAlign: 'right',
               }}>
-                {cfg.label}
+                <T>{cfg.label}</T>
               </span>
             </div>
           );

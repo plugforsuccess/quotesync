@@ -52,9 +52,9 @@ const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+
 function KpiCard({ label, value, sub, color, urgent, urgentCount, onUrgentClick }) {
   return (
     <div className="card" style={{ position: "relative" }}>
-      <div style={{ fontSize: 12, color: "var(--qs-subtle)", fontWeight: 500, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, color: "var(--qs-subtle)", fontWeight: 500, marginBottom: 6 }}><T>{label}</T></div>
       <div style={{ fontSize: 22, fontWeight: 700, color: color || "var(--qs-text)" }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}><T>{sub}</T></div>}
       {urgent && urgentCount > 0 && (
         <div
           onClick={onUrgentClick}
@@ -359,7 +359,7 @@ export default function RetentionPage() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.retentionpage.1d263e">Retention Hub</T></h1>
           <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2 }}>
-            {currentAgency?.agencies?.name || 'Wiley-Wilson Agency'}
+            {currentAgency?.agencies?.name || <T k="pages.retentionpage.532198">{'Wiley-Wilson Agency'}</T>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -381,7 +381,7 @@ export default function RetentionPage() {
                 <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 <T k="pages.retentionpage.d18dcb">Running...</T>
               </>
-            ) : '▶ Run AI Renewals'}
+            ) : <T k="pages.retentionpage.2a2f62">{'▶ Run AI Renewals'}</T>}
           </button>
 
           {/* Run AI Cancels */}
@@ -402,7 +402,7 @@ export default function RetentionPage() {
                 <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 <T k="pages.retentionpage.d18dcb">Running...</T>
               </>
-            ) : '▶ Run AI Cancels'}
+            ) : <T k="pages.retentionpage.ffaafa">{'▶ Run AI Cancels'}</T>}
           </button>
 
           {/* Sync Queue */}
@@ -424,7 +424,7 @@ export default function RetentionPage() {
               className="w-3.5 h-3.5"
               style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}
             />
-            {syncing ? 'Syncing…' : 'Sync Queue'}
+            {syncing ? <T k="pages.retentionpage.221ca6">{'Syncing…'}</T> : <T k="pages.retentionpage.c692fa">{'Sync Queue'}</T>}
           </button>
 
           {lastSynced && (
@@ -443,7 +443,7 @@ export default function RetentionPage() {
           <span style={{ color: 'var(--qs-text)' }}>
             <strong style={{ color: 'var(--qs-info)' }}><T k="pages.retentionpage.908b9d">AI Renewals complete —</T></strong>{' '}
             {renewalQueueResult.queued} <T k="pages.retentionpage.b0c6ff">queued ·</T> {renewalQueueResult.blocked} <T k="pages.retentionpage.1cdbdf">blocked ·</T> {renewalQueueResult.skipped} <T k="pages.retentionpage.e52e27">skipped</T>
-            {renewalQueueResult.rate_limited ? ' · rate limited, retry later' : ''}
+            {renewalQueueResult.rate_limited ? <T k="pages.retentionpage.0261b9">{' · rate limited, retry later'}</T> : ''}
           </span>
           <button onClick={clearRenewalResult} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
         </div>
@@ -464,7 +464,7 @@ export default function RetentionPage() {
           <span style={{ color: 'var(--qs-text)' }}>
             <strong style={{ color: 'var(--qs-warning)' }}><T k="pages.retentionpage.6e9b40">AI Cancels complete —</T></strong>{' '}
             {cancelQueueResult.queued} <T k="pages.retentionpage.b0c6ff">queued ·</T> {cancelQueueResult.blocked} <T k="pages.retentionpage.1cdbdf">blocked ·</T> {cancelQueueResult.skipped} <T k="pages.retentionpage.e52e27">skipped</T>
-            {cancelQueueResult.rate_limited ? ' · rate limited, retry later' : ''}
+            {cancelQueueResult.rate_limited ? <T k="pages.retentionpage.0261b9">{' · rate limited, retry later'}</T> : ''}
           </span>
           <button onClick={clearCancelResult} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
         </div>
@@ -508,26 +508,26 @@ export default function RetentionPage() {
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
         {["health", "lift", "at_risk", "activity", "velocity", "integrity", "renewal_audit", "targeting", "offers", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "health"     ? "🩺 Health"         :
-             t === "lift"       ? "📈 Retention Lift" :
-             t === "at_risk"    ? "⚡ At Risk"        :
-             t === "activity"   ? "🗓️ Activity"       :
-             t === "velocity"   ? "🏎️ Velocity"       :
-             t === "integrity"  ? "🛡️ Integrity"      :
-             t === "renewal_audit" ? "📑 Renewal Audit" :
-             t === "targeting"  ? "🎯 Targeting"      :
-             t === "offers"     ? "💵 Offers"         :
-             t === "renewals"   ? "🔄 Renewals"       :
-             t === "ai_perf"    ? "📊 AI Performance" :
-             t === "resolved"   ? "✅ Outcomes"       :
-             t === "notes"      ? "🗒 Notes"          :
-             t === "attrition"  ? "📉 Terminations"   :
-             t === "reasons"    ? "🔍 Reasons"        :
-             t === "growth"     ? "📈 Net Growth"     :
-             t === "trends"     ? "📋 Trends"         :
-             t === "book"       ? "📖 Book Metrics"   :
-             t === "distribute" ? "⚖️ Distribute"     :
-                                  "⬆ Import"}
+            {t === "health"     ? <T k="pages.retentionpage.ee1a6e">{"🩺 Health"}</T>         :
+             t === "lift"       ? <T k="pages.retentionpage.6faa4f">{"📈 Retention Lift"}</T> :
+             t === "at_risk"    ? <T k="pages.retentionpage.e86c53">{"⚡ At Risk"}</T>        :
+             t === "activity"   ? <T k="pages.retentionpage.f205be">{"🗓️ Activity"}</T>       :
+             t === "velocity"   ? <T k="pages.retentionpage.949c6d">{"🏎️ Velocity"}</T>       :
+             t === "integrity"  ? <T k="pages.retentionpage.4607d5">{"🛡️ Integrity"}</T>      :
+             t === "renewal_audit" ? <T k="pages.retentionpage.614b5a">{"📑 Renewal Audit"}</T> :
+             t === "targeting"  ? <T k="pages.retentionpage.280723">{"🎯 Targeting"}</T>      :
+             t === "offers"     ? <T k="pages.retentionpage.c25ce2">{"💵 Offers"}</T>         :
+             t === "renewals"   ? <T k="pages.retentionpage.97aa6a">{"🔄 Renewals"}</T>       :
+             t === "ai_perf"    ? <T k="pages.retentionpage.b90118">{"📊 AI Performance"}</T> :
+             t === "resolved"   ? <T k="pages.retentionpage.a517f5">{"✅ Outcomes"}</T>       :
+             t === "notes"      ? <T k="pages.retentionpage.97f124">{"🗒 Notes"}</T>          :
+             t === "attrition"  ? <T k="pages.retentionpage.92531f">{"📉 Terminations"}</T>   :
+             t === "reasons"    ? <T k="pages.retentionpage.e426a4">{"🔍 Reasons"}</T>        :
+             t === "growth"     ? <T k="pages.retentionpage.05db1a">{"📈 Net Growth"}</T>     :
+             t === "trends"     ? <T k="pages.retentionpage.3fee45">{"📋 Trends"}</T>         :
+             t === "book"       ? <T k="pages.retentionpage.24b1e5">{"📖 Book Metrics"}</T>   :
+             t === "distribute" ? <T k="pages.retentionpage.5e6812">{"⚖️ Distribute"}</T>     :
+                                  <T k="pages.retentionpage.a44a5e">{"⬆ Import"}</T>}
           </button>
         ))}
       </div>

@@ -1,4 +1,5 @@
 // src/components/ThemeToggle.jsx
+import { T } from './SiteCopy';
 import { useState, useRef, useEffect } from 'react';
 import { useTheme, THEMES } from '../contexts/ThemeContext';
 
@@ -72,7 +73,7 @@ function PillToggle({ theme, setTheme }) {
             letterSpacing: '0.07em',
             padding: '6px 10px 4px',
           }}>
-            Theme
+            <T k="components.themetoggle.a797e3">Theme</T>
           </div>
           {THEMES.map(t => {
             const active = theme === t.key;
@@ -101,7 +102,7 @@ function PillToggle({ theme, setTheme }) {
                   color: active ? '#3B82F6' : 'var(--qs-text)',
                   flex: 1,
                 }}>
-                  {t.label}
+                  <T>{t.label}</T>
                 </span>
                 {active && (
                   <span style={{
@@ -132,7 +133,7 @@ function SwitchToggle({ theme, setTheme }) {
         letterSpacing: '0.07em',
         marginBottom: 6,
       }}>
-        Theme
+        <T k="components.themetoggle.a797e3">Theme</T>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {THEMES.map(t => (
@@ -159,7 +160,7 @@ function SwitchToggle({ theme, setTheme }) {
               fontWeight: theme === t.key ? 600 : 400,
               color: theme === t.key ? '#3B82F6' : 'var(--qs-dim)',
             }}>
-              {t.label}
+              <T>{t.label}</T>
             </span>
             {theme === t.key && (
               <span style={{

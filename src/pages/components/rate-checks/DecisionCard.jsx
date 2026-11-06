@@ -48,7 +48,7 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
       {action ? (
         <>
           {/* "(+PUP)": the umbrella isn't unlocked yet; the action below gets it there. */}
-          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}{/PUP/.test(decisionLabel(rc, household) || '') ? '' : ' (+PUP)'}</span>
+          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}{/PUP/.test(decisionLabel(rc, household) || '') ? '' : <T k="pages.components.ratechecks.decisioncard.980ffe">{' (+PUP)'}</T>}</span>
           <h3 className="mt-2 text-lg font-bold leading-snug"><T k={`rc.decision.${action.key}.headline`}>{action.headline}</T></h3>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k={`rc.decision.${action.key}.why`}>{action.why}</T></p>
         </>
@@ -61,7 +61,7 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
           {reasons.map((r, i) => (
             <li key={i} className="flex gap-2.5">
               <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--qs-subtle)' }} />
-              <span><span className="font-semibold">{r.name}</span>{r.detail && <span style={{ color: 'var(--qs-text)' }}> — {r.detail}</span>}</span>
+              <span><span className="font-semibold">{r.name}</span>{r.detail && <span style={{ color: 'var(--qs-text)' }}> — <T>{r.detail}</T></span>}</span>
             </li>
           ))}
         </ul>
@@ -69,7 +69,7 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
       {reasons.length === 0 && !action && notes.length === 0 && <p className="mt-1 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.decisioncard.33aaed">Nothing on the page needs special handling.</T></p>}
 
       {notes.map((r, i) => (
-        <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>
+        <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> <T>{r.detail}</T></p>
       ))}
 
       {!compact && questions.length > 0 && <StillToAsk rc={rc} questions={questions} />}
@@ -120,7 +120,7 @@ function Question({ q, a, onSave }) {
       <li>
         <button type="button" onClick={() => setOpen(true)} className="flex w-full items-start gap-2 text-left text-sm">
           <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-success)' }} aria-hidden="true" />
-          <span className="min-w-0"><span style={{ color: 'var(--qs-subtle)' }}>{label}:</span> <b>{shown}</b></span>
+          <span className="min-w-0"><span style={{ color: 'var(--qs-subtle)' }}><T>{label}</T>:</span> <b>{shown}</b></span>
         </button>
       </li>
     );
@@ -130,7 +130,7 @@ function Question({ q, a, onSave }) {
   const pick = (patch) => { onSave(patch); if (patch.answer !== 'yes') setOpen(false); };
   return (
     <li className="rounded-lg p-2.5" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
-      <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{label}</p>
+      <p className="text-sm" style={{ color: 'var(--qs-text)' }}><T>{label}</T></p>
       {isPayoff(q) ? (
         <select aria-label={label} value={a?.answer || ''} onChange={e => pick({ answer: e.target.value })}
           className="dark-select mt-2 w-full rounded-md px-2 py-2 text-sm" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
@@ -146,7 +146,7 @@ function Question({ q, a, onSave }) {
               <button key={v} type="button" aria-pressed={a?.answer === v} onClick={() => pick({ answer: v, ...(v === 'no' ? { details: null } : {}) })}
                 className={`h-9 flex-1 rounded-md text-sm font-semibold ${a?.answer === v ? 'bg-primary-600 text-white' : ''}`}
                 style={a?.answer === v ? undefined : { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
-                {v === 'yes' ? 'Yes' : 'No'}
+                {v === 'yes' ? <T k="pages.components.ratechecks.decisioncard.5397e0">{'Yes'}</T> : <T k="pages.components.ratechecks.decisioncard.816c52">{'No'}</T>}
               </button>
             ))}
           </div>
