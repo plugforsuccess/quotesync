@@ -37,7 +37,7 @@ const GREETINGS = [
 const SHOW_PAY_SCHEDULE = false;
 const SCHEDULE_ROWS = [
   ['auto_home', 'Auto + home or condo'], ['auto_renters', 'Auto + renters'], ['home_only', 'Home or condo only'],
-  ['auto_only', 'Auto only'], ['renters_only', 'Renters only'],
+  ['auto_only', 'Auto only'], ['renters_only', 'Renters only'], ['landlord', 'Landlord'],
 ];
 
 // Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".

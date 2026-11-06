@@ -73,7 +73,7 @@ const CARRIERS = [
   'Encompass', 'Foremost', 'Grange', 'The Hanover', 'Shelter', 'Homesite', 'Openly', 'Branch',
   'Bristol West', 'Infinity', 'Esurance', 'Other',
 ]
-const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial', 'other']
+const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'landlord', 'umbrella', 'commercial_auto', 'commercial', 'other']
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 // Texted-code verification of the consumer's number: off until the agency turns it on.
 //   supabase secrets set RATE_CHECK_OTP_REQUIRED=true
@@ -164,7 +164,7 @@ const EXTRACTION_TOOL = {
       carrier_raw: { type: 'string', description: 'Carrier / company name exactly as printed.' },
       policy_type: {
         type: 'string', enum: POLICY_TYPES,
-        description: 'commercial_auto = business vehicles (named insured is a business, or vehicles are commercial); commercial = BOP, general liability, commercial property or workers comp.',
+        description: 'landlord = a dwelling the insured rents out to others (landlord, dwelling fire, DP-1/DP-2/DP-3); home is the house they live in. commercial_auto = business vehicles (named insured is a business, or vehicles are commercial); commercial = BOP, general liability, commercial property or workers comp.',
       },
       policy_number: nullable('string', { description: 'Full policy number exactly as printed (all characters, including dashes/spaces). Null if not visible.' }),
       premium: nullable('number', { description: 'TOTAL premium for the whole policy term, in USD — not a monthly/installment amount and not a per-vehicle line.' }),
@@ -447,7 +447,7 @@ const CARRIER_AUTO_TERM_MONTHS: Record<string, 6 | 12> = {
   'Kemper': 6,
   'Chubb': 12,
 }
-const ANNUAL_LINES = new Set(['home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial'])
+const ANNUAL_LINES = new Set(['home', 'renters', 'condo', 'landlord', 'umbrella', 'commercial_auto', 'commercial'])
 
 // Whole months between two ISO dates, snapped to a 6- or 12-month term.
 function termFromDates(eff: string | null, exp: string | null): 6 | 12 | null {

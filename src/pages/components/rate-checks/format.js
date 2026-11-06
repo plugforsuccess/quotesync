@@ -136,7 +136,7 @@ export const CARRIERS = [
 export const carrierLabel = (rc) => (rc.carrier === 'Other' && rc.carrier_raw ? rc.carrier_raw : rc.carrier) || null;
 
 export const POLICY_TYPE_LABEL = {
-  auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', umbrella: 'Umbrella',
+  auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', landlord: 'Landlord', umbrella: 'Umbrella',
   commercial_auto: 'Commercial auto', commercial: 'Commercial', other: 'Other',
 };
 export const POLICY_TYPES = Object.keys(POLICY_TYPE_LABEL);

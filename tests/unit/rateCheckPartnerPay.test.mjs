@@ -12,7 +12,7 @@ const scan = (o) => ({ id: Math.random().toString(36).slice(2), promoter_id: 'p1
 const schedule = scheduleFrom([]);
 
 test('default schedule, overridden by saved rows', () => {
-  assert.deepEqual(schedule, { auto_home: 45, auto_renters: 15, home_only: 15, auto_only: 10, renters_only: 2, extra_line: 5 });
+  assert.deepEqual(schedule, { auto_home: 45, auto_renters: 15, home_only: 15, auto_only: 10, renters_only: 2, landlord: 10, extra_line: 5 });
   assert.equal(scheduleFrom([{ tier: 'auto_home', amount: '40.00' }, { tier: 'nope', amount: 9 }]).auto_home, 40);
 });
 
@@ -30,16 +30,29 @@ test('only read, non-duplicate, non-declined, non-Allstate, current pages qualif
 
 test('tiers by what the household sends', () => {
   const t = (...types) => householdTier(types.map(policy_type => scan({ policy_type })), NOW);
-  assert.deepEqual(t('auto', 'home'), { tier: 'auto_home', extras: 0, pages: 2 });
-  assert.deepEqual(t('auto', 'condo'), { tier: 'auto_home', extras: 0, pages: 2 });
-  assert.deepEqual(t('auto', 'renters'), { tier: 'auto_renters', extras: 0, pages: 2 });
-  assert.deepEqual(t('home'), { tier: 'home_only', extras: 0, pages: 1 });
-  assert.deepEqual(t('auto'), { tier: 'auto_only', extras: 0, pages: 1 });
-  assert.deepEqual(t('renters'), { tier: 'renters_only', extras: 0, pages: 1 });
+  assert.deepEqual(t('auto', 'home'), { tier: 'auto_home', landlord: false, extras: 0, pages: 2 });
+  assert.deepEqual(t('auto', 'condo'), { tier: 'auto_home', landlord: false, extras: 0, pages: 2 });
+  assert.deepEqual(t('auto', 'renters'), { tier: 'auto_renters', landlord: false, extras: 0, pages: 2 });
+  assert.deepEqual(t('home'), { tier: 'home_only', landlord: false, extras: 0, pages: 1 });
+  assert.deepEqual(t('auto'), { tier: 'auto_only', landlord: false, extras: 0, pages: 1 });
+  assert.deepEqual(t('renters'), { tier: 'renters_only', landlord: false, extras: 0, pages: 1 });
   // Umbrella and a second auto are extra lines, capped at 2.
-  assert.deepEqual(t('auto', 'home', 'umbrella'), { tier: 'auto_home', extras: 1, pages: 3 });
-  assert.deepEqual(t('auto', 'home', 'umbrella', 'auto', 'auto'), { tier: 'auto_home', extras: 2, pages: 5 });
-  assert.deepEqual(t('umbrella'), { tier: null, extras: 0, pages: 1 });
+  assert.deepEqual(t('auto', 'home', 'umbrella'), { tier: 'auto_home', landlord: false, extras: 1, pages: 3 });
+  assert.deepEqual(t('auto', 'home', 'umbrella', 'auto', 'auto'), { tier: 'auto_home', landlord: false, extras: 2, pages: 5 });
+  assert.deepEqual(t('umbrella'), { tier: null, landlord: false, extras: 0, pages: 1 });
+});
+
+test('landlord is counted on its own: its fee on top of the rest', () => {
+  const t = (...types) => householdTier(types.map(policy_type => scan({ policy_type })), NOW);
+  assert.deepEqual(t('landlord'), { tier: 'landlord', landlord: false, extras: 0, pages: 1 });
+  assert.deepEqual(t('auto', 'landlord'), { tier: 'auto_only', landlord: true, extras: 0, pages: 2 });
+  assert.deepEqual(t('auto', 'home', 'landlord', 'umbrella'), { tier: 'auto_home', landlord: true, extras: 1, pages: 4 });
+  const fee = (...types) => households(types.map(policy_type => scan({ policy_type, phone: '4045550100' })), schedule, NOW)[0].fee;
+  assert.equal(fee('landlord'), 10);
+  assert.equal(fee('auto', 'landlord'), 20); // auto only $10 + landlord $10
+  assert.equal(fee('auto', 'home', 'landlord'), 55); // $45 + $10
+  // A second landlord policy is an extra line.
+  assert.equal(fee('landlord', 'landlord'), 15);
 });
 
 test('one household per phone, address or policy number', () => {
