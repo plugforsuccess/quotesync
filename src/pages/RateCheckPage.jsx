@@ -1546,13 +1546,13 @@ function OfficeStatus({ className }) {
     const t = setInterval(() => setOpens(nextOpening()), 60000);
     return () => clearInterval(t);
   }, []);
-  // A small chip: the dot, then the state in bold with what it means underneath,
-  // so neither line wraps awkwardly on a phone.
+  // The dot, then the state in bold with what it means underneath (no box: it's a
+  // status, not a button), so neither line wraps awkwardly on a phone.
   return (
-    <div className={`inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.07] py-2 pl-3 pr-4 text-left ${className}`} aria-live="polite">
-      <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
+    <div className={`inline-flex items-start gap-2 text-left ${className}`} aria-live="polite">
+      <span className="relative mt-[5px] flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
         {!opens && <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />}
-        <span className={`relative h-3 w-3 rounded-full ring-2 ring-white/20 ${opens ? 'bg-amber-300' : 'bg-emerald-400'}`} />
+        <span className={`relative h-2.5 w-2.5 rounded-full ${opens ? 'bg-amber-300' : 'bg-emerald-400'}`} />
       </span>
       <span className="min-w-0 leading-tight">
         <span className="block whitespace-nowrap text-[15px] font-bold text-white">
