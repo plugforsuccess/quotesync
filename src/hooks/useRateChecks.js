@@ -566,6 +566,7 @@ export const useSavePromoter = () => {
         ...('notes' in fields ? { notes: fields.notes?.trim() || null } : {}),
         ...('mailing_address' in fields ? { mailing_address: fields.mailing_address?.replace(/\s+/g, ' ').trim() || null } : {}),
         ...('mailing_city_state_zip' in fields ? { mailing_city_state_zip: fields.mailing_city_state_zip?.replace(/\s+/g, ' ').trim() || null } : {}),
+        ...('recruited_by' in fields ? { recruited_by: fields.recruited_by || null } : {}),
         ...('monthly_cap' in fields ? { monthly_cap: fields.monthly_cap ? Math.max(1, Math.min(1000, Math.round(Number(fields.monthly_cap)))) : null } : {}),
       };
       const q = id
@@ -579,6 +580,36 @@ export const useSavePromoter = () => {
   });
 };
 
+// The team: who can recruit partners (each has a "Become a Partner" link code) and
+// their names, for "Recruited by" and the partner floor. Separate from useAgencyTeam
+// so the partner screens don't depend on the team page's query.
+export const useRecruiters = (agencyId) =>
+  useQuery({
+    queryKey: ['partner_recruiters', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agency_memberships')
+        .select('user_id, agency_role, status, recruit_code, profiles(full_name, email)')
+        .eq('agency_id', agencyId)
+        .eq('status', 'active');
+      if (error) throw error;
+      return (data || []).map(m => ({ userId: m.user_id, role: m.agency_role, code: m.recruit_code, name: m.profiles?.full_name || m.profiles?.email || 'Team member' }));
+    },
+    enabled: !!agencyId,
+  });
+
+// The agency's floors (producer_floor_settings): partners_floor and the rest.
+export const useFloorSettings = (agencyId) =>
+  useQuery({
+    queryKey: ['producer_floor_settings', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('producer_floor_settings').select('*').eq('agency_id', agencyId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!agencyId,
+  });
+
 // People who asked to become partners from the Drivers Ed page, newest first (open ones only).
 export const usePartnerApplications = (agencyId) =>
   useQuery({
@@ -586,7 +617,7 @@ export const usePartnerApplications = (agencyId) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rate_check_partner_applications')
-        .select('id, first_name, last_name, phone, email, is_customer, audience, source, status, created_at')
+        .select('id, first_name, last_name, phone, email, is_customer, audience, source, status, created_at, recruited_by')
         .eq('agency_id', agencyId)
         .eq('status', 'new')
         .order('created_at', { ascending: false })

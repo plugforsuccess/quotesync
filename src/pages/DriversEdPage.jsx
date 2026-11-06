@@ -3,7 +3,7 @@
 // teen course, hidden for now: SHOW_JOSHUAS_LAW), plus the referral partner program (aimed at customers taking the course for
 // their discount, with an apply form), in the consumer site's look — royal-blue hero with the shared nav, white
 // cards, deep-blue headings, the fluorescent green as the accent. No black.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { rateCheckStart } from '../lib/rateCheckStart';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight, Loader2, Share2, PenLine, BadgeDollarSign } from 'lucide-react';
@@ -107,7 +107,18 @@ const input = 'mt-1.5 block w-full rounded-xl border border-slate-300 bg-white p
 
 // The referral partner program: why (you're already taking the course for the discount —
 // your friends are probably overpaying too), how, and a short application.
+// A producer's recruit link (/courses?by=CODE#partners): remembered for the visit, sent
+// with the application so the partner is credited to that producer.
+function recruitCode() {
+  try {
+    const by = new URLSearchParams(window.location.search).get('by');
+    if (by && /^[A-Za-z0-9]{6,12}$/.test(by)) sessionStorage.setItem('partner_recruit_code', by.toUpperCase());
+    return sessionStorage.getItem('partner_recruit_code');
+  } catch { return null; }
+}
+
 function PartnerProgram() {
+  const [recruit] = useState(recruitCode);
   const [f, setF] = useState({ first: '', last: '', phone: '', email: '', allstate: '', agent: '', audience: '' });
   const [state, setState] = useState({ status: 'idle', error: '' });
   const set = (k) => (e) => setF(v => ({ ...v, [k]: k === 'phone' ? formatPhone(e.target.value) : e.target.value }));
@@ -120,7 +131,7 @@ function PartnerProgram() {
       const res = await fetch(PARTNER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
-        body: JSON.stringify({ mode: 'apply', first_name: f.first.trim(), last_name: f.last.trim(), phone: phoneDigits(f.phone), email: f.email.trim(), is_customer: f.allstate === 'no' ? 'no' : f.allstate === 'yes' ? (f.agent || 'allstate_unsure') : null, audience: f.audience || null, source: 'drivers_ed' }),
+        body: JSON.stringify({ mode: 'apply', first_name: f.first.trim(), last_name: f.last.trim(), phone: phoneDigits(f.phone), email: f.email.trim(), is_customer: f.allstate === 'no' ? 'no' : f.allstate === 'yes' ? (f.agent || 'allstate_unsure') : null, audience: f.audience || null, source: recruit ? 'recruit_link' : 'drivers_ed', recruit_code: recruit || null }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Try again.');
@@ -209,6 +220,12 @@ function PartnerProgram() {
 }
 
 export default function GeorgiaDriverEducationPage() {
+  // A recruit link lands on #partners: take them to the application.
+  useEffect(() => {
+    if (window.location.hash !== '#partners') return undefined;
+    const t = setTimeout(() => document.getElementById('partners')?.scrollIntoView({ block: 'start' }), 100);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <div className="min-h-screen bg-white">
       <title>Georgia Driver Education &amp; Insurance Discounts | Cam Wiley Agency</title>

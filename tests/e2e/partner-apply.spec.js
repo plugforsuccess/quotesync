@@ -27,3 +27,19 @@ test('apply to be a referral partner from Drivers Ed', async ({ page }) => {
   expect(posts).toHaveLength(1);
   expect(posts[0]).toMatchObject({ mode: 'apply', first_name: 'Dana', phone: '4045551212', is_customer: 'allstate_unsure', audience: 'Coworkers', source: 'drivers_ed' });
 });
+
+test("a producer's recruit link opens the application and credits the producer", async ({ page }) => {
+  const posts = [];
+  await page.route('**/rest/v1/**', r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.route('**/functions/v1/rate-check-partner', async (route) => {
+    posts.push(route.request().postDataJSON());
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ applied: true }) });
+  });
+  await page.goto('/courses?by=AB12CD34#partners');
+  await expect(page.getByRole('heading', { name: /Get paid to share the savings/ })).toBeInViewport();
+  await page.getByLabel('First name').fill('Dana');
+  await page.getByLabel('Mobile number').fill('4045551212');
+  await page.getByRole('button', { name: 'Apply to be a partner' }).click();
+  await expect(page.getByText('Thanks, Dana!')).toBeVisible();
+  expect(posts[0]).toMatchObject({ mode: 'apply', recruit_code: 'AB12CD34', source: 'recruit_link' });
+});
