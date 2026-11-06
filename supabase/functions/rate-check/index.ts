@@ -314,6 +314,7 @@ const CLASSIFY_TOOL = {
     properties: {
       policy_type: { type: 'string', enum: CLASSIFY_TYPES, description: 'auto = personal auto; home = homeowners (HO-3/HO-5, dwelling); condo = condo unit owners (HO-6); renters = renters/tenants (HO-4); landlord = rental dwelling (DP-1/DP-3); umbrella = personal umbrella/excess liability; motorcycle; boat = boat or watercraft; other = another insurance policy; not_a_policy = not an insurance declarations page or policy document.' },
       confidence: { type: 'string', enum: ['high', 'low'], description: 'high only if the page clearly shows the policy type.' },
+      zip: { type: ['string', 'null'], description: "The 5-digit ZIP code of the named insured's mailing address (or the insured property), if shown. Null if not shown." },
     },
     required: ['policy_type', 'confidence'],
   },
@@ -332,7 +333,7 @@ async function classifyPolicy(apiKey: string, base64: string, mediaType: string)
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model, max_tokens: 200, tools: [CLASSIFY_TOOL], tool_choice: toolChoice,
-          messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: 'What kind of insurance policy is this? Answer with the policy_type tool.' }] }],
+          messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: 'What kind of insurance policy is this, and what is the insured\'s ZIP code? Answer with the policy_type tool.' }] }],
         }),
       })
     } finally { clearTimeout(timer) }
@@ -344,7 +345,8 @@ async function classifyPolicy(apiKey: string, base64: string, mediaType: string)
   const json = await res.json()
   const input = (json.content || []).find((c: any) => c.type === 'tool_use')?.input || {}
   const type = CLASSIFY_TYPES.includes(input.policy_type) ? input.policy_type : null
-  return { policy_type: type, confidence: input.confidence === 'high' ? 'high' : 'low' }
+  const zip = /^\d{5}$/.test(String(input.zip || '').slice(0, 5)) ? String(input.zip).slice(0, 5) : null
+  return { policy_type: type, confidence: input.confidence === 'high' ? 'high' : 'low', zip }
 }
 
 async function extractDecPage(apiKey: string, base64: string, mediaType: string) {
@@ -941,7 +943,7 @@ Deno.serve(async (req) => {
 
   // ── Validate ──
   const phone = String(body.phone || '').replace(/\D/g, '').replace(/^1(\d{10})$/, '$1')
-  const zip = String(body.zip || '').trim()
+  let zip = String(body.zip || '').trim()
   const mediaType = String(body.media_type || '').toLowerCase()
   const imageBase64 = typeof body.image_base64 === 'string'
     ? body.image_base64.replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '')
@@ -953,13 +955,13 @@ Deno.serve(async (req) => {
   if (phone.length !== 10) errors.push('phone must be a 10-digit US number')
   // The form requires an email; the function only checks the shape (an older form may not send one).
   if (email && !EMAIL_RE.test(email)) errors.push('email is not valid')
-  // ZIP is optional for staff uploads (an emailed dec page may not need it typed in).
-  if (staff ? (zip && !/^\d{5}$/.test(zip)) : !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
+  // ZIP is optional: when it isn't typed, it's taken from the address on the policy.
+  if (zip && !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
   // The text-message box is optional: a time means they checked it; none means they left it unchecked.
   if (!staff && body.consent_given_at && Number.isNaN(Date.parse(body.consent_given_at))) {
     errors.push('consent_given_at is not a valid time')
   }
-  if (!staff && !['own', 'rent', 'family', 'retirement'].includes(String(body.housing_situation || ''))) errors.push('housing_situation is required')
+  // Where they live is no longer asked; the policy type says it (home/condo = own, renters = rent).
   if (!MEDIA_TYPES[mediaType]) errors.push('media_type not allowed')
   if (!imageBase64) errors.push('image_base64 is required')
   else if (base64DecodedSize(imageBase64) > MAX_IMAGE_BYTES) errors.push('image exceeds 10 MB')
@@ -968,6 +970,7 @@ Deno.serve(async (req) => {
   }
 
   const firstName = cleanText(body.first_name, 80)
+  const lastName = cleanText(body.last_name, 80)
   // Where they live (asked on the form; optional on staff uploads). Drives rules and the lead.
   const HOUSING = ['own', 'rent', 'family', 'retirement']
   const housing = HOUSING.includes(String(body.housing_situation || '')) ? String(body.housing_situation) : null
@@ -1014,6 +1017,18 @@ Deno.serve(async (req) => {
       .gte('verified_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       .limit(1)
     if (!verified?.length) return jsonResponse({ error: 'Verify your mobile number first.', code: 'phone_unverified' }, 403, corsHeaders)
+    if (email) {
+      const { data: emailOk } = await supabase
+        .from('rate_check_otps')
+        .select('id')
+        .eq('channel', 'email')
+        .eq('email', email)
+        .eq('session_id', sessionId)
+        .not('verified_at', 'is', null)
+        .gte('verified_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .limit(1)
+      if (!emailOk?.length) return jsonResponse({ error: 'Verify your email first.', code: 'email_unverified' }, 403, corsHeaders)
+    }
   }
   const landingPage = staff ? 'agent_upload' : cleanText(body.landing_page, 512)
   // Who gets credit: the producer who sent the link, or the staff member uploading.
@@ -1045,6 +1060,7 @@ Deno.serve(async (req) => {
       .insert({
         agency_id: agencyId,
         session_id: sessionId,
+        last_name: lastName,
         first_name: firstName,
         phone,
         email,
@@ -1089,6 +1105,14 @@ Deno.serve(async (req) => {
 
     // ── 3. Extract ──
     const { flat, extractError } = await extractAndStore(supabase, anthropicKey, rateCheckId, agencyId, imageBase64, mediaType)
+
+    // No ZIP typed (the form no longer asks when the policy has an address): take it
+    // from the insured address on the policy.
+    if (!zip && flat?.insured_address) {
+      const found = String(flat.insured_address).match(/\b(\d{5})(?:-\d{4})?\b/g)
+      const z = found?.length ? found[found.length - 1].slice(0, 5) : null
+      if (z) { zip = z; await supabase.from('rate_checks').update({ zip }).eq('id', rateCheckId) }
+    }
 
     // ── 3b. Same policy sent twice → one card ──
     const duplicate = flat ? await findDuplicate(supabase, rateCheckId, agencyId, phone, flat) : null
@@ -1152,6 +1176,7 @@ Deno.serve(async (req) => {
           .from('leads')
           .update({
             ...(firstName ? { first_name: firstName } : {}),
+            ...(lastName ? { last_name: lastName } : {}),
             ...(phone ? { phone } : {}),
             ...(email ? { email } : {}),
             ...(zip ? { zip } : {}),
@@ -1174,6 +1199,7 @@ Deno.serve(async (req) => {
             state: 'GA',
             zip: zip || null,
             first_name: firstName,
+            last_name: lastName,
             phone,
             email,
             ...consent,

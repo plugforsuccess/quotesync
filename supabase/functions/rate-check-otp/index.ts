@@ -5,6 +5,8 @@
 // before rate-check accepts their dec page:
 //   { mode: 'send',   phone, session_id }        → texts a 6-digit code (10 minutes)
 //   { mode: 'verify', phone, session_id, code }  → { verified: true } and marks the row
+//   Add channel: 'email' with email (instead of phone) to send / check a code by email
+//   (Resend: RESEND_API_KEY, RATE_CHECK_EMAIL_FROM).
 // Codes are stored hashed in rate_check_otps; rate-check looks for a verified row
 // for the same phone + session before it stores an upload.
 //
@@ -57,6 +59,22 @@ function sixDigits(): string {
   return String(n[0] % 1_000_000).padStart(6, '0')
 }
 
+async function sendEmail(to: string, code: string): Promise<{ ok: boolean; error?: string }> {
+  const key = Deno.env.get('RESEND_API_KEY')
+  if (!key) return { ok: false, error: 'Email is not configured' }
+  const from = Deno.env.get('RATE_CHECK_EMAIL_FROM') || Deno.env.get('DD_EMAIL_FROM') || 'Cam Wiley Agency <noreply@insuredbycam.com>'
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from, to: [to], subject: `${code} is your Cam Wiley Agency code`,
+      text: `Your Cam Wiley Agency code is ${code}. It expires in 10 minutes.\n\nIf you didn't ask for this, you can ignore this email.`,
+    }),
+  })
+  if (!res.ok) return { ok: false, error: `Resend ${res.status}: ${(await res.text()).slice(0, 200)}` }
+  return { ok: true }
+}
+
 async function sendSMS(to: string, body: string): Promise<{ ok: boolean; error?: string }> {
   const sid = Deno.env.get('TWILIO_ACCOUNT_SID'), token = Deno.env.get('TWILIO_AUTH_TOKEN'), from = Deno.env.get('TWILIO_PHONE_NUMBER')
   if (!sid || !token || !from) return { ok: false, error: 'Twilio is not configured' }
@@ -84,45 +102,59 @@ Deno.serve(async (req) => {
   let body: any
   try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400, cors) }
 
+  const channel = body?.channel === 'email' ? 'email' : 'sms'
   const phone = String(body?.phone || '').replace(/\D/g, '').replace(/^1(\d{10})$/, '$1')
+  const email = String(body?.email || '').trim().toLowerCase().slice(0, 160)
   const sessionId = typeof body?.session_id === 'string' ? body.session_id.slice(0, 64) : ''
-  if (phone.length !== 10) return json({ error: 'Enter a 10-digit US mobile number.' }, 400, cors)
+  if (channel === 'sms' && phone.length !== 10) return json({ error: 'Enter a 10-digit US mobile number.' }, 400, cors)
+  if (channel === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: 'Enter a valid email address.' }, 400, cors)
+  // The code is tied to the number or the email it went to.
+  const target = channel === 'email' ? email : phone
+  const match = (q: any) => (channel === 'email' ? q.eq('channel', 'email').eq('email', email) : q.eq('phone', phone).eq('channel', 'sms'))
   if (!sessionId) return json({ error: 'session_id is required' }, 400, cors)
   const now = Date.now()
 
   if (body.mode === 'send') {
     if (!(await checkRateLimit(supabase, `otp_send_ip:${clientIp}`, SEND_PER_IP, 60))) return json({ error: 'Too many codes requested. Wait a minute and try again.' }, 429, cors)
-    if (!(await checkRateLimit(supabase, `otp_send_phone:${phone}`, SEND_PER_PHONE, 600))) return json({ error: 'We already texted that number a few times. Wait 10 minutes and try again.' }, 429, cors)
+    if (!(await checkRateLimit(supabase, `otp_send_${channel}:${target}`, SEND_PER_PHONE, 600))) {
+      return json({ error: channel === 'email' ? 'We already emailed that address a few times. Wait 10 minutes and try again.' : 'We already texted that number a few times. Wait 10 minutes and try again.' }, 429, cors)
+    }
 
     const code = sixDigits()
     const { error: insErr } = await supabase.from('rate_check_otps').insert({
-      phone, session_id: sessionId, code_hash: await sha256Hex(`${phone}:${sessionId}:${code}`),
+      channel, phone: channel === 'sms' ? phone : null, email: channel === 'email' ? email : null,
+      session_id: sessionId, code_hash: await sha256Hex(`${target}:${sessionId}:${code}`),
       expires_at: new Date(now + CODE_TTL_SECONDS * 1000).toISOString(),
       ip_address: clientIp !== 'unknown' ? clientIp : null,
     })
     if (insErr) { console.error('[RATE_CHECK_OTP] insert failed:', insErr.message); return json({ error: 'Something went wrong. Please try again.' }, 500, cors) }
 
-    const sms = await sendSMS(`+1${phone}`, `Your insuredbycam code is ${code}. It expires in 10 minutes.`)
-    if (!sms.ok) { console.error('[RATE_CHECK_OTP] sms failed:', sms.error); return json({ error: 'We couldn’t text that number. Check it and try again.' }, 502, cors) }
+    const out = channel === 'email'
+      ? await sendEmail(email, code)
+      : await sendSMS(`+1${phone}`, `Your Cam Wiley Agency code is ${code}. It expires in 10 minutes.`)
+    if (!out.ok) {
+      console.error(`[RATE_CHECK_OTP] ${channel} failed:`, out.error)
+      return json({ error: channel === 'email' ? 'We couldn’t email that address. Check it and try again.' : 'We couldn’t text that number. Check it and try again.' }, 502, cors)
+    }
     return json({ sent: true, expires_in: CODE_TTL_SECONDS }, 200, cors)
   }
 
   if (body.mode === 'verify') {
     if (!(await checkRateLimit(supabase, `otp_verify_ip:${clientIp}`, VERIFY_PER_IP, 60))) return json({ error: 'Too many tries. Wait a minute and try again.' }, 429, cors)
     const code = String(body.code || '').replace(/\D/g, '')
-    if (code.length !== 6) return json({ error: 'Enter the 6-digit code from the text.' }, 400, cors)
+    if (code.length !== 6) return json({ error: channel === 'email' ? 'Enter the 6-digit code from the email.' : 'Enter the 6-digit code from the text.' }, 400, cors)
 
-    const { data: rows } = await supabase.from('rate_check_otps')
-      .select('id, code_hash, attempts, expires_at')
-      .eq('phone', phone).eq('session_id', sessionId).is('verified_at', null)
+    const { data: rows } = await match(supabase.from('rate_check_otps')
+      .select('id, code_hash, attempts, expires_at'))
+      .eq('session_id', sessionId).is('verified_at', null)
       .order('created_at', { ascending: false }).limit(1)
     const row = rows?.[0]
     if (!row || Date.parse(row.expires_at) < now) return json({ error: 'That code has expired. Send a new one.' }, 400, cors)
     if (row.attempts >= MAX_ATTEMPTS) return json({ error: 'Too many wrong tries. Send a new code.' }, 429, cors)
 
-    if (row.code_hash !== await sha256Hex(`${phone}:${sessionId}:${code}`)) {
+    if (row.code_hash !== await sha256Hex(`${target}:${sessionId}:${code}`)) {
       await supabase.from('rate_check_otps').update({ attempts: row.attempts + 1 }).eq('id', row.id)
-      return json({ error: row.attempts + 1 >= MAX_ATTEMPTS ? 'Too many wrong tries. Send a new code.' : 'That code isn’t right. Check the text and try again.' }, 400, cors)
+      return json({ error: row.attempts + 1 >= MAX_ATTEMPTS ? 'Too many wrong tries. Send a new code.' : (channel === 'email' ? 'That code isn’t right. Check the email and try again.' : 'That code isn’t right. Check the text and try again.') }, 400, cors)
     }
     await supabase.from('rate_check_otps').update({ verified_at: new Date(now).toISOString() }).eq('id', row.id)
     return json({ verified: true }, 200, cors)

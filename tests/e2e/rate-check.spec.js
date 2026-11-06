@@ -54,19 +54,23 @@ async function fillContact(page) {
     const body = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body.mode === 'send' ? { sent: true } : { verified: true }) });
   });
-  await page.getByLabel('First name').fill('Keisha');
-  await page.getByLabel('Mobile number').fill('4045551212');
-  await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
-  // Only when the build has VITE_RATE_CHECK_OTP=true.
-  const textMe = page.getByRole('button', { name: 'Text me a code' });
-  if (await textMe.isVisible()) {
-    await textMe.click();
-    await page.getByLabel(/Enter the 6-digit code/).fill('123456');
-    await expect(page.getByRole('status')).toHaveText(/Number verified/);
+  await page.getByLabel('First Name').fill('Keisha');
+  await page.getByLabel('Last Name').fill('Example');
+  await page.getByLabel('Mobile Number').fill('4045551212');
+  await expect(page.getByLabel('Mobile Number')).toHaveValue('(404) 555-1212');
+  await page.getByLabel('Email', { exact: true }).fill('keisha@example.com');
+  // Codes only when the build turns them on (VITE_RATE_CHECK_OTP / _EMAIL_OTP): Verify → pop-up → code.
+  for (const field of ['Mobile Number', 'Email']) {
+    const verify = page.locator('div.relative').filter({ has: page.getByLabel(field, { exact: true }) }).getByRole('button', { name: 'Verify' });
+    if (await verify.isVisible()) {
+      await verify.click();
+      await page.getByLabel('6-digit code').fill('123456');
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+    }
   }
-  await page.getByLabel('Email').fill('keisha@example.com');
-  await page.getByLabel('ZIP code').fill('30094');
-  await page.getByLabel('Where do you live?').selectOption('own');
+  // ZIP is asked only when no policy shows one.
+  const zip = page.getByLabel('ZIP Code');
+  if (await zip.isVisible()) await zip.fill('30094');
 }
 
 // Two one-time prompts can appear in the flow: "Only one policy?" on Continue and
@@ -90,6 +94,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
 
   let posted = null;
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     posted = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
@@ -138,7 +143,6 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   expect(posted.phone).toBe('4045551212');
   expect(posted.zip).toBe('30094');
   expect(posted.email).toBe('keisha@example.com');
-  expect(posted.housing_situation).toBe('own');
   expect(posted.consent_version).toBe('ratecheck-v2');
   expect(posted.sms_consent).toBe('opted_in');
   expect(Date.parse(posted.consent_given_at)).not.toBeNaN();
@@ -164,6 +168,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   const posts = [];
   let throttledOnce = false;
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     if (posts.length === 1 && !throttledOnce) {
       throttledOnce = true; // the page should wait and retry this one
       return route.fulfill({ status: 429, contentType: 'application/json', body: '{"error":"Rate limit exceeded"}' });
@@ -257,6 +262,7 @@ test('a policy with several pages goes up as one PDF, and asks about more pages'
   });
   const posts = [];
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     posts.push(route.request().postDataJSON());
     await route.fulfill({ status: 200, contentType: 'application/json',
       body: JSON.stringify({ status: 'received', rate_check_id: 't1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 1560 }) });
@@ -307,6 +313,7 @@ test('a downloaded PDF counts its own pages and goes up whole', async ({ page },
   fs.writeFileSync(file, await doc.save());
   const posts = [];
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     posts.push(route.request().postDataJSON());
     await route.fulfill({ status: 200, contentType: 'application/json',
       body: JSON.stringify({ status: 'received', rate_check_id: 't1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 1560 }) });
@@ -344,6 +351,7 @@ async function partnerLinkUpload(page, testInfo, lookup) {
   fs.writeFileSync(photo, noisePng(900, 1200));
   const posts = [];
   await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' }); // the add-time type check
     const body = route.request().postDataJSON();
     if (body.mode === 'invite_lookup') return lookup(route);
     posts.push(body);

@@ -22,7 +22,7 @@ import {
   AlertTriangle, BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
-import { checkPolicyType, preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
+import { checkPolicyType, sendEmailOtp, verifyEmailOtp, emailFix, preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import { nextOpening } from '../lib/businessHours';
 import { DrawnCheck, CountUp, NextTimeline, CamCard, ShareLine } from './components/rate-checks/DoneExtras';
@@ -50,7 +50,8 @@ const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: '
 
 // Texted-code verification of the mobile number: off while the agency tests; set
 // VITE_RATE_CHECK_OTP=true (and RATE_CHECK_OTP_REQUIRED on the function) to turn it on.
-const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
+const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true'; // code by text (needs a Twilio number)
+const EMAIL_OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_EMAIL_OTP === 'true'; // code by email
 // The licensed agent shown on the page (same headshot as the homepage). Two GA
 // licenses: Cam's individual resident license goes under his headshot (the card
 // names him); the agency's resident license goes in the footer next to the agency name.
@@ -124,6 +125,7 @@ export default function RateCheckPage() {
   const [wanted, setWantedState] = useState(() => readJSON(WANTED_KEY));
   const setWanted = (list) => { setWantedState(list); writeJSON(WANTED_KEY, list); };
   const kindsRef = useRef(readJSON(KINDS_KEY) || {});
+  const policyZipRef = useRef('');
   const checkTypeRef = useRef(() => {});
   const rememberKind = (id, kind) => { if (!kind) return; kindsRef.current = { ...kindsRef.current, [id]: kind }; writeJSON(KINDS_KEY, kindsRef.current); };
   const groupKind = useRef(null);
@@ -140,12 +142,12 @@ export default function RateCheckPage() {
   const [textNudge, setTextNudge] = useState(false);
   const textNudgedRef = useRef(false);
   const [grouping, setGrouping] = useState(null); // File[]
-  const [fields, setFields] = useState({ firstName: '', phone: '', email: '', zip: '', housing: '' });
+  const [fields, setFields] = useState({ firstName: '', lastName: '', phone: '', email: '', zip: '', housing: '' });
   // Text-message verification of the mobile number. The verified number is kept for
   // the tab session so a reload (or a second policy) doesn't ask again.
-  const [otp, setOtp] = useState({ status: 'idle', code: '', error: '', sentAt: 0 }); // idle | sending | sent | verifying
   const [verifiedPhone, setVerifiedPhone] = useState(() => { try { return sessionStorage.getItem('rc_verified_phone') || ''; } catch { return ''; } });
-  const [, tick] = useState(0);
+  const [verifiedEmail, setVerifiedEmail] = useState(() => { try { return sessionStorage.getItem('rc_verified_email') || ''; } catch { return ''; } });
+  const [codeFor, setCodeFor] = useState(null); // 'phone' | 'email': the code pop-up that's open
   const [consent, setConsent] = useState(false);
   const [referralConsent, setReferralConsent] = useState(false);
   const [given, setGiven] = useState(null); // { consentGivenAt, referralConsentGivenAt } once sent this session
@@ -203,7 +205,7 @@ export default function RateCheckPage() {
         });
       }
       const f = session?.fields || draft?.fields;
-      if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, phone: f.phone || prev.phone, email: f.email || prev.email, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
+      if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, lastName: f.lastName || prev.lastName, phone: f.phone || prev.phone, email: f.email || prev.email, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
       // Sent here from the /save wizard: fill in what they already told it.
       const handed = takeScannerPrefill();
       if (handed) setFields(prev => ({
@@ -215,7 +217,7 @@ export default function RateCheckPage() {
       if (restored.length) {
         updateItems(() => restored);
         restored.filter(i => i.status === 'draft').forEach(i => i.pages.forEach(pg => checkQuality(pg.id, pg.file)));
-        restored.filter(i => i.status === 'draft' && i.kind).forEach(checkTypeRef.current);
+        restored.filter(i => i.status === 'draft').forEach(checkTypeRef.current);
       }
       setReady(true);
     })();
@@ -275,8 +277,8 @@ export default function RateCheckPage() {
       try {
         const prepared = await preparePolicy(it.pages.map(pg => pg.file));
         const data = await submitWithRetry(() => submitRateCheck({
-          prepared, firstName: f.firstName, phone: f.phone.replace(/\D/g, ''), email: f.email, zip: f.zip,
-          housingSituation: f.housing, consentGivenAt: grant.consentGivenAt,
+          prepared, firstName: f.firstName, lastName: f.lastName, phone: f.phone.replace(/\D/g, ''), email: f.email.trim(),
+          zip: f.zip || policyZipRef.current || '', housingSituation: f.housing, consentGivenAt: grant.consentGivenAt,
           referralConsentGivenAt: grant.referralConsentGivenAt,
           // Always the link's code: the server credits it (or ignores an expired one), so a failed lookup never loses the credit.
           inviteCode: inviteCode || null,
@@ -298,7 +300,7 @@ export default function RateCheckPage() {
     if (kind) policies = policies.map(pol => { rememberKind(pol.id, kind); return { ...pol, kind }; });
     updateItems(list => [...list, ...policies]);
     policies.forEach(pol => { saveDraftPages(pol); pol.pages.forEach(pg => checkQuality(pg.id, pg.file)); });
-    if (kind) policies.forEach(checkType);
+    policies.forEach(checkType);
     if (step === 'results') setStep('policies');
   };
 
@@ -307,10 +309,10 @@ export default function RateCheckPage() {
   const patchItem = (id, change) => updateItems(list => list.map(i => (i.id === id ? { ...i, ...change } : i)));
   const checkType = (pol) => {
     const file = pol.pages?.[0]?.file;
-    if (!pol.kind || !file) return;
+    if (!file) return;
     patchItem(pol.id, { typeCheck: { state: 'checking' } });
     checkPolicyType(file).then(r => {
-      const typeCheck = { state: 'done', read: r?.policy_type || null, confidence: r?.confidence || 'low' };
+      const typeCheck = { state: 'done', read: r?.policy_type || null, confidence: r?.confidence || 'low', zip: r?.zip || null };
       const cur = itemsRef.current.find(i => i.id === pol.id);
       if (!cur) return;
       const wrong = mismatchOf({ ...cur, typeCheck });
@@ -455,8 +457,8 @@ export default function RateCheckPage() {
     itemsRef.current.forEach(i => i.preview && URL.revokeObjectURL(i.preview));
     await clearDraft();
     clearSession();
-    updateItems(() => []); setFields({ firstName: '', phone: '', email: '', zip: '', housing: '' });
-    setOtp({ status: 'idle', code: '', error: '', sentAt: 0 });
+    updateItems(() => []); setFields({ firstName: '', lastName: '', phone: '', email: '', zip: '', housing: '' });
+    setCodeFor(null);
     setConsent(false); setReferralConsent(false); setGiven(null); setResumed(false); setStep('policies');
     setWanted(null); kindsRef.current = {}; writeJSON(KINDS_KEY, null);
     window.scrollTo(0, 0);
@@ -466,44 +468,32 @@ export default function RateCheckPage() {
   const sent = items.filter(i => i.status !== 'draft');
   const phoneDigits = fields.phone.replace(/\D/g, '');
   const phoneVerified = !OTP_ENABLED || (phoneDigits.length === 10 && verifiedPhone === phoneDigits);
+  const emailClean = fields.email.trim().toLowerCase();
+  const emailVerified = !EMAIL_OTP_ENABLED || (isEmail(emailClean) && verifiedEmail === emailClean);
+  // ZIP comes from the policy (read as it's added); only asked when no policy shows one.
+  const policyZip = drafts.map(d => d.typeCheck?.zip).find(z => /^\d{5}$/.test(z || '')) || '';
+  policyZipRef.current = policyZip;
+  const needZip = !policyZip && !drafts.some(d => d.typeCheck?.state === 'checking');
   const missing = [
     !fields.firstName.trim() && 'your first name',
+    !fields.lastName.trim() && 'your last name',
     phoneDigits.length !== 10 && 'your mobile number',
+    phoneDigits.length === 10 && !phoneVerified && 'a verified mobile number',
     !isEmail(fields.email) && 'your email',
-    !/^\d{5}$/.test(fields.zip) && 'your ZIP code',
-    !fields.housing && 'where you live',
-    phoneDigits.length === 10 && !phoneVerified && 'the code we texted you',
+    isEmail(fields.email) && !emailVerified && 'a verified email',
+    needZip && !/^\d{5}$/.test(fields.zip) && 'your ZIP code',
   ].filter(Boolean);
   const contactOk = missing.length === 0;
 
-  // ── Mobile number verification ──
-  const requestCode = async () => {
-    setOtp(o => ({ ...o, status: 'sending', error: '' }));
-    try {
-      await sendOtp(phoneDigits);
-      setOtp({ status: 'sent', code: '', error: '', sentAt: Date.now() });
-    } catch (err) {
-      setOtp(o => ({ ...o, status: o.sentAt ? 'sent' : 'idle', error: err.message }));
-    }
+  // ── Verified by code: the pop-up reports back here ──
+  const onCodeVerified = (kind) => {
+    const key = kind === 'phone' ? 'rc_verified_phone' : 'rc_verified_email';
+    const value = kind === 'phone' ? phoneDigits : emailClean;
+    try { sessionStorage.setItem(key, value); } catch { /* private mode */ }
+    if (kind === 'phone') setVerifiedPhone(value); else setVerifiedEmail(value);
+    setCodeFor(null);
+    navigator.vibrate?.(8);
   };
-  const checkCode = async (code) => {
-    setOtp(o => ({ ...o, status: 'verifying', error: '' }));
-    try {
-      await verifyOtp(phoneDigits, code);
-      try { sessionStorage.setItem('rc_verified_phone', phoneDigits); } catch { /* private mode */ }
-      setVerifiedPhone(phoneDigits);
-      setOtp({ status: 'idle', code: '', error: '', sentAt: 0 });
-      navigator.vibrate?.(8);
-    } catch (err) {
-      setOtp(o => ({ ...o, status: 'sent', error: err.message }));
-    }
-  };
-  const canResend = Date.now() - otp.sentAt > 30_000;
-  useEffect(() => {
-    if (otp.status !== 'sent' || canResend) return undefined;
-    const t = setTimeout(() => tick(n => n + 1), 30_500 - (Date.now() - otp.sentAt));
-    return () => clearTimeout(t);
-  }, [otp.status, otp.sentAt, canResend]);
 
   const submit = (over = {}) => {
     const textOk = over.consent ?? consent;
@@ -676,7 +666,7 @@ export default function RateCheckPage() {
       ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}.`
       : '';
     return (
-      <Shell step={3} bar={
+      <Shell step={3} noFooter bar={
         <ActionBar hint={canSend ? null : hint}>
           <button type="button" onClick={send} disabled={!canSend} className={primaryBtn}>
             {drafts.length > 1 ? `Check My ${drafts.length} Policies` : 'Check My Rate'}
@@ -711,67 +701,44 @@ export default function RateCheckPage() {
           </div>
         )}
         <form onSubmit={(e) => { e.preventDefault(); send(); }} className="mt-6 space-y-4" noValidate>
-          <Field label="First name" htmlFor="rc-first">
-            <input id="rc-first" autoComplete="given-name" value={fields.firstName} maxLength={60} required
-              onChange={e => setFields(f => ({ ...f, firstName: e.target.value }))} className={inputCls} />
-          </Field>
-          <Field label="Mobile number" htmlFor="rc-phone">
-            <input id="rc-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" required
-              value={fields.phone} className={inputCls}
-              onChange={e => { setFields(f => ({ ...f, phone: formatPhoneInput(e.target.value) })); setOtp({ status: 'idle', code: '', error: '', sentAt: 0 }); }} />
-          </Field>
-          {OTP_ENABLED && phoneDigits.length === 10 && (phoneVerified ? (
-            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700" role="status">
-              <Check className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.number-verified">Number verified</T>
-            </p>
-          ) : !otp.sentAt ? (
-            <div>
-              <button type="button" onClick={requestCode} disabled={otp.status === 'sending'}
-                className="qb qb-outline qb-md w-full">
-                {otp.status === 'sending' ? 'Sending…' : <T k="rc.flow.text-me-a-code">Text Me a Code</T>}
-              </button>
-              <p className="mt-1.5 px-1 text-xs text-slate-500"><T k="rc.flow.we-text-a-6digit-code">We text a 6-digit code to confirm it's you.</T></p>
-              {otp.error && <p className="mt-1 px-1 text-sm text-red-600" role="alert">{otp.error}</p>}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <label htmlFor="rc-code" className="block text-sm font-semibold text-slate-800"><T k="rc.flow.enter-the-6digit-code-we">Enter the 6-Digit Code We Texted to</T>{' '}{fields.phone}</label>
-              <div className="mt-2 flex gap-2">
-                <input id="rc-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="123456" value={otp.code}
-                  className={`${inputCls} tracking-[0.25em]`}
-                  onChange={e => {
-                    const code = e.target.value.replace(/\D/g, '').slice(0, 6);
-                    setOtp(o => ({ ...o, code, error: '' }));
-                    if (code.length === 6) checkCode(code);
-                  }} />
-                <button type="button" onClick={() => checkCode(otp.code)} disabled={otp.code.length !== 6 || otp.status === 'verifying'}
-                  className="qb qb-blue qb-md shrink-0">
-                  {otp.status === 'verifying' ? 'Checking…' : <T k="rc.flow.verify">Verify</T>}
-                </button>
-              </div>
-              {otp.error && <p className="mt-2 text-sm text-red-600" role="alert">{otp.error}</p>}
-              <button type="button" onClick={requestCode} disabled={!canResend || otp.status === 'sending'}
-                className="mt-2 text-xs font-semibold text-slate-600 underline disabled:no-underline disabled:opacity-60">
-                {otp.status === 'sending' ? 'Sending…' : canResend ? <T k="rc.flow.send-a-new-code">Send a New Code</T> : <T k="rc.flow.send-a-new-code-30">Send a New Code in 30 Seconds</T>}
-              </button>
-            </div>
-          ))}
-          <Field label="Email" htmlFor="rc-email">
-            <input id="rc-email" type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" required
-              value={fields.email} onChange={e => setFields(f => ({ ...f, email: e.target.value }))} className={inputCls} />
-          </Field>
-          <div className="grid grid-cols-[7.5rem_1fr] gap-3">
-            <Field label="ZIP code" htmlFor="rc-zip">
-              <input id="rc-zip" inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="30094" required
-                value={fields.zip} onChange={e => setFields(f => ({ ...f, zip: e.target.value.replace(/\D/g, '').slice(0, 5) }))} className={inputCls} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={<T k="rc.contact.first">First Name</T>} htmlFor="rc-first">
+              <input id="rc-first" autoComplete="given-name" autoCapitalize="words" value={fields.firstName} maxLength={60} required
+                onChange={e => setFields(f => ({ ...f, firstName: cleanName(e.target.value) }))} className={inputCls} />
             </Field>
-            <Field label="Where do you live?" htmlFor="rc-housing">
-              <select id="rc-housing" value={fields.housing} required onChange={e => setFields(f => ({ ...f, housing: e.target.value }))} className={inputCls}>
-                <option value=""><T k="rc.flow.choose-one">Choose one</T></option>
-                {HOUSING_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+            <Field label={<T k="rc.contact.last">Last Name</T>} htmlFor="rc-last">
+              <input id="rc-last" autoComplete="family-name" autoCapitalize="words" value={fields.lastName} maxLength={60} required
+                onChange={e => setFields(f => ({ ...f, lastName: cleanName(e.target.value) }))} className={inputCls} />
             </Field>
           </div>
+          <Field label={<T k="rc.contact.mobile">Mobile Number</T>} htmlFor="rc-phone">
+            <VerifyField verified={OTP_ENABLED && phoneDigits.length === 10 && phoneVerified}
+              canVerify={OTP_ENABLED && phoneDigits.length === 10 && !phoneVerified} onVerify={() => setCodeFor('phone')}>
+              <input id="rc-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" required
+                value={fields.phone} className={`${inputCls} pr-28`}
+                onChange={e => setFields(f => ({ ...f, phone: formatPhoneInput(e.target.value) }))} />
+            </VerifyField>
+          </Field>
+          <Field label={<T k="rc.contact.email">Email</T>} htmlFor="rc-email">
+            <VerifyField verified={EMAIL_OTP_ENABLED && isEmail(emailClean) && emailVerified}
+              canVerify={EMAIL_OTP_ENABLED && isEmail(emailClean) && !emailVerified} onVerify={() => setCodeFor('email')}>
+              <input id="rc-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" placeholder="you@example.com" required
+                value={fields.email} className={`${inputCls} pr-28`}
+                onChange={e => setFields(f => ({ ...f, email: e.target.value.replace(/\s/g, '') }))} />
+            </VerifyField>
+            {emailFix(fields.email) && (
+              <button type="button" onClick={() => setFields(f => ({ ...f, email: emailFix(f.email) }))}
+                className="mt-1.5 px-1 text-left text-sm text-slate-600">
+                <T k="rc.contact.didyoumean">Did you mean</T> <span className="font-semibold text-blue-700 underline underline-offset-2">{emailFix(fields.email)}</span>?
+              </button>
+            )}
+          </Field>
+          {needZip && (
+            <Field label={<T k="rc.contact.zip">ZIP Code</T>} htmlFor="rc-zip">
+              <input id="rc-zip" inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="30094" required
+                value={fields.zip} onChange={e => setFields(f => ({ ...f, zip: e.target.value.replace(/\D/g, '').slice(0, 5) }))} className={`${inputCls} max-w-[9rem]`} />
+            </Field>
+          )}
 
           <fieldset className="pt-2">
             <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="rc.flow.optional">Optional</T></legend>
@@ -788,6 +755,12 @@ export default function RateCheckPage() {
           </p>
           <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
         </form>
+        {codeFor && (
+          <CodeSheet channel={codeFor} target={codeFor === 'phone' ? fields.phone : emailClean}
+            send={codeFor === 'phone' ? () => sendOtp(phoneDigits) : () => sendEmailOtp(emailClean)}
+            check={codeFor === 'phone' ? (c) => verifyOtp(phoneDigits, c) : (c) => verifyEmailOtp(emailClean, c)}
+            onVerified={() => onCodeVerified(codeFor)} onClose={() => setCodeFor(null)} />
+        )}
       </Shell>
     );
   }
@@ -1488,6 +1461,90 @@ function Choice({ checked, onChange, title, fine, children }) {
   );
 }
 
+// Names: letters, spaces, hyphens and apostrophes only (no digits or emoji pasted in).
+const cleanName = (v) => v.replace(/[^\p{L}\s'’.-]/gu, '').replace(/\s{2,}/g, ' ').slice(0, 60);
+
+// A field with a Verify button inside it (or a Verified badge once done).
+function VerifyField({ verified, canVerify, onVerify, children }) {
+  return (
+    <div className="relative">
+      {children}
+      {verified ? (
+        <span className="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-7 items-center gap-1 rounded-full bg-blue-50 px-2.5 text-xs font-bold text-blue-800">
+          <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" /> <T k="rc.code.verified">Verified</T>
+        </span>
+      ) : canVerify ? (
+        <button type="button" onClick={onVerify} className="absolute inset-y-0 right-1.5 my-auto h-9 rounded-lg bg-blue-700 px-3.5 text-sm font-bold text-white">
+          <T k="rc.code.verify">Verify</T>
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+// The code pop-up: sends the code when it opens, checks it as the 6th digit lands.
+function CodeSheet({ channel, target, send, check, onVerified, onClose }) {
+  const [code, setCode] = useState('');
+  const [state, setState] = useState('sending'); // sending | sent | checking
+  const [error, setError] = useState('');
+  const [sentAt, setSentAt] = useState(0);
+  const [, tick] = useState(0);
+  const input = useRef(null);
+  const doSend = useCallback(async () => {
+    setState('sending'); setError('');
+    try { await send(); setSentAt(Date.now()); setState('sent'); setTimeout(() => input.current?.focus(), 50); }
+    catch (err) { setError(err.message); setState('sent'); }
+  }, [send]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { doSend(); }, []);
+  const canResend = sentAt > 0 && Date.now() - sentAt > 30_000;
+  useEffect(() => {
+    if (!sentAt || canResend) return undefined;
+    const t = setTimeout(() => tick(n => n + 1), 30_500 - (Date.now() - sentAt));
+    return () => clearTimeout(t);
+  }, [sentAt, canResend]);
+  const verify = async (c) => {
+    setState('checking'); setError('');
+    try { await check(c); onVerified(); }
+    catch (err) { setError(err.message); setState('sent'); setCode(''); input.current?.focus(); }
+  };
+  const isPhone = channel === 'phone';
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F2D6B]/50 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="rc-code-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+            {isPhone ? <MessageSquare className="h-6 w-6" aria-hidden="true" /> : <Lock className="h-6 w-6" aria-hidden="true" />}
+          </span>
+          <button type="button" onClick={onClose} aria-label="Close" className="-mr-1 rounded-full p-1.5 text-slate-400"><X className="h-5 w-5" /></button>
+        </div>
+        <h2 id="rc-code-title" className="mt-3 text-xl font-extrabold tracking-tight text-slate-900">
+          {isPhone ? <T k="rc.code.title.phone">Enter the Code We Texted</T> : <T k="rc.code.title.email">Enter the Code We Emailed</T>}
+        </h2>
+        <p className="mt-1 text-[15px] text-slate-600">
+          {state === 'sending' ? <T k="rc.code.sending">Sending your code to</T> : <T k="rc.code.sent">We sent a 6-digit code to</T>}{' '}
+          <span className="font-semibold text-slate-900">{target}</span>.
+        </p>
+        <input ref={input} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="••••••" value={code}
+          aria-label="6-digit code" disabled={state === 'checking'}
+          className="mt-4 h-16 w-full rounded-2xl border-2 border-slate-300 bg-white text-center text-3xl font-bold tracking-[0.5em] text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          onChange={e => { const c = e.target.value.replace(/\D/g, '').slice(0, 6); setCode(c); setError(''); if (c.length === 6) verify(c); }} />
+        {error && <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>}
+        {state === 'checking' && <p className="mt-2 flex items-center gap-2 text-sm text-slate-600"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> <T k="rc.code.checking">Checking…</T></p>}
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <button type="button" onClick={onClose} className="font-semibold text-slate-600 underline underline-offset-4">
+            {isPhone ? <T k="rc.code.wrong.phone">Wrong Number?</T> : <T k="rc.code.wrong.email">Wrong Email?</T>}
+          </button>
+          <button type="button" onClick={doSend} disabled={!canResend || state === 'sending'} className="font-semibold text-blue-700 disabled:text-slate-400">
+            {canResend ? <T k="rc.code.resend">Send a New Code</T> : <T k="rc.code.resend-wait">New Code in 30 Seconds</T>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, htmlFor, children }) {
   return (
     <div>
@@ -1911,7 +1968,7 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
 const STEPS = ['Policies', 'Upload', 'Contact'];
 // `wide`: the landing page spreads out on desktop (two columns, wider grids); the
 // steps stay one narrow column, which reads better for forms.
-function Shell({ children, step, bar, center = false, wide = false }) {
+function Shell({ children, step, bar, center = false, wide = false, noFooter = false }) {
   const styles = <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}.rc-track{scrollbar-width:none}.rc-track::-webkit-scrollbar{display:none}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>;
   // The landing page is full width and draws its own header (see Landing).
   if (wide) {
@@ -1949,7 +2006,7 @@ function Shell({ children, step, bar, center = false, wide = false }) {
       <main key={step} className={`qc-step ${center
         ? 'mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-md flex-col justify-center px-4 py-6'
         : 'mx-auto max-w-md px-4 pt-6 pb-10'}`}>{children}</main>
-      <RateCheckFooter padForBar={!!bar} />
+      {noFooter ? (bar && <div className="h-40" aria-hidden="true" />) : <RateCheckFooter padForBar={!!bar} />}
       {bar}
     </div>
   );
