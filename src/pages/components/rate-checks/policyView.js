@@ -177,7 +177,7 @@ export function formatCoverage(raw, key, vehicles) {
 
 const NAMES = {
   bi: 'Bodily injury', bi_per_person: 'Bodily injury (per person)', bi_per_accident: 'Bodily injury (per accident)',
-  pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist PD', med_pay: 'Medical payments',
+  pd: 'Property damage', um_uim: 'Uninsured Motorist BI', umpd: 'Uninsured Motorist PD', med_pay: 'Medical payments',
   pip: 'Personal injury protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
   rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap Coverage', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
   custom_equipment: 'Custom equipment', sound_equipment: 'Sound equipment', glass: 'Glass',
@@ -193,8 +193,8 @@ export function coverageName(key) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// Allstate's coverage screen order: BI, PD, med pay, UM BI, UM PD (then comp, collision, add-ons).
-const AUTO_LIABILITY = ['pd', 'med_pay', 'pip', 'um_uim', 'umpd'];
+// Order on the sheet: BI, UM BI, PD, med pay, UM PD (then comp, collision, add-ons).
+const AUTO_LIABILITY = ['um_uim', 'pd', 'med_pay', 'pip', 'umpd'];
 const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside', 'glass'];
 const HOME_ORDER = ['dwelling', 'other_structures', 'personal_property', 'loss_of_use', 'liability', 'med_pay', 'deductible', 'wind_hail_deductible', 'hurricane_deductible'];
 
@@ -233,12 +233,9 @@ export function autoCoverageGroups(rc) {
     if (k === 'um_uim' && r?.note) r.note = r.note.replace(/^PD\s+deductible/i, 'Deductible');
     liability.push(r || { key: k, label: coverageName(k), value: 'None listed', muted: true });
   }
-  // Uninsured motorist PD always has a row, directly under uninsured motorist (no divider).
-  const um = liability.findIndex(r => r?.key === 'um_uim');
-  if (um >= 0) {
-    let pd = liability.findIndex(r => r?.key === 'umpd');
-    const row_ = pd >= 0 ? liability.splice(pd, 1)[0] : { key: 'umpd', label: coverageName('umpd'), value: null };
-    liability.splice(um + 1, 0, { ...row_, joined: true });
+  // Uninsured Motorist PD always has a row (after medical payments), when the policy has UM.
+  if (liability.some(r => r?.key === 'um_uim') && !liability.some(r => r?.key === 'umpd')) {
+    liability.push({ key: 'umpd', label: coverageName('umpd'), value: null });
   }
 
   const physical = [];

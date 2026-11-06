@@ -62,14 +62,13 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
   const [liab, every] = autoCoverageGroups(auto);
   assert.deepEqual(liab.rows.map(r => [r.label, r.value]), [
     ['Bodily injury', '$250k / $500k'],
+    ['Uninsured Motorist BI', '$250k / $500k / $100k'],
     ['Property damage', '$100,000'],
     ['Medical payments', 'None listed'],
-    ['Uninsured motorist', '$250k / $500k / $100k'],
-    ['Uninsured motorist PD', null], // always listed, right under UM
+    ['Uninsured Motorist PD', null], // always listed when there's UM
   ]);
-  assert.equal(liab.rows[4].joined, true);
   const withDed = autoCoverageGroups({ ...auto, coverages: { ...auto.coverages, um_uim: '250000/500000/100000 (PD Deductible $250)' } })[0];
-  assert.deepEqual([withDed.rows[3].value, withDed.rows[3].note], ['$250k / $500k / $100k', 'Deductible $250']);
+  assert.deepEqual([withDed.rows[1].value, withDed.rows[1].note], ['$250k / $500k / $100k', 'Deductible $250']);
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
   assert.deepEqual(vehicleCoverages(auto, 0), []);
