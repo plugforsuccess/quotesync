@@ -493,10 +493,14 @@ export default function RateChecksPage() {
               className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
               <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline"><T k="pages.ratecheckspage.d008bd">Upload Dec Page</T></span>
             </button>
-            <button onClick={() => setInviteOpen(true)}
-              className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
-              <Send className="h-4 w-4" aria-hidden="true" /> <T k="pages.ratecheckspage.176f56">Send a Link</T>
-            </button>
+            {/* Send a Link is hidden: it had producers text leads from their own numbers.
+                Quick Send (the agency's number) replaces it. */}
+            {SHOW_SEND_A_LINK && (
+              <button onClick={() => setInviteOpen(true)}
+                className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
+                <Send className="h-4 w-4" aria-hidden="true" /> <T k="pages.ratecheckspage.176f56">Send a Link</T>
+              </button>
+            )}
           </div>
         </div>
 
@@ -522,8 +526,8 @@ export default function RateChecksPage() {
                 <Clock className="h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
                 <span className="min-w-0 flex-1 font-medium">
                   {overdueOnly
-                    ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">Waiting 30+ min</T></>
-                    : <>{overdue} <T k="pages.ratecheckspage.f9362d">Waiting 30+ min For a Quote</T></>}
+                    ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">waiting 30+ minutes</T></>
+                    : <>{overdue} <T k="pages.ratecheckspage.f9362d">waiting 30+ minutes for a quote</T></>}
                 </span>
                 <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? <T k="pages.ratecheckspage.b3f854">{'Show All'}</T> : <T k="pages.ratecheckspage.d97d1e">{'Show'}</T>}</span>
               </button>
@@ -636,6 +640,8 @@ export default function RateChecksPage() {
 
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
+const SHOW_SEND_A_LINK = false;
+
 function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted }) {
   // Prices saved in this drawer, so the chips and goal header update before the list refetches.
   const [saved, setSaved] = useState({});
@@ -699,12 +705,13 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               <a href={`tel:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 font-semibold text-white">
                 <Phone className="h-4 w-4" /> <T k="pages.ratecheckspage.c3755e">Call</T> {formatPhone(rc.phone)}
               </a>
-              <a href={`sms:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
-                <MessageSquare className="h-4 w-4" /> <T k="pages.ratecheckspage.9dffbf">Text</T>
+              {/* On phones Text and Email are icon buttons so Call, Text, Email and copy fit on one row. */}
+              <a href={`sms:+1${rc.phone}`} aria-label="Text" title="Text" className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-medium sm:px-3" style={inputStyle}>
+                <MessageSquare className="h-4 w-4" /> <span className="hidden sm:inline"><T k="pages.ratecheckspage.9dffbf">Text</T></span>
               </a>
               {rc.email && (
-                <a href={`mailto:${rc.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
-                  <Mail className="h-4 w-4" /> <T k="pages.ratecheckspage.ce8ae9">Email</T>
+                <a href={`mailto:${rc.email}`} aria-label="Email" title="Email" className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-medium sm:px-3" style={inputStyle}>
+                  <Mail className="h-4 w-4" /> <span className="hidden sm:inline"><T k="pages.ratecheckspage.ce8ae9">Email</T></span>
                 </a>
               )}
               <CopyButton text={formatPhone(rc.phone)} label="Copy phone number" className="p-2" />
@@ -716,23 +723,6 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
             </div>
           )}
           <GoalHeader household={household} />
-        </div>
-
-        {/* Household, what to quote, the price — one swipe each; then the quote sheet and reference */}
-        <div className="pt-4">
-          {/* Slide 1: the household (when there's more than one policy) with the price right under it. Slide 2: what to quote. */}
-          <Carousel label="Quote this policy" slides={[
-            { key: 'price', label: multi ? 'Household and price' : 'Price', content: (
-              <div className="flex h-full flex-col gap-3">
-                {multi && <HouseholdCard rc={rc} household={household} onSelect={onSelect} />}
-                <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
-                {rc.upload_source === 'agent' && (
-                  <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.d03dfd">Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</T></p>
-                )}
-              </div>
-            ) },
-            { key: 'decision', label: 'What to Quote', content: <DecisionCard rc={rc} household={household} /> },
-          ]} />
         </div>
 
         <div className="space-y-6 p-5">
@@ -750,6 +740,23 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
           {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info"><T k="pages.ratecheckspage.75068f">Scanned again — check the details below.</T></Notice>}
           <PolicyDetails rc={rc} warning={!rc.extract_error ? warning : null} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
+        {/* After the quote sheet: household and price (where the Allstate price goes), then what to quote. */}
+        <div className="-mx-5">
+          {/* Slide 1: the household (when there's more than one policy) with the price right under it. Slide 2: what to quote. */}
+          <Carousel label="Quote this policy" slides={[
+            { key: 'price', label: multi ? 'Household and price' : 'Price', content: (
+              <div className="flex h-full flex-col gap-3">
+                {multi && <HouseholdCard rc={rc} household={household} onSelect={onSelect} />}
+                <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
+                {rc.upload_source === 'agent' && (
+                  <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.d03dfd">Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</T></p>
+                )}
+              </div>
+            ) },
+            { key: 'decision', label: 'What to Quote', content: <DecisionCard rc={rc} household={household} /> },
+          ]} />
+        </div>
+
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
           {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
