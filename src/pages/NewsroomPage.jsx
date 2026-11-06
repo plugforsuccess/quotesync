@@ -157,7 +157,7 @@ const NewsroomPage = () => {
   // Get categories from centralized config (with "All Stories" option)
   const categories = getCategoryOptions(true);
   const newest = stories.reduce((d, s) => (s.published_at && (!d || s.published_at > d) ? s.published_at : d), null);
-  const updated = newest ? new Date(newest).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const updated = newest ? new Date(newest).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
 
   return (
     <div className="min-h-screen bg-gray-50">

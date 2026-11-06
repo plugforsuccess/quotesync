@@ -19,7 +19,7 @@ const sectionStyle = {
 function fmtMonth(d) {
   if (!d) return '';
   const [y, m] = String(d).split('-');
-  return new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  return new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
 function Stat({ label, rate, sample, tone }) {

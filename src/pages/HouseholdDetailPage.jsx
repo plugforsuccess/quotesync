@@ -39,7 +39,7 @@ const fmtDate = d => {
   if (!d) return '—';
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
   const date = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
-  return isNaN(date.getTime()) ? d : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return isNaN(date.getTime()) ? d : date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 };
 
 // Small inline icon button to copy a value (e.g. an email) to the clipboard.
@@ -341,7 +341,7 @@ export default function HouseholdDetailPage() {
                   return (
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
                       background: overdue ? '#EF444422' : '#3B82F622', color: overdue ? '#FCA5A5' : '#60A5FA' }}>
-                      📅 {overdue ? 'Callback due' : 'Call back'} {new Date(r.callback_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      📅 {overdue ? 'Callback due' : 'Call back'} {new Date(r.callback_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </span>
                   );
                 })()}

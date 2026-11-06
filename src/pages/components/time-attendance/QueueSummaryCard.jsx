@@ -28,12 +28,12 @@ function getWorkdaysInRange(weekStart, count) {
 
 function formatDateShort(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }
 
 function formatWeekOfLabel(weekStart) {
   const d = new Date(weekStart + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }
 
 function abandonRateColor(rate, inbound) {

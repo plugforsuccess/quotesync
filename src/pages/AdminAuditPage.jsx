@@ -240,7 +240,7 @@ const AdminAuditPage = () => {
                               <div>
                                 <div className="font-medium text-gray-900">
                                   {new Date(log.created_at).toLocaleDateString('en-US', {
-                                    month: 'short',
+                                    month: 'long',
                                     day: 'numeric',
                                     year: 'numeric'
                                   })}

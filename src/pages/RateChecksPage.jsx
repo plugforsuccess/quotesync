@@ -683,7 +683,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               <WhoIsWho rcId={rc.id} partnerFirst={rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null} />
               {rc.resubmitted_at && (
                 <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                  <T k="pages.ratecheckspage.01fa31">Sent again</T> {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  <T k="pages.ratecheckspage.01fa31">Sent again</T> {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   {rc.resubmit_count > 1 ? ` · ${rc.resubmit_count} times` : ''}
                 </p>
               )}
@@ -823,7 +823,7 @@ function QuoteBox({ rc, onQuoted }) {
       {bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
           <div className="text-xl font-extrabold text-green-600"><T k="pages.ratecheckspage.79ec67">Bound with</T> {boundInfo.bound_carrier || 'Allstate'}{boundInfo.bound_premium != null ? ` at ${money(boundInfo.bound_premium)}/yr` : ''}</div>
-          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
+          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
           <ReviewAsk rc={rc} review={boundInfo.review} />
         </div>
       )}

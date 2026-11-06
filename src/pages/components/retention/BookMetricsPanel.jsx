@@ -25,7 +25,7 @@ function fmtPct(n) {
 function fmtMonth(d) {
   if (!d) return '—';
   const [y, m] = d.split('-');
-  return new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  return new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
 const REPORTS = {

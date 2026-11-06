@@ -223,7 +223,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
               disabled={isFuture}
               tabIndex={open ? 0 : -1}
               aria-pressed={inWeek}
-              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}${isHoliday ? ` (${holidayLabel})` : ''}${inWeek ? ' (selected week)' : ''}${isFuture ? ' (unavailable)' : ''}`}
+              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' })}${isHoliday ? ` (${holidayLabel})` : ''}${inWeek ? ' (selected week)' : ''}${isFuture ? ' (unavailable)' : ''}`}
               className={`
                 py-1.5 text-xs text-center transition-colors relative
                 ${isFuture

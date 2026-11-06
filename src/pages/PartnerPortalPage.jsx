@@ -199,7 +199,7 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <section className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <p className="text-sm text-slate-700">
           <span className="flex items-center gap-1.5 font-semibold text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.b6f43a">W-9 on file</T></span>
-          <T k="pages.partnerportalpage.71fed0">Signed</T> {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          <T k="pages.partnerportalpage.71fed0">Signed</T> {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
         <button type="button" onClick={() => setOpen(true)} className="min-h-[40px] shrink-0 text-sm font-semibold text-blue-700"><T k="pages.partnerportalpage.069330">Update</T></button>
       </section>

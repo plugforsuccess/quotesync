@@ -485,7 +485,7 @@ test('policy checks and who-is-who: expired, no cars, name from the policy, rela
   await chooser.setFiles(photo);
   // A deck: one question in front, the rest wait behind it.
   const deck = page.getByRole('region', { name: 'Questions about policy 1' });
-  await expect(deck.getByText(/This policy ended Mar 2025/)).toBeVisible();
+  await expect(deck.getByText(/This policy ended March 2025/)).toBeVisible();
   await expect(deck.getByText('1 of 3')).toBeVisible();
   await expect(page.getByText(/We don’t see any cars yet/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Answer the Question Above' })).toBeDisabled();

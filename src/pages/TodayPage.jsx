@@ -685,7 +685,7 @@ export default function TodayPage() {
               const cb = item.callback_at ? new Date(item.callback_at) : null;
               const overdue = cb && cb < new Date();
               const label = cb
-                ? `${overdue ? '📅 Callback due' : '📅 Call back'} ${cb.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+                ? `${overdue ? '📅 Callback due' : '📅 Call back'} ${cb.toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
                 : '📞 Left voicemail — awaiting callback';
               return (
                 <button
@@ -731,7 +731,7 @@ export default function TodayPage() {
             {promises.map(item => {
               const due = new Date(item.promise_date + 'T00:00:00');
               const overdue = due < new Date(new Date().toDateString());
-              const label = `${overdue ? '⚠ Promise overdue' : '📌 Pay by'} ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+              const label = `${overdue ? '⚠ Promise overdue' : '📌 Pay by'} ${due.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
               return (
                 <button
                   key={item.id}

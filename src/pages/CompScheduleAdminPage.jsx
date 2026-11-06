@@ -195,6 +195,6 @@ function ScheduleListTable({ schedules, expandedId, onToggleExpanded, onEdit, on
 function formatDate(isoDate) {
   if (!isoDate) return '—';
   return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
+    year: 'numeric', month: 'long', day: 'numeric',
   });
 }

@@ -22,7 +22,7 @@ function getWorkdaysInRange(weekStart, count) {
 
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }
 
 function cleanQueueName(name) {

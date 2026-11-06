@@ -1346,7 +1346,7 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, 
           </Prompt>
         ) },
         concerns.includes('expired') && { key: 'expired', tone: 'ask', el: (
-          <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> <span data-copy="fixed">{new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span></>}
+          <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> <span data-copy="fixed">{new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span></>}
             actions={<>
               <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.replace">Remove It</T></button>
               <button type="button" onClick={() => onConcernOk('expired')} className={promptSecondary}><T k="rc.check.current">It’s Current</T></button>

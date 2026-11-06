@@ -32,7 +32,7 @@ const OPT_OUT_CHANNEL_OPTIONS = [
 
 function formatDate(d) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 function getEmployeeName(employees, id) {

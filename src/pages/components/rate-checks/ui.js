@@ -19,7 +19,7 @@ export function formatPhone(p) {
 }
 
 export function formatDate(ts) {
-  return ts ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  return ts ? new Date(ts).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
 }
 
 // Can the competing agent's book be bought? (competitor_agents.book_ownership)

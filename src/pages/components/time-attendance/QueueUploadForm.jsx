@@ -61,7 +61,7 @@ function toLocalDateStr(date) {
 function formatDateShort(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 // ── Abandon Rate Styling ────────────────────────────────────────────────────────
@@ -375,7 +375,7 @@ export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
             {currentMonday === toMonday(new Date())
               ? 'Upload Status \u2014 This Week'
               : `Upload Status \u2014 Week of ${new Date(currentMonday + 'T00:00:00')
-                  .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                  .toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
             }
           </p>
           <div style={{ display: 'flex', gap: 6 }}>

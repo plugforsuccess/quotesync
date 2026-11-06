@@ -30,7 +30,7 @@ function localDay(d = new Date()) { return d.toLocaleDateString('en-CA'); }
 // relative tag alongside the date rather than replacing it.
 function dayParts(k) {
   const dateObj = new Date(k + 'T00:00:00');
-  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
   let rel;
   if (k === localDay()) rel = 'Today';
   else if (k === localDay(new Date(Date.now() - 86400000))) rel = 'Yesterday';

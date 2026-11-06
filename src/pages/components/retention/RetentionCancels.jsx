@@ -967,7 +967,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             </div>
             {event.callback_at && (
               <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 6 }}>
-                <T k="pages.components.retention.retentioncancels.83a3be">Current:</T> {new Date(event.callback_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                <T k="pages.components.retention.retentioncancels.83a3be">Current:</T> {new Date(event.callback_at).toLocaleString("en-US", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </div>
             )}
           </div>
@@ -2241,7 +2241,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             {event.callback_at && (
               <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 6 }}>
                 <T k="pages.components.retention.retentioncancels.83a3be">Current:</T> {new Date(event.callback_at).toLocaleString("en-US", {
-                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                  month: "long", day: "numeric", hour: "numeric", minute: "2-digit",
                 })}
               </div>
             )}

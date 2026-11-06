@@ -11,7 +11,7 @@ function fmt$(n) {
   return `${v < 0 ? '−' : ''}$${Math.abs(v).toLocaleString()}`;
 }
 function fmtDate(d) {
-  return d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+  return d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '—';
 }
 function diffColor(d) { return d < 0 ? '#34D399' : d > 0 ? '#FBBF24' : 'var(--qs-dim)'; }
 function signed(d) { return `${d > 0 ? '+' : d < 0 ? '−' : ''}${fmt$(Math.abs(d))}`; }

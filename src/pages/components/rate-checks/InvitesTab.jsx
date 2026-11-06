@@ -25,7 +25,7 @@ function short(ts) {
   const d = new Date(ts);
   const mins = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
   if (mins < 24 * 60) return ago(ts);
-  return d.toLocaleDateString('en-US', d.getFullYear() === new Date().getFullYear() ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', d.getFullYear() === new Date().getFullYear() ? { month: 'long', day: 'numeric' } : { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 const isExpired = (i) => new Date(i.expires_at) < new Date();
