@@ -18,7 +18,7 @@ import Dismissible from '../components/Dismissible';
 import BrandLogo from '../components/BrandLogo';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
-  AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
@@ -1722,10 +1722,11 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
                 <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
               </p>
               <StartCard onStart={onStart} onUpload={onUpload} onDropFiles={onDropFiles} />
-              <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-blue-100 lg:justify-start">
+              <ul className="mx-auto mt-5 grid w-fit grid-cols-2 gap-x-6 gap-y-2.5 text-sm text-blue-100 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-5 lg:mx-0 lg:justify-start">
                 <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
                 <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
                 <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
+                <Trust icon={BadgeCheck} k="rc.trust.free" label="Free, no obligation" />
               </ul>
             </div>
             <OwnerCard />
