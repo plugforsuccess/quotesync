@@ -126,3 +126,47 @@ test('log a household quote: per-policy term rates, saved as annual, then Quote 
   // The old path that changed the lead's status itself is not used.
   expect(writes.some(w => (w.table || '').includes('rate-check-outcome'))).toBe(false);
 });
+
+async function openClose(page, quotedRows) {
+  const writes = await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  await page.route(SB + '/rest/v1/rate_checks*', async (route) => {
+    const req = route.request(); const u = new URL(req.url());
+    if (req.method() === 'PATCH') { writes.push({ table: 'rate_checks', q: u.search, body: req.postDataJSON() }); return route.fulfill({ status: 204, body: '' }); }
+    if (u.searchParams.get('promoter_id')) return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    const one = (req.headers().accept || '').includes('vnd.pgrst.object');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(one ? quotedRows[0] : quotedRows) });
+  });
+  await page.route(SB + '/rest/v1/sales_quotes*', async (route) => {
+    const req = route.request();
+    if (req.method() === 'PATCH') { writes.push({ table: 'sales_quotes', q: new URL(req.url()).search, body: req.postDataJSON() }); return route.fulfill({ status: 200, contentType: 'application/json', body: '[{"id":"Q1"}]' }); }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.goto('/agency/leads/rate-checks');
+  await page.getByRole('button', { name: /^All/ }).first().click(); // already quoted: not under Needs Quote
+  await page.locator('li').filter({ hasText: 'Stephen' }).first().click();
+  await page.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Close/ }).click();
+  await expect(page.getByRole('heading', { name: 'Close It Out' })).toBeVisible();
+  return writes;
+}
+
+test('close: mark bound writes each policy bound with Allstate at its annual premium', async ({ page }) => {
+  const quotedRows = rows.map(r => ({ ...r, status: 'won', allstate_premium: r.policy_type === 'auto' ? 5900 : 2500 }));
+  const writes = await openClose(page, quotedRows);
+  await page.getByRole('button', { name: 'Bound', exact: true }).click();
+  await expect(page.getByLabel('Auto bound premium')).toHaveValue('2950'); // 6-month, from the saved quote
+  await page.getByLabel('Auto policy number').fill('804 123 456');
+  await page.getByRole('button', { name: /Mark Bound · 2 Policies/ }).click();
+  await expect(page.getByText(/Bound\. The lead is closed as Won/)).toBeVisible();
+  const bound = writes.filter(w => w.table === 'rate_checks' && w.body.status === 'bound');
+  expect(bound.map(w => [w.q, w.body.bound_carrier, w.body.bound_premium])).toEqual([['?id=eq.a1', 'Allstate', 5900], ['?id=eq.h1', 'Allstate', 2500]]);
+});
+
+test('close: mark lost closes the household quote with the reason', async ({ page }) => {
+  const quotedRows = rows.map(r => ({ ...r, status: 'lost', allstate_premium: 9000 }));
+  const writes = await openClose(page, quotedRows);
+  await page.getByRole('button', { name: 'Lost', exact: true }).click();
+  await page.getByRole('radio', { name: /Price/ }).click();
+  await page.getByRole('button', { name: 'Mark Lost' }).click();
+  await expect(page.getByText('Marked Lost. The lead is closed.')).toBeVisible();
+  expect(writes.find(w => w.table === 'sales_quotes').body).toMatchObject({ status: 'lost', lost_reason: 'price' });
+});

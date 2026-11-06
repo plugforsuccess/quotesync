@@ -100,3 +100,64 @@ export function useMarkLost() {
     onSuccess: (_d, v) => refresh(v.lead.id),
   });
 }
+
+// ── Sales workspace: Close ──────────────────────────────────────────────────
+const refreshAll = (qc, leadId) => {
+  qc.invalidateQueries({ queryKey: ['rate_checks'] });
+  qc.invalidateQueries({ queryKey: ['agency_leads'] });
+  qc.invalidateQueries({ queryKey: salesKey(leadId) });
+};
+
+/**
+ * Bound with Allstate: each policy written is marked bound on its rate check. The
+ * database turns that into the household's bind (items, bundle type, first auto
+ * renewal) and closes the lead as Won. Policy numbers go on the bound items.
+ */
+export function useBindHousehold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ rows }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const at = new Date().toISOString();
+      for (const r of rows) {
+        const { error } = await supabase.from('rate_checks')
+          .update({ status: 'bound', bound_carrier: 'Allstate', bound_premium: r.annualPremium, bound_at: at, bound_by: user?.id ?? null })
+          .eq('id', r.id);
+        if (error) throw error;
+        if (r.policyNumber) {
+          await supabase.from('bound_items').update({ policy_number: r.policyNumber }).eq('rate_check_id', r.id);
+        }
+      }
+    },
+    onSuccess: (_d, v) => refreshAll(qc, v.leadId),
+  });
+}
+
+/** Not ready yet: a callback date (and why) on the lead; it comes back up on that day. */
+export function useScheduleFollowUp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leadId, at, note }) => {
+      const { error } = await supabase.from('leads')
+        .update({ next_followup_at: at, callback_note: note?.trim() || null })
+        .eq('id', leadId);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => refreshAll(qc, v.leadId),
+  });
+}
+
+/** Lost: the household's open quotes close with the reason; the lead closes as Lost. */
+export function useLoseHousehold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leadId, reason }) => {
+      const { data, error } = await supabase.from('sales_quotes')
+        .update({ status: 'lost', lost_reason: reason, closed_at: new Date().toISOString() })
+        .eq('lead_id', leadId).eq('status', 'open').select('id');
+      if (error) throw error;
+      if (!data?.length) throw new Error('No open quote on this household. Save the quote first.');
+    },
+    onSuccess: (_d, v) => refreshAll(qc, v.leadId),
+  });
+}

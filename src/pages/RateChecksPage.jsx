@@ -49,6 +49,7 @@ import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import LogQuote from './components/sales/LogQuote';
 import ContactStep from './components/sales/ContactStep';
+import CloseStep from './components/sales/CloseStep';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -650,7 +651,7 @@ const STEPS = [
   { v: 'review', label: 'Review' },
   { v: 'log', label: 'Quote' },
   { v: 'tell', label: 'Contact' },
-  { v: 'close', label: 'Close', soon: true },
+  { v: 'close', label: 'Close' },
 ];
 
 function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
@@ -788,6 +789,16 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
         {step === 'tell' && (
           <div className="mx-auto max-w-3xl p-5">
             <ContactStep household={live} />
+            <button type="button" onClick={() => setStep('close')} className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold"
+              style={{ border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+              <T k="sales.contact.toclose">Next: Close It Out</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        )}
+
+        {step === 'close' && (
+          <div className="mx-auto max-w-3xl p-5">
+            <CloseStep household={live} />
           </div>
         )}
 
