@@ -20,13 +20,22 @@ function ago(ts) {
   return formatDate(ts);
 }
 
+// "Oct 22" this year, "Oct 22, 2025" before; minutes and hours for today.
+function short(ts) {
+  const d = new Date(ts);
+  const mins = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+  if (mins < 24 * 60) return ago(ts);
+  return d.toLocaleDateString('en-US', d.getFullYear() === new Date().getFullYear() ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 const isExpired = (i) => new Date(i.expires_at) < new Date();
 const stateOf = (i) => (i.upload_count > 0 ? 'uploaded' : isExpired(i) ? 'expired' : i.opened_at ? 'opened' : 'sent');
+// A colored dot carries the state; the label stays plain text so it reads in either theme.
 const PILL = {
-  uploaded: { label: (i) => `Uploaded${i.upload_count > 1 ? ` ×${i.upload_count}` : ''}`, color: 'var(--qs-success)', bg: 'var(--qs-success-subtle)', border: 'var(--qs-success-border)' },
-  opened: { label: (i) => `Opened ${ago(i.opened_at)} · not uploaded`, color: 'var(--qs-warning)', bg: 'var(--qs-warning-subtle)', border: 'var(--qs-warning-border)' },
-  sent: { label: () => 'Not opened yet', color: 'var(--qs-subtle)', bg: 'var(--qs-elevated)', border: 'var(--qs-border)' },
-  expired: { label: () => 'Expired', color: 'var(--qs-subtle)', bg: 'var(--qs-elevated)', border: 'var(--qs-border)' },
+  uploaded: { label: (i) => `Uploaded${i.upload_count > 1 ? ` ×${i.upload_count}` : ''}`, dot: '#16A34A' },
+  opened: { label: (i) => `Opened ${short(i.opened_at)} · no upload`, dot: '#F59E0B' },
+  sent: { label: () => 'Not opened yet', dot: '#94A3B8' },
+  expired: { label: () => 'Expired', dot: '#CBD5E1' },
 };
 
 // A Quick Send text that never reached them: worth a call or a QR in person instead.
@@ -165,31 +174,39 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
 function InviteRow({ i, onOpen, onResend }) {
   const state = stateOf(i);
   const pill = PILL[state];
+  const problem = textProblem(i);
+  const meta = [i.source === 'quick_send' ? 'Quick Send' : i.event_name || 'Direct link', i.producer_name && `sent by ${i.producer_name}`, short(i.created_at)].filter(Boolean).join(' · ');
+  const btn = 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-semibold';
   return (
-    <li className="px-4 py-3 text-sm" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      <div className="flex items-start justify-between gap-3">
+    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-5" style={{ borderTop: '1px solid var(--qs-border)' }}>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-bright)' }} aria-hidden="true">
+          {(i.first_name || '?').trim().charAt(0).toUpperCase()}
+        </span>
         <div className="min-w-0">
-          <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>
-            {i.first_name || 'No name'}
-            {i.phone && <span className="ml-1.5 whitespace-nowrap font-normal" style={{ color: 'var(--qs-text)' }}>{formatPhone(i.phone)}</span>}
+          <p className="flex flex-wrap items-baseline gap-x-2 text-[15px] leading-tight">
+            <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{i.first_name || 'No name'}</span>
+            {i.phone && <span className="whitespace-nowrap tabular-nums" style={{ color: 'var(--qs-subtle)' }}>{formatPhone(i.phone)}</span>}
           </p>
-          <span className="mt-1 inline-block rounded px-2 py-0.5 text-xs font-semibold" style={{ color: pill.color, background: pill.bg, border: `1px solid ${pill.border}` }}>{pill.label(i)}</span>
-          {textProblem(i) && <p className="mt-1 text-xs font-semibold text-red-600">{textProblem(i)}</p>}
-          <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-            {[i.source === 'quick_send' ? 'Quick Send' : i.event_name || 'Direct link', i.producer_name && `sent by ${i.producer_name}`, ago(i.created_at)].filter(Boolean).join(' · ')}
-          </p>
+          <p className="mt-1 text-xs sm:truncate" style={{ color: 'var(--qs-subtle)' }}>{meta}</p>
+          {problem && <p className="mt-1 text-xs font-semibold text-red-600">{problem}</p>}
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
+      </div>
+      <div className="flex flex-wrap items-center gap-2 pl-[52px] sm:flex-nowrap sm:pl-0">
+        <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)' }}>
+          <span className="h-2 w-2 rounded-full" style={{ background: pill.dot }} aria-hidden="true" />{pill.label(i)}
+        </span>
+        <div className="flex w-full items-center gap-2 sm:ml-2 sm:w-[196px] sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none">
           {state === 'uploaded' && i.last_rate_check_id && onOpen && (
-            <button onClick={() => onOpen(i.last_rate_check_id)} className="min-h-[40px] rounded-lg px-3 font-semibold" style={inputStyle}><T k="pages.components.ratechecks.invitestab.c3bf44">Open</T></button>
-          )}
-          {state === 'opened' && i.phone && (
-            <a href={smsUrl(i, nudgeText(i))} className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-primary-600 px-3 font-semibold text-white">
-              <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.invitestab.bcd792">Nudge</T>
-            </a>
+            <button onClick={() => onOpen(i.last_rate_check_id)} className={btn} style={inputStyle}><T k="pages.components.ratechecks.invitestab.c3bf44">Open</T></button>
           )}
           {(state === 'opened' || state === 'sent') && onResend && (
-            <button onClick={onResend} className={`min-h-[40px] rounded-lg px-3 font-semibold ${state === 'opened' ? 'text-primary-600' : ''}`} style={state === 'opened' ? undefined : inputStyle}><T k="pages.components.ratechecks.invitestab.1c0b8f">Resend</T></button>
+            <button onClick={onResend} className={btn} style={inputStyle}><T k="pages.components.ratechecks.invitestab.1c0b8f">Resend</T></button>
+          )}
+          {state === 'opened' && i.phone && (
+            <a href={smsUrl(i, nudgeText(i))} className={`${btn} bg-primary-600 text-white`}>
+              <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.invitestab.bcd792">Nudge</T>
+            </a>
           )}
         </div>
       </div>
