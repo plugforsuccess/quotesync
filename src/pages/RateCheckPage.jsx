@@ -854,6 +854,7 @@ export default function RateCheckPage() {
       <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id} flash={flash === it.id}
         mismatch={mismatchOf(it)} onKeep={() => patchItem(it.id, { typeOk: true })}
         onConcernOk={(k) => patchItem(it.id, k === 'expired' ? { expiredOk: true } : { carsOk: true })}
+        onMovedOk={() => patchItem(it.id, { movedSeen: true })}
         onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
         onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
         onRemove={() => removeItem(it.id)}
@@ -943,7 +944,8 @@ export default function RateCheckPage() {
               <KindSlot key={k} kind={k} drafts={drafts.filter(d => d.kind === k)} renderDraft={draftCard}
                 movedAway={drafts.find(d => d.movedFrom === k && d.kind !== k)?.kind || null}
                 onUpload={() => { setAskingMore(null); openFiles({ kind: k }); }}
-                onCamera={() => { setAskingMore(null); openCamera({ kind: k }); }} />
+                onCamera={() => { setAskingMore(null); openCamera({ kind: k }); }}
+                onRemoveKind={wanted.length > 1 ? () => setWanted(wanted.filter(w => w !== k)) : null} />
             ))}
             {drafts.some(d => !d.kind || !wanted.includes(d.kind)) && (
               <li className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -1057,7 +1059,7 @@ function PickPolicies({ initial, onContinue, onBack }) {
 
 // Guided step 2: one slot per picked type. Empty: upload or take photos, plus where to
 // find it. Filled: the policy's card(s), and room for another of the same type.
-function KindSlot({ kind, drafts, renderDraft, movedAway, onUpload, onCamera }) {
+function KindSlot({ kind, drafts, renderDraft, movedAway, onUpload, onCamera, onRemoveKind }) {
   const { label, Icon } = KIND[kind] || KIND.other;
   const [help, setHelp] = useState(false);
   const done = drafts.length > 0;
@@ -1071,6 +1073,12 @@ function KindSlot({ kind, drafts, renderDraft, movedAway, onUpload, onCamera }) 
           {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-400" aria-hidden="true" />}
           {done ? (drafts.length === 1 ? <T k="rc.slot.added">Added</T> : <>{drafts.length} <T k="rc.slot.added-many">policies added</T></>) : <T k="rc.slot.not-added">Not added yet</T>}
         </span>
+        {!done && onRemoveKind && (
+          <button type="button" onClick={onRemoveKind} aria-label={`I don't have ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()} policy`}
+            className="-mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
       </div>
       {!done && movedAway && (
         <p className="mt-3 flex items-start gap-2 rounded-2xl bg-blue-50 px-3 py-2.5 text-sm text-[#0F2D6B]" role="status">
@@ -1198,7 +1206,7 @@ function Thumb({ item, scanning = false, small = false }) {
 
 // A policy waiting to be sent: its pages in order, each with retake/remove, and an
 // add-page tile. Right after a photo it asks whether the policy has more pages.
-function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
+function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, onMovedOk, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
   const concerns = concernsOf(item);
   const [picked, setPicked] = useState(null); // the page tapped for retake / remove
@@ -1302,11 +1310,6 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, 
         </div>
       )}
 
-      {item.movedFrom && item.kind !== item.movedFrom && (
-        <Prompt tone="info" icon={Check} title={<><T k="rc.check.moved">Moved to</T> {KIND[item.kind]?.label}</>}>
-          <T k="rc.check.moved-why2">This file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} {(KIND[item.kind]?.label || '').toLowerCase()} <T k="rc.check.moved-policy">policy.</T>
-        </Prompt>
-      )}
 
       {onMergeUp && (
         <button type="button" onClick={onMergeUp}
@@ -1318,6 +1321,12 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, 
       {/* Questions on this policy, one at a time: the front card is answered first and the
           rest wait behind it. */}
       <PromptDeck label={`Questions about policy ${n}`} cards={[
+        item.movedFrom && item.kind !== item.movedFrom && !item.movedSeen && { key: 'moved', tone: 'info', el: (
+          <Prompt tone="info" icon={Check} title={<><T k="rc.check.moved">Moved to</T> {KIND[item.kind]?.label}</>}
+            actions={<button type="button" onClick={onMovedOk} className={`${promptPrimary} col-span-2`}><T k="rc.check.got-it">Got It</T></button>}>
+            <T k="rc.check.moved-why2">This file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} {(KIND[item.kind]?.label || '').toLowerCase()} <T k="rc.check.moved-policy">policy.</T>
+          </Prompt>
+        ) },
         mismatch === 'not_a_policy' && { key: 'not_a_policy', tone: 'ask', el: (
           <Prompt icon={FileText} title={<T k="rc.check.not-policy-title">This doesn’t look like a policy</T>}
             actions={<>
@@ -1393,13 +1402,12 @@ function PromptDeck({ cards, label }) {
   const [front, ...rest] = live;
   const behind = rest.slice(0, 2);
   const layer = (tone) => tone === 'ask' ? 'bg-amber-100 ring-amber-300' : 'bg-blue-100 ring-blue-200';
-  const step = 9; // each card behind sits up and to the right of the one in front
   return (
-    <section aria-label={label} className="relative mt-3" style={{ paddingTop: behind.length * step, paddingRight: behind.length * step }}>
+    <section aria-label={label} className="relative mt-3" style={{ marginBottom: behind.length * 11 }}>
       {behind.map((c, i) => (
         <div key={c.key} aria-hidden="true"
-          className={`absolute rounded-2xl shadow-[0_4px_10px_-6px_rgba(15,45,107,0.3)] ring-1 transition-all duration-300 ${layer(c.tone)}`}
-          style={{ top: behind.length * step - (i + 1) * step, right: behind.length * step - (i + 1) * step, bottom: (i + 1) * step, left: (i + 1) * step, opacity: 1 - i * 0.3, zIndex: 2 - i }} />
+          className={`absolute inset-0 rounded-2xl shadow-[0_4px_10px_-6px_rgba(15,45,107,0.3)] ring-1 transition-all duration-300 ${layer(c.tone)}`}
+          style={{ transform: `translateY(${(i + 1) * 11}px) scale(${1 - (i + 1) * 0.05})`, opacity: 1 - i * 0.3, zIndex: 2 - i }} />
       ))}
       <div key={front.key} className="rc-deck-in relative z-10 rounded-2xl shadow-[0_6px_16px_-8px_rgba(15,45,107,0.25)]">
         {cloneElement(front.el, { className: '', badge: live.length > 1 ? `1 of ${live.length}` : null })}

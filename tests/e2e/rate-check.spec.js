@@ -414,9 +414,13 @@ test('the guided flow: pick policies, add each one, continue', async ({ page }, 
   await page.getByRole('button', { name: "That's all" }).click();
   await expect(page.getByRole('button', { name: '1 of 2 added' })).toBeDisabled();
   await expect(page.getByText('Not added yet')).toHaveCount(1); // Home still open
+  // No home policy after all: the X takes Home off the list. Auto, now the only one, has no X.
+  await expect(page.getByRole('button', { name: "I don't have an auto policy" })).toHaveCount(0);
+  await page.getByRole('button', { name: "I don't have a home policy" }).click();
+  await expect(page.getByText('Not added yet')).toHaveCount(0);
 
   // Picked up front, so no "Only one policy?" prompt: straight to contact.
-  await page.getByRole('button', { name: 'Continue with what I have' }).click();
+  await page.getByRole('button', { name: /^Continue$/ }).click();
   await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Only one policy?' })).toHaveCount(0);
 });
@@ -449,6 +453,8 @@ test('a policy in the wrong slot is caught before anything is sent', async ({ pa
   await page.getByRole('button', { name: "That's all" }).click();
   // It moves itself to Auto; Home reopens and says what to add. Nothing to tap.
   await expect(page.getByText('this file is an auto policy.')).toBeVisible();
+  await page.getByRole('button', { name: 'Got It' }).click();
+  await expect(page.getByText('this file is an auto policy.')).toHaveCount(0);
   await expect(page.getByText('That file was an auto policy. Add your home policy here.')).toBeVisible();
   await expect(page.getByRole('button', { name: '1 of 2 added' })).toBeDisabled();
   await expect(page.getByText('Not added yet')).toHaveCount(1);
