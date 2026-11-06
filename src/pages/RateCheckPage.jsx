@@ -22,7 +22,7 @@ import {
   AlertTriangle, BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
-import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
+import { checkPolicyType, preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import { nextOpening } from '../lib/businessHours';
 import { DrawnCheck, CountUp, NextTimeline, CamCard, ShareLine } from './components/rate-checks/DoneExtras';
@@ -87,6 +87,17 @@ const KINDS = [
 ];
 const KIND = Object.fromEntries(KINDS.map(([k, label, Icon]) => [k, { label, Icon }]));
 const WANTED_KEY = 'rc_wanted_v1';
+// A policy whose file reads (clearly) as another type than its slot: that type, or
+// 'not_a_policy'. Landlord and other lines map to Other. null when it matches or can't tell.
+const READ_AS = { landlord: 'other' };
+function mismatchOf(item) {
+  const t = item?.typeCheck;
+  if (!item?.kind || item.typeOk || t?.state !== 'done' || !t.read || t.confidence !== 'high') return null;
+  const read = READ_AS[t.read] || t.read;
+  if (read === 'not_a_policy') return read;
+  if (!KIND[read] || read === item.kind) return null;
+  return read;
+}
 const KINDS_KEY = 'rc_kinds_v1';
 const readJSON = (key) => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
 const writeJSON = (key, v) => {
@@ -113,6 +124,7 @@ export default function RateCheckPage() {
   const [wanted, setWantedState] = useState(() => readJSON(WANTED_KEY));
   const setWanted = (list) => { setWantedState(list); writeJSON(WANTED_KEY, list); };
   const kindsRef = useRef(readJSON(KINDS_KEY) || {});
+  const checkTypeRef = useRef(() => {});
   const rememberKind = (id, kind) => { if (!kind) return; kindsRef.current = { ...kindsRef.current, [id]: kind }; writeJSON(KINDS_KEY, kindsRef.current); };
   const groupKind = useRef(null);
   // A policy: { id, pages: [{ id, file, preview, quality }], file, preview (page 1),
@@ -203,6 +215,7 @@ export default function RateCheckPage() {
       if (restored.length) {
         updateItems(() => restored);
         restored.filter(i => i.status === 'draft').forEach(i => i.pages.forEach(pg => checkQuality(pg.id, pg.file)));
+        restored.filter(i => i.status === 'draft' && i.kind).forEach(checkTypeRef.current);
       }
       setReady(true);
     })();
@@ -285,7 +298,24 @@ export default function RateCheckPage() {
     if (kind) policies = policies.map(pol => { rememberKind(pol.id, kind); return { ...pol, kind }; });
     updateItems(list => [...list, ...policies]);
     policies.forEach(pol => { saveDraftPages(pol); pol.pages.forEach(pg => checkQuality(pg.id, pg.file)); });
+    if (kind) policies.forEach(checkType);
     if (step === 'results') setStep('policies');
+  };
+
+  // Is the file in a slot the kind of policy the slot is for? Checked as it's added, so a
+  // home policy in the Auto slot is caught here and never sent.
+  const patchItem = (id, change) => updateItems(list => list.map(i => (i.id === id ? { ...i, ...change } : i)));
+  const checkType = (pol) => {
+    const file = pol.pages?.[0]?.file;
+    if (!pol.kind || !file) return;
+    patchItem(pol.id, { typeCheck: { state: 'checking' } });
+    checkPolicyType(file).then(r => patchItem(pol.id, { typeCheck: { state: 'done', read: r?.policy_type || null, confidence: r?.confidence || 'low' } }));
+  };
+  checkTypeRef.current = checkType;
+  const moveKind = (id, kind) => {
+    rememberKind(id, kind);
+    patchItem(id, { kind });
+    if (Array.isArray(wanted) && !wanted.includes(kind)) setWanted([...wanted, kind]);
   };
 
   const onPick = (e) => {
@@ -754,12 +784,15 @@ export default function RateCheckPage() {
   // ── Step 2: policies (a checklist of the picked types when guided) ──
   const returning = sent.length > 0 && !!given;
   const guided = !returning && Array.isArray(wanted) && wanted.length > 0;
-  const addedKinds = guided ? wanted.filter(k => drafts.some(d => d.kind === k)) : [];
+  const unsure = drafts.filter(d => mismatchOf(d));
+  const checking = drafts.some(d => d.typeCheck?.state === 'checking');
+  const addedKinds = guided ? wanted.filter(k => drafts.some(d => d.kind === k && !mismatchOf(d))) : [];
   const allAdded = guided && addedKinds.length === wanted.length;
   const draftCard = (it) => {
     const n = drafts.indexOf(it);
     return (
       <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id}
+        mismatch={mismatchOf(it)} onMove={(k) => moveKind(it.id, k)} onKeep={() => patchItem(it.id, { typeOk: true })}
         onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
         onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
         onRemove={() => removeItem(it.id)}
@@ -780,7 +813,11 @@ export default function RateCheckPage() {
     <Shell step={2} wide={drafts.length === 0 && !returning && !guided} bar={guided ? (
       <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
         <div className="flex min-w-0 flex-1 flex-col items-stretch">
-          {allAdded ? (
+          {unsure.length > 0 || checking ? (
+            <button type="button" disabled className={primaryBtn}>
+              {unsure.length ? <T k="rc.check.fix-first">Fix the Policy Marked Above</T> : <><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> <T k="rc.check.checking">Checking Your Policies…</T></>}
+            </button>
+          ) : allAdded ? (
             <button type="button" onClick={() => goNext()} className={primaryBtn}>
               <T k="rc.guided.continue">Continue</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
             </button>
@@ -971,7 +1008,7 @@ function KindSlot({ kind, drafts, renderDraft, onUpload, onCamera }) {
       {done ? (
         <>
           <ul className="mt-3 space-y-2">{drafts.map(renderDraft)}</ul>
-          <button type="button" onClick={onUpload} className="mt-2 text-sm font-semibold text-blue-700"><T k="rc.flow.another">+ Another</T>{' '}{label.toLowerCase()}{' '}<T k="rc.flow.policy">Policy</T></button>
+          <button type="button" onClick={onUpload} className="mt-2 text-sm font-semibold text-blue-700"><T k="rc.flow.another">+ Another</T>{' '}{label}{' '}<T k="rc.flow.policy">Policy</T></button>
         </>
       ) : (
         <>
@@ -1085,7 +1122,7 @@ function Thumb({ item, scanning = false, small = false }) {
 
 // A policy waiting to be sent: its pages in order, each with retake/remove, and an
 // add-page tile. Right after a photo it asks whether the policy has more pages.
-function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
+function DraftCard({ item, index, asking, mismatch, onMove, onKeep, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
   const [picked, setPicked] = useState(null); // the page tapped for retake / remove
   const pickedIndex = pages.findIndex(pg => pg.id === picked);
@@ -1183,6 +1220,26 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
             className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-slate-200">
             <X className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.remove">Remove</T>
           </button>
+        </div>
+      )}
+
+      {mismatch && (
+        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3" role="alert">
+          {mismatch === 'not_a_policy' ? (
+            <p className="font-semibold text-[#0F2D6B]"><T k="rc.check.not-policy">This doesn’t look like an insurance policy.</T></p>
+          ) : (
+            <p className="font-semibold text-[#0F2D6B]">
+              <T k="rc.check.looks-like">This looks like</T> {/^[aeiou]/i.test(KIND[mismatch]?.label || '') ? 'an' : 'a'} {KIND[mismatch]?.label || 'other'} <T k="rc.check.policy-not">policy, not</T> {KIND[item.kind]?.label}.
+            </p>
+          )}
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {mismatch === 'not_a_policy' ? (
+              <button type="button" onClick={onRemove} className="qb qb-blue qb-md flex-1"><T k="rc.check.remove">Remove It</T></button>
+            ) : (
+              <button type="button" onClick={() => onMove(mismatch)} className="qb qb-blue qb-md flex-1 whitespace-nowrap"><T k="rc.check.move">Move to</T> {KIND[mismatch]?.label}</button>
+            )}
+            <button type="button" onClick={onKeep} className="qb qb-outline qb-md flex-1 whitespace-nowrap"><T k="rc.check.keep">It’s Right</T></button>
+          </div>
         </div>
       )}
 

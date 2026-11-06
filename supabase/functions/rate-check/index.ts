@@ -103,6 +103,7 @@ const RATE_LIMIT = 5 // public requests per minute per IP
 const LOOKUP_RATE_LIMIT = 30 // invite-link opens per minute per IP
 const AGENT_RATE_LIMIT = 30 // staff uploads per minute per user
 const HOUSEHOLD_RATE_LIMIT = 20 // a household's 2nd, 3rd… policy, per minute per session
+const CLASSIFY_RATE_LIMIT = 30 // type checks as policies are added, per minute per IP
 const RATE_WINDOW_SECONDS = 60
 
 // A follow-up policy from someone who already sent one: same session, phone and IP, recently.
@@ -297,6 +298,54 @@ const INSTRUCTION =
   'The upload may be several pages of the same policy (drivers, vehicles and coverages often continue on later ' +
   'pages): read every page and combine them into one record. ' +
   'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
+
+// ── Type check as a policy is added ─────────────────────────────────────────
+// The guided flow asks which policies someone has, then one upload slot per type.
+// Before anything is sent, each file's type is checked so a home policy dropped in
+// the Auto slot is caught on the spot. Nothing is stored; only the type comes back.
+const CLASSIFY_MODEL = Deno.env.get('RATE_CHECK_CLASSIFY_MODEL') || 'claude-haiku-4-5'
+const CLASSIFY_MAX_BYTES = 6 * 1024 * 1024
+const CLASSIFY_TYPES = ['auto', 'home', 'condo', 'renters', 'landlord', 'umbrella', 'motorcycle', 'boat', 'other', 'not_a_policy']
+const CLASSIFY_TOOL = {
+  name: 'policy_type',
+  description: 'Record what kind of insurance document this is.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      policy_type: { type: 'string', enum: CLASSIFY_TYPES, description: 'auto = personal auto; home = homeowners (HO-3/HO-5, dwelling); condo = condo unit owners (HO-6); renters = renters/tenants (HO-4); landlord = rental dwelling (DP-1/DP-3); umbrella = personal umbrella/excess liability; motorcycle; boat = boat or watercraft; other = another insurance policy; not_a_policy = not an insurance declarations page or policy document.' },
+      confidence: { type: 'string', enum: ['high', 'low'], description: 'high only if the page clearly shows the policy type.' },
+    },
+    required: ['policy_type', 'confidence'],
+  },
+}
+
+async function classifyPolicy(apiKey: string, base64: string, mediaType: string) {
+  const fileBlock = mediaType === 'application/pdf'
+    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
+    : { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } }
+  const call = async (model: string, toolChoice: Record<string, string>) => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 20_000)
+    try {
+      return await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model, max_tokens: 200, tools: [CLASSIFY_TOOL], tool_choice: toolChoice,
+          messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: 'What kind of insurance policy is this? Answer with the policy_type tool.' }] }],
+        }),
+      })
+    } finally { clearTimeout(timer) }
+  }
+  let res = await call(CLASSIFY_MODEL, { type: 'tool', name: 'policy_type' })
+  if (res.status === 400 && (await res.clone().text()).includes('tool_choice')) res = await call(CLASSIFY_MODEL, { type: 'auto' })
+  if (res.status === 404 || res.status === 400) res = await call(ANTHROPIC_MODEL, { type: 'tool', name: 'policy_type' }) // model unavailable: use the reader's model
+  if (!res.ok) throw new Error(`Anthropic API error (${res.status}): ${(await res.text()).slice(0, 300)}`)
+  const json = await res.json()
+  const input = (json.content || []).find((c: any) => c.type === 'tool_use')?.input || {}
+  const type = CLASSIFY_TYPES.includes(input.policy_type) ? input.policy_type : null
+  return { policy_type: type, confidence: input.confidence === 'high' ? 'high' : 'low' }
+}
 
 async function extractDecPage(apiKey: string, base64: string, mediaType: string) {
   const fileBlock = mediaType === 'application/pdf'
@@ -803,6 +852,26 @@ Deno.serve(async (req) => {
       event_name: invite.event_name,
       producer_name: invite.producer_name,
     }, 200, corsHeaders)
+  }
+
+  // ── Type check as a policy is added (public, nothing stored) ──
+  if (body?.mode === 'classify') {
+    if (!(await checkRateLimit(supabase, `rate_check_classify:${clientIp}`, CLASSIFY_RATE_LIMIT))) {
+      return jsonResponse({ error: 'Rate limit exceeded' }, 429, corsHeaders)
+    }
+    const b64 = typeof body.image_base64 === 'string' ? body.image_base64.replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '') : ''
+    const mt = String(body.media_type || '')
+    if (!b64 || !EXTRACTABLE.has(mt) || base64DecodedSize(b64) > CLASSIFY_MAX_BYTES) {
+      return jsonResponse({ error: 'Unsupported file' }, 400, corsHeaders)
+    }
+    if (!anthropicKey) return jsonResponse({ policy_type: null, confidence: 'low' }, 200, corsHeaders)
+    try {
+      return jsonResponse(await classifyPolicy(anthropicKey, b64, mt), 200, corsHeaders)
+    } catch (e) {
+      // Never block an upload because the check failed.
+      console.error('[RATE_CHECK] classify failed:', (e as Error).message)
+      return jsonResponse({ policy_type: null, confidence: 'low' }, 200, corsHeaders)
+    }
   }
 
   // ── Staff upload (Rate Checks inbox): verify the caller and their agency ──

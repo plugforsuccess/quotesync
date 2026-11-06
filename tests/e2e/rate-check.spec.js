@@ -410,3 +410,41 @@ test('the guided flow: pick policies, add each one, continue', async ({ page }, 
   await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Only one policy?' })).toHaveCount(0);
 });
+
+test('a policy in the wrong slot is caught before anything is sent', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const photo = testInfo.outputPath('auto-in-home.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  const sent = [];
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    const body = route.request().postDataJSON();
+    if (body?.mode === 'classify') {
+      await new Promise(r => setTimeout(r, 300));
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ policy_type: 'auto', confidence: 'high' }) });
+    }
+    sent.push(body);
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/?start=1');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 2 policies/i }).click();
+
+  // An auto policy uploaded into the Home slot (the second slot).
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Upload', exact: true }).nth(1).click(),
+  ]);
+  await chooser.setFiles(photo);
+  await page.getByRole('button', { name: "That's all" }).click();
+  await expect(page.getByText('This looks like an Auto policy, not Home.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fix the Policy Marked Above' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Continue with what I have' })).toHaveCount(0);
+
+  // One tap moves it; the Home slot goes back to "Not added yet".
+  await page.getByRole('button', { name: 'Move to Auto' }).click();
+  await expect(page.getByText('This looks like an Auto policy')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '1 of 2 added' })).toBeDisabled();
+  await expect(page.getByText('Not added yet')).toHaveCount(1);
+  expect(sent).toHaveLength(0); // nothing went to the agency
+});

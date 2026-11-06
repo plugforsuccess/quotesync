@@ -292,6 +292,23 @@ export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '
  * undefined if it couldn't be checked (busy, offline): the upload still sends the
  * code, so the server credits the link either way.
  */
+/** What kind of policy is this file? A quick type-only check as a policy is added to
+ * a slot (nothing is stored). null when it can't tell or the check fails — never blocks. */
+export async function checkPolicyType(file) {
+  try {
+    const prepared = await prepareDecPage(file);
+    if (prepared.bytes > 6 * 1024 * 1024) return null;
+    const res = await fetch(RATE_CHECK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
+      body: JSON.stringify({ mode: 'classify', image_base64: prepared.base64, media_type: prepared.mediaType }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.policy_type ? data : null;
+  } catch { return null; }
+}
+
 export async function lookupInvite(code) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
