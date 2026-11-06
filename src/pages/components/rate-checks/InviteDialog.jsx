@@ -34,7 +34,7 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
   };
 
   const field = 'w-full rounded-md px-3 py-2 text-sm';
-  const label = (t) => <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{t}</span>;
+  const label = (t) => <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{t}</T></span>;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Send a Rate Check link">
@@ -59,10 +59,10 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
               <datalist id="rc-events">{events.map(ev => <option key={ev.event_name} value={ev.event_name} />)}</datalist>
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <label>{label('First name')}
+              <label>{label('First Name')}
                 <input className={field} style={inputStyle} value={firstName} onChange={e => setFirstName(e.target.value)} maxLength={60} autoFocus />
               </label>
-              <label>{label('Mobile (optional)')}
+              <label>{label('Mobile (Optional)')}
                 <input className={field} style={inputStyle} type="tel" inputMode="tel" placeholder="(404) 555-1212"
                   value={phone} onChange={e => setPhone(formatPhoneInput(e.target.value))} />
               </label>

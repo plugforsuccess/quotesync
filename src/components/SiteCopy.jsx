@@ -73,13 +73,15 @@ export function SiteCopyProvider({ children }) {
   const onEditablePage = EDITABLE.some(re => re.test(pathname));
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (askedToEdit && canEdit) setEditing(true); }, [askedToEdit, canEdit]);
-  // While editing, a button or link whose label is editable text doesn't act: tapping
-  // or typing a space in its label would otherwise open the camera, a file picker, a page.
+  // While editing, tapping the outlined words of a button or link edits them instead of
+  // pressing it (it would otherwise open the camera, a file picker, a page). Tapping the
+  // rest of the button (its icon, its edges) still works, so dialogs, drawers and tabs
+  // can be opened and edited too.
   useEffect(() => {
     if (!editing) return undefined;
     const block = (e) => {
-      const host = e.target instanceof Element ? e.target.closest('button, a, label') : null;
-      if (host && host.querySelector('[role="textbox"][contenteditable]')) { e.preventDefault(); e.stopPropagation(); }
+      const onText = e.target instanceof Element && e.target.closest('[role="textbox"][contenteditable]');
+      if (onText && onText.closest('button, a, label')) { e.preventDefault(); e.stopPropagation(); }
     };
     document.addEventListener('click', block, true);
     return () => document.removeEventListener('click', block, true);
@@ -176,7 +178,7 @@ export function SiteCopyProvider({ children }) {
             <p className="min-w-0 flex-1 text-xs leading-snug text-slate-200" aria-live="polite">
               {showSaved
                 ? <span className="inline-flex items-center gap-1 font-semibold text-emerald-300"><Check className="h-3.5 w-3.5" aria-hidden="true" /> Saved. It’s live.</span>
-                : <>Tap outlined text to edit. It saves when you tap away.<span className="hidden sm:inline"> Clear a line to bring back the original. **Two asterisks** make text bold.</span></>}
+                : <>Tap outlined text to edit; tap a button’s icon or edge to use it. Saves when you tap away.<span className="hidden sm:inline"> Clear a line to bring back the original. **Two asterisks** make text bold.</span></>}
             </p>
             <button type="button" onClick={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setEditing(false); }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-sm font-bold text-slate-900">

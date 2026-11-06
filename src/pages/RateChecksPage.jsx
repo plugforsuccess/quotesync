@@ -1047,7 +1047,7 @@ function PolicyForm({ rc, onDone }) {
   };
 
   const field = 'w-full rounded-md px-2 py-1.5 text-sm';
-  const label = (text) => <span style={{ color: 'var(--qs-subtle)' }}>{text}</span>;
+  const label = (text) => <span style={{ color: 'var(--qs-subtle)' }}><T>{text}</T></span>;
   return (
     <div className="rounded-lg p-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
       <div className="grid grid-cols-2 gap-3 text-sm">

@@ -254,7 +254,7 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
   };
 
   const field = 'w-full rounded-lg px-3 py-2 text-sm';
-  const label = (t) => <span className="mb-1 block text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>{t}</span>;
+  const label = (t) => <span className="mb-1 block text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T>{t}</T></span>;
 
   return (
     <form onSubmit={submit} className="dark-card space-y-3" style={{ padding: 16 }}>
