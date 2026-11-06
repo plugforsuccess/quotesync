@@ -13,7 +13,7 @@ import { buildText } from '../../../lib/textTemplates';
 import Dismissible from '../../../components/Dismissible';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
-  useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
+  useRecruiters, useFloorSettings, useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
   usePartnerApplications, useCloseApplication, usePartnerRules, useSavePartnerRules,
 } from '../../../hooks/useRateChecks';
 import { downloadCSV } from '../../../lib/csvExport';
@@ -22,6 +22,7 @@ import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
 import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
 import SendPitch from './SendPitch';
+import { activations, activatedCount, recruitUrl } from './partnerRecruiting';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
   TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, rulesFrom, households, partnerSummary, applyCap,
@@ -49,6 +50,10 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const rules = useMemo(() => rulesFrom(rulesRow), [rulesRow]);
   const savePromoter = useSavePromoter();
   const recordPayout = useRecordPromoterPayout();
+  const { data: recruiters = [] } = useRecruiters(agencyId);
+  const { data: floors } = useFloorSettings(agencyId);
+  const nameOf = (uid) => recruiters.find(r => r.userId === uid)?.name || null;
+  const activated = useMemo(() => activations(promoters, scans, Date.now(), rules), [promoters, scans, rules]);
 
   const schedule = useMemo(() => scheduleFrom(rateRows), [rateRows]);
   const now = currentMonth();
@@ -105,7 +110,9 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
   return (
     <div className="space-y-4">
-      <Applications agencyId={agencyId} userId={userId} canEdit={canEdit} savePromoter={savePromoter} />
+      <RecruitPanel userId={userId} recruiters={recruiters} activated={activated} floor={floors?.partners_floor ?? 2} canEdit={canEdit} month={now} />
+
+      <Applications agencyId={agencyId} userId={userId} canEdit={canEdit} savePromoter={savePromoter} nameOf={nameOf} />
 
       <Dismissible id="partners.program-rules">
         <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
@@ -226,6 +233,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.e99180">Paused</T></span>}</h3>
                 <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || 'No contact on file'}</p>
+                <RecruitedBy promoter={p} recruiters={recruiters} canEdit={canEdit}
+                  onChange={(uid) => savePromoter.mutate({ id: p.id, agencyId, recruited_by: uid })} />
               </div>
               <span className="flex flex-wrap justify-end gap-1.5">
                 {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Agreement signed' : 'Agreement not signed'}</Pill>}
@@ -483,7 +492,71 @@ const CUSTOMER_BADGE = {
 
 // People who asked to join from the Drivers Ed page. "Add as partner" makes the partner
 // (same as Add partner) and closes the application; then send them their portal link.
-function Applications({ agencyId, userId, canEdit, savePromoter }) {
+// The partner floor (Schedule B): each producer's own "Become a Partner" link and how many
+// partners they've activated this month. Activated = signed the agreement AND sent a
+// qualified household. Managers also see everyone's count.
+function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) {
+  const me = recruiters.find(r => r.userId === userId);
+  if (!me) return null;
+  const mine = activatedCount(activated, userId, month);
+  const team = recruiters
+    .filter(r => ['producer', 'principal', 'manager', 'owner'].includes(r.role))
+    .map(r => ({ ...r, count: activatedCount(activated, r.userId, month) }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const met = mine >= floor;
+  return (
+    <section className="dark-card" style={{ padding: 16 }} aria-label="Partner floor">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="partners.floor.title">Your Partner Floor</T></h3>
+          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="partners.floor.line">A partner counts once they sign the agreement and send a qualified household.</T></p>
+        </div>
+        <p className="shrink-0 text-right">
+          <span className="block text-2xl font-extrabold tabular-nums" style={{ color: met ? 'var(--qs-success)' : 'var(--qs-bright)' }}>{mine} / {floor}</span>
+          <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{monthName(month)}</span>
+        </p>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: 'var(--qs-elevated)' }} role="progressbar" aria-valuemin={0} aria-valuemax={floor} aria-valuenow={mine} aria-label="Partners activated this month">
+        <div className="h-full rounded-full" style={{ width: `${floor ? Math.min(100, (mine / floor) * 100) : 100}%`, background: met ? 'var(--qs-success)' : 'var(--qs-info)' }} />
+      </div>
+      {me.code && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <code className="min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-xs" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)' }}>{recruitUrl(me.code)}</code>
+          <CopyTextButton text={recruitUrl(me.code)} className="min-h-[36px] rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
+            <T k="partners.floor.copy">Copy My Recruit Link</T>
+          </CopyTextButton>
+        </div>
+      )}
+      {canEdit && team.length > 1 && (
+        <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
+          {team.map(r => (
+            <li key={r.userId} className="flex items-center justify-between gap-2 rounded-lg px-3 py-1.5" style={{ background: 'var(--qs-elevated)' }}>
+              <span className="truncate" style={{ color: 'var(--qs-text)' }}>{r.name}</span>
+              <span className="font-semibold tabular-nums" style={{ color: r.count >= floor ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>{r.count} / {floor}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// Who recruited this partner (credited with them and the households they send).
+function RecruitedBy({ promoter: p, recruiters, canEdit, onChange }) {
+  const name = recruiters.find(r => r.userId === p.recruited_by)?.name;
+  if (!canEdit) return name ? <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="partners.recruited-by">Recruited by</T> {name}</p> : null;
+  return (
+    <label className="mt-1 inline-flex items-center gap-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+      <T k="partners.recruited-by">Recruited by</T>
+      <select value={p.recruited_by || ''} onChange={(e) => onChange(e.target.value || null)} className="rounded-md px-1.5 py-0.5 text-xs" style={inputStyle} aria-label={`Recruited by, for ${p.name}`}>
+        <option value="">Nobody</option>
+        {recruiters.map(r => <option key={r.userId} value={r.userId}>{r.name}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
   const { data: apps = [] } = usePartnerApplications(agencyId);
   const close = useCloseApplication();
   const [busy, setBusy] = useState(null);
@@ -491,7 +564,8 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
   const add = (a) => {
     setBusy(a.id);
     const name = [a.first_name, a.last_name].filter(Boolean).join(' ');
-    savePromoter.mutate({ agencyId, userId, name, phone: a.phone, email: a.email || '' }, {
+    // Credited to the producer whose recruit link they applied through (none if they found the page themselves).
+    savePromoter.mutate({ agencyId, userId, name, phone: a.phone, email: a.email || '', recruited_by: a.recruited_by || null }, {
       onSuccess: (row) => close.mutate({ id: a.id, status: 'added', promoterId: row?.id, agencyId }, { onSettled: () => setBusy(null) }),
       onError: () => setBusy(null),
     });
@@ -511,7 +585,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
                 {CUSTOMER_BADGE[a.is_customer] && <span className="ml-2 rounded px-1.5 py-0.5 text-[11px] font-bold" style={a.is_customer === 'agency' ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)' } : { color: 'var(--qs-text)', background: 'var(--qs-card)' }}>{CUSTOMER_BADGE[a.is_customer]}</span>}
               </p>
               <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                {[formatPhone(a.phone), a.email, a.audience, `applied ${formatDate(a.created_at)}`].filter(Boolean).join(' · ')}
+                {[formatPhone(a.phone), a.email, a.audience, `applied ${formatDate(a.created_at)}`, a.recruited_by && `via ${nameOf(a.recruited_by) || 'a recruit link'}`].filter(Boolean).join(' · ')}
               </p>
             </div>
             {canEdit && (
@@ -553,6 +627,7 @@ function AddPartner({ agencyId, userId, save, onDone }) {
     if (!ok) return;
     save.mutate({
       agencyId, userId, name, phone: form.phone, email: form.email,
+      recruited_by: userId, // whoever adds a partner recruited them; change it on the partner's card
       mailing_address: fullAddress ? form.street : '',
       mailing_city_state_zip: fullAddress ? `${form.city.trim()}, ${form.state} ${form.zip}` : '',
     }, { onSuccess: onDone });

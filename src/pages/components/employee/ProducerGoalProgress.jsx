@@ -12,8 +12,36 @@ import { useMemo } from 'react';
 import { Target, TrendingUp, TrendingDown } from 'lucide-react';
 import { useProducerTargets } from '../../../hooks/useProducerTargets';
 import { useMyProduction } from '../../../hooks/useMyProduction';
+import { usePromoters, usePromoterScans, usePartnerRules, useFloorSettings } from '../../../hooks/useRateChecks';
+import { rulesFrom, currentMonth } from '../rate-checks/partnerPay';
+import { activations, activatedCount } from '../rate-checks/partnerRecruiting';
 
 const money = (n) => `$${Math.round(n || 0).toLocaleString()}`;
+
+// Schedule B partner floor: partners this producer recruited who signed the agreement
+// and sent a qualified household, this month, against the agency's floor.
+function PartnerFloor({ orgId, userId }) {
+  const { data: promoters = [] } = usePromoters(orgId);
+  const { data: scans = [] } = usePromoterScans(orgId);
+  const { data: rulesRow } = usePartnerRules(orgId);
+  const { data: floors } = useFloorSettings(orgId);
+  const floor = floors?.partners_floor ?? 2;
+  const count = useMemo(
+    () => activatedCount(activations(promoters, scans, Date.now(), rulesFrom(rulesRow)), userId, currentMonth()),
+    [promoters, scans, rulesRow, userId]
+  );
+  if (!userId || !floor) return null;
+  const met = count >= floor;
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 4 }}>
+        <span><T k="scorecard.partners">Partners Activated</T></span>
+        <span style={{ fontFamily: "'DM Mono', monospace", color: met ? 'var(--qs-success)' : 'var(--qs-text)' }}>{count} / {floor}</span>
+      </div>
+      <Bar pct={count / floor} color={met ? 'var(--qs-success)' : 'var(--qs-info)'} />
+    </div>
+  );
+}
 
 // Mon–Fri business days elapsed (incl. today) and total for the current month.
 function businessDays() {
@@ -241,6 +269,8 @@ export default function ProducerGoalProgress({ orgId, employee, compact = false 
           </div>
         </div>
       )}
+
+      <PartnerFloor orgId={orgId} userId={authUserId} />
 
       {isLoading && (
         <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 12 }}><T k="pages.components.employee.producergoalprogress.8817c9">Loading production…</T></div>

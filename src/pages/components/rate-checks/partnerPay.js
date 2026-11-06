@@ -91,7 +91,7 @@ export function householdTier(scans, now = Date.now(), expiredDays = EXPIRED_DAY
 
 // Months are in the agency's time zone (Georgia), the same as the partner portal.
 const TZ = 'America/New_York';
-const monthKey = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
+export const monthKey = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
 // A month is paid on this day of the following month, so late quotes and replies are in.
 export const PAY_DAY = 21;
 /** "2026-10" → "2026-11-21": the day that month's households are paid. */

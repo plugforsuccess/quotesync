@@ -799,7 +799,7 @@ async function resolvePromoter(supabase: any, code: unknown) {
   if (c.length !== 8) return null
   let q = supabase
     .from('rate_check_promoters')
-    .select('id, agency_id, name, photo_url, photo_consent_at')
+    .select('id, agency_id, name, photo_url, photo_consent_at, recruited_by')
     .eq('code', c)
     .eq('active', true)
   if (PARTNER_AGREEMENT_REQUIRED) q = q.eq('agreement_version', PARTNER_AGREEMENT_VERSION).not('agreement_signed_at', 'is', null)
@@ -1058,11 +1058,17 @@ Deno.serve(async (req) => {
   }
   const landingPage = staff ? 'agent_upload' : cleanText(body.landing_page, 512)
   // Who gets credit: the producer who sent the link, or the staff member uploading.
+  // A partner's household goes to the producer who recruited that partner (Schedule B).
+  const recruiterName = promoter?.recruited_by
+    ? (await supabase.from('profiles').select('full_name').eq('id', promoter.recruited_by).maybeSingle()).data?.full_name ?? null
+    : null
   const origin = invite
     ? { invite_id: invite.id, producer_id: invite.created_by, producer_name: invite.producer_name, event_name: invite.event_name }
     : staff
       ? { producer_id: staff.userId, producer_name: staff.name }
-      : {}
+      : promoter?.recruited_by
+        ? { producer_id: promoter.recruited_by, producer_name: recruiterName }
+        : {}
 
   try {
     // ── Resolve agency ──

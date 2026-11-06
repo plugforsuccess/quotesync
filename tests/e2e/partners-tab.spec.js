@@ -48,6 +48,11 @@ async function mock(page, state) {
     const one = (req.headers().accept || '').includes('vnd.pgrst.object');
     const json = (b, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(b) });
     if (p.startsWith('/auth/v1/user')) return json(user);
+    if (p === '/rest/v1/agency_memberships' && (url.searchParams.get('select') || '').includes('recruit_code')) {
+      return json([{ user_id: UID, agency_role: 'principal', status: 'active', recruit_code: 'CAMREC01', profiles: { full_name: 'Cam Wiley', email: user.email } },
+        { user_id: 'amy', agency_role: 'producer', status: 'active', recruit_code: 'AMYREC01', profiles: { full_name: 'Amy Producer', email: 'amy@example.com' } }]);
+    }
+    if (p === '/rest/v1/producer_floor_settings') return json(one ? { agency_id: AG, partners_floor: 2 } : [{ agency_id: AG, partners_floor: 2 }]);
     if (p === '/rest/v1/agency_memberships') return json(one ? membership : [membership]);
     if (p === '/rest/v1/feature_permissions') return json([{ feature_key: 'rate_checks', enabled: true }]);
     if (req.method() !== 'GET' && req.method() !== 'HEAD') {
@@ -182,4 +187,23 @@ test('Scripts: what to say and text, one tap to copy or text', async ({ page, co
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Check My Rate');
   await expect(page.getByRole('article', { name: 'Reconnect after a quote that came in high' })).toBeVisible();
   await expect(page.getByRole('article', { name: 'Ask them to share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+});
+
+test('partner floor: recruit link, activated partners count for their recruiter, new partners credited', async ({ page }) => {
+  // Javon signed and sent households this month, recruited by Cam: 1 of 2. A partner who
+  // signed but never sent anyone doesn't count.
+  const state = { partners: [partner({ agreement_signed_at: iso(1), recruited_by: UID }), partner({ id: 'p2', name: 'Kim Lee', phone: '4045550999', agreement_signed_at: iso(1), recruited_by: 'amy' })], rules: null, payouts: [] };
+  const writes = await mock(page, state);
+  await page.goto('/agency/leads/rate-checks');
+  await page.getByRole('tab', { name: 'Partners' }).click();
+  const floor = page.getByRole('region', { name: 'Partner floor' });
+  await expect(floor.getByText('1 / 2').first()).toBeVisible();
+  await expect(floor.getByText(/\/courses\?by=CAMREC01#partners/)).toBeVisible();
+  await expect(floor.getByRole('listitem').filter({ hasText: 'Amy Producer' })).toContainText('0 / 2');
+
+  // The partner's card says who recruited them; adding a partner credits whoever adds them.
+  await page.getByRole('region', { name: 'Partners' }).getByRole('button', { name: /Javon Yarbrough/ }).click();
+  await expect(page.getByLabel('Recruited by, for Javon Yarbrough')).toHaveValue(UID);
+  await page.getByLabel('Recruited by, for Javon Yarbrough').selectOption('amy');
+  await expect.poll(() => writes.find(w => w.table.startsWith('rate_check_promoters') && w.method === 'PATCH')?.body).toMatchObject({ recruited_by: 'amy' });
 });
