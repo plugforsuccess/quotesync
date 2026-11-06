@@ -20,7 +20,7 @@ import Dismissible from '../components/Dismissible';
 import BrandLogo from '../components/BrandLogo';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
-  AlertTriangle, BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, BadgeCheck, CalendarX, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem, Layers, ArrowRight,
 } from 'lucide-react';
 import { checkPolicyType, sendEmailOtp, verifyEmailOtp, emailFix, preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
@@ -762,7 +762,7 @@ export default function RateCheckPage() {
             </div>
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="mt-6 space-y-4" noValidate>
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="mt-7 space-y-5" noValidate>
           <div className="grid grid-cols-2 gap-3">
             <Field label={<T k="rc.contact.first">First Name</T>} htmlFor="rc-first">
               <input id="rc-first" autoComplete="given-name" autoCapitalize="words" value={fields.firstName} maxLength={60} required
@@ -808,7 +808,7 @@ export default function RateCheckPage() {
           )}
 
           {askReferrer && (
-            <RelationPicker id="rc-rel-ref" legend={<><T k="rc.rel.ref">How do you know</T> {partnerFirst || <T k="rc.rel.ref-who">the person who sent you</T>}? <span className="font-normal text-slate-500">(<T k="rc.flow.optional">Optional</T>)</span></>}
+            <RelationPicker id="rc-rel-ref" legend={<><T k="rc.rel.ref">How do you know</T> <span className="font-semibold text-slate-900">{partnerFirst || <T k="rc.rel.ref-who">the person who sent you</T>}</span>? <span className="text-slate-400">· <T k="rc.flow.optional">Optional</T></span></>}
               options={REFERRER_RELATIONSHIPS} value={rel.referrer} other={rel.referrerOther}
               onChange={(v) => setRel(x => ({ ...x, referrer: v }))} onOther={(t) => setRel(x => ({ ...x, referrerOther: t }))} />
           )}
@@ -1058,37 +1058,42 @@ function KindSlot({ kind, drafts, renderDraft, movedAway, onUpload, onCamera }) 
   const { label, Icon } = KIND[kind] || KIND.other;
   const [help, setHelp] = useState(false);
   const done = drafts.length > 0;
+  const lower = (k) => (KIND[k]?.label || '').toLowerCase();
   return (
-    <li className={`rounded-2xl border-[1.5px] bg-white p-4 ${done ? 'border-blue-200' : 'border-slate-200'}`}>
+    <li className={`rounded-3xl bg-white p-4 shadow-sm ring-1 ${done ? 'ring-blue-200' : 'ring-slate-200'}`}>
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Icon className="h-5 w-5" aria-hidden="true" /></span>
-        <div className="min-w-0 flex-1">
-          <p className="font-bold text-[#0F2D6B]"><T k={`rc.kind.${kind}`}>{label}</T></p>
-          <p className="text-[13px] text-slate-500">{done ? (drafts.length === 1 ? <T k="rc.slot.added">Added</T> : <>{drafts.length} <T k="rc.slot.added-many">policies added</T></>) : <T k="rc.slot.not-added">Not added yet</T>}</p>
-          {!done && movedAway && (
-            <p className="mt-1 text-[13px] font-semibold text-blue-700">
-              <T k="rc.slot.moved-away">That file was</T> {/^[aeiou]/i.test(KIND[movedAway]?.label || '') ? 'an' : 'a'} {(KIND[movedAway]?.label || '').toLowerCase()} <T k="rc.slot.moved-away-2">policy. Add your</T> {(KIND[kind]?.label || '').toLowerCase()} <T k="rc.slot.moved-away-3">policy here.</T>
-            </p>
-          )}
-        </div>
-        {done && <span className="qc-badge qc-badge-sm shrink-0" aria-label="Added"><Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /></span>}
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+        <p className="min-w-0 flex-1 text-[17px] font-bold text-[#0F2D6B]"><T k={`rc.kind.${kind}`}>{label}</T></p>
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${done ? 'bg-blue-50 text-blue-800' : 'bg-slate-100 text-slate-600'}`}>
+          {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-400" aria-hidden="true" />}
+          {done ? (drafts.length === 1 ? <T k="rc.slot.added">Added</T> : <>{drafts.length} <T k="rc.slot.added-many">policies added</T></>) : <T k="rc.slot.not-added">Not added yet</T>}
+        </span>
       </div>
+      {!done && movedAway && (
+        <p className="mt-3 flex items-start gap-2 rounded-2xl bg-blue-50 px-3 py-2.5 text-sm text-[#0F2D6B]" role="status">
+          <Layers className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" />
+          <span><T k="rc.slot.moved-away">That file was</T> {/^[aeiou]/i.test(KIND[movedAway]?.label || '') ? 'an' : 'a'} {lower(movedAway)} <T k="rc.slot.moved-away-2">policy. Add your</T> {lower(kind)} <T k="rc.slot.moved-away-3">policy here.</T></span>
+        </p>
+      )}
       {done ? (
         <>
           <ul className="mt-3 space-y-2">{drafts.map(renderDraft)}</ul>
-          <button type="button" onClick={onUpload} className="mt-2 text-sm font-semibold text-blue-700"><T k="rc.flow.another">+ Another</T>{' '}{label}{' '}<T k="rc.flow.policy">Policy</T></button>
+          <button type="button" onClick={onUpload}
+            className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-slate-200 text-sm font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-50/50">
+            <Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.another2">Add Another</T> {label} <T k="rc.flow.policy">Policy</T>
+          </button>
         </>
       ) : (
         <>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={onUpload} className="qb qb-blue qb-md flex-1 px-3 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.upload">Upload</T></button>
-            <button type="button" onClick={onCamera} className="qb qb-outline qb-md flex-1 px-3 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.use-my-camera">Use My Camera</T></button>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button type="button" onClick={onUpload} className="qb qb-blue qb-md w-full whitespace-nowrap px-2 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.upload">Upload</T></button>
+            <button type="button" onClick={onCamera} className="qb qb-outline qb-md w-full whitespace-nowrap px-2 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.use-my-camera">Use My Camera</T></button>
           </div>
-          <button type="button" onClick={() => setHelp(v => !v)} aria-expanded={help} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-700">
+          <button type="button" onClick={() => setHelp(v => !v)} aria-expanded={help} className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-700">
             <T k="rc.slot.help">Where Do I Find It?</T> <ChevronDown className={`h-3.5 w-3.5 transition-transform ${help ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
           {help && (
-            <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">
+            <p className="mt-2 rounded-2xl bg-slate-50 p-3 text-[13px] leading-relaxed text-slate-600">
               <T k="rc.slot.helptext">In your insurer’s app or website, open Documents and download your latest policy (the declarations page). A paper copy? Tap Use My Camera and get every page.</T>
             </p>
           )}
@@ -1202,8 +1207,6 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onCo
   const total = pages.reduce((t, pg) => t + (pg.pdfPages || 1), 0);
   const counting = pages.some(pg => isPdfName(pg.file) && pg.pdfPages === undefined);
 
-  const bytes = pages.reduce((t, pg) => t + (pg.file?.size || 0), 0);
-  const size = bytes ? (bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`) : null;
   const pageCount = counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`;
 
   // One downloaded PDF: a single file row, not the photo tiles.
@@ -1211,15 +1214,14 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onCo
     const pg = pages[0];
     const name = String(pg.file?.name || '').replace(/\.pdf$/i, '') || 'Policy PDF';
     return (
-      <li data-policy={item.id} className={`${flash ? 'ring-4 ring-amber-300 ' : ''}flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm`}>
-        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+      <li data-policy={item.id} className={`flex items-center gap-3 rounded-2xl bg-slate-50 p-3 ring-1 transition-shadow ${flash ? 'ring-4 ring-amber-300' : 'ring-slate-200'}`}>
+        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200">
           <FileText className="h-5 w-5" />
-          <span className="text-[9px] font-extrabold tracking-wide">PDF</span>
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-slate-900">{name}</p>
           <p className="mt-0.5 text-sm text-slate-500">
-            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>{size && ` · ${size}`}
+            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>
           </p>
         </div>
         <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Replace policy ${n}`}
@@ -1234,17 +1236,15 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onCo
     );
   }
   return (
-    <li data-policy={item.id} className={`rounded-2xl border bg-white p-3 shadow-sm transition-shadow ${flash ? 'ring-4 ring-amber-300' : ''} ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
+    <li data-policy={item.id} className={`rounded-2xl bg-slate-50 p-3 ring-1 transition-shadow ${flash ? 'ring-4 ring-amber-300' : asking ? 'ring-2 ring-blue-300' : 'ring-slate-200'}`}>
       <div className="flex items-center gap-3">
-        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-slate-50 text-slate-500 ring-1 ring-slate-200">
+        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200">
           <Camera className="h-5 w-5" />
-          <span className="text-[9px] font-extrabold tracking-wide">PHOTOS</span>
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-slate-900"><T k="rc.flow.photographed-policy">Photographed policy</T></p>
           <p className="mt-0.5 truncate text-sm text-slate-500">
-            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>{size && ` · ${size}`}
-            {bad >= 0 && <span className="text-amber-700">{' '}<T k="rc.flow.page">· Page</T>{' '}{bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
+            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>
           </p>
         </div>
         <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
@@ -1277,8 +1277,15 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onCo
         </li>
       </ul>
 
+      {bad >= 0 && pickedIndex < 0 && (
+        <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-amber-700">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span><T k="rc.flow.page">Page</T> {bad + 1} {pages[bad].quality.issue === 'dark' ? <T k="rc.flow.too-dark">looks too dark. Tap it to retake.</T> : <T k="rc.flow.blurry">looks blurry. Tap it to retake.</T>}</span>
+        </p>
+      )}
+
       {pickedIndex >= 0 && (
-        <div className="mt-2 flex items-center gap-2 rounded-xl bg-slate-50 p-2 pl-3 ring-1 ring-slate-200">
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-white p-2 pl-3 ring-1 ring-slate-200">
           <span className="flex-1 text-sm font-semibold text-slate-700"><T k="rc.flow.page">Page</T>{' '}{pickedIndex + 1}</span>
           <button type="button" onClick={() => { setPicked(null); onRetakePage(picked); }} aria-label={`Retake page ${pickedIndex + 1} of policy ${n}`}
             className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
@@ -1292,66 +1299,82 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onCo
       )}
 
       {item.movedFrom && item.kind !== item.movedFrom && (
-        <p className="mt-2 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-sm text-[#0F2D6B]" role="status">
-          <Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" strokeWidth={3} aria-hidden="true" />
-          <span><T k="rc.check.moved">Moved to</T> {KIND[item.kind]?.label}<T k="rc.check.moved-why">: this file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} {(KIND[item.kind]?.label || '').toLowerCase()} <T k="rc.check.moved-policy">policy.</T></span>
-        </p>
+        <Prompt tone="info" icon={Check} title={<><T k="rc.check.moved">Moved to</T> {KIND[item.kind]?.label}</>}>
+          <T k="rc.check.moved-why2">This file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} {(KIND[item.kind]?.label || '').toLowerCase()} <T k="rc.check.moved-policy">policy.</T>
+        </Prompt>
       )}
 
-      {concern && !mismatch && (
-        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3" role="alert">
-          <p className="font-semibold text-[#0F2D6B]">
-            {concern === 'expired'
-              ? <><T k="rc.check.expired">This policy ended</T> {new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}. <T k="rc.check.expired-2">Got a newer one?</T></>
-              : <T k="rc.check.no-cars">We don’t see any cars on this page. Add the page that lists your vehicles.</T>}
-          </p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {concern === 'expired'
-              ? <button type="button" onClick={onRemove} className="qb qb-blue qb-md flex-1 whitespace-nowrap"><T k="rc.check.replace">Remove It</T></button>
-              : <button type="button" onClick={onAddPage} className="qb qb-blue qb-md flex-1 whitespace-nowrap"><T k="rc.check.add-page">Add Page</T></button>}
-            <button type="button" onClick={() => onConcernOk(concern)} className="qb qb-outline qb-md flex-1 whitespace-nowrap">
-              {concern === 'expired' ? <T k="rc.check.current">It’s Current</T> : <T k="rc.check.all-there">It’s All There</T>}
-            </button>
-          </div>
-        </div>
+      {concern === 'expired' && !mismatch && (
+        <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> {new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</>}
+          actions={<>
+            <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.replace">Remove It</T></button>
+            <button type="button" onClick={() => onConcernOk(concern)} className={promptSecondary}><T k="rc.check.current">It’s Current</T></button>
+          </>}>
+          <T k="rc.check.expired-why">We quote against your current policy. If you have a newer one, add that instead.</T>
+        </Prompt>
+      )}
+      {concern === 'no_cars' && !mismatch && (
+        <Prompt icon={Car} title={<T k="rc.check.no-cars-title">We don’t see any cars yet</T>}
+          actions={<>
+            <button type="button" onClick={onAddPage} className={promptPrimary}><Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.check.add-page">Add Page</T></button>
+            <button type="button" onClick={() => onConcernOk(concern)} className={promptSecondary}><T k="rc.check.all-there">It’s All There</T></button>
+          </>}>
+          <T k="rc.check.no-cars-why">Add the page that lists your vehicles so we can match your coverage.</T>
+        </Prompt>
       )}
 
       {mismatch === 'not_a_policy' && (
-        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3" role="alert">
-          <p className="font-semibold text-[#0F2D6B]"><T k="rc.check.not-policy">This doesn’t look like an insurance policy.</T></p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            <button type="button" onClick={onRemove} className="qb qb-blue qb-md flex-1 whitespace-nowrap"><T k="rc.check.remove">Remove It</T></button>
-            <button type="button" onClick={onKeep} className="qb qb-outline qb-md flex-1 whitespace-nowrap"><T k="rc.check.keep">It’s a Policy</T></button>
-          </div>
-        </div>
+        <Prompt icon={FileText} title={<T k="rc.check.not-policy-title">This doesn’t look like a policy</T>}
+          actions={<>
+            <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.remove">Remove It</T></button>
+            <button type="button" onClick={onKeep} className={promptSecondary}><T k="rc.check.keep">It’s a Policy</T></button>
+          </>}>
+          <T k="rc.check.not-policy-why">We need the declarations page: the one that lists your coverages and price.</T>
+        </Prompt>
       )}
 
       {onMergeUp && (
         <button type="button" onClick={onMergeUp}
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700">
+          className="mt-3 w-full rounded-xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
           <T k="rc.flow.same-policy-as-policy">Same Policy As Policy</T>{' '}{index}<T k="rc.flow.combine-them">? Combine Them</T>
         </button>
       )}
 
-      {asking && (
-        <div className="mt-2 rounded-xl bg-blue-50 p-3" role="group" aria-label="More pages?">
-          <p className="font-semibold text-slate-900"><T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T></p>
-          <p className="mt-0.5 text-sm text-slate-600"><T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T></p>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={onAddPage}
-              className="qb qb-blue qb-md flex-1 px-3">
-              <Camera className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.add-page">Add Page</T>{' '}{pages.length + 1}
-            </button>
-            <button type="button" onClick={onDoneAdding}
-              className="qb qb-outline qb-md flex-1 px-3">
-              <T k="rc.flow.thats-all">That's All</T>
-            </button>
-          </div>
-        </div>
+      {asking && !concern && !mismatch && (
+        <Prompt tone="info" icon={Layers} role="group" title={<T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T>}
+          actions={<>
+            <button type="button" onClick={onAddPage} className={promptPrimary}><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.add-page">Add Page</T> {pages.length + 1}</button>
+            <button type="button" onClick={onDoneAdding} className={promptSecondary}><T k="rc.flow.thats-all">That's All</T></button>
+          </>}>
+          <T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T>
+        </Prompt>
       )}
     </li>
   );
 }
+
+// Every question or note on a policy uses this: icon, bold line, short reason, and up
+// to two equal buttons. Amber = needs an answer; blue = for their information.
+function Prompt({ tone = 'ask', icon: Icon = AlertTriangle, title, children, actions = null, role }) {
+  const ask = tone === 'ask';
+  return (
+    <div role={role || (ask ? 'alert' : 'status')}
+      className={`mt-3 rounded-2xl p-3.5 ${ask ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-blue-50 ring-1 ring-blue-100'}`}>
+      <div className="flex items-start gap-3">
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${ask ? 'bg-amber-100 text-amber-600' : 'bg-white text-blue-700'}`} aria-hidden="true">
+          <Icon className="h-4 w-4" strokeWidth={2.5} />
+        </span>
+        <div className="min-w-0 flex-1 pt-1">
+          <p className="text-[15px] font-semibold leading-snug text-[#0F2D6B]">{title}</p>
+          {children && <p className="mt-1 text-sm leading-relaxed text-slate-600">{children}</p>}
+        </div>
+      </div>
+      {actions && <div className="mt-3 grid grid-cols-2 gap-2">{actions}</div>}
+    </div>
+  );
+}
+const promptPrimary = 'qb qb-blue qb-md w-full whitespace-nowrap px-3 text-[15px]';
+const promptSecondary = 'qb qb-outline qb-md w-full whitespace-nowrap bg-white px-3 text-[15px]';
 
 // Several photos picked at once: pages of one policy, or one photo per policy?
 function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
@@ -1563,20 +1586,25 @@ const cleanName = (v) => v.replace(/[^\p{L}\s'’.-]/gu, '').replace(/\s{2,}/g, 
 // One tap: a row of choices; "Other" opens a short typed answer (normalized when sent).
 function RelationPicker({ id, legend, options, value, other, onChange, onOther }) {
   return (
-    <fieldset>
-      <legend className="mb-2 text-sm text-slate-800">{legend}</legend>
-      <div className="flex flex-wrap gap-2" role="radiogroup">
+    <fieldset className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <legend className="sr-only">{legend}</legend>
+      <p className="text-[15px] leading-snug text-slate-800" aria-hidden="true">{legend}</p>
+      <div className="mt-3 flex flex-wrap gap-2" role="radiogroup">
         {options.map(([k, label]) => (
           <button key={k} type="button" role="radio" aria-checked={value === k} onClick={() => onChange(value === k ? '' : k)}
-            className={`h-10 rounded-full border px-4 text-sm font-semibold ${value === k ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-300 bg-white text-slate-700'}`}>
+            className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold transition-colors ${value === k ? 'bg-blue-700 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+            {value === k && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />}
             <T k={`${id}.${k}`}>{label}</T>
           </button>
         ))}
       </div>
       {value === 'other' && (
-        <input aria-label="Describe how you're related" value={other} maxLength={OTHER_MAX} placeholder="e.g. Cousin, Roommate"
-          onChange={e => onOther(e.target.value.slice(0, OTHER_MAX))}
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        <div className="relative mt-3">
+          <input aria-label="Describe how you're related" value={other} maxLength={OTHER_MAX} placeholder="e.g. Cousin, Roommate"
+            onChange={e => onOther(e.target.value.slice(0, OTHER_MAX))}
+            className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-3.5 pr-14 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" />
+          <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-xs tabular-nums text-slate-400">{other.length}/{OTHER_MAX}</span>
+        </div>
       )}
     </fieldset>
   );

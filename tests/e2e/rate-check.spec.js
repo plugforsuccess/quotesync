@@ -477,23 +477,23 @@ test('policy checks and who-is-who: expired, no cars, name from the policy, rela
   await page.getByRole('button', { name: /Continue · 1 policy/i }).click();
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
   await chooser.setFiles(photo);
-  await page.getByRole('button', { name: "That's all" }).click().catch(() => {});
+  // One question at a time: "More pages?" waits while this policy has a question open.
 
   // Expired: asked first, and Continue waits.
   await expect(page.getByText(/This policy ended Mar 2025/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Answer the Question Above' })).toBeDisabled();
   await page.getByRole('button', { name: 'It’s Current' }).click();
   // Then: no cars on the page.
-  await expect(page.getByText(/We don’t see any cars on this page/)).toBeVisible();
+  await expect(page.getByText(/We don’t see any cars yet/)).toBeVisible();
   await page.getByRole('button', { name: 'It’s All There' }).click();
   await page.getByRole('button', { name: /^Continue$/ }).click();
 
   // The name arrives from the policy; typing a different one asks how they're related.
   await expect(page.getByLabel('First Name')).toHaveValue('Dana');
   await expect(page.getByLabel('Last Name')).toHaveValue('Reyes');
-  await expect(page.getByText('is your…')).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: 'Spouse / Partner' })).toHaveCount(0);
   await page.getByLabel('First Name').fill('Mike');
-  await expect(page.getByText('is your…')).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Spouse / Partner' })).toBeVisible();
   await page.getByRole('radio', { name: 'Other' }).first().click();
   await page.getByLabel('Describe how you\'re related').fill('my COUSIN!!');
   // Came from a referral link: how they know the person (optional).
