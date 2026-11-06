@@ -247,7 +247,7 @@ const AdminAgencyDetailPage = () => {
                 }}
               >
                 <Eye size={14} />
-                <T k="pages.adminagencydetailpage.e532d2">View as Agent</T>
+                <T k="pages.adminagencydetailpage.e532d2">View As Agent</T>
               </button>
             )}
             {agency.status !== 'approved' && (
@@ -647,7 +647,7 @@ const AdminAgencyDetailPage = () => {
             borderRadius: 12, padding: 24, width: '100%', maxWidth: 440,
           }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>
-              <T k="pages.adminagencydetailpage.e532d2">View as Agent</T>
+              <T k="pages.adminagencydetailpage.e532d2">View As Agent</T>
             </h3>
             <p style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 16 }}>
               <T k="pages.adminagencydetailpage.e0d6f2">You will be placed in</T> <strong><T k="pages.adminagencydetailpage.7f9c63">read-only impersonation mode</T></strong> <T k="pages.adminagencydetailpage.d55669">for</T>{' '}

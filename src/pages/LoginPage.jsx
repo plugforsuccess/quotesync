@@ -266,7 +266,7 @@ const LoginPage = () => {
                 onClick={() => { setMode('reset'); setError(''); setResetSuccess(''); }}
                 className="text-sm text-emerald-400 hover:text-emerald-300 mt-2"
               >
-                Forgot password?
+                Forgot Password?
               </button>
             </div>
 
@@ -278,7 +278,7 @@ const LoginPage = () => {
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in…
+                  Signing In…
                 </>
               ) : 'Sign In'}
             </button>

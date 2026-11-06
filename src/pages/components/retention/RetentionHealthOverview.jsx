@@ -99,16 +99,16 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
   // matter how the book looks. Missing book data → can't be green either.
   const status = (() => {
     // A preventable-lapse leak is a process failure — it outranks a clean book.
-    if (preventable >= 5) return { key: 'red', ...LIGHT.red, label: 'Workflow leaking',
+    if (preventable >= 5) return { key: 'red', ...LIGHT.red, label: 'Workflow Leaking',
       note: `${preventable} cases lapsed without ever being called — work the leak, not just the book.` };
 
     let s;
-    if (netRet == null) s = { key: 'amber', ...LIGHT.amber, label: 'Book data pending',
+    if (netRet == null) s = { key: 'amber', ...LIGHT.amber, label: 'Book Data Pending',
       note: 'Upload a book-health report to score net retention.' };
     else {
       const belowTarget = netRet < NET_RETENTION_TARGET;
       const shrinking = pifVar != null && pifVar < 0;
-      if (belowTarget && shrinking) s = { key: 'red', ...LIGHT.red, label: 'Needs attention',
+      if (belowTarget && shrinking) s = { key: 'red', ...LIGHT.red, label: 'Needs Attention',
         note: 'Net retention is below target and the book is shrinking.' };
       else if (belowTarget || shrinking) s = { key: 'amber', ...LIGHT.amber, label: 'Watch',
         note: belowTarget ? 'Net retention is below target.' : 'The book is shrinking month-over-month.' };

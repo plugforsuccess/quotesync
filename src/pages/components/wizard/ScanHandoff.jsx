@@ -32,7 +32,7 @@ export function ScanFastPathStep({ answers, onSkip }) {
         <Camera className="w-7 h-7 text-white" />
       </div>
       <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 leading-tight">
-        <T k="pages.components.wizard.scanhandoff.f7f28c">Skip the questions — scan your policy</T>
+        <T k="pages.components.wizard.scanhandoff.f7f28c">Skip the Questions — Scan Your Policy</T>
       </h2>
       <p className="text-sm text-gray-500 mb-5 leading-relaxed">
         <T k="pages.components.wizard.scanhandoff.67f796">Snap the first page of each policy (car, home, renters). We read your coverage and price, and Cam texts you only if Allstate can beat it.</T>
@@ -42,7 +42,7 @@ export function ScanFastPathStep({ answers, onSkip }) {
         onClick={() => scan(answers)}
         className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-6 py-4 font-black text-white text-lg transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
       >
-        <T k="pages.components.wizard.scanhandoff.964bfa">Scan my dec page</T>
+        <T k="pages.components.wizard.scanhandoff.964bfa">Scan My Dec Page</T>
         <ArrowRight className="w-5 h-5" />
       </button>
       <button
@@ -61,7 +61,7 @@ export function ScanHandoffCard({ answers, agentName }) {
   const scan = useScanHandoff('wizard_confirmation');
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 className="font-bold text-gray-900 mb-1"><T k="pages.components.wizard.scanhandoff.8573a4">Have your declarations page?</T></h3>
+      <h3 className="font-bold text-gray-900 mb-1"><T k="pages.components.wizard.scanhandoff.8573a4">Have Your Declarations Page?</T></h3>
       <p className="text-sm text-gray-500 mb-4">
         <T k="pages.components.wizard.scanhandoff.8a4c77">Scan it and</T> {agentName || 'your agent'} <T k="pages.components.wizard.scanhandoff.f0c1c6">can quote your exact coverage instead of an estimate.</T>
       </p>
@@ -71,7 +71,7 @@ export function ScanHandoffCard({ answers, agentName }) {
         className="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-primary-300 bg-white px-6 py-3 font-semibold text-primary-700 transition-colors hover:border-primary-500 hover:bg-primary-50"
       >
         <Camera className="w-5 h-5" />
-        <T k="pages.components.wizard.scanhandoff.964bfa">Scan my dec page</T>
+        <T k="pages.components.wizard.scanhandoff.964bfa">Scan My Dec Page</T>
       </button>
     </div>
   );

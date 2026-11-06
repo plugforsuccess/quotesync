@@ -48,7 +48,7 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
           <button onClick={submit} disabled={!body.trim() || add.isPending}
             style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: '#3B82F6', color: '#fff',
               fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: (!body.trim() || add.isPending) ? 0.5 : 1 }}>
-            {add.isPending ? 'Saving…' : 'Add comment'}
+            {add.isPending ? 'Saving…' : 'Add Comment'}
           </button>
         </div>
         {err && <div style={{ fontSize: 12, color: '#EF4444' }}>{err}</div>}

@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 const CLOSE_REASONS = [
-  { value: 'not_interested', label: 'Not interested' },
-  { value: 'unreachable', label: 'Unreachable after all attempts' },
-  { value: 'bad_risk', label: 'Bad risk (driving record / claims)' },
-  { value: 'wrong_territory', label: 'Wrong territory' },
-  { value: 'already_insured_elsewhere', label: 'Already insured elsewhere' },
+  { value: 'not_interested', label: 'Not Interested' },
+  { value: 'unreachable', label: 'Unreachable After All Attempts' },
+  { value: 'bad_risk', label: 'Bad Risk (Driving Record / Claims)' },
+  { value: 'wrong_territory', label: 'Wrong Territory' },
+  { value: 'already_insured_elsewhere', label: 'Already Insured Elsewhere' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -68,7 +68,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
                   <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-900"><T k="pages.components.dispositionmodal.6bf316">Quoted in Lead Manager</T></p>
-                    <p className="text-sm text-gray-500"><T k="pages.components.dispositionmodal.4ddd85">Lead converted to a serious quote</T></p>
+                    <p className="text-sm text-gray-500"><T k="pages.components.dispositionmodal.4ddd85">Lead Converted to a Serious Quote</T></p>
                   </div>
                 </button>
                 <button
@@ -78,7 +78,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
                   <XCircle className="w-6 h-6 text-gray-400 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-900"><T k="pages.components.dispositionmodal.b4e191">Close Lead</T></p>
-                    <p className="text-sm text-gray-500"><T k="pages.components.dispositionmodal.52b03e">Not interested, unreachable, or disqualified</T></p>
+                    <p className="text-sm text-gray-500"><T k="pages.components.dispositionmodal.52b03e">Not Interested, Unreachable, or Disqualified</T></p>
                   </div>
                 </button>
               </div>

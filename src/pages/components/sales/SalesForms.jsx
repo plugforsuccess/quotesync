@@ -90,7 +90,7 @@ function QuoteForm({ lead, agencyId, onClose }) {
       footer={<>
         {logQuote.error && <p className="mb-2 text-sm text-red-600" role="alert">Couldn’t save: {logQuote.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!ready || logQuote.isPending} onClick={save}>
-          {logQuote.isPending ? 'Saving…' : lines.length ? `Save quote · ${lines.length} ${lines.length === 1 ? 'policy' : 'policies'}` : 'Pick what you quoted'}
+          {logQuote.isPending ? 'Saving…' : lines.length ? `Save Quote · ${lines.length} ${lines.length === 1 ? 'Policy' : 'Policies'}` : 'Pick What You Quoted'}
         </button>
       </>}>
       <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>What did you quote?</p>
@@ -135,7 +135,7 @@ function BindForm({ lead, agencyId, openQuote, onClose }) {
       footer={<>
         {logBind.error && <p className="mb-2 text-sm text-red-600" role="alert">Couldn’t save: {logBind.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!ready || logBind.isPending} onClick={save}>
-          {logBind.isPending ? 'Saving…' : lines.length ? `Save bind · ${items} ${items === 1 ? 'item' : 'items'}` : 'Pick what you wrote'}
+          {logBind.isPending ? 'Saving…' : lines.length ? `Save Bind · ${items} ${items === 1 ? 'Item' : 'Items'}` : 'Pick What You Wrote'}
         </button>
       </>}>
       <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>What did you write?</p>
@@ -196,7 +196,7 @@ function LostForm({ lead, openQuotes, onClose }) {
         {markLost.error && <p className="mb-2 text-sm text-red-600" role="alert">Couldn’t save: {markLost.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!reason || markLost.isPending}
           onClick={() => markLost.mutate({ lead, quoteIds: openQuotes.map(q => q.id), reason }, { onSuccess: onClose })}>
-          {markLost.isPending ? 'Saving…' : 'Mark lost'}
+          {markLost.isPending ? 'Saving…' : 'Mark Lost'}
         </button>
       </>}>
       <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Why?</p>
@@ -239,7 +239,7 @@ export function LeadSalesCard({ lead, agencyId }) {
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-gray-900"><FileText className="h-5 w-5" aria-hidden="true" /> Quotes &amp; binds</h2>
+      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-gray-900"><FileText className="h-5 w-5" aria-hidden="true" /> Quotes & Binds</h2>
       <p className="mb-4 text-sm text-gray-500">Counts toward whoever logs it.</p>
 
       <div className="grid grid-cols-3 gap-2">

@@ -43,7 +43,7 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
         style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{invite ? 'Link ready' : 'Send a link'}</h2>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{invite ? 'Link Ready' : 'Send a Link'}</h2>
             <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
               {invite ? 'Send it from your own phone. Their upload comes back tagged to you.' : 'For someone who doesn’t have their policy on them.'}
             </p>
@@ -74,7 +74,7 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
             <div className="flex justify-end gap-2">
               <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm" style={inputStyle}><T k="pages.components.ratechecks.invitedialog.ea4788">Cancel</T></button>
               <button type="submit" disabled={!canSubmit} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                {create.isPending ? 'Creating…' : 'Create link'}
+                {create.isPending ? 'Creating…' : 'Create Link'}
               </button>
             </div>
           </form>

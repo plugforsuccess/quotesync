@@ -232,7 +232,7 @@ export default function EmployeeLayout() {
               onClick={handleSignOut}
               className="qs-focusable px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-900 hover:text-red-600 border border-black/10 hover:border-red-400 hover:bg-red-50 transition-colors"
             >
-              Sign out
+              Sign Out
             </button>
           </div>
         </div>

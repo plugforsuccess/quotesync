@@ -20,7 +20,7 @@ export default function NotesSearch({ agencyId }) {
 
   return (
     <div style={{ maxWidth: 860 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 4 }}><T k="pages.components.retention.notessearch.501212">Search notes</T></h2>
+      <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 4 }}><T k="pages.components.retention.notessearch.501212">Search Notes</T></h2>
       <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
         <T k="pages.components.retention.notessearch.c9b9fe">Full-text search across every case note — by text, policy #, or customer name. Filter by type or tag.</T>
       </p>

@@ -172,7 +172,7 @@ const AgencyApplyPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Display/Brand Name (optional)
+                  Display/Brand Name (Optional)
                 </label>
                 <input
                   type="text"
@@ -306,7 +306,7 @@ const AgencyApplyPage = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Territory Preferences</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Desired Territories (ZIP codes, cities, or regions)
+                Desired Territories (ZIP Codes, Cities, or Regions)
               </label>
               <textarea
                 name="desiredTerritories"

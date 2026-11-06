@@ -12,10 +12,10 @@ const FIELDS = [
   { key: 'vc_base_comp_pct', label: 'VC Base Comp Rate', type: 'percent', icon: Percent },
   { key: 'vc_commission_rate', label: 'Agency VC Commission Rate', type: 'percent', icon: Percent },
   { key: 'non_vc_bonus_monthly', label: 'Non-VC Bonus (Monthly Est.)', type: 'currency', icon: DollarSign },
-  { key: 'tp_band1_threshold', label: 'TP Band 1 Threshold (items)', type: 'integer', icon: Hash },
-  { key: 'tp_band1_addon', label: 'TP Band 1 Add-On ($/item)', type: 'currency', icon: DollarSign },
-  { key: 'tp_band2_threshold', label: 'TP Band 2 Threshold (items)', type: 'integer', icon: Hash },
-  { key: 'tp_band2_addon', label: 'TP Band 2 Add-On ($/item)', type: 'currency', icon: DollarSign },
+  { key: 'tp_band1_threshold', label: 'TP Band 1 Threshold (Items)', type: 'integer', icon: Hash },
+  { key: 'tp_band1_addon', label: 'TP Band 1 Add-On ($/Item)', type: 'currency', icon: DollarSign },
+  { key: 'tp_band2_threshold', label: 'TP Band 2 Threshold (Items)', type: 'integer', icon: Hash },
+  { key: 'tp_band2_addon', label: 'TP Band 2 Add-On ($/Item)', type: 'currency', icon: DollarSign },
 ];
 
 function formatDisplayValue(value, type) {

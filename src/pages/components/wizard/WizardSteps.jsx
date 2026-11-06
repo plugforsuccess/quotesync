@@ -160,7 +160,7 @@ export function ZipStep({ value, onChange, onAutoAdvance, isTargetZip: isTargetZ
             }}
             className="text-primary-600 font-semibold hover:text-primary-700 underline underline-offset-2"
           >
-            <T k="pages.components.wizard.wizardsteps.2458fe">Try a different ZIP code</T>
+            <T k="pages.components.wizard.wizardsteps.2458fe">Try a Different ZIP Code</T>
           </button>
           <button
             type="button"
@@ -226,7 +226,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
       <div className="space-y-5 max-w-sm mx-auto">
         {/* Own home */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.06d2a0">Do you own your home?</T></h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.06d2a0">Do You Own Your Home?</T></h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={ownsHome === true} onClick={() => { onOwnsHomeChange(true); checkAutoAdvance(true, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
             <ChoiceButton selected={ownsHome === false} onClick={() => { onOwnsHomeChange(false); checkAutoAdvance(false, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
@@ -234,7 +234,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
         </div>
         {/* Married */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.7b5265">Are you married?</T></h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.7b5265">Are You Married?</T></h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={maritalStatus === 'married'} onClick={() => { onMaritalStatusChange('married'); checkAutoAdvance(ownsHome, 'married', multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
             <ChoiceButton selected={maritalStatus === 'single'} onClick={() => { onMaritalStatusChange('single'); checkAutoAdvance(ownsHome, 'single', multipleDrivers, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
@@ -242,7 +242,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
         </div>
         {/* Multiple drivers */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.0a5a26">Multiple drivers in your household?</T></h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.0a5a26">Multiple Drivers in Your Household?</T></h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={multipleDrivers === true} onClick={() => { onMultipleDriversChange(true); checkAutoAdvance(ownsHome, maritalStatus, true, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
             <ChoiceButton selected={multipleDrivers === false} onClick={() => { onMultipleDriversChange(false); checkAutoAdvance(ownsHome, maritalStatus, false, multipleVehicles); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
@@ -250,7 +250,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
         </div>
         {/* Multiple vehicles */}
         <div>
-          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.33afa1">Multiple vehicles in your household?</T></h5>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center"><T k="pages.components.wizard.wizardsteps.33afa1">Multiple Vehicles in Your Household?</T></h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={multipleVehicles === true} onClick={() => { onMultipleVehiclesChange(true); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, true); }} className="w-full"><T k="pages.components.wizard.wizardsteps.7469a2">YES</T></ChoiceButton>
             <ChoiceButton selected={multipleVehicles === false} onClick={() => { onMultipleVehiclesChange(false); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, false); }} className="w-full"><T k="pages.components.wizard.wizardsteps.c2f3f4">NO</T></ChoiceButton>
@@ -347,7 +347,7 @@ export function EarlyPhoneStep({ value, onChange, onSkip }) {
           onClick={onSkip}
           className="text-sm text-primary-500 hover:text-primary-600 font-medium transition-colors bg-transparent border-0 cursor-pointer"
         >
-          <T k="pages.components.wizard.wizardsteps.131e38">Skip for now</T>
+          <T k="pages.components.wizard.wizardsteps.131e38">Skip For Now</T>
         </button>
       </div>
     </div>
@@ -552,7 +552,7 @@ export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
           onClick={onSkip}
           className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors bg-transparent border-0 cursor-pointer px-4 py-2 rounded-lg hover:bg-gray-100"
         >
-          <T k="pages.components.wizard.wizardsteps.ae4ee4">Not sure</T>
+          <T k="pages.components.wizard.wizardsteps.ae4ee4">Not Sure</T>
         </button>
       </div>
     </div>
@@ -600,7 +600,7 @@ export function CurrentHomePremiumStep({ value, onChange, onSkip }) {
           onClick={onSkip}
           className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors bg-transparent border-0 cursor-pointer px-4 py-2 rounded-lg hover:bg-gray-100"
         >
-          <T k="pages.components.wizard.wizardsteps.ae4ee4">Not sure</T>
+          <T k="pages.components.wizard.wizardsteps.ae4ee4">Not Sure</T>
         </button>
       </div>
     </div>
@@ -610,11 +610,11 @@ export function CurrentHomePremiumStep({ value, onChange, onSkip }) {
 // ─── Coverage Lapse Step ───────────────────────────────────────────
 
 const COVERAGE_LAPSE_OPTIONS = [
-  { value: 'no_lapse', label: 'No lapse — currently insured' },
-  { value: 'under_30', label: 'Less than 30 days' },
-  { value: '30_to_90', label: '30 – 90 days' },
-  { value: 'over_90', label: 'Over 90 days' },
-  { value: 'never_insured', label: 'Never been insured' },
+  { value: 'no_lapse', label: 'No Lapse — Currently Insured' },
+  { value: 'under_30', label: 'Less Than 30 Days' },
+  { value: '30_to_90', label: '30 – 90 Days' },
+  { value: 'over_90', label: 'Over 90 Days' },
+  { value: 'never_insured', label: 'Never Been Insured' },
 ];
 
 export function CoverageLapseStep({ value, onChange, onAutoAdvance }) {
@@ -687,7 +687,7 @@ export function VehicleYearStep({ value, onChange, onAutoAdvance }) {
           onClick={() => setShowOlderDropdown(true)}
           className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium py-2"
         >
-          <T k="pages.components.wizard.wizardsteps.824248">Enter other year</T>
+          <T k="pages.components.wizard.wizardsteps.824248">Enter Other Year</T>
         </button>
       ) : (
         <select
@@ -1152,7 +1152,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
             onClick={handleSwitchToManual}
             className="text-sm text-primary-600 hover:underline"
           >
-            <T k="pages.components.wizard.wizardsteps.15191a">Can't find your address? Enter it manually</T>
+            <T k="pages.components.wizard.wizardsteps.15191a">Can't Find Your Address? Enter It Manually</T>
           </button>
         ) : (
           <button
@@ -1160,7 +1160,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
             onClick={() => setManualMode(false)}
             className="text-sm text-primary-600 hover:underline"
           >
-            <T k="pages.components.wizard.wizardsteps.aa8bf0">Search for your address instead</T>
+            <T k="pages.components.wizard.wizardsteps.aa8bf0">Search For Your Address Instead</T>
           </button>
         )}
       </div>
@@ -1375,7 +1375,7 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           <div className="absolute inset-0 bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 animate-gradient-x"></div>
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-6 py-3.5 rounded-xl">
             <span className="relative z-10 text-white font-bold text-base">
-              <T k="pages.components.wizard.wizardsteps.03b047">Connect my policy</T>
+              <T k="pages.components.wizard.wizardsteps.03b047">Connect My Policy</T>
             </span>
             <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
           </div>
@@ -1452,7 +1452,7 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-6 py-3.5 rounded-xl">
             <Zap className="relative z-10 w-5 h-5 text-white" />
             <span className="relative z-10 text-white font-bold text-base">
-              {syncing ? 'Opening...' : 'Connect my policy'}
+              {syncing ? 'Opening...' : 'Connect My Policy'}
             </span>
           </div>
         </button>
@@ -1462,7 +1462,7 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
         onClick={onSkip}
         className="w-full text-sm text-gray-400 hover:text-gray-600 py-2 transition-colors"
       >
-        <T k="pages.components.wizard.wizardsteps.81b106">Skip for now →</T>
+        <T k="pages.components.wizard.wizardsteps.81b106">Skip For Now →</T>
       </button>
     </div>
   );
@@ -1470,9 +1470,9 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
 
 export function HomeInsuranceStatusStep({ value, onChange, onAutoAdvance }) {
   const options = [
-    { value: 'switching',  label: "I'm switching providers",       emoji: '🔄' },
-    { value: 'first_time', label: "First-time homebuyer",          emoji: '🏡' },
-    { value: 'lapsed',     label: "My current coverage has lapsed", emoji: '⚠️' },
+    { value: 'switching',  label: "I'm Switching Providers",       emoji: '🔄' },
+    { value: 'first_time', label: "First-Time Homebuyer",          emoji: '🏡' },
+    { value: 'lapsed',     label: "My Current Coverage Has Lapsed", emoji: '⚠️' },
   ];
 
   const handleSelect = (val) => {
@@ -1502,9 +1502,9 @@ export function HomeInsuranceStatusStep({ value, onChange, onAutoAdvance }) {
 
 export function HomeOccupancyTypeStep({ value, onChange, onAutoAdvance }) {
   const options = [
-    { value: 'primary',  label: 'Yes — it\'s my primary home',       emoji: '🏠' },
-    { value: 'seasonal', label: 'Sometimes — seasonal / second home', emoji: '🌴' },
-    { value: 'rental',   label: 'No — I rent it out',                emoji: '🔑' },
+    { value: 'primary',  label: 'Yes — It\'s My Primary Home',       emoji: '🏠' },
+    { value: 'seasonal', label: 'Sometimes — Seasonal / Second Home', emoji: '🌴' },
+    { value: 'rental',   label: 'No — I Rent It Out',                emoji: '🔑' },
   ];
 
   const handleSelect = (val) => {

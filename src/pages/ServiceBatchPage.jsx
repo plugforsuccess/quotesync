@@ -238,7 +238,7 @@ export default function ServiceBatchPage() {
             borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
           }}
         >
-          {showAdd ? 'Close' : '+ Log task'}
+          {showAdd ? 'Close' : '+ Log Task'}
         </button>
       </div>
 
@@ -483,7 +483,7 @@ function ServiceActivityPanel({ agencyId, empName }) {
       <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', background: 'none', border: 'none', padding: '11px 14px', cursor: 'pointer',
         fontFamily: 'inherit', color: 'var(--qs-bright)' }}>
-        <span style={{ fontSize: 13, fontWeight: 700 }}><T k="pages.servicebatchpage.3754bb">📊 Team activity today</T></span>
+        <span style={{ fontSize: 13, fontWeight: 700 }}><T k="pages.servicebatchpage.3754bb">📊 Team Activity Today</T></span>
         <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>{totAtt} <T k="pages.servicebatchpage.1db222">attempt</T>{totAtt === 1 ? '' : 's'} · {totClr} <T k="pages.servicebatchpage.b04ea2">cleared ·</T> {open ? '▲' : '▼'}</span>
       </button>
       {open && (
@@ -491,7 +491,7 @@ function ServiceActivityPanel({ agencyId, empName }) {
           <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
             <thead><tr>
               <th style={th}><T k="pages.servicebatchpage.40bed7">Person</T></th><th style={th}><T k="pages.servicebatchpage.7ba3b8">Attempts</T></th><th style={th}><T k="pages.servicebatchpage.94c326">Reached</T></th>
-              <th style={th}><T k="pages.servicebatchpage.b6e0b0">In progress</T></th><th style={th}><T k="pages.servicebatchpage.a3b087">Cleared</T></th><th style={th}><T k="pages.servicebatchpage.699633">Median time</T></th>
+              <th style={th}><T k="pages.servicebatchpage.b6e0b0">In Progress</T></th><th style={th}><T k="pages.servicebatchpage.a3b087">Cleared</T></th><th style={th}><T k="pages.servicebatchpage.699633">Median Time</T></th>
             </tr></thead>
             <tbody>
               {rows.map(r => (
@@ -652,21 +652,21 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
             display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span><T k="pages.servicebatchpage.1a534c">⏰ Follow up</T> {new Date(task.follow_up_at) <= new Date() ? 'due ·' : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
             <button onClick={e => { e.stopPropagation(); setFollowUp.mutate({ id: task.id, followUpAt: null }); }}
-              style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 11, padding: 0, textDecoration: 'underline' }}><T k="pages.servicebatchpage.01bc6f">clear</T></button>
+              style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 11, padding: 0, textDecoration: 'underline' }}><T k="pages.servicebatchpage.01bc6f">Clear</T></button>
           </div>
         )}
 
         {/* Actions */}
         <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 6, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
-          <button onClick={() => setLogging(v => !v)} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}><T k="pages.servicebatchpage.492b72">📞 Log call</T></button>
+          <button onClick={() => setLogging(v => !v)} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}><T k="pages.servicebatchpage.492b72">📞 Log Call</T></button>
           {waiting
             ? <button onClick={() => setWaiting.mutate({ id: task.id, waiting: false, task })} style={btnStyle('var(--qs-card)', 'var(--qs-text)')}><T k="pages.servicebatchpage.d4529a">▶ Resume</T></button>
-            : <button onClick={() => setWaiting.mutate({ id: task.id, waiting: true, task })} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}><T k="pages.servicebatchpage.08ecb1">⏸ Wait on customer</T></button>}
+            : <button onClick={() => setWaiting.mutate({ id: task.id, waiting: true, task })} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}><T k="pages.servicebatchpage.08ecb1">⏸ Wait on Customer</T></button>}
           {hardToReach && (
             <button onClick={handleFinalNotice}
               title={`Sent the final email after ${ATTEMPT_CAP}+ tries? Close it out as unreachable.`}
-              style={btnStyle('var(--qs-card)', 'var(--qs-text)')}><T k="pages.servicebatchpage.cc7aac">✉ Final notice → close</T></button>
+              style={btnStyle('var(--qs-card)', 'var(--qs-text)')}><T k="pages.servicebatchpage.cc7aac">✉ Final Notice → Close</T></button>
           )}
           <button onClick={handleDone} style={btnStyle('var(--qs-info)', '#fff')}><T k="pages.servicebatchpage.f92965">Done</T></button>
         </div>
@@ -855,7 +855,7 @@ function ExpectedCallbacks({ agencyId }) {
               disabled={logCallback.isPending}
               style={btnStyle('var(--qs-info)', '#fff')}
             >
-              {cb.rep_name ? `📞 On the line → ${cb.rep_name.split(' ')[0]}` : '📞 They called — log it'}
+              {cb.rep_name ? `📞 On the Line → ${cb.rep_name.split(' ')[0]}` : '📞 They Called — Log It'}
             </button>
           </div>
         ))}
@@ -1154,7 +1154,7 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
               <button type="button" onClick={() => setAddingPolicy(true)}
                 style={{ padding: '4px 10px', borderRadius: 14, border: '1px dashed var(--qs-border)',
                   background: 'transparent', color: 'var(--qs-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                <T k="pages.servicebatchpage.cecf19">+ add policy</T>
+                <T k="pages.servicebatchpage.cecf19">+ Add Policy</T>
               </button>
             ) : (
               <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
@@ -1169,7 +1169,7 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
                   </button>
                 ))}
                 <button type="button" onClick={() => setAddingPolicy(false)}
-                  style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 12 }}><T k="pages.servicebatchpage.6b2ded">done</T></button>
+                  style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 12 }}><T k="pages.servicebatchpage.6b2ded">Done</T></button>
               </span>
             )}
           </div>
@@ -1196,7 +1196,7 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
             <option value="low">Low</option>
           </select>
         </label>
-        <label style={{ ...lbl, gridColumn: '1 / -1' }}><span><T k="pages.servicebatchpage.2b679f">What's needed</T> <span style={{ color: 'var(--qs-danger)' }}>*</span></span>
+        <label style={{ ...lbl, gridColumn: '1 / -1' }}><span><T k="pages.servicebatchpage.2b679f">What's Needed</T> <span style={{ color: 'var(--qs-danger)' }}>*</span></span>
           <input value={title} onChange={e => setTitle(e.target.value)} style={input}
             placeholder="e.g. Update mortgagee to ABC Bank" />
         </label>
@@ -1209,7 +1209,7 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
           cursor: canSubmit ? 'pointer' : 'not-allowed', border: 'none',
           background: canSubmit ? 'var(--qs-info)' : 'var(--qs-card)', color: canSubmit ? '#fff' : 'var(--qs-muted)',
           borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
-        }}>{busy ? 'Saving…' : 'Add to batch'}</button>
+        }}>{busy ? 'Saving…' : 'Add to Batch'}</button>
       </div>
       {error && (
         <div style={{ marginTop: 10, fontSize: 12, color: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)',

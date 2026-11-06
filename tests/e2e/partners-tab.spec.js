@@ -82,7 +82,7 @@ test('with the reply-Y rule on, only households that replied Y are owed', async 
   await expect(card.getByText('2 households in')).toBeVisible();
   // Stephen (auto + home, replied Y) is $45; Ana is waiting. This month pays on the 21st of next month.
   await expect(card.getByText(/^Pays \w{3} 21$/)).toBeVisible();
-  await card.getByRole('button', { name: /2 households in/ }).click();
+  await card.getByRole('button', { name: /2 households in/i }).click();
   await expect(card.getByText('Replied Y')).toBeVisible();
   await expect(card.getByText('Not texted yet')).toBeVisible();
   // The rules card warns that texting has to be set up.
@@ -179,7 +179,7 @@ test('Scripts: what to say and text, one tap to copy or text', async ({ page, co
   expect(decodeURIComponent(href)).toContain('insuredbycam.com');
   await text.getByRole('button', { name: 'Copy' }).click();
   await expect(text.getByRole('button', { name: 'Copied' })).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Check my rate');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Check My Rate');
   await expect(page.getByRole('article', { name: 'Reconnect after a quote that came in high' })).toBeVisible();
   await expect(page.getByRole('article', { name: 'Ask them to share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
 });

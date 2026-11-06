@@ -258,7 +258,7 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
                   <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.8c758f">Net Ret</T></th>
                   <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.f09513">Policy Ret</T></th>
                   <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.4eeff3">Prior Yr</T></th>
-                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.3b73fb">Δ pts</T></th>
+                  <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.3b73fb">Δ Pts</T></th>
                   <th style={{ textAlign: 'right' }}><T k="pages.components.retention.bookmetricspanel.592f66">New (0–2 yr)</T></th>
                 </tr>
               </thead>

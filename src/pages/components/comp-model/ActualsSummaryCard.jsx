@@ -76,7 +76,7 @@ export default function ActualsSummaryCard({
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <FileSpreadsheet className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-1"><T k="pages.components.compmodel.actualssummarycard.c66add">No entries found</T></h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1"><T k="pages.components.compmodel.actualssummarycard.c66add">No Entries Found</T></h3>
         <p className="text-sm text-gray-500">
           <T k="pages.components.compmodel.actualssummarycard.9d5ec6">No entries found for this producer in</T> {monthLabel}<T k="pages.components.compmodel.actualssummarycard.cbb61e">. Upload the NB file to calculate actuals.</T>
         </p>

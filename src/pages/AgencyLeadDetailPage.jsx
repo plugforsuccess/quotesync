@@ -65,7 +65,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
   return (
     <div className="pt-3 border-t border-gray-100">
       <div className="flex justify-between items-start">
-        <dt className="text-gray-500"><T k="pages.agencyleaddetailpage.36e9b1">Referred by</T></dt>
+        <dt className="text-gray-500"><T k="pages.agencyleaddetailpage.36e9b1">Referred By</T></dt>
         <dd className="text-gray-900 text-right">
           {linked ? (
             <span>
@@ -92,7 +92,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
             onClick={() => setEditing((v) => !v)}
             className="ml-3 text-xs text-primary-600 hover:text-primary-700"
           >
-            {editing ? 'Cancel' : linked ? 'Change' : 'Link referrer'}
+            {editing ? 'Cancel' : linked ? 'Change' : 'Link Referrer'}
           </button>
         </dd>
       </div>
@@ -131,7 +131,7 @@ function ReferredByField({ lead, leadId, agencyId }) {
             disabled={setReferrer.isPending}
             className="w-full px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md disabled:opacity-50"
           >
-            {setReferrer.isPending ? 'Saving…' : 'Save referrer'}
+            {setReferrer.isPending ? 'Saving…' : 'Save Referrer'}
           </button>
           <p className="text-[11px] text-gray-400">
             <T k="pages.agencyleaddetailpage.1224e2">Only Georgia-resident referrers are eligible to win; anyone may refer.</T>

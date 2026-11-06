@@ -79,7 +79,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
     return (
       <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
         <Phone className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.components.timeattendance.producerdetailview.eaf06c">No performance data</T></h2>
+        <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.components.timeattendance.producerdetailview.eaf06c">No Performance Data</T></h2>
         <p className="text-qs-dim"><T k="pages.components.timeattendance.producerdetailview.4e20a5">Upload RingCentral data for this week to see producer metrics.</T></p>
       </div>
     );

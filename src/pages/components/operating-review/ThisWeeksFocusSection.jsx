@@ -57,7 +57,7 @@ export default function ThisWeeksFocusSection({ agencyId }) {
     <section style={sectionStyle}>
       <header style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-          <T k="pages.components.operatingreview.thisweeksfocussection.8d82c3">This week's focus</T>
+          <T k="pages.components.operatingreview.thisweeksfocussection.8d82c3">This Week's Focus</T>
         </h2>
         <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 0 }}>
           <T k="pages.components.operatingreview.thisweeksfocussection.52d2a2">Top 5 in each lane. Assign or open. The list refreshes when work resolves.</T>

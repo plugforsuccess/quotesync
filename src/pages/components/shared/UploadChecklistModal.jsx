@@ -57,8 +57,8 @@ export default function UploadChecklistModal({
             <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--qs-bright)',
               margin: 0, marginBottom: 4 }}>
               {totalActionable > 0
-                ? `${totalActionable} item${totalActionable > 1 ? 's' : ''} need${totalActionable === 1 ? 's' : ''} your attention`
-                : 'All reports current ✓'
+                ? `${totalActionable} Item${totalActionable > 1 ? 's' : ''} Need${totalActionable === 1 ? 's' : ''} Your Attention`
+                : 'All Reports Current ✓'
               }
             </h2>
             <p style={{ fontSize: 12, color: 'var(--qs-muted)', margin: 0 }}>
@@ -213,7 +213,7 @@ export default function UploadChecklistModal({
               color: totalActionable > 0 ? 'var(--qs-text)' : '#10B981',
             }}
           >
-            {totalActionable > 0 ? 'Dismiss' : 'All clear — close'}
+            {totalActionable > 0 ? 'Dismiss' : 'All Clear — Close'}
           </button>
         </div>
       </div>

@@ -110,7 +110,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   await page.getByRole('button', { name: 'Continue with one' }).click();
 
   await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
-  const submit = page.getByRole('button', { name: 'Check my rate' });
+  const submit = page.getByRole('button', { name: 'Check My Rate' });
   await expect(submit).toBeDisabled();
   await fillContact(page);
   // Both boxes are optional and start unchecked: automated texts first, partner referral second.
@@ -209,7 +209,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   await page.getByRole('button', { name: 'Add more policies' }).click();
   await expect(page.getByText('3 policies already sent.')).toBeVisible();
   await page.getByTestId('rc-files').setInputFiles(files[3]);
-  await page.getByRole('button', { name: /Send it/ }).click();
+  await page.getByRole('button', { name: /Send it/i }).click();
   await expect(page.getByText('Auto · $980/yr')).toBeVisible({ timeout: 15_000 });
   expect(posts).toHaveLength(4);
   expect(posts[3].sms_consent).toBe('declined');
@@ -244,7 +244,7 @@ test('saves progress on the device and warns about dark or blurry photos', async
   await expect(page.getByLabel('First name')).toHaveValue('Dre');
   await expect(page.getByRole('checkbox').nth(0)).not.toBeChecked();
 
-  await page.getByRole('button', { name: '2 policies', exact: true }).click();
+  await page.getByRole('button', { name: '2 Policies', exact: true }).click();
   await page.getByRole('button', { name: 'Start over' }).click();
   await expect(page.getByRole('heading', { name: 'Get a cheaper rate on your insurance today.' })).toBeVisible();
   await page.reload();
@@ -288,7 +288,7 @@ test('a policy with several pages goes up as one PDF, and asks about more pages'
   await page.getByRole('button', { name: /Continue/ }).click();
   await fillContact(page);
   await page.getByRole('checkbox').nth(0).check();
-  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
 
   expect(posts).toHaveLength(1);
@@ -328,7 +328,7 @@ test('a downloaded PDF counts its own pages and goes up whole', async ({ page },
   await page.getByRole('button', { name: /Continue/ }).click();
   await fillContact(page);
   await page.getByRole('checkbox').nth(0).check();
-  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
 
   expect(posts).toHaveLength(1);
@@ -359,7 +359,7 @@ async function sendOne(page, photo) {
   await page.getByRole('button', { name: /Continue/ }).click();
   await fillContact(page);
   await page.getByRole('checkbox').nth(0).check();
-  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
 }
 
@@ -387,12 +387,12 @@ test('the guided flow: pick policies, add each one, continue', async ({ page }, 
   const photo = testInfo.outputPath('auto-dec.png');
   fs.writeFileSync(photo, noisePng(900, 1200));
   await page.goto('/ratecheck');
-  await page.getByRole('button', { name: /Check my rate/ }).first().click();
+  await page.getByRole('button', { name: /Check My Rate/ }).first().click();
   await expect(page.getByRole('heading', { name: 'What should we check?' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pick at least one' })).toBeDisabled();
   await page.getByRole('button', { name: 'Auto', exact: true }).click();
   await page.getByRole('button', { name: 'Home', exact: true }).click();
-  await page.getByRole('button', { name: /Continue · 2 policies/ }).click();
+  await page.getByRole('button', { name: /Continue · 2 policies/i }).click();
 
   await expect(page.getByRole('heading', { name: 'Upload your policies' })).toBeVisible();
   await expect(page.getByRole('button', { name: '0 of 2 added' })).toBeDisabled();

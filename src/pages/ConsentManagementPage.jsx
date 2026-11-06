@@ -142,7 +142,7 @@ export default function ConsentManagementPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.ce2660">Customer</T></th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.bcc254">Phone</T></th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.0d593a">Auto-dial</T></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.0d593a">Auto-Dial</T></th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.b16cff">DNC</T></th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.447497">Date</T></th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><T k="pages.consentmanagementpage.f31bbd">Source</T></th>
@@ -291,7 +291,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.905743">Policy Numbers (comma separated)</T></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.905743">Policy Numbers (Comma Separated)</T></label>
             <input
               type="text"
               value={policyNumbers}
@@ -329,7 +329,7 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.c021a1">Opt-out Channel</T></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1"><T k="pages.consentmanagementpage.c021a1">Opt-Out Channel</T></label>
               <select
                 value={optOutChannel}
                 onChange={(e) => setOptOutChannel(e.target.value)}

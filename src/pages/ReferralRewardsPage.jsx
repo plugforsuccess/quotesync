@@ -267,7 +267,7 @@ export default function ReferralRewardsPage() {
       {/* Program health */}
       {ops && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
-          <h2 className="font-semibold text-gray-900 mb-3">Program health</h2>
+          <h2 className="font-semibold text-gray-900 mb-3">Program Health</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             {[
               ['Entries', ops.entries_total ?? 0],
@@ -309,7 +309,7 @@ export default function ReferralRewardsPage() {
         {/* Log a call-in referral */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-            <Plus className="w-4 h-4 text-primary-600" /> Log a call-in referral
+            <Plus className="w-4 h-4 text-primary-600" /> Log a Call-in Referral
           </h2>
           <p className="text-xs text-gray-500 mb-4">
             Use this when someone calls in and names who referred them. Quoted
@@ -318,7 +318,7 @@ export default function ReferralRewardsPage() {
           <form onSubmit={handleAdd} className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Referring customer&apos;s name{' '}
+                Referring Customer's Name{' '}
                 <span className="text-red-500">*</span>
               </label>
               <input
@@ -333,7 +333,7 @@ export default function ReferralRewardsPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone <span className="text-gray-400">(optional)</span>
+                  Phone <span className="text-gray-400">(Optional)</span>
                 </label>
                 <input
                   type="tel"
@@ -364,7 +364,7 @@ export default function ReferralRewardsPage() {
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Note <span className="text-gray-400">(optional)</span>
+                Note <span className="text-gray-400">(Optional)</span>
               </label>
               <input
                 type="text"
@@ -386,7 +386,7 @@ export default function ReferralRewardsPage() {
               ) : (
                 <Plus className="w-4 h-4" />
               )}
-              Add to this month&apos;s drawing
+              Add to This Month's Drawing
             </button>
           </form>
         </div>
@@ -394,8 +394,8 @@ export default function ReferralRewardsPage() {
         {/* Entry list */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-primary-600" /> This month&apos;s
-            entries
+            <Users className="w-4 h-4 text-primary-600" /> This Month's
+            Entries
           </h2>
           {entries.length === 0 ? (
             <p className="text-sm text-gray-500 py-8 text-center">
@@ -467,8 +467,8 @@ export default function ReferralRewardsPage() {
       {/* Shareable referral links */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mt-6">
         <h2 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-          <Link2 className="w-4 h-4 text-primary-600" /> Shareable referral
-          links
+          <Link2 className="w-4 h-4 text-primary-600" /> Shareable Referral
+          Links
         </h2>
         <p className="text-xs text-gray-500 mb-4">
           Create a personal link for a customer. Quotes from anyone who uses
@@ -508,7 +508,7 @@ export default function ReferralRewardsPage() {
             disabled={createLink.isPending}
             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg disabled:opacity-50"
           >
-            {createLink.isPending ? 'Creating…' : 'Create link'}
+            {createLink.isPending ? 'Creating…' : 'Create Link'}
           </button>
         </form>
         {linkError && (
@@ -572,7 +572,7 @@ export default function ReferralRewardsPage() {
       {pastWinners.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 mt-6">
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-500" /> Past winners
+            <Trophy className="w-4 h-4 text-amber-500" /> Past Winners
           </h2>
           <ul className="divide-y divide-gray-100">
             {pastWinners.map((d) => {
@@ -625,7 +625,7 @@ export default function ReferralRewardsPage() {
                             }
                             className="text-[11px] px-2 py-0.5 rounded bg-primary-50 text-primary-700 hover:bg-primary-100"
                           >
-                            Mark paid (Zelle)
+                            Mark Paid (Zelle)
                           </button>
                           <button
                             type="button"

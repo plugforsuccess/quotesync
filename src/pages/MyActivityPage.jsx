@@ -238,7 +238,7 @@ export default function MyActivityPage() {
       {/* Last 14 days timeline */}
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.myactivitypage.beab46">Last 14 days</T></h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.myactivitypage.beab46">Last 14 Days</T></h3>
           {data && (
             <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
               <strong style={{ color: '#B07A0E' }}>{data.totals.saves}</strong> <T k="pages.myactivitypage.c94a10">saves ·</T>{' '}

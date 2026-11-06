@@ -189,7 +189,7 @@ function StorePage() {
             {/* Notify Me Form */}
             <div className="max-w-xl mx-auto bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 text-center">
               <h3 className="text-2xl font-bold text-white mb-3">
-                Get Notified at Launch
+                Get Notified At Launch
               </h3>
               <p className="text-white/70 mb-6">
                 Be the first to know when physical products drop. No spam, just launch updates.
@@ -215,7 +215,7 @@ function StorePage() {
         {productType === 'digital' && (
           <div className="max-w-4xl mx-auto bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
             <h2 className="text-2xl font-bold text-white mb-4 text-center">
-              Why Buy From insuredbycam?
+              Why Buy From Insuredbycam?
             </h2>
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <div>

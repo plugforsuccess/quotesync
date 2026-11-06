@@ -61,7 +61,7 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
         border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.06)',
         color: '#F87171', fontSize: 13, fontWeight: 700, cursor: 'pointer',
       }}>
-        <T k="pages.components.retention.casehandoffextras.dbed1b">⤴ Escalate to agent</T>
+        <T k="pages.components.retention.casehandoffextras.dbed1b">⤴ Escalate to Agent</T>
       </button>
     );
   }
@@ -75,13 +75,13 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
           style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 13 }}>✕</button>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.fb9c74">Why does this need an agent?</T></label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.fb9c74">Why Does This Need an Agent?</T></label>
         <select className="dark-select" value={reason} onChange={e => setReason(e.target.value)}>
           {ESCALATION_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.c50ac7">Details for the agent</T></label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.c50ac7">Details For the Agent</T></label>
         <textarea className="dark-input" rows={2} value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="What you've tried, what the customer needs, any deadline." />
@@ -97,7 +97,7 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
           color: escalate.isPending ? 'var(--qs-muted)' : '#fff',
           fontSize: 13, fontWeight: 700, cursor: escalate.isPending ? 'not-allowed' : 'pointer',
         }}>
-        {escalate.isPending ? 'Escalating…' : 'Hand off to agent'}
+        {escalate.isPending ? 'Escalating…' : 'Hand Off to Agent'}
       </button>
       {escalate.isError && (
         <div style={{ fontSize: 12, color: '#F87171', marginTop: 6 }}>
@@ -173,7 +173,7 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
         border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
         color: 'var(--qs-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
       }}>
-        <T k="pages.components.retention.casehandoffextras.470620">💡 Refer to sales (cross-sell)</T>
+        <T k="pages.components.retention.casehandoffextras.470620">💡 Refer to Sales (Cross-Sell)</T>
       </button>
     );
   }
@@ -187,13 +187,13 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
           style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 13 }}>✕</button>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.dc337c">Product they're interested in</T></label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.dc337c">Product They're Interested In</T></label>
         <select className="dark-select" value={product} onChange={e => setProduct(e.target.value)}>
           {REFER_PRODUCTS.map(p => <option key={p} value={p}>{productLabel(p)}</option>)}
         </select>
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.9b5ca9">Note for sales</T></label>
+        <label className="dark-label"><T k="pages.components.retention.casehandoffextras.9b5ca9">Note For Sales</T></label>
         <textarea className="dark-input" rows={2} value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="What they said — e.g. asked about bundling their auto." />
@@ -213,7 +213,7 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
           color: refer.isPending ? 'var(--qs-muted)' : '#fff',
           fontSize: 13, fontWeight: 700, cursor: refer.isPending ? 'not-allowed' : 'pointer',
         }}>
-        {refer.isPending ? 'Referring…' : 'Send to sales board'}
+        {refer.isPending ? 'Referring…' : 'Send to Sales Board'}
       </button>
       {refer.isError && (
         <div style={{ fontSize: 12, color: '#F87171', marginTop: 6 }}>

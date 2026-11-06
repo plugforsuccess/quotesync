@@ -349,7 +349,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
     return (
       <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
         <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.components.timeattendance.teamcomparisonview.566a60">No team data</T></h2>
+        <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.components.timeattendance.teamcomparisonview.566a60">No Team Data</T></h2>
         <p className="text-qs-dim">
           {filterLabel
             ? `No ${filterLabel} data for this week. Upload RingCentral data to see team comparison.`

@@ -43,7 +43,7 @@ export default function TerminationAliasesPage() {
       {/* Uncategorized panel */}
       <section style={{ ...cardStyle, marginBottom: 16 }}>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', margin: 0, marginBottom: 12 }}>
-          <T k="pages.terminationaliasespage.eb035c">Needs review:</T> {uncategorized.length} <T k="pages.terminationaliasespage.420135">raw reason</T>{uncategorized.length === 1 ? '' : 's'}
+          <T k="pages.terminationaliasespage.eb035c">Needs Review:</T> {uncategorized.length} <T k="pages.terminationaliasespage.420135">raw Reason</T>{uncategorized.length === 1 ? '' : 's'}
         </h2>
         {uncategorized.length === 0 ? (
           <p style={{ color: 'var(--qs-subtle)', margin: 0 }}>
@@ -61,7 +61,7 @@ export default function TerminationAliasesPage() {
       {/* Existing aliases panel */}
       <section style={cardStyle}>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', margin: 0, marginBottom: 12 }}>
-          <T k="pages.terminationaliasespage.d27fe1">Active aliases:</T> {aliases.length}
+          <T k="pages.terminationaliasespage.d27fe1">Active Aliases:</T> {aliases.length}
         </h2>
         {aliases.length === 0 ? (
           <p style={{ color: 'var(--qs-subtle)', margin: 0 }}>
@@ -101,10 +101,10 @@ function UncategorizedTable({ uncategorized, categories, agencyId }) {
     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
       <thead>
         <tr style={{ background: 'var(--qs-elevated)' }}>
-          <th style={thStyle}><T k="pages.terminationaliasespage.dc6ac0">Raw reason</T></th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.dc6ac0">Raw Reason</T></th>
           <th style={{ ...thStyle, textAlign: 'right' }}><T k="pages.terminationaliasespage.e93f99">Count</T></th>
           <th style={{ ...thStyle, textAlign: 'right' }}><T k="pages.terminationaliasespage.cd118d">Latest</T></th>
-          <th style={thStyle}><T k="pages.terminationaliasespage.86eed1">Assign category</T></th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.86eed1">Assign Category</T></th>
         </tr>
       </thead>
       <tbody>
@@ -166,8 +166,8 @@ function AliasTable({ aliases, categories, agencyId }) {
     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
       <thead>
         <tr style={{ background: 'var(--qs-elevated)' }}>
-          <th style={thStyle}><T k="pages.terminationaliasespage.dc6ac0">Raw reason</T></th>
-          <th style={thStyle}><T k="pages.terminationaliasespage.8a9e44">Maps to</T></th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.dc6ac0">Raw Reason</T></th>
+          <th style={thStyle}><T k="pages.terminationaliasespage.8a9e44">Maps To</T></th>
           <th style={thStyle}><T k="pages.terminationaliasespage.f31bbd">Source</T></th>
           <th style={{ ...thStyle, textAlign: 'right' }}><T k="pages.terminationaliasespage.06df33">Actions</T></th>
         </tr>

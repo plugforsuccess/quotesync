@@ -341,7 +341,7 @@ export default function RenewalDetailPage() {
         )}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm text-gray-600 mb-1"><T k="pages.renewaldetailpage.773ecc">Assign to</T></label>
+            <label className="block text-sm text-gray-600 mb-1"><T k="pages.renewaldetailpage.773ecc">Assign To</T></label>
             <select
               value={assignTo || policy.assigned_to_id || ''}
               onChange={(e) => setAssignTo(e.target.value)}
@@ -412,7 +412,7 @@ export default function RenewalDetailPage() {
               disabled={updateStatus.isPending}
               className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg disabled:opacity-50"
             >
-              <T k="pages.renewaldetailpage.773fa8">Mark Follow-up Complete</T>
+              <T k="pages.renewaldetailpage.773fa8">Mark Follow-Up Complete</T>
             </button>
           )}
         </div>

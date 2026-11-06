@@ -877,7 +877,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
           {fileResults.length > 1
-            ? `${fileResults.length} files selected`
+            ? `${fileResults.length} Files Selected`
             : 'Choose File(s)'}
           <input
             ref={fileRef}

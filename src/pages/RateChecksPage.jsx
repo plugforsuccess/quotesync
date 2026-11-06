@@ -48,9 +48,9 @@ import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
 const FILTERS = [
-  { value: 'open', label: 'Needs quote', statuses: OPEN_STATUSES },
+  { value: 'open', label: 'Needs Quote', statuses: OPEN_STATUSES },
   { value: 'won', label: 'Wins', statuses: ['won', 'bound'] },
-  { value: 'lost', label: 'Can’t beat', short: 'Lost', statuses: ['lost'] },
+  { value: 'lost', label: 'Can’t Beat', short: 'Lost', statuses: ['lost'] },
   { value: 'all', label: 'All', statuses: null },
 ];
 // The consumer page says we text "typically within 30 mins during business hours".
@@ -217,7 +217,7 @@ const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h
 // the weekly and set-up tabs sit behind More.
 const WORK_TABS = [
   { v: 'inbox', label: 'Inbox', Icon: Camera },
-  { v: 'invites', label: 'Links sent', short: 'Links', Icon: Send },
+  { v: 'invites', label: 'Links Sent', short: 'Links', Icon: Send },
   { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
 ];
 const MORE_GROUPS = [
@@ -226,12 +226,12 @@ const MORE_GROUPS = [
     { v: 'texts', label: 'Texts', hint: 'Every text customers and partners get', Icon: MessageSquare },
   ] },
   { title: 'Insights', tabs: [
-    { v: 'map', label: 'Where we win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
-    { v: 'agents', label: 'Competing agents', short: 'Agents', hint: 'Whose customers send us their policy', Icon: Users },
+    { v: 'map', label: 'Where We Win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
+    { v: 'agents', label: 'Competing Agents', short: 'Agents', hint: 'Whose customers send us their policy', Icon: Users },
   ] },
   { title: 'Setup', tabs: [
     { v: 'rules', label: 'Rules', hint: 'Where each scan goes', Icon: SlidersHorizontal },
-    { v: 'partners', label: 'Referral agencies', short: 'Referrals', hint: 'Who writes what Allstate can’t', Icon: Handshake },
+    { v: 'partners', label: 'Referral Agencies', short: 'Referrals', hint: 'Who writes what Allstate can’t', Icon: Handshake },
   ] },
 ];
 
@@ -351,7 +351,7 @@ function NotifyButton() {
   return (
     <button onClick={() => Notification.requestPermission().then(setPerm)} title="Get a heads-up on this device when a policy comes in" aria-label="Alert me here"
       className="hidden h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold sm:inline-flex" style={inputStyle}>
-      <Bell className="h-4 w-4" aria-hidden="true" /><span className="hidden lg:inline"><T k="pages.ratecheckspage.4bd5f4">Alert me here</T></span>
+      <Bell className="h-4 w-4" aria-hidden="true" /><span className="hidden lg:inline"><T k="pages.ratecheckspage.4bd5f4">Alert Me Here</T></span>
     </button>
   );
 }
@@ -434,7 +434,7 @@ export default function RateChecksPage() {
       <div className="dark-page flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.9eba0d">Rate Checks isn't enabled</T></h2>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.9eba0d">Rate Checks Isn't Enabled</T></h2>
           <p style={{ color: 'var(--qs-dim)' }}>
             <T k="pages.ratecheckspage.a401fc">Ask a platform admin to turn on the Rate Checks feature for your agency.</T>
           </p>
@@ -458,11 +458,11 @@ export default function RateChecksPage() {
             <NotifyButton />
             <button onClick={() => setUploadOpen(true)} aria-label="Upload dec page" title="Upload dec page"
               className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
-              <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline"><T k="pages.ratecheckspage.d008bd">Upload dec page</T></span>
+              <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline"><T k="pages.ratecheckspage.d008bd">Upload Dec Page</T></span>
             </button>
             <button onClick={() => setInviteOpen(true)}
               className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
-              <Send className="h-4 w-4" aria-hidden="true" /> <T k="pages.ratecheckspage.176f56">Send a link</T>
+              <Send className="h-4 w-4" aria-hidden="true" /> <T k="pages.ratecheckspage.176f56">Send a Link</T>
             </button>
           </div>
         </div>
@@ -489,10 +489,10 @@ export default function RateChecksPage() {
                 <Clock className="h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
                 <span className="min-w-0 flex-1 font-medium">
                   {overdueOnly
-                    ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">waiting 30+ min</T></>
-                    : <>{overdue} <T k="pages.ratecheckspage.f9362d">waiting 30+ min for a quote</T></>}
+                    ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">Waiting 30+ min</T></>
+                    : <>{overdue} <T k="pages.ratecheckspage.f9362d">Waiting 30+ min For a Quote</T></>}
                 </span>
-                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show all' : 'Show'}</span>
+                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show All' : 'Show'}</span>
               </button>
             )}
 
@@ -643,7 +643,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)', transform: headerHidden ? 'translateY(-100%)' : 'none' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || 'Rate check'}</h2>
+              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || 'Rate Check'}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
                 {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
@@ -697,7 +697,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
                 )}
               </div>
             ) },
-            { key: 'decision', label: 'What to quote', content: <DecisionCard rc={rc} household={household} /> },
+            { key: 'decision', label: 'What to Quote', content: <DecisionCard rc={rc} household={household} /> },
           ]} />
         </div>
 
@@ -708,7 +708,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               {canRescan && (
                 <button onClick={() => rescan.mutate({ rateCheckId: rc.id })} disabled={rescan.isPending}
                   className="ml-2 inline-flex items-center gap-1 font-semibold text-primary-600 hover:underline disabled:opacity-50">
-                  <RefreshCw className={`h-3.5 w-3.5 ${rescan.isPending ? 'animate-spin' : ''}`} /> {rescan.isPending ? 'Scanning…' : 'Scan again'}
+                  <RefreshCw className={`h-3.5 w-3.5 ${rescan.isPending ? 'animate-spin' : ''}`} /> {rescan.isPending ? 'Scanning…' : 'Scan Again'}
                 </button>
               )}
             </Notice>
@@ -795,7 +795,7 @@ function QuoteBox({ rc, onQuoted }) {
         </div>
       )}
       {!bound && <form onSubmit={submit} className="mt-7 space-y-3">
-        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} <T k="pages.ratecheckspage.f9fce9">price per year</T></label>
+        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} <T k="pages.ratecheckspage.f9fce9">price Per Year</T></label>
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
             {premium && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>}
@@ -919,7 +919,7 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
         <input value={premium} onChange={e => setPremium(sanitizeMoneyInput(e.target.value))} inputMode="decimal" className="w-28 rounded-md px-2 py-1.5" style={inputStyle} />
       </label>
       <button type="submit" disabled={!chosen || bind.isPending} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
-        {bind.isPending ? 'Saving…' : 'Mark bound'}
+        {bind.isPending ? 'Saving…' : 'Mark Bound'}
       </button>
       {bind.isError && <span className="text-sm text-red-600">{bind.error.message}</span>}
     </form>
@@ -932,16 +932,16 @@ function PolicyDetails({ rc, warning, onRescan, rescanning }) {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.7558bf">Quote sheet</T></h3>
+        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.7558bf">Quote Sheet</T></h3>
         {!editing && (
           <div className="flex items-center gap-3">
             {onRescan && (
               <button onClick={onRescan} disabled={rescanning} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline disabled:opacity-50">
-                <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? 'animate-spin' : ''}`} /> {rescanning ? 'Scanning…' : 'Scan again'}
+                <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? 'animate-spin' : ''}`} /> {rescanning ? 'Scanning…' : 'Scan Again'}
               </button>
             )}
             <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
-              <Pencil className="h-3.5 w-3.5" /> <T k="pages.ratecheckspage.7a6e64">Fix details</T>
+              <Pencil className="h-3.5 w-3.5" /> <T k="pages.ratecheckspage.7a6e64">Fix Details</T>
             </button>
           </div>
         )}
@@ -956,7 +956,7 @@ function PolicyPhoto({ rc }) {
   const isPdf = rc.image_media_type === 'application/pdf';
   return (
     <section>
-      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.11ac95">What they sent</T></h3>
+      <h3 className={heading} style={{ color: 'var(--qs-bright)' }}><T k="pages.ratecheckspage.11ac95">What They Sent</T></h3>
       {!rc.image_path ? (
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.b53e83">No photo on file. Photos are deleted after 90 days.</T></p>
       ) : isLoading ? (

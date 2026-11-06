@@ -10,10 +10,10 @@ const PRODUCT_LABELS = {
 };
 
 const OUTCOME_OPTIONS = [
-  { value: 'pitched',     label: 'Pitched — awaiting decision' },
-  { value: 'sold',        label: 'Sold ✓ — quote in progress' },
-  { value: 'declined',    label: 'Declined — not interested' },
-  { value: 'not_reached', label: 'Could not reach' },
+  { value: 'pitched',     label: 'Pitched — Awaiting Decision' },
+  { value: 'sold',        label: 'Sold ✓ — Quote in Progress' },
+  { value: 'declined',    label: 'Declined — Not Interested' },
+  { value: 'not_reached', label: 'Could Not Reach' },
 ];
 
 function SectionHeader({ children }) {
@@ -152,7 +152,7 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
               color: '#60A5FA',
             }}
           >
-            <T k="pages.components.crosssell.crosssellqueue.5cafd4">🔄 Open renewal:</T> {renewal.product?.toUpperCase()} · {renewal.renewal_date} →
+            <T k="pages.components.crosssell.crosssellqueue.5cafd4">🔄 Open Renewal:</T> {renewal.product?.toUpperCase()} · {renewal.renewal_date} →
           </button>
         )}
         {cancel && (
@@ -166,8 +166,8 @@ function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
               color: '#F87171',
             }}
           >
-            <T k="pages.components.crosssell.crosssellqueue.de3c52">⚠ Open cancel:</T> {cancel.product?.toUpperCase()} <T k="pages.components.crosssell.crosssellqueue.9a1ee9">· due</T> {cancel.cancel_effective_date}
-            {cancel.amount_due ? ` · $${Number(cancel.amount_due).toLocaleString()} owed` : ''} →
+            <T k="pages.components.crosssell.crosssellqueue.de3c52">⚠ Open Cancel:</T> {cancel.product?.toUpperCase()} <T k="pages.components.crosssell.crosssellqueue.9a1ee9">· Due</T> {cancel.cancel_effective_date}
+            {cancel.amount_due ? ` · $${Number(cancel.amount_due).toLocaleString()} Owed` : ''} →
           </button>
         )}
         {cs.match_type === 'new_lead' && cs.lead_id && (

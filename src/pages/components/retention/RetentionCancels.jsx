@@ -176,14 +176,14 @@ function CustomerDrilldownModal({ event, onClose }) {
             { label: "Cancel Date",      value: event.cancel_effective_date || "\u2014",                               color: urgencyColor(days) },
             { label: "Days Left",        value: days <= 0 ? "PAST DUE" : `${days} days`,                         color: urgencyColor(days) },
             { label: "Phone",            value: event.phone || "\u2014",                                               color: event.phone ? "var(--qs-text)" : "var(--qs-muted)" },
-            { label: "Premium at Risk",  value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014",    color: "var(--qs-text)" },
+            { label: "Premium At Risk",  value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014",    color: "var(--qs-text)" },
             { label: "Prior Premium",    value: event.prior_premium ? fmtFull$(event.prior_premium) : "\u2014",        color: "var(--qs-dim)" },
             {
               label: "Premium Change",
               value: premiumChangePct !== null ? `${premiumChangePct >= 0 ? "+" : ""}${premiumChangePct.toFixed(1)}%` : "\u2014",
               color: premiumChangePct === null ? "var(--qs-muted)" : "var(--qs-text)",
             },
-            { label: "Items at Risk",    value: event.item_count != null ? String(event.item_count) : "\u2014",        color: "var(--qs-text)" },
+            { label: "Items At Risk",    value: event.item_count != null ? String(event.item_count) : "\u2014",        color: "var(--qs-text)" },
             { label: "Status",           value: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).label,     color: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).color },
             { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "var(--qs-dim)" },
           ].map(({ label, value, color }) => (
@@ -354,7 +354,7 @@ function AlreadyPaidAction({ onConfirm, busy }) {
           flex: 1, padding: "8px", borderRadius: 8, border: "none", background: busy ? "var(--qs-card)" : "var(--qs-info)",
           color: busy ? "var(--qs-muted)" : "#fff", fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit",
         }}>
-          {busy ? "Clearing…" : "Yes, mark paid"}
+          {busy ? "Clearing…" : "Yes, Mark Paid"}
         </button>
         <button type="button" onClick={() => setConfirming(false)} style={{
           flex: 1, padding: "8px", borderRadius: 8, border: "1px solid var(--qs-border)", background: "var(--qs-card)",
@@ -952,7 +952,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
           {/* ── Schedule a callback ──────────────────────────── */}
           <div style={{ marginBottom: 20 }}>
-            <label className="dark-label"><T k="pages.components.retention.retentioncancels.1ce60b">Schedule a callback</T></label>
+            <label className="dark-label"><T k="pages.components.retention.retentioncancels.1ce60b">Schedule a Callback</T></label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <input type="datetime-local" className="dark-input" value={cbTime}
                 onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
@@ -999,7 +999,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             marginBottom: 12,
           }}>
             <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-              {[{ v: "outbound", label: "📞 We called" }, { v: "inbound", label: "📲 They called (inbound)" }].map(opt => {
+              {[{ v: "outbound", label: "📞 We Called" }, { v: "inbound", label: "📲 They Called (Inbound)" }].map(opt => {
                 const on = attemptForm.direction === opt.v;
                 return (
                   <button key={opt.v} type="button"
@@ -1091,7 +1091,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 transition: "background 0.15s",
               }}
             >
-              {loggingAttempt ? "Logging\u2026" : "+ Log Call"}
+              {loggingAttempt ? "Logging…" : "+ Log Call"}
             </button>
           </div>
 
@@ -1167,7 +1167,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 reached attempt is logged. */}
             <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
               title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
-              <label className="dark-label"><T k="pages.components.retention.retentioncancels.28a575">Outcome (customer reached)</T></label>
+              <label className="dark-label"><T k="pages.components.retention.retentioncancels.28a575">Outcome (Customer Reached)</T></label>
               <select
                 className="dark-select"
                 value={form.status}
@@ -1248,7 +1248,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   </div>
 
                   <div>
-                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.27079b">Reason for Rate Reduction</T></label>
+                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.27079b">Reason For Rate Reduction</T></label>
                     <select
                       className="dark-select"
                       value={form.rewrite_reason}
@@ -1277,7 +1277,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Saved premium — only on a straight save (reinstatement) */}
             {form.status === "saved" && (
               <div>
-                <label className="dark-label"><T k="pages.components.retention.retentioncancels.c31724">Premium saved</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "var(--qs-danger)", marginLeft: 2 }}>*</span></label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.c31724">Premium Saved</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "var(--qs-danger)", marginLeft: 2 }}>*</span></label>
                 {dollarInput(
                   <input
                     className="dark-input"
@@ -1300,7 +1300,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       onClick={() => { setPremiumTouched(true); setSavedPremium(String(event.premium_at_risk)); }}
                       style={{ marginLeft: 6, background: "none", border: "none", padding: 0,
                         color: "var(--qs-info)", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
-                      <T k="pages.components.retention.retentioncancels.7fd782">premium unchanged — use at-risk</T>
+                      <T k="pages.components.retention.retentioncancels.7fd782">Premium Unchanged — Use At-Risk</T>
                     </button>
                   ) : null}
                 </div>
@@ -1333,7 +1333,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 captured; the closer is asked only when 2+ tactics were used. */}
             {["saved","rewritten"].includes(form.status) && (
               <div>
-                <label className="dark-label"><T k="pages.components.retention.retentioncancels.9336df">What saved them?</T></label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.9336df">What Saved Them?</T></label>
                 {onRecordTactics.length === 0 ? (
                   <InterventionPicker
                     context={caseContext}
@@ -1449,7 +1449,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   marginTop: 4,
                 }}
               >
-                {saving ? "Saving\u2026" : resolveLabel}
+                {saving ? "Saving…" : resolveLabel}
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center" }}>
@@ -1496,15 +1496,15 @@ const RENEWAL_STATUS_CONFIG = {
 // it" when a rep actually confirmed it, or vice-versa.
 function renewalResolutionBanner(status, outcomeSource) {
   if (status === "confirmed")
-    return { label: "Renewed — saved", sub: "rep-confirmed", ...SUCCESS_CHIP };
+    return { label: "Renewed — Saved", sub: "rep-confirmed", ...SUCCESS_CHIP };
   if (status === "lost")
-    return { label: "Lost — did not renew", sub: null, ...NEUTRAL_CHIP };
+    return { label: "Lost — Did Not Renew", sub: null, ...NEUTRAL_CHIP };
   if (status === "unreachable")
     return { label: "Unreachable", sub: "no contact made", ...NEUTRAL_CHIP };
   if (status === "auto_resolved") {
     return (outcomeSource === "observed" || outcomeSource === "rep")
-      ? { label: "Renewed — confirmed by rep", sub: "not credited as a save", ...SUCCESS_CHIP }
-      : { label: "Auto-resolved — system-inferred", sub: "no call logged", ...NEUTRAL_CHIP };
+      ? { label: "Renewed — Confirmed By Rep", sub: "not credited as a save", ...SUCCESS_CHIP }
+      : { label: "Auto-Resolved — System-Inferred", sub: "no call logged", ...NEUTRAL_CHIP };
   }
   return null;
 }
@@ -2089,7 +2089,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               { label: "Days Until",    value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
               { label: "Premium",       value: event.premium ? fmtFull$(event.premium) : "\u2014" },
               { label: "Prior Premium", value: event.premium_old ? fmtFull$(event.premium_old) : "\u2014" },
-              { label: "Premium \u0394",     value: event.premium_change != null
+              { label: "Premium Δ",     value: event.premium_change != null
                   ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
                   : "\u2014",
                 color: event.premium_change == null ? "var(--qs-dim)" : "var(--qs-text)" },
@@ -2222,7 +2222,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
           {/* ── Schedule a callback ──────────────────────────── */}
           <div style={{ marginBottom: 20 }}>
-            <label className="dark-label"><T k="pages.components.retention.retentioncancels.1ce60b">Schedule a callback</T></label>
+            <label className="dark-label"><T k="pages.components.retention.retentioncancels.1ce60b">Schedule a Callback</T></label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <input type="datetime-local" className="dark-input" value={cbTime}
                 onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
@@ -2274,7 +2274,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             marginBottom: 12,
           }}>
             <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-              {[{ v: "outbound", label: "📞 We called" }, { v: "inbound", label: "📲 They called (inbound)" }].map(opt => {
+              {[{ v: "outbound", label: "📞 We Called" }, { v: "inbound", label: "📲 They Called (Inbound)" }].map(opt => {
                 const on = attemptForm.direction === opt.v;
                 return (
                   <button key={opt.v} type="button"
@@ -2366,7 +2366,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 transition: "background 0.15s",
               }}
             >
-              {loggingAttempt ? "Logging\u2026" : "+ Log Call"}
+              {loggingAttempt ? "Logging…" : "+ Log Call"}
             </button>
           </div>
 
@@ -2442,7 +2442,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 reached attempt is logged. */}
             <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
               title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
-              <label className="dark-label"><T k="pages.components.retention.retentioncancels.28a575">Outcome (customer reached)</T></label>
+              <label className="dark-label"><T k="pages.components.retention.retentioncancels.28a575">Outcome (Customer Reached)</T></label>
               <select
                 className="dark-select"
                 value={form.status}
@@ -2477,14 +2477,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               <div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
-                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.fd2ba5">Renewal offer</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}><T k="pages.components.retention.retentioncancels.99d447">(from report)</T></span></label>
+                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.fd2ba5">Renewal Offer</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}><T k="pages.components.retention.retentioncancels.99d447">(From Report)</T></span></label>
                     <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
                       border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-dim)" }}>
                       {event.premium != null ? fmtFull$(event.premium) : "—"}
                     </div>
                   </div>
                   <div>
-                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.f8987c">Renewal paid</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "var(--qs-danger)", marginLeft: 2 }}>*</span></label>
+                    <label className="dark-label"><T k="pages.components.retention.retentioncancels.f8987c">Renewal Paid</T> <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "var(--qs-danger)", marginLeft: 2 }}>*</span></label>
                     {dollarInput(
                       <input
                         className="dark-input"
@@ -2525,7 +2525,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 captured; the closer is asked only when 2+ tactics were used. */}
             {form.status === "confirmed" && (
               <div>
-                <label className="dark-label"><T k="pages.components.retention.retentioncancels.9336df">What saved them?</T></label>
+                <label className="dark-label"><T k="pages.components.retention.retentioncancels.9336df">What Saved Them?</T></label>
                 {onRecordTactics.length === 0 ? (
                   <InterventionPicker
                     context={caseContext}
@@ -2632,7 +2632,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   marginTop: 4,
                 }}
               >
-                {saving ? "Saving\u2026" : resolveLabel}
+                {saving ? "Saving…" : resolveLabel}
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "var(--qs-danger)", marginTop: 8, textAlign: "center" }}>
@@ -2777,7 +2777,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
             {/* Detail grid — color values used as inline style props */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
               {[
-                { label: 'Premium at Risk', value: r.premium_at_risk ? fmtFull$(r.premium_at_risk) : '—' },
+                { label: 'Premium At Risk', value: r.premium_at_risk ? fmtFull$(r.premium_at_risk) : '—' },
                 { label: 'Cycle', value: `#${r.cycle || 1}`,
                   color: 'var(--qs-dim)' },
                 { label: 'Attempts', value: r.cancel_attempts || 0,
@@ -3417,7 +3417,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             },
             {
               key:        'points',
-              label:      'Points at Risk',
+              label:      'Points At Risk',
               rawValue:   totalPoints,
               display:    totalPoints.toLocaleString(),
               sub:        'portfolio impact',
@@ -3426,7 +3426,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             },
             {
               key:        'items',
-              label:      'Items at Risk',
+              label:      'Items At Risk',
               rawValue:   totalItems,
               display:    totalItems.toLocaleString(),
               sub:        'total policy items',
@@ -3444,7 +3444,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             },
             {
               key:        'multi_line',
-              label:      'Multi-Line at Risk',
+              label:      'Multi-Line At Risk',
               rawValue:   countMultiLine,
               display:    countMultiLine,
               sub:        'bundled customers',
@@ -3542,7 +3542,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               background: 'none', border: 'none', cursor: 'pointer',
             }}
           >
-            <T k="pages.components.retention.retentioncancels.22901b">Clear filter ✕</T>
+            <T k="pages.components.retention.retentioncancels.22901b">Clear Filter ✕</T>
           </button>
         </div>
       )}
@@ -3767,7 +3767,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
             }}
           >
             {[
-              ...(currentEmployeeId ? [{ value: 'me', label: '👤 Me (my cases)' }] : []),
+              ...(currentEmployeeId ? [{ value: 'me', label: '👤 Me (My Cases)' }] : []),
               { value: 'all',        label: 'Anyone' },
               { value: 'unassigned', label: 'Unassigned' },
             ].map(opt => (

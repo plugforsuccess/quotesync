@@ -51,17 +51,17 @@ test('log a quote with term premiums, then mark it bound with items and a bundle
   const state = { quotes: [], binds: [] };
   const writes = await mock(page, state);
   await page.goto('/agency/leads/L1');
-  const card = page.locator('div').filter({ has: page.getByRole('heading', { name: /Quotes & binds/ }) }).last();
+  const card = page.locator('div').filter({ has: page.getByRole('heading', { name: /Quotes & Binds/ }) }).last();
   await expect(card.getByRole('button', { name: 'Lost' })).toBeDisabled(); // nothing open yet
 
   await card.getByRole('button', { name: 'Quote', exact: true }).click();
-  const q = page.getByRole('dialog', { name: 'Log a quote' });
-  await expect(q.getByRole('button', { name: 'Pick what you quoted' })).toBeDisabled();
+  const q = page.getByRole('dialog', { name: 'Log a Quote' });
+  await expect(q.getByRole('button', { name: 'Pick What You Quoted' })).toBeDisabled();
   await q.getByRole('button', { name: 'Auto' }).click();
   await q.getByRole('button', { name: 'Home' }).click();
   await q.getByLabel('Auto quoted premium').fill('912');
   await q.getByLabel('Home quoted premium').fill('1,480');
-  await q.getByRole('button', { name: 'Save quote · 2 policies' }).click();
+  await q.getByRole('button', { name: 'Save Quote · 2 Policies' }).click();
   await expect(q).toHaveCount(0);
   expect(writes[0]).toMatchObject({ t: 'sales_quotes', method: 'POST', body: {
     agency_id: AG, lead_id: 'L1', customer_name: 'Dana Reyes', products: ['auto', 'home'],
@@ -70,11 +70,11 @@ test('log a quote with term premiums, then mark it bound with items and a bundle
 
   // Bound: prefilled from the open quote; auto items come from the 2 cars on the lead.
   await card.getByRole('button', { name: 'Bound', exact: true }).click();
-  const b = page.getByRole('dialog', { name: 'Mark bound' });
+  const b = page.getByRole('dialog', { name: 'Mark Bound' });
   await expect(b.getByRole('radio', { name: 'Preferred bundle' })).toHaveAttribute('aria-checked', 'true');
   await b.getByLabel('Auto bound premium').fill('868');
   await b.getByLabel('Auto policy number').fill('804 123 456');
-  await b.getByRole('button', { name: 'Save bind · 3 items' }).click();
+  await b.getByRole('button', { name: 'Save Bind · 3 Items' }).click();
   await expect(b).toHaveCount(0);
   const bind = writes.find(w => w.t === 'sales_binds');
   expect(bind.body).toMatchObject({ lead_id: 'L1', quote_id: 'Q1', bundle_type: 'preferred_bundle', bundle_type_overridden: false });
@@ -89,12 +89,12 @@ test('mark a quote lost with a reason', async ({ page }) => {
   const state = { quotes: [{ id: 'Q9', status: 'open', products: ['renters'], lines: [], quoted_on: '2026-11-01', quoted_premium: 180 }], binds: [] };
   const writes = await mock(page, state);
   await page.goto('/agency/leads/L1');
-  const card = page.locator('div').filter({ has: page.getByRole('heading', { name: /Quotes & binds/ }) }).last();
+  const card = page.locator('div').filter({ has: page.getByRole('heading', { name: /Quotes & Binds/ }) }).last();
   await card.getByRole('button', { name: 'Lost' }).click();
-  const d = page.getByRole('dialog', { name: 'Mark lost' });
+  const d = page.getByRole('dialog', { name: 'Mark Lost' });
   await expect(d.getByRole('radio')).toHaveText([/Price/, /No response/, /Not eligible/]);
   await d.getByRole('radio', { name: /Price/ }).click();
-  await d.getByRole('button', { name: 'Mark lost' }).click();
+  await d.getByRole('button', { name: 'Mark Lost' }).click();
   await expect(d).toHaveCount(0);
   expect(writes[0]).toMatchObject({ t: 'sales_quotes', method: 'PATCH', body: { status: 'lost', lost_reason: 'price' } });
 });

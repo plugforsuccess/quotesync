@@ -146,7 +146,7 @@ function RepTimeline({ agencyId, employees }) {
             <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.b21c39">Calls</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.94c326">Reached</T></th>
             <th style={{ textAlign: 'right' }}
               title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)"><T k="pages.components.retention.repactivitypanel.e25296">Saves</T></th>
-            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.8d5e7e">Premium</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.f38a5e">Tasks done</T></th></tr></thead>
+            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.8d5e7e">Premium</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.f38a5e">Tasks Done</T></th></tr></thead>
           <tbody>
             {data.series.map(d => {
               const saves = d.cancelSaves + d.renewalSaves;
@@ -216,7 +216,7 @@ function DailyTeam({ agencyId, employees }) {
             <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.b21c39">Calls</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.94c326">Reached</T></th>
             <th style={{ textAlign: 'right' }}
               title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)"><T k="pages.components.retention.repactivitypanel.e25296">Saves</T></th>
-            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.8d5e7e">Premium</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.f38a5e">Tasks done</T></th></tr></thead>
+            <th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.8d5e7e">Premium</T></th><th style={{ textAlign: 'right' }}><T k="pages.components.retention.repactivitypanel.f38a5e">Tasks Done</T></th></tr></thead>
           <tbody>
             {rows.map(({ e, a }) => {
               const saves = a.cancelSaves + a.renewalSaves;
@@ -263,7 +263,7 @@ function QueueCoverage({ agencyId }) {
     <>
       <table>
         <thead><tr>
-          <th><T k="pages.components.retention.repactivitypanel.608033">Rep</T></th><th><T k="pages.components.retention.repactivitypanel.722ad2">Queue</T></th><th><T k="pages.components.retention.repactivitypanel.e3b5c4">Untouched</T></th><th><T k="pages.components.retention.repactivitypanel.8fedbc">Worked today</T></th><th><T k="pages.components.retention.repactivitypanel.a0c76c">Calls vs target</T></th><th><T k="pages.components.retention.repactivitypanel.f7a42e">Queue coverage</T></th>
+          <th><T k="pages.components.retention.repactivitypanel.608033">Rep</T></th><th><T k="pages.components.retention.repactivitypanel.722ad2">Queue</T></th><th><T k="pages.components.retention.repactivitypanel.e3b5c4">Untouched</T></th><th><T k="pages.components.retention.repactivitypanel.8fedbc">Worked Today</T></th><th><T k="pages.components.retention.repactivitypanel.a0c76c">Calls vs Target</T></th><th><T k="pages.components.retention.repactivitypanel.f7a42e">Queue Coverage</T></th>
         </tr></thead>
         <tbody>
           {rows.map(r => {
@@ -324,9 +324,9 @@ export default function RepActivityPanel({ agencyId }) {
           <T k="pages.components.retention.repactivitypanel.f35d25">LIVE</T>
         </span>
         <div style={{ display: 'flex', gap: 6, marginLeft: 6 }}>
-          <button style={tab(mode === 'queue')} onClick={() => setMode('queue')}><T k="pages.components.retention.repactivitypanel.1d55af">Queue — today</T></button>
-          <button style={tab(mode === 'daily')} onClick={() => setMode('daily')}><T k="pages.components.retention.repactivitypanel.296863">Daily — team</T></button>
-          <button style={tab(mode === 'rep')} onClick={() => setMode('rep')}><T k="pages.components.retention.repactivitypanel.bd805c">By rep</T></button>
+          <button style={tab(mode === 'queue')} onClick={() => setMode('queue')}><T k="pages.components.retention.repactivitypanel.1d55af">Queue — Today</T></button>
+          <button style={tab(mode === 'daily')} onClick={() => setMode('daily')}><T k="pages.components.retention.repactivitypanel.296863">Daily — Team</T></button>
+          <button style={tab(mode === 'rep')} onClick={() => setMode('rep')}><T k="pages.components.retention.repactivitypanel.bd805c">By Rep</T></button>
         </div>
       </div>
       {mode === 'queue' ? <QueueCoverage agencyId={agencyId} />

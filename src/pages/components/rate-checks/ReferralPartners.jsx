@@ -48,7 +48,7 @@ export default function ReferralPartners({ agencyId }) {
       <div className="dark-card overflow-hidden" style={{ padding: 0 }}>
         <div className="flex items-center justify-between p-3" style={{ borderBottom: '1px solid var(--qs-border)' }}>
           <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.referralpartners.c09f68">Agencies you refer to</T></span>
-          {data.length > 0 && <button onClick={() => start(null)} className="min-h-[40px] rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white"><T k="pages.components.ratechecks.referralpartners.1d90c7">Add agency</T></button>}
+          {data.length > 0 && <button onClick={() => start(null)} className="min-h-[40px] rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white"><T k="pages.components.ratechecks.referralpartners.1d90c7">Add Agency</T></button>}
         </div>
 
         {editing && (
@@ -78,7 +78,7 @@ export default function ReferralPartners({ agencyId }) {
           !editing && (
             <div className="p-6 text-center">
               <p style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.referralpartners.746aa6">No agencies yet. Add an agency that writes what Allstate can’t, like SR-22 or commercial.</T></p>
-              <button onClick={() => start(null)} className="mt-4 min-h-[44px] rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.components.ratechecks.referralpartners.1d90c7">Add agency</T></button>
+              <button onClick={() => start(null)} className="mt-4 min-h-[44px] rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.components.ratechecks.referralpartners.1d90c7">Add Agency</T></button>
             </div>
           )
         ) : (

@@ -157,7 +157,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               {/* "Why this matters" section */}
               <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">
-                  <T k="components.newsroom.storymodal.aa8aa0">Why this matters</T>
+                  <T k="components.newsroom.storymodal.aa8aa0">Why This Matters</T>
                 </h2>
                 <p className="text-gray-700 leading-relaxed">
                   {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
@@ -189,7 +189,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               {/* CTA Block */}
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                 <h3 className="text-lg font-bold text-gray-900 mb-1">
-                  <T k="components.newsroom.storymodal.964a04">Does this touch your policy?</T>
+                  <T k="components.newsroom.storymodal.964a04">Does This Touch Your Policy?</T>
                 </h3>
                 <p className="text-sm text-gray-600 mb-4"><T k="components.newsroom.storymodal.f26060">Upload your policy and a licensed agent will check it, or text Cam the question.</T></p>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -197,7 +197,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                     onClick={() => handleCTAClick('compare_policy')}
                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                   >
-                    <T k="components.newsroom.storymodal.f8feed">Check my rate</T>
+                    <T k="components.newsroom.storymodal.f8feed">Check My Rate</T>
                   </button>
                   <a
                     href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}

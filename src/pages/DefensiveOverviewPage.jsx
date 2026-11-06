@@ -51,12 +51,12 @@ export default function DefensiveOverviewPage() {
 
   const c = data.counts || {};
   const kpis = [
-    { label: 'Total issued', value: data.total_issued },
+    { label: 'Total Issued', value: data.total_issued },
     { label: 'New', value: c.new },
-    { label: 'In review', value: c.in_review },
+    { label: 'In Review', value: c.in_review },
     { label: 'Applied', value: c.applied },
     { label: 'Completed', value: c.completed },
-    { label: 'Oldest unprocessed', value: `${data.oldest_unprocessed_age_days}d` },
+    { label: 'Oldest Unprocessed', value: `${data.oldest_unprocessed_age_days}d` },
   ];
 
   return (
@@ -84,7 +84,7 @@ export default function DefensiveOverviewPage() {
 
         {/* Throughput */}
         <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 mb-8">
-          <h2 className="text-sm font-semibold mb-4"><T k="pages.defensiveoverviewpage.2b6a51">Throughput — last 12 weeks</T></h2>
+          <h2 className="text-sm font-semibold mb-4"><T k="pages.defensiveoverviewpage.2b6a51">Throughput — Last 12 Weeks</T></h2>
           <div style={{ width: '100%', height: 280 }}>
             <ResponsiveContainer>
               <BarChart data={data.throughput || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
@@ -108,7 +108,7 @@ export default function DefensiveOverviewPage() {
               <tr>
                 <th className="text-left px-5 py-2"><T k="pages.defensiveoverviewpage.780f85">Assignee</T></th>
                 <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.03c2e7">New</T></th>
-                <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.e7c095">In review</T></th>
+                <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.e7c095">In Review</T></th>
                 <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.733d43">Applied</T></th>
                 <th className="text-right px-3 py-2"><T k="pages.defensiveoverviewpage.07ca50">Completed</T></th>
                 <th className="text-right px-5 py-2"><T k="pages.defensiveoverviewpage.96b014">Total</T></th>

@@ -250,10 +250,10 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
   }
 
   const MATCH_TYPE_CONFIG = {
-    renewal_only: { label: 'Renewal match',    color: '#3B82F6', note: 'Pitch during renewal call' },
-    cancel_only:  { label: 'Cancel match',     color: '#F59E0B', note: 'On hold — resolve cancel first' },
+    renewal_only: { label: 'Renewal Match',    color: '#3B82F6', note: 'Pitch during renewal call' },
+    cancel_only:  { label: 'Cancel Match',     color: '#F59E0B', note: 'On hold — resolve cancel first' },
     both:         { label: 'Renewal + Cancel', color: '#EF4444', note: 'On hold — cancel takes priority' },
-    new_lead:     { label: 'Outbound pitch',   color: '#B07A0E', note: 'Active customer — worked in the Outbound tab' },
+    new_lead:     { label: 'Outbound Pitch',   color: '#B07A0E', note: 'Active customer — worked in the Outbound tab' },
   };
 
   return (
@@ -315,7 +315,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                   <T k="pages.components.crosssell.crossselluploadmodal.411c0d">Select Cross-Sell Audit Report</T>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-                  <T k="pages.components.crosssell.crossselluploadmodal.30b438">Excel (.xlsx) · from Allstate Agency Portal</T>
+                  <T k="pages.components.crosssell.crossselluploadmodal.30b438">Excel (.Xlsx) · From Allstate Agency Portal</T>
                 </div>
                 <input type="file" accept=".xlsx,.xls"
                   onChange={handleFile} style={{ display: 'none' }} />

@@ -126,7 +126,7 @@ const TrustBuilder = () => {
             <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Shield className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2"><T k="pages.components.trustbuilder.600b1c">256-bit Encryption</T></h3>
+            <h3 className="text-lg font-bold text-white mb-2"><T k="pages.components.trustbuilder.600b1c">256-Bit Encryption</T></h3>
             <p className="text-sm text-white/70 leading-relaxed">
               <T k="pages.components.trustbuilder.aa5f1c">Bank-level security standard used by Plaid, Venmo, and major banks.</T>
             </p>

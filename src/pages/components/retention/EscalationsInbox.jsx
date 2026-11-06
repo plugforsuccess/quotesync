@@ -54,7 +54,7 @@ function Row({ esc, empName, onOpenCase, onResolve, resolving }) {
           style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--qs-border)',
             background: 'var(--qs-elevated)', color: 'var(--qs-text)', fontSize: 12,
             fontWeight: 600, cursor: 'pointer' }}>
-          <T k="pages.components.retention.escalationsinbox.33c277">Open case →</T>
+          <T k="pages.components.retention.escalationsinbox.33c277">Open Case →</T>
         </button>
         {!resolveOpen ? (
           <button type="button" onClick={() => setResolveOpen(true)}
@@ -104,7 +104,7 @@ export default function EscalationsInbox({ agencyId, producers = [], onOpenCase 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <span style={{ fontSize: 16 }}>⤴</span>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: '#F87171', margin: 0 }}>
-          <T k="pages.components.retention.escalationsinbox.0c6ed9">Escalations to you (</T>{escalations.length})
+          <T k="pages.components.retention.escalationsinbox.0c6ed9">Escalations to You (</T>{escalations.length})
         </h3>
         <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
           <T k="pages.components.retention.escalationsinbox.7bd55d">cases a rep handed off for an agent decision</T>

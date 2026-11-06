@@ -21,7 +21,7 @@ const BLANK = { name: '', line: '', field: 'dwelling', op: 'gt', value_num: '', 
 const fieldDef = (f) => RULE_FIELDS.find(x => x.value === f) || RULE_FIELDS[0];
 // A rule's outcome, in the same colours as the rate check badges.
 const outcome = (r) => (r.decision === 'umbrella'
-  ? { label: 'Counts toward PUP', cls: DECISION.quote_allstate_umbrella.cls }
+  ? { label: 'Counts Toward PUP', cls: DECISION.quote_allstate_umbrella.cls }
   : { label: `${DECISION[r.decision]?.label || r.decision}${r.carrier ? ` — ${r.carrier}` : ''}`, cls: DECISION[r.decision]?.cls || '' });
 
 // Strongest result wins, left to right.
@@ -129,11 +129,11 @@ export default function RulesTab({ agencyId, canEdit }) {
           <div className="flex gap-2">
             {rules.length === 0 && (
               <button onClick={() => seed.mutate(agencyId)} disabled={seed.isPending} className="min-h-[40px] rounded-lg px-3 text-sm" style={inputStyle}>
-                {seed.isPending ? 'Adding…' : 'Add the starter rules'}
+                {seed.isPending ? 'Adding…' : 'Add the Starter Rules'}
               </button>
             )}
             <button onClick={() => { setEditing('new'); setMenu(null); }} className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
-              <Plus className="h-4 w-4" /> <T k="pages.components.ratechecks.rulestab.39567c">New rule</T>
+              <Plus className="h-4 w-4" /> <T k="pages.components.ratechecks.rulestab.39567c">New Rule</T>
             </button>
           </div>
         )}
@@ -261,7 +261,7 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
       <div className="flex items-center justify-between gap-3">
         <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{initial.id ? 'Edit rule' : 'New rule'}</span>
         <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--qs-text)' }}>
-          <T k="pages.components.ratechecks.rulestab.222ae5">Rule active</T> <Switch on={form.enabled} label="Rule active" onChange={(on) => set('enabled', on)} />
+          <T k="pages.components.ratechecks.rulestab.222ae5">Rule Active</T> <Switch on={form.enabled} label="Rule active" onChange={(on) => set('enabled', on)} />
         </label>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -327,7 +327,7 @@ function RuleEditor({ initial, onCancel, onSave, save }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" disabled={save.isPending || !form.name.trim()} className="min-h-[44px] rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white disabled:opacity-50">
-          {save.isPending ? 'Saving…' : 'Save rule'}
+          {save.isPending ? 'Saving…' : 'Save Rule'}
         </button>
         <button type="button" onClick={onCancel} className="min-h-[44px] rounded-lg px-4 text-sm" style={inputStyle}><T k="pages.components.ratechecks.rulestab.ea4788">Cancel</T></button>
         {save.isError && <span className="text-sm text-red-600">{save.error.message}</span>}

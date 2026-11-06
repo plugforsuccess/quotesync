@@ -165,7 +165,7 @@ const AdminAgenciesPage = () => {
         {agencies.length === 0 ? (
           <div className="dark-card" style={{ padding: 48, textAlign: 'center' }}>
             <Building2 size={64} style={{ color: 'var(--qs-subtle)', margin: '0 auto 16px' }} />
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.adminagenciespage.1b42d9">No agencies found</T></h2>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 8 }}><T k="pages.adminagenciespage.1b42d9">No Agencies Found</T></h2>
             <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
               {filter === 'all' ? 'No agencies have applied yet.' : `No agencies with status "${filter}"`}
             </p>

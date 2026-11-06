@@ -73,13 +73,13 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
         </button>
         {filtersOpen && (
           <div className="flex w-full flex-col gap-3 rounded-lg p-3" style={{ background: 'var(--qs-elevated)' }}>
-            <label className="flex items-center justify-between gap-3"><T k="pages.components.ratechecks.competitoragents.a9f411">At least this many customers</T>
+            <label className="flex items-center justify-between gap-3"><T k="pages.components.ratechecks.competitoragents.a9f411">At Least This Many Customers</T>
               <input type="number" min={1} value={minSeen} onChange={e => setMinSeen(Math.max(1, Number(e.target.value) || 1))}
                 className="w-16 rounded px-2 py-1.5" style={inputStyle} />
             </label>
             <label className="flex min-h-[32px] items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={acquirableOnly} onChange={e => setAcquirableOnly(e.target.checked)} /> <T k="pages.components.ratechecks.competitoragents.439a78">Books we could buy</T></label>
             <label className="flex min-h-[32px] items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={starredOnly} onChange={e => setStarredOnly(e.target.checked)} /> <T k="pages.components.ratechecks.competitoragents.7bc1e7">Starred only</T></label>
-            <label className="flex items-center justify-between gap-3 md:hidden"><T k="pages.components.ratechecks.competitoragents.33d804">Sort by</T>
+            <label className="flex items-center justify-between gap-3 md:hidden"><T k="pages.components.ratechecks.competitoragents.33d804">Sort By</T>
               <select value={sort} onChange={e => setSort(e.target.value)} className="dark-select" style={{ width: 'auto', ...inputStyle }}>
                 <option value="rate_checks">Most customers</option>
                 <option value="avg_annual_premium">Highest premium</option>
@@ -125,7 +125,7 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
                   <SortTh k="avg_annual_premium"><T k="pages.components.ratechecks.competitoragents.45906e">Avg premium</T></SortTh>
                   <SortTh k="win_rate_pct"><T k="pages.components.ratechecks.competitoragents.26bd90">We win</T></SortTh>
                   <SortTh k="avg_savings_when_won"><T k="pages.components.ratechecks.competitoragents.77e44d">Avg savings</T></SortTh>
-                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.competitoragents.55d959">Last seen</T></th>
+                  <th className={thCls} style={thStyle}><T k="pages.components.ratechecks.competitoragents.55d959">Last Seen</T></th>
                 </tr>
               </thead>
               <tbody>
@@ -260,7 +260,7 @@ function AgentDetails({ r, update }) {
           placeholder="e.g. met at a chamber event; may retire in 2027" />
         <button onClick={() => update.mutate({ id: r.id, updates: { notes: notes.trim() || null } })}
           disabled={update.isPending || notes === (r.notes || '')}
-          className="rounded bg-primary-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"><T k="pages.components.ratechecks.competitoragents.a7a25d">Save notes</T></button>
+          className="rounded bg-primary-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"><T k="pages.components.ratechecks.competitoragents.a7a25d">Save Notes</T></button>
       </div>
     </div>
   );

@@ -106,7 +106,7 @@ export default function WhatSlippedSection({ agencyId, reviewWeekStart, priorWee
           severity: 'warning',
           title: `${name} below 70% of weekly target`,
           detail: `Delivered ${actual} items vs. target of ${Math.round(weeklyTarget)} (${Math.round(ratio * 100)}%).`,
-          cta: { label: 'Open comp model', href: `/agency/producers/${pc.employee_id}/comp-model` },
+          cta: { label: 'Open Comp Model', href: `/agency/producers/${pc.employee_id}/comp-model` },
         };
       })
       .filter(Boolean);
@@ -124,7 +124,7 @@ export default function WhatSlippedSection({ agencyId, reviewWeekStart, priorWee
         severity: 'warning',
         title: `${item.label} is overdue`,
         detail: item.description || 'Upload past due.',
-        cta: { label: 'Go to upload page', href: item.link || '/agency/retention' },
+        cta: { label: 'Go to Upload Page', href: item.link || '/agency/retention' },
       }));
 
     return [
@@ -154,7 +154,7 @@ export default function WhatSlippedSection({ agencyId, reviewWeekStart, priorWee
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
-              <T k="pages.components.operatingreview.whatslippedsection.e17300">What slipped last week</T>
+              <T k="pages.components.operatingreview.whatslippedsection.e17300">What Slipped Last Week</T>
             </h2>
             <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2, marginBottom: 0 }}>
               <T k="pages.components.operatingreview.whatslippedsection.e31687">Variance checks against last week's expectations.</T>
@@ -358,7 +358,7 @@ async function detectSlips(agencyId) {
     severity: 'critical',
     title: `Pending cancel untouched · ${c.priority_tier}`,
     detail: `Case ${c.id.slice(0, 8)}: 0 attempts, $${c.premium_at_risk ?? 0} at risk, cancel ${c.cancel_effective_date}.`,
-    cta: { label: 'Open case', href: `/agency/retention` },
+    cta: { label: 'Open Case', href: `/agency/retention` },
   }));
 
   const renewalSlips = (renewals ?? []).map(r => ({
@@ -367,7 +367,7 @@ async function detectSlips(agencyId) {
     severity: 'warning',
     title: `Renewal not yet contacted · ${r.customer_name || r.policy_no}`,
     detail: `Renews ${r.renewal_date}${r.premium_change_pct ? ` · ${r.premium_change_pct > 0 ? '+' : ''}${r.premium_change_pct}% premium change` : ''}.`,
-    cta: { label: 'Open renewal', href: `/agency/renewals/${r.id}` },
+    cta: { label: 'Open Renewal', href: `/agency/renewals/${r.id}` },
   }));
 
   const leadResponseSlips = (leads ?? []).map(l => ({
@@ -376,7 +376,7 @@ async function detectSlips(agencyId) {
     severity: 'critical',
     title: `Lead never contacted · ${l.first_name || l.id.slice(0, 8)}`,
     detail: `Created ${new Date(l.created_at).toLocaleDateString()} · score ${l.lead_score ?? '—'}.`,
-    cta: { label: 'Open lead', href: `/agency/leads` },
+    cta: { label: 'Open Lead', href: `/agency/leads` },
   }));
 
   return {

@@ -127,7 +127,7 @@ export default function TerminationReasonTab({ agencyId }) {
                 border: '1px solid var(--qs-border)', borderRadius: 6, cursor: 'pointer',
               }}
             >
-              {m === 24 ? '2 years' : `${m} months`}
+              {m === 24 ? '2 Years' : `${m} Months`}
             </button>
           ))}
           {goLive && (
@@ -143,7 +143,7 @@ export default function TerminationReasonTab({ agencyId }) {
                 border: '1px solid var(--qs-border)', borderRadius: 6, cursor: 'pointer',
               }}
             >
-              Since SOP launch
+              Since SOP Launch
             </button>
           )}
         </div>
@@ -192,7 +192,7 @@ export default function TerminationReasonTab({ agencyId }) {
             🎯 What to focus on this week
           </div>
           <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--qs-bright)', margin: 0, marginBottom: 6 }}>
-            {topPreventable.display_name}: {topPreventable.count} terminations, {fmt$(topPreventable.premium)} in lost premium
+            {topPreventable.display_name}: {topPreventable.count} Terminations, {fmt$(topPreventable.premium)} in Lost Premium
           </h3>
           <p style={{ fontSize: 13, color: 'var(--qs-text)', margin: 0 }}>
             {actionCopy(topPreventable.code, topPreventable.deltaPct)}
@@ -212,7 +212,7 @@ export default function TerminationReasonTab({ agencyId }) {
       {/* Stacked bar chart by month */}
       <div style={cardStyle}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)', margin: 0, marginBottom: 12 }}>
-          Terminations by month and category
+          Terminations By Month and Category
         </h3>
         <MonthlyStackedChart series={currentSeries} categories={categories} theme={theme} />
       </div>
@@ -220,7 +220,7 @@ export default function TerminationReasonTab({ agencyId }) {
       {/* Category breakdown table */}
       <div style={cardStyle}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)', margin: 0, marginBottom: 12 }}>
-          By category — {windowMonths} months vs. prior {windowMonths} months
+          By Category — {windowMonths} Months vs. Prior {windowMonths} Months
         </h3>
         <CategoryBreakdownTable compared={compared} totalCount={totalCount} totalPremium={totalPremium} />
       </div>
@@ -318,11 +318,11 @@ function CategoryBreakdownTable({ compared, totalCount, totalPremium }) {
         <thead>
           <tr style={{ background: 'var(--qs-elevated)' }}>
             <th style={thStyle}>Category</th>
-            <th style={thStyle}>Action class</th>
+            <th style={thStyle}>Action Class</th>
             <th style={{ ...thStyle, textAlign: 'right' }}>Count</th>
             <th style={{ ...thStyle, textAlign: 'right' }}>Premium</th>
             <th style={{ ...thStyle, textAlign: 'right' }}>Share</th>
-            <th style={{ ...thStyle, textAlign: 'right' }}>vs prior</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>vs Prior</th>
           </tr>
         </thead>
         <tbody>

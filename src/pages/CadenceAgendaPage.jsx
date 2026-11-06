@@ -421,7 +421,7 @@ export default function CadenceAgendaPage() {
         <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)',
           marginBottom: 8 }}>
-          <T k="pages.cadenceagendapage.86bc5a">Meeting logged</T>
+          <T k="pages.cadenceagendapage.86bc5a">Meeting Logged</T>
         </h2>
         <p style={{ fontSize: 14, color: 'var(--qs-muted)' }}>
           {template?.label} <T k="pages.cadenceagendapage.23a58b">with</T> {empName} <T k="pages.cadenceagendapage.c6f793">has been recorded.</T>
@@ -584,7 +584,7 @@ export default function CadenceAgendaPage() {
               fontSize: 12, color: '#3B82F6', background: 'none',
               border: 'none', cursor: 'pointer', padding: '4px 0',
             }}>
-            <T k="pages.cadenceagendapage.d2018e">+ Add commitment</T>
+            <T k="pages.cadenceagendapage.d2018e">+ Add Commitment</T>
           </button>
         )}
       </div>
@@ -599,7 +599,7 @@ export default function CadenceAgendaPage() {
           fontSize: 15, fontWeight: 700, cursor: 'pointer',
           opacity: completing ? 0.6 : 1,
         }}>
-        {completing ? 'Logging meeting...' : 'Complete Meeting'}
+        {completing ? 'Logging Meeting...' : 'Complete Meeting'}
       </button>
     </div>
   );

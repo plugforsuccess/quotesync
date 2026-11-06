@@ -423,7 +423,7 @@ const NewsroomDashboardPage = () => {
         {stories.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <div className="text-6xl mb-4">📝</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.newsroomdashboardpage.43f3e8">No stories found</T></h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.newsroomdashboardpage.43f3e8">No Stories Found</T></h2>
             <p className="text-gray-600 mb-6">
               {filter === 'all'
                 ? "Get started by creating your first story"

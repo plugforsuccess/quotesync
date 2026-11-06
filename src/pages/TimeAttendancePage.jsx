@@ -761,7 +761,7 @@ const TimeAttendancePage = () => {
           {!selectedEmployee ? (
             <div className="dark-card p-12 text-center">
               <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.timeattendancepage.61b214">Select an employee</T></h2>
+              <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.timeattendancepage.61b214">Select an Employee</T></h2>
               <p className="text-qs-dim"><T k="pages.timeattendancepage.dcc2aa">Choose an employee from the dropdown above to enter their weekly time.</T></p>
             </div>
           ) : (

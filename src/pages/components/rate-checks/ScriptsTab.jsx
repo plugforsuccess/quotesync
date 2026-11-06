@@ -30,7 +30,7 @@ And if you want, I'll check your rate and tell you honestly if I can beat it. If
         name: 'Text right after',
         when: 'Send it to the group chat, or one by one, while it’s fresh.',
         kind: 'text',
-        text: `Thanks for hearing me out 🙏 Here's the link: ${SITE}. Tap "Check my rate" and upload your policy (the PDF from your insurance app, or photos of every page). Takes about a minute, nothing to download. If you want me to check your rate too, leave the box checked and I'll text you. Appreciate y'all!`,
+        text: `Thanks for hearing me out 🙏 Here's the link: ${SITE}. Tap "Check My Rate" and upload your policy (the PDF from your insurance app, or photos of every page). Takes about a minute, nothing to download. If you want me to check your rate too, leave the box checked and I'll text you. Appreciate y'all!`,
       },
     ],
   },
@@ -51,7 +51,7 @@ Rates have moved since then, and I've got a new tool on my website that reads yo
         name: 'Text version',
         when: 'If you can’t catch them in person.',
         kind: 'text',
-        text: `Hey, I owe you a follow-up on that quote. I came in high last time, so I didn't want to waste your time, my bad for going quiet. Rates have moved, so I'd like to take a fresh look: ${SITE}, tap "Check my rate" (about a minute, nothing to download). If I can't get you a cheaper rate, I'll tell you straight up.`,
+        text: `Hey, I owe you a follow-up on that quote. I came in high last time, so I didn't want to waste your time, my bad for going quiet. Rates have moved, so I'd like to take a fresh look: ${SITE}, tap "Check My Rate" (about a minute, nothing to download). If I can't get you a cheaper rate, I'll tell you straight up.`,
       },
     ],
   },
@@ -71,7 +71,7 @@ Rates have moved since then, and I've got a new tool on my website that reads yo
 ];
 
 const TIPS = [
-  ['Call it your website, not an app.', '“App” makes people think download. Say: “Go to insuredbycam.com on your phone and tap Check my rate. Nothing to download.”'],
+  ['Call it your website, not an app.', '“App” makes people think download. Say: “Go to insuredbycam.com on your phone and tap Check My Rate. Nothing to download.”'],
   ['Explain “dec page”.', 'Most people don’t know the term: “the page that lists your cars, coverages and price; it’s in your insurance app or the email from your last renewal.”'],
   ['Ask for a number.', '“I’d love 10 of you” works better than “anyone who wants to.”'],
   ['Don’t promise savings.', '“I’ll tell you honestly if I can beat it” is more believable, and it keeps you compliant.'],

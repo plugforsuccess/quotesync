@@ -118,7 +118,7 @@ export default function CustomerSearchPage() {
               cursor: 'pointer', border: '1px solid var(--qs-border)',
               background: 'var(--qs-elevated)', color: 'var(--qs-dim)',
             }}>
-            {reconcile.isPending ? 'Rebuilding…' : '↻ Rebuild directory'}
+            {reconcile.isPending ? 'Rebuilding…' : '↻ Rebuild Directory'}
           </button>
         )}
       </div>

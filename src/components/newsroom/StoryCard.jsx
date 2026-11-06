@@ -168,7 +168,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
         onClick={handleReadMore}
         className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-semibold text-sm mb-4 transition-colors"
       >
-        <T k="components.newsroom.storycard.43340e">Read more</T>
+        <T k="components.newsroom.storycard.43340e">Read More</T>
         <ChevronRight className="w-4 h-4" />
       </button>
 

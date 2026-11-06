@@ -119,7 +119,7 @@ export default function CompScheduleAlertCard() {
       />
       <div className="flex-1">
         <h3 className="text-base font-semibold text-[var(--qs-bright)]">
-          {announced.carrier_name} {announced.state_code} {yearLabel} <T k="pages.components.planning.compschedulealertcard.c30062">compensation schedule announced</T>
+          {announced.carrier_name} {announced.state_code} {yearLabel} <T k="pages.components.planning.compschedulealertcard.c30062">compensation Schedule Announced</T>
         </h3>
         <p className="text-sm text-[var(--qs-text)] mt-1">
           <T k="pages.components.planning.compschedulealertcard.975826">Effective</T> <strong>{formatDate(announced.effective_from)}</strong>.{' '}

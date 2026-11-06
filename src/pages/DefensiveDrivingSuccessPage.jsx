@@ -38,7 +38,7 @@ export default function DefensiveDrivingSuccessPage() {
         {state === 'active' ? (
           <>
             <span className="qc-badge mb-4" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>
-            <h1 className="text-2xl font-extrabold text-[#0F2D6B] mb-2">Payment complete — you’re enrolled!</h1>
+            <h1 className="text-2xl font-extrabold text-[#0F2D6B] mb-2">Payment Complete — You’re Enrolled!</h1>
             <p className="text-sm text-slate-600 mb-6">Your Georgia 6-Hour Defensive Driving course is ready.</p>
             <Link to="/courses/defensive-driving/portal"
               className="qb qb-blue qb-lg w-full sm:w-auto">
@@ -48,13 +48,13 @@ export default function DefensiveDrivingSuccessPage() {
         ) : state === 'checking' ? (
           <>
             <Loader2 className="w-12 h-12 text-blue-700 mx-auto mb-4 animate-spin" />
-            <h1 className="text-xl font-extrabold text-[#0F2D6B] mb-2">Confirming your payment…</h1>
+            <h1 className="text-xl font-extrabold text-[#0F2D6B] mb-2">Confirming Your Payment…</h1>
             <p className="text-sm text-slate-500">This only takes a moment.</p>
           </>
         ) : (
           <>
             <Clock className="w-12 h-12 text-[#B07A0E] mx-auto mb-4" />
-            <h1 className="text-xl font-extrabold text-[#0F2D6B] mb-2">Almost there</h1>
+            <h1 className="text-xl font-extrabold text-[#0F2D6B] mb-2">Almost There</h1>
             <p className="text-sm text-slate-600 mb-6">
               Your payment is processing. If you completed checkout, your access will appear shortly —
               refresh this page or head to the course page.

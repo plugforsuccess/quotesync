@@ -227,7 +227,7 @@ function QueueRow({ row, staff, canEdit, expanded, onToggle, onChanged }) {
             {canEdit ? (
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="block">
-                  <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1"><T k="pages.defensivediscountqueuepage.28eb13">Policy reference</T></span>
+                  <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1"><T k="pages.defensivediscountqueuepage.28eb13">Policy Reference</T></span>
                   <input value={policyRef} onChange={(e) => setPolicyRef(e.target.value)} placeholder="Policy # the discount was applied to"
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
                 </label>

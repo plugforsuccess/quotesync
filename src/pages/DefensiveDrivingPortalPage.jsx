@@ -258,7 +258,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
       <div className="sticky top-0 z-20 ddc-bar backdrop-blur border-b">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <button onClick={onBack} className="ddc-link flex items-center gap-1.5 ddc-sm">
-            <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">All modules</span>
+            <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">All Modules</span>
           </button>
           <span className="ddc-xs ddc-faint">Module {mod.ordinal} of {total}</span>
           <div className="flex items-center gap-3">
@@ -343,7 +343,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
 
         <div className="mt-10 flex items-center justify-between gap-3 border-t ddc-bd pt-6">
           <button onClick={() => (step === 0 ? onBack() : go(step - 1))} className="ddc-sm ddc-link flex items-center gap-1.5">
-            <ArrowLeft className="w-4 h-4" /> {step === 0 ? 'All modules' : 'Back'}
+            <ArrowLeft className="w-4 h-4" /> {step === 0 ? 'All Modules' : 'Back'}
           </button>
 
           {kind !== 'quiz' ? (
@@ -356,7 +356,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
             </div>
           ) : (completed || kcPassed) ? (
             <button onClick={onNext} className="ddc-sm ddc-btn rounded-full px-6 py-3 transition flex items-center gap-2">
-              {isLast ? 'Finish' : 'Next module'} <ArrowRight className="w-4 h-4" />
+              {isLast ? 'Finish' : 'Next Module'} <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <span className="ddc-xs ddc-faint">Pass the quiz to continue</span>
@@ -424,7 +424,7 @@ function ReadAlongButton({ read }) {
     <div className="inline-flex items-center gap-1.5">
       <button type="button" onClick={read.playing ? read.stop : read.start}
         className="inline-flex items-center gap-1.5 rounded-full border ddc-bd ddc-card px-3 py-1.5 ddc-xs font-semibold ddc-heading">
-        {read.playing ? <><Square className="h-3.5 w-3.5" aria-hidden="true" /> Stop</> : <><Volume2 className="h-3.5 w-3.5 ddc-accent" aria-hidden="true" /> Read along</>}
+        {read.playing ? <><Square className="h-3.5 w-3.5" aria-hidden="true" /> Stop</> : <><Volume2 className="h-3.5 w-3.5 ddc-accent" aria-hidden="true" /> Read Along</>}
       </button>
       <button type="button" onClick={() => { read.setRate(next[0]); if (read.playing) read.stop(); }}
         aria-label={`Reading speed: ${RATES[i][1]}. Tap for ${next[1].toLowerCase()}.`}
@@ -470,9 +470,9 @@ function Block({ b }) {
 }
 
 const CALLOUT = {
-  law: { icon: Scale, cls: 'ddc-cal-law', label: 'Georgia law' },
-  key: { icon: KeyRound, cls: 'ddc-cal-key', label: 'Key point' },
-  warn: { icon: AlertTriangle, cls: 'ddc-cal-warn', label: 'Watch out' },
+  law: { icon: Scale, cls: 'ddc-cal-law', label: 'Georgia Law' },
+  key: { icon: KeyRound, cls: 'ddc-cal-key', label: 'Key Point' },
+  warn: { icon: AlertTriangle, cls: 'ddc-cal-warn', label: 'Watch Out' },
   tip: { icon: Lightbulb, cls: 'ddc-cal-tip', label: 'Tip' },
 };
 
@@ -541,7 +541,7 @@ function SectionQuiz({ quiz, defaultPassed, onPass }) {
         <>
           {checked && <p className="mt-3 ddc-sm ddc-warn">Not quite — review the highlighted answers and try again.</p>}
           <button type="button" onClick={check} disabled={!allAnswered}
-            className="mt-4 ddc-btn rounded-full px-5 py-2.5 ddc-sm transition">Check answers</button>
+            className="mt-4 ddc-btn rounded-full px-5 py-2.5 ddc-sm transition">Check Answers</button>
         </>
       )}
     </div>
@@ -582,7 +582,7 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
 
   return (
     <div>
-      <h2 className="ddc-lg font-bold ddc-heading mb-1">Module quiz</h2>
+      <h2 className="ddc-lg font-bold ddc-heading mb-1">Module Quiz</h2>
       <p className="ddc-xs ddc-muted mb-5">Answer all questions to complete this module. You can retake it if needed.</p>
       <div className="space-y-6">
         {questions.map((q, qi) => (
@@ -604,13 +604,13 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
 
       {result && !result.passed && (
         <p className="mt-4 ddc-sm ddc-warn">You scored {result.score_pct}% — {result.threshold}% is required to pass. Review the material and try again.
-          <button onClick={load} className="underline ml-2">New attempt</button></p>
+          <button onClick={load} className="underline ml-2">New Attempt</button></p>
       )}
       {error && <p className="mt-4 ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
 
       <button onClick={submit} disabled={!allAnswered || busy}
         className="mt-5 ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
-        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit answers'}
+        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit Answers'}
       </button>
     </div>
   );
@@ -708,7 +708,7 @@ function FinalExam({ course, enrollment }) {
         {error && <p className="mt-4 ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
         <button onClick={doSubmit} disabled={!allAnswered || busy}
           className="mt-5 ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
-          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit exam'}
+          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit Exam'}
         </button>
       </div>
     );
@@ -771,7 +771,7 @@ function CertificateBlock({ courseSlug }) {
       <button onClick={download} disabled={preparing || downloading} className="ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
         {preparing ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</>
           : downloading ? <><Loader2 className="w-4 h-4 animate-spin" /> Opening…</>
-          : <><Download className="w-4 h-4" /> Download certificate</>}
+          : <><Download className="w-4 h-4" /> Download Certificate</>}
       </button>
     </div>
   );

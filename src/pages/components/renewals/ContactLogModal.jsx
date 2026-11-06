@@ -41,9 +41,9 @@ const FOLLOWUP_REASONS = [
 ];
 
 const CONSENT_OPTIONS = [
-  { value: '', label: 'Did not ask' },
-  { value: 'yes', label: 'Yes — customer consented to automated calls' },
-  { value: 'no', label: 'No — customer declined automated calls' },
+  { value: '', label: 'Did Not Ask' },
+  { value: 'yes', label: 'Yes — Customer Consented to Automated Calls' },
+  { value: 'no', label: 'No — Customer Declined Automated Calls' },
 ];
 
 export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) {

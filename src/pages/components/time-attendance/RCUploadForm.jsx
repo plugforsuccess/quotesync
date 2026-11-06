@@ -489,7 +489,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                 color: '#F59E0B',
               }}
             >
-              <T k="pages.components.timeattendance.rcuploadform.4545ec">Use file's week (</T>{weekMismatch.fileWeek})
+              <T k="pages.components.timeattendance.rcuploadform.4545ec">Use File's Week (</T>{weekMismatch.fileWeek})
             </button>
             <button
               onClick={() => setWeekMismatch(null)}
@@ -500,7 +500,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                 color: 'var(--qs-dim)',
               }}
             >
-              <T k="pages.components.timeattendance.rcuploadform.b35c6f">Keep selected week (</T>{weekMismatch.selectedWeek})
+              <T k="pages.components.timeattendance.rcuploadform.b35c6f">Keep Selected Week (</T>{weekMismatch.selectedWeek})
             </button>
           </div>
         </div>

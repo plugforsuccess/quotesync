@@ -220,7 +220,7 @@ export default function WorkloadDistribution({ agencyId }) {
         {/* Controls */}
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ minWidth: 170 }}>
-            <label><T k="pages.components.retention.workloaddistribution.fe5c75">From (source)</T></label>
+            <label><T k="pages.components.retention.workloaddistribution.fe5c75">From (Source)</T></label>
             <select value={sourceId} onChange={e => setSourceId(e.target.value)} style={{ width: '100%' }}>
               <option value="">Select rep…</option>
               {byEmp.unassigned && (byEmp.unassigned.cancels + byEmp.unassigned.renewals > 0) && (
@@ -235,7 +235,7 @@ export default function WorkloadDistribution({ agencyId }) {
           </div>
 
           <div style={{ minWidth: 170 }}>
-            <label><T k="pages.components.retention.workloaddistribution.f9ff1d">To (target)</T></label>
+            <label><T k="pages.components.retention.workloaddistribution.f9ff1d">To (Target)</T></label>
             <select value={targetId} onChange={e => setTargetId(e.target.value)} style={{ width: '100%' }}>
               <option value="">Select rep…</option>
               {employees.filter(e => e.id !== sourceId).map(e => (
@@ -245,7 +245,7 @@ export default function WorkloadDistribution({ agencyId }) {
           </div>
 
           <div style={{ minWidth: 150 }}>
-            <label><T k="pages.components.retention.workloaddistribution.de8189">Case type</T></label>
+            <label><T k="pages.components.retention.workloaddistribution.de8189">Case Type</T></label>
             <select value={caseType} onChange={e => setCaseType(e.target.value)} style={{ width: '100%' }}>
               <option value="both">Cancels + Renewals</option>
               <option value="cancels">Cancels only</option>
@@ -254,7 +254,7 @@ export default function WorkloadDistribution({ agencyId }) {
           </div>
 
           <div style={{ minWidth: 130 }}>
-            <label><T k="pages.components.retention.workloaddistribution.5ee68a">Amount by</T></label>
+            <label><T k="pages.components.retention.workloaddistribution.5ee68a">Amount By</T></label>
             <select value={mode} onChange={e => setMode(e.target.value)} style={{ width: '100%' }}>
               <option value="pct">Percentage</option>
               <option value="count">Exact count</option>
@@ -264,14 +264,14 @@ export default function WorkloadDistribution({ agencyId }) {
           <div style={{ flex: 1, minWidth: 200 }}>
             {mode === 'pct' ? (
               <>
-                <label><T k="pages.components.retention.workloaddistribution.08714e">Share to move:</T> {pct}%</label>
+                <label><T k="pages.components.retention.workloaddistribution.08714e">Share to Move:</T> {pct}%</label>
                 <input type="range" min={0} max={100} step={5} value={pct}
                   onChange={e => setPct(Number(e.target.value))}
                   style={{ width: '100%', padding: 0, background: 'transparent' }} />
               </>
             ) : (
               <>
-                <label><T k="pages.components.retention.workloaddistribution.e1f759">Cases to move (per type)</T></label>
+                <label><T k="pages.components.retention.workloaddistribution.e1f759">Cases to Move (Per Type)</T></label>
                 <input type="number" min={0} value={count}
                   onChange={e => setCount(Math.max(0, Number(e.target.value)))}
                   style={{ width: '100%' }} />

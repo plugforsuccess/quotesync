@@ -17,8 +17,8 @@ function fmtDate(d) {
 }
 
 const KIND = {
-  reversed:   { label: 'Reversed save', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.35)' },
-  unverified: { label: 'No logged call', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.35)' },
+  reversed:   { label: 'Reversed Save', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.35)' },
+  unverified: { label: 'No Logged Call', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.35)' },
 };
 
 function Row({ r }) {
@@ -56,7 +56,7 @@ export default function SaveIntegrityPanel({ agencyId }) {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.components.retention.saveintegritypanel.b2e2ec">Save integrity</T></h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}><T k="pages.components.retention.saveintegritypanel.b2e2ec">Save Integrity</T></h3>
             <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 2, maxWidth: 560 }}>
               <T k="pages.components.retention.saveintegritypanel.233c42">Saves caught by the Allstate termination report (reversed) or recorded with no real call (only the auto-record). Reversed saves no longer count toward the save rate.</T>
             </div>

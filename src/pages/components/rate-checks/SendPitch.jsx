@@ -17,7 +17,7 @@ export default function SendPitch({ className = '' }) {
     <button type="button" onClick={send} disabled={busy} aria-label="Send partner pitch" title="Text someone the partner pitch: a short message and 4 screenshots"
       className={`inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 disabled:opacity-60 ${className}`}
       style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-      <Send className="h-4 w-4" aria-hidden="true" /> {busy ? 'Opening…' : 'Send pitch'}
+      <Send className="h-4 w-4" aria-hidden="true" /> {busy ? 'Opening…' : 'Send Pitch'}
     </button>
   );
 }

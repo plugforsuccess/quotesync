@@ -65,7 +65,7 @@ const ZipValidator = ({ onValidZip, onClose }) => {
             <span className="text-white text-2xl">📍</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            What's your ZIP code?
+            What's Your ZIP Code?
           </h2>
           <p className="text-gray-600">
             I need to make sure I can write policies in your area

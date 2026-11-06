@@ -179,7 +179,7 @@ export function SiteCopyProvider({ children }) {
             </p>
             <button type="button" onClick={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setEditing(false); }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-sm font-bold text-slate-900">
-              <Check className="h-4 w-4" aria-hidden="true" /> Done editing
+              <Check className="h-4 w-4" aria-hidden="true" /> Done Editing
             </button>
           </div>
           {error && <p className="bg-red-600 px-4 py-1.5 text-center text-xs text-white" role="alert">{error}</p>}

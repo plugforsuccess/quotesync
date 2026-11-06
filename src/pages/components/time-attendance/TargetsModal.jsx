@@ -13,8 +13,8 @@ const SERVICE_FIELD_GROUPS = [
     fields: [
       { key: 'outbound_calls_weekly', label: 'Outbound Calls / Week', type: 'int' },
       { key: 'total_calls_weekly', label: 'Total Calls / Week', type: 'int' },
-      { key: 'avg_handle_time_min_low', label: 'Avg Handle Time (min low)', type: 'float' },
-      { key: 'avg_handle_time_min_high', label: 'Avg Handle Time (min high)', type: 'float' },
+      { key: 'avg_handle_time_min_low', label: 'Avg Handle Time (min Low)', type: 'float' },
+      { key: 'avg_handle_time_min_high', label: 'Avg Handle Time (min High)', type: 'float' },
       { key: 'avg_calls_per_day', label: 'Avg Calls / Day', type: 'int' },
     ],
   },

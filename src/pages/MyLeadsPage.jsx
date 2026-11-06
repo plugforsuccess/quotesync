@@ -89,7 +89,7 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze, onSales }) {
 
       <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
         <button onClick={() => onLog(lead)} style={btn('primary')}><T k="pages.myleadspage.60866b">Log Touch</T></button>
-        <button onClick={() => onFollowup(lead)} style={btn()}><T k="pages.myleadspage.d0a869">📅 Follow-up</T></button>
+        <button onClick={() => onFollowup(lead)} style={btn()}><T k="pages.myleadspage.d0a869">📅 Follow-Up</T></button>
         <button onClick={() => onSnooze(lead)} style={btn()}><T k="pages.myleadspage.3dd493">💤 Snooze</T></button>
         <button onClick={() => onSales(lead, 'quote')} style={btn()}>Quote</button>
         <button onClick={() => onSales(lead, 'bind')} style={btn()}>Bound</button>

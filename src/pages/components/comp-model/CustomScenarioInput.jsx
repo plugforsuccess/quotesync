@@ -32,7 +32,7 @@ export default function CustomScenarioInput({ config, productMix }) {
       </div>
 
       <div className="flex items-center gap-3 mb-3">
-        <label className="text-sm text-gray-600 whitespace-nowrap"><T k="pages.components.compmodel.customscenarioinput.671cf8">Enter monthly item count:</T></label>
+        <label className="text-sm text-gray-600 whitespace-nowrap"><T k="pages.components.compmodel.customscenarioinput.671cf8">Enter Monthly Item Count:</T></label>
         <input
           type="number"
           min="1"

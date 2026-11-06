@@ -97,7 +97,7 @@ export default function ChangePasswordPage() {
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)',
             display: 'block', marginBottom: 6 }}>
-            <T k="pages.changepasswordpage.354484">New password</T>
+            <T k="pages.changepasswordpage.354484">New Password</T>
           </label>
           <input
             type="password"
@@ -115,7 +115,7 @@ export default function ChangePasswordPage() {
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)',
             display: 'block', marginBottom: 6 }}>
-            <T k="pages.changepasswordpage.4c231e">Confirm password</T>
+            <T k="pages.changepasswordpage.4c231e">Confirm Password</T>
           </label>
           <input
             type="password"

@@ -447,7 +447,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
           opacity: allDecided ? 1 : 0.4,
           color: 'var(--qs-info)', borderColor: 'var(--qs-info)', fontWeight: 600,
         }}>
-        <T k="pages.components.retention.retentionimport.c9cc8c">Save</T> {cases.length} <T k="pages.components.retention.retentionimport.549cc2">review decision</T>{cases.length !== 1 ? 's' : ''}
+        <T k="pages.components.retention.retentionimport.c9cc8c">Save</T> {cases.length} <T k="pages.components.retention.retentionimport.549cc2">review Decision</T>{cases.length !== 1 ? 's' : ''}
       </button>
       {!allDecided && (
         <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
@@ -589,7 +589,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             borderTop: "1px solid var(--qs-border)",
           }}>
             <button className="btn-primary" onClick={onCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing\u2026" : "Commit Upload"}
+              {isCommitting ? "Committing…" : "Commit Upload"}
             </button>
             <button className="btn-ghost" onClick={onCancel}>
               <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
@@ -1173,7 +1173,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+              {isCommitting ? "Committing…" : "Confirm & Commit"}
             </button>
             <button className="btn-ghost" onClick={() => { setParsedRows(null); setExcludedCount(0); setUploadFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
               <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>
@@ -1506,7 +1506,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+              {isCommitting ? "Committing…" : "Confirm & Commit"}
             </button>
             <button className="btn-ghost" onClick={() => { setParsedRows(null); setLapseFile(null); }}>
               <T k="pages.components.retention.retentionimport.ea4788">Cancel</T>

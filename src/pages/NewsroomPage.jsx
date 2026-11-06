@@ -253,7 +253,7 @@ const NewsroomPage = () => {
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                   className="mt-3 text-primary-600 hover:text-primary-700 font-medium text-sm"
                 >
-                  <T k="pages.newsroompage.ab0463">Back to top ↑</T>
+                  <T k="pages.newsroompage.ab0463">Back to Top ↑</T>
                 </button>
               </div>
             )}

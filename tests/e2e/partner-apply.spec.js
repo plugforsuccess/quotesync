@@ -20,7 +20,7 @@ test('apply to be a referral partner from Drivers Ed', async ({ page }) => {
   await expect(page.getByText('Is Cam Wiley your agent?')).toHaveCount(0);
   await page.getByRole('group', { name: 'Are you an Allstate customer?' }).getByText('Yes', { exact: true }).click();
   await page.getByRole('group', { name: 'Is Cam Wiley your agent?' }).getByText('Not sure', { exact: true }).click();
-  await page.getByLabel(/Who would you share it with/).selectOption('Coworkers');
+  await page.getByLabel(/Who Would You Share It With/).selectOption('Coworkers');
   await apply.click();
 
   await expect(page.getByText('Thanks, Dana!')).toBeVisible();
