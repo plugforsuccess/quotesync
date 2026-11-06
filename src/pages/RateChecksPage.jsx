@@ -647,8 +647,8 @@ const SHOW_SEND_A_LINK = false;
 // The sales workspace: full screen, one household, in steps. Review the quote sheet,
 // save the Allstate quote, then contact them and close.
 const STEPS = [
-  { v: 'review', label: 'Quote' },
-  { v: 'log', label: 'Save Quote' },
+  { v: 'review', label: 'Review' },
+  { v: 'log', label: 'Quote' },
   { v: 'tell', label: 'Contact' },
   { v: 'close', label: 'Close', soon: true },
 ];
