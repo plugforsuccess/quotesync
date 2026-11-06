@@ -179,7 +179,7 @@ test('Scripts: what to say and text, one tap to copy or text', async ({ page, co
   expect(decodeURIComponent(href)).toContain('insuredbycam.com');
   await text.getByRole('button', { name: 'Copy' }).click();
   await expect(text.getByRole('button', { name: 'Copied' })).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Upload my policy');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Check my rate');
   await expect(page.getByRole('article', { name: 'Reconnect after a quote that came in high' })).toBeVisible();
   await expect(page.getByRole('article', { name: 'Ask them to share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
 });

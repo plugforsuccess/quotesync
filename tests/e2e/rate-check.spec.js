@@ -99,7 +99,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   });
 
   await page.goto('/ratecheck?utm_source=e2e&utm_campaign=ratecheck-qa');
-  await expect(page.getByRole('heading', { name: 'Get a second opinion on your insurance.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get a cheaper rate on your insurance today.' })).toBeVisible();
 
   await page.getByTestId('rc-files').setInputFiles(photoPath);
   await expect(page.getByText('1 page', { exact: true })).toBeVisible();
@@ -219,7 +219,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   await page.reload();
   await expect(page.getByText('Auto · $980/yr')).toBeVisible();
   await page.getByRole('button', { name: 'Start over' }).click();
-  await expect(page.getByRole('heading', { name: 'Get a second opinion on your insurance.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get a cheaper rate on your insurance today.' })).toBeVisible();
 });
 
 test('saves progress on the device and warns about dark or blurry photos', async ({ page }, testInfo) => {
@@ -246,7 +246,7 @@ test('saves progress on the device and warns about dark or blurry photos', async
 
   await page.getByRole('button', { name: '2 policies', exact: true }).click();
   await page.getByRole('button', { name: 'Start over' }).click();
-  await expect(page.getByRole('heading', { name: 'Get a second opinion on your insurance.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get a cheaper rate on your insurance today.' })).toBeVisible();
   await page.reload();
   await expect(page.getByText('Welcome back')).toHaveCount(0);
 });
@@ -387,14 +387,14 @@ test('the guided flow: pick policies, add each one, continue', async ({ page }, 
   const photo = testInfo.outputPath('auto-dec.png');
   fs.writeFileSync(photo, noisePng(900, 1200));
   await page.goto('/ratecheck');
-  await page.getByRole('button', { name: /Get started/ }).first().click();
+  await page.getByRole('button', { name: /Check my rate/ }).first().click();
   await expect(page.getByRole('heading', { name: 'What should we check?' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pick at least one' })).toBeDisabled();
   await page.getByRole('button', { name: 'Auto', exact: true }).click();
   await page.getByRole('button', { name: 'Home', exact: true }).click();
   await page.getByRole('button', { name: /Continue · 2 policies/ }).click();
 
-  await expect(page.getByRole('heading', { name: 'Add your declarations pages' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Upload your policies' })).toBeVisible();
   await expect(page.getByRole('button', { name: '0 of 2 added' })).toBeDisabled();
   const [chooser] = await Promise.all([
     page.waitForEvent('filechooser'),

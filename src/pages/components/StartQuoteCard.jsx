@@ -68,7 +68,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
 
                       <span className="relative z-10 text-white font-black text-lg tracking-wide whitespace-nowrap">
-                        <T k="pages.components.startquotecard.59e107">Check My Savings</T>
+                        <T k="pages.components.startquotecard.59e107">Check my rate</T>
                       </span>
                       <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:trangray-x-2" />
                     </div>
@@ -79,7 +79,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                     onClick={onGetQuote}
                     className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors cursor-pointer bg-transparent border-0"
                   >
-                    <T k="pages.components.startquotecard.02948b">Already have your policy handy? Sync it now →</T>
+                    <T k="pages.components.startquotecard.02948b">Have your policy handy? Connect it now →</T>
                   </button>
 
                   <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-600">

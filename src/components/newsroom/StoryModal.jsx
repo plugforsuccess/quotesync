@@ -191,13 +191,13 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                 <h3 className="text-lg font-bold text-gray-900 mb-1">
                   <T k="components.newsroom.storymodal.964a04">Does this touch your policy?</T>
                 </h3>
-                <p className="text-sm text-gray-600 mb-4"><T k="components.newsroom.storymodal.f26060">Send your declarations page and a licensed agent will check it, or text Cam the question.</T></p>
+                <p className="text-sm text-gray-600 mb-4"><T k="components.newsroom.storymodal.f26060">Upload your policy and a licensed agent will check it, or text Cam the question.</T></p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={() => handleCTAClick('compare_policy')}
                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                   >
-                    <T k="components.newsroom.storymodal.f8feed">Upload my policy</T>
+                    <T k="components.newsroom.storymodal.f8feed">Check my rate</T>
                   </button>
                   <a
                     href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}
