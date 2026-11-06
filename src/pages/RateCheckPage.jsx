@@ -52,7 +52,8 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // The licensed agent shown on the page (same headshot as the homepage). Two GA
 // licenses: Cam's individual resident license goes under his headshot (the card
 // names him); the agency's resident license goes in the footer next to the agency name.
-const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
+// photo: the full portrait; avatar: a square crop centered on the face, for round photos.
+const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', avatar: '/logos/cameron-avatar.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', license: '209488' };
 // "Meet the Owner" carousel: three photos, each with its story underneath.
 // Family first (it backs up "Family comes first" just above), then the court, then the agency.
@@ -551,7 +552,7 @@ export default function RateCheckPage() {
         )}
 
         {!reading && <NextTimeline texting={!!given?.consentGivenAt} opensAt={opens?.label} />}
-        {!reading && <CamCard photo={AGENT.photo} />}
+        {!reading && <CamCard photo={AGENT.avatar} />}
 
         <Carousel slides={slides} className="mt-5" />
 
@@ -1390,9 +1391,8 @@ function OwnerCard() {
       {/* Phones: the name centered across the top, then a big headshot with the rest beside it. */}
       <h2 className="mb-4 whitespace-nowrap text-center text-[clamp(22px,7vw,28px)] font-black leading-none tracking-tight lg:hidden" style={{ color: GOLD }}>{AGENCY.short}</h2>
       <div className="flex items-center gap-3.5 lg:flex-col lg:gap-4 lg:text-center">
-        <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
-          className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
-          style={{ objectPosition: '50% 30%' }} />
+        <img src={AGENT.avatar} alt={AGENT.name} width="160" height="160"
+          className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40" />
         <div className="min-w-0 flex-1">
           <h2 className="hidden whitespace-nowrap font-black leading-none tracking-tight lg:block lg:text-[30px]" style={{ color: GOLD }}>{AGENCY.short}</h2>
           <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-2.5 lg:text-xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
@@ -1478,7 +1478,7 @@ function ExampleText() {
         <span className="text-xs text-slate-400">Messages</span>
       </figcaption>
       <div className="mt-4 flex items-end gap-2.5">
-        <img src={AGENT.photo} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[#F5D061]" />
+        <img src={AGENT.avatar} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[#F5D061]" />
         <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200">
           <T k="rc.example.text">Hi Dana, it’s Cam. Same coverage with Allstate comes to</T>{' '}
           <b className="font-bold text-emerald-700">$1,180/yr</b>{' '}
