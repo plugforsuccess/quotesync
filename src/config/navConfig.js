@@ -13,7 +13,7 @@ export const PLANES = {
 // lead path), Drivers Ed, and the content pages (Newsroom). Store, Giveaway, the old
 // quote page and the wizard still work by direct link; they're just not in the nav.
 export const consumerNav = [
-  { to: '/', label: 'Check My Rate', icon: '📸', isPrimary: true, end: true },
+  { to: '/?start=1', label: 'Check My Rate', icon: '📸', isPrimary: true, end: true },
   { to: '/courses', label: 'Drivers Ed', icon: '🚗' },
   { to: '/news', label: 'Newsroom', icon: '📰' },
 ];

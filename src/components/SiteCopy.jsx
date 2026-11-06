@@ -210,12 +210,12 @@ export function useCopyValue(key, fallback = '') {
   return typeof v === 'string' && v.trim() ? v.trim() : fallback;
 }
 
-export function EditPagePencil({ className = '' }) {
+export function EditPagePencil({ className = '', tone = 'dark' }) {
   const { canStartEditing, startEditing } = useContext(Ctx);
   if (!canStartEditing) return null;
   return (
     <button type="button" onClick={startEditing} aria-label="Edit this page" title="Edit this page"
-      className={`qs-edit-pencil inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white ${className}`}>
+      className={`qs-edit-pencil inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tone === 'light' ? 'text-slate-500 hover:bg-slate-100 hover:text-[#0F2D6B]' : 'text-white/80 hover:bg-white/10 hover:text-white'} ${className}`}>
       <Pencil className="h-[18px] w-[18px]" aria-hidden="true" />
     </button>
   );

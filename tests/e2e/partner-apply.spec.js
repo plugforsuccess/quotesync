@@ -9,7 +9,7 @@ test('apply to be a referral partner from Drivers Ed', async ({ page }) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ applied: true }) });
   });
   await page.goto('/courses');
-  await page.getByRole('link', { name: /Become a referral partner/ }).click();
+  await page.getByRole('link', { name: /Become a referral partner/i }).click();
   await expect(page.getByRole('heading', { name: /Get paid to share the savings/ })).toBeInViewport();
 
   const apply = page.getByRole('button', { name: 'Apply to be a partner' });

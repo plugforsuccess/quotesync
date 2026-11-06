@@ -98,7 +98,7 @@ export default function DefensiveDrivingPage() {
               </ul>
               <div className="flex items-center gap-4">
                 <a href="#enroll" className="qb qb-gold qb-lg px-7">
-                  <T k="pages.defensivedrivingpage.6ba3ba">Enroll for</T> {price}
+                  <T k="pages.defensivedrivingpage.6ba3ba">Enroll For</T> {price}
                 </a>
                 <span className="text-sm text-blue-100"><T k="pages.defensivedrivingpage.47455c">One-time payment</T></span>
               </div>
@@ -178,7 +178,7 @@ export default function DefensiveDrivingPage() {
               ))}
             </ul>
             <a href="#enroll" className="qb qb-blue qb-lg px-8">
-              <CreditCard className="w-4 h-4" /> <T k="pages.defensivedrivingpage.e3b2ff">Enroll now</T>
+              <CreditCard className="w-4 h-4" /> <T k="pages.defensivedrivingpage.e3b2ff">Enroll Now</T>
             </a>
           </div>
         </div>
@@ -349,7 +349,7 @@ function EnrollCard({ course, enrollment, user, profile }) {
           </p>
           <Link to="/courses/defensive-driving/portal"
             className="qb qb-blue qb-lg flex w-full">
-            <T k="pages.defensivedrivingpage.21acac">Go to your course</T>
+            <T k="pages.defensivedrivingpage.21acac">Go to Your Course</T>
           </Link>
         </div>
       ) : user ? (

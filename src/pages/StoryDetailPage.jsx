@@ -2,6 +2,7 @@
 // Individual story page with full SEO optimization for /news/{slug}
 
 import { T } from '../components/SiteCopy';
+import { rateCheckStart } from '../lib/rateCheckStart';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
@@ -155,7 +156,7 @@ const StoryDetailPage = () => {
     if (!story) return;
     trackNewsroomCTAClick(story, ctaType);
 
-    if (ctaType === 'compare_policy') navigate('/');
+    if (ctaType === 'compare_policy') navigate(rateCheckStart('newsroom'));
   };
 
   if (loading) {

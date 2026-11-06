@@ -2,6 +2,7 @@
 // Full story modal for "Read more" functionality
 
 import { T } from '../SiteCopy';
+import { rateCheckStart } from '../../lib/rateCheckStart';
 import { useEffect } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
@@ -50,7 +51,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
 
     // Navigate after closing modal
     setTimeout(() => {
-      if (ctaType === 'compare_policy') window.location.href = '/';
+      if (ctaType === 'compare_policy') window.location.href = rateCheckStart('newsroom');
     }, 300);
   };
 

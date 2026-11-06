@@ -8,12 +8,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useForceTheme } from '../contexts/ThemeContext';
 import { getDefaultLanding } from '../config/navConfig';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import BrandLogo, { SealMark } from '../components/BrandLogo';
 
 const LoginPage = () => {
   // Login page is designed dark — force dark for all users regardless of
   // their saved theme preference. Preference is restored once they navigate
   // into an authenticated Layout.
-  useForceTheme('dark');
+  useForceTheme('light');
 
   const navigate = useNavigate();
   const { user, loading: authLoading, authzResolved, currentAgencyId, platformRole, currentAgencyRole, isPlatformUser } = useAuth();
@@ -124,208 +125,67 @@ const LoginPage = () => {
     }
   };
 
+  // Brand look: the agency's blue, a white card, the seal and name, the site's buttons.
+  const bg = { background: 'radial-gradient(ellipse at 15% 0%, rgba(96,165,250,0.35) 0%, transparent 55%), linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)' };
+  const field = 'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
+  const linkBtn = 'text-sm font-semibold text-blue-700 hover:underline';
+
   if (verifying) {
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center px-4"
-        style={{
-          backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(56, 189, 148, 0.03) 0%, transparent 50%), linear-gradient(135deg, #0f1117 0%, #1a1d28 50%, #0f1117 100%)'
-        }}
-      >
-        {/* Logo mark with spinning ring */}
-        <div className="relative mb-8">
-          <div
-            className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center"
-            style={{ boxShadow: '0 0 40px rgba(16, 185, 129, 0.2)' }}
-          >
-            <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          {/* Spinning ring — uses --qs-success token */}
-          <div
-            className="absolute inset-0 rounded-2xl animate-spin"
-            style={{
-              border: '2px solid transparent',
-              borderTopColor: 'var(--qs-success)',
-              borderRightColor: 'rgba(16, 185, 129, 0.2)',
-              animationDuration: '1.2s'
-            }}
-          />
+      <div className="flex min-h-screen flex-col items-center justify-center px-4" style={bg}>
+        <div className="relative mb-6">
+          <SealMark className="h-16 w-16" />
+          <span className="absolute -inset-2 animate-spin rounded-full border-2 border-transparent border-t-[#F5D061]" style={{ animationDuration: '1.2s' }} aria-hidden="true" />
         </div>
-
-        {/* Text — uses --qs-bright and --qs-dim tokens */}
-        <p className="font-semibold text-lg mb-2" style={{ color: 'var(--qs-bright)' }}>
-          Verifying your account
-        </p>
-        <p className="text-sm" style={{ color: 'var(--qs-dim)' }}>
-          Setting up your workspace…
-        </p>
-
-        {/* Three-dot pulse — uses --qs-success token */}
-        <div className="flex gap-1.5 mt-6">
-          {[0, 1, 2].map(i => (
-            <div
-              key={i}
-              className="w-1.5 h-1.5 rounded-full"
-              style={{
-                backgroundColor: 'var(--qs-success)',
-                animation: 'pulse 1.2s ease-in-out infinite',
-                animationDelay: `${i * 0.2}s`,
-                opacity: 0.7
-              }}
-            />
-          ))}
-        </div>
+        <p className="text-lg font-bold text-white">Verifying Your Account</p>
+        <p className="mt-1 text-sm text-blue-100">Setting up your workspace…</p>
       </div>
     );
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(56, 189, 148, 0.03) 0%, transparent 50%), linear-gradient(135deg, #0f1117 0%, #1a1d28 50%, #0f1117 100%)'
-      }}
-    >
-      <div
-        className="w-full max-w-md rounded-xl p-8"
-        style={{
-          background: 'rgba(255, 255, 255, 0.04)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.06)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-        }}
-      >
-        {/* Logo — matches global header */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <span className="text-xl font-black tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-              insuredbycam
-            </span>
-          </div>
-          <p className="text-sm text-gray-400">Agency Admin Portal</p>
-        </div>
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10" style={bg}>
+      <div className="mb-6"><BrandLogo /></div>
+      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl shadow-blue-950/30 sm:p-8">
+        <h1 className="text-2xl font-extrabold tracking-tight text-[#0F2D6B]">{mode === 'login' ? 'Sign In' : 'Reset Your Password'}</h1>
+        <p className="mt-1 text-sm text-slate-500">{mode === 'login' ? 'Agency workspace' : 'We’ll email you a link to set a new one.'}</p>
 
-        <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold text-white">
-            {mode === 'login' ? 'Sign In' : 'Reset Password'}
-          </h2>
-          <p className="text-gray-400 text-sm mt-1">
-            {mode === 'login' ? 'Access your dashboard' : 'Enter your email to receive a reset link'}
-          </p>
-        </div>
-
-        {error && (
-          <div className="bg-red-900/30 border border-red-700/40 text-red-300 px-4 py-3 rounded-lg text-sm mb-6">
-            {error}
-          </div>
-        )}
-
-        {resetSuccess && (
-          <div className="bg-emerald-900/30 border border-emerald-700/40 text-emerald-300 px-4 py-3 rounded-lg text-sm mb-6">
-            {resetSuccess}
-          </div>
-        )}
+        {error && <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
+        {resetSuccess && <p className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800" role="status">{resetSuccess}</p>}
 
         {mode === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-white placeholder-gray-500"
-                placeholder="admin@example.com"
-              />
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold text-slate-800">Email</label>
+              <input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={field} placeholder="you@example.com" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-white placeholder-gray-500"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                onClick={() => { setMode('reset'); setError(''); setResetSuccess(''); }}
-                className="text-sm text-emerald-400 hover:text-emerald-300 mt-2"
-              >
-                Forgot Password?
-              </button>
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <label htmlFor="login-password" className="block text-sm font-semibold text-slate-800">Password</label>
+                <button type="button" onClick={() => { setMode('reset'); setError(''); setResetSuccess(''); }} className={linkBtn}>Forgot Password?</button>
+              </div>
+              <input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required className={field} placeholder="Your password" />
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing In…
-                </>
-              ) : 'Sign In'}
+            <button type="submit" disabled={loading} className="qb qb-blue qb-lg mt-2 w-full">
+              {loading ? (<><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" /> Signing In…</>) : 'Sign In'}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleResetPassword} className="space-y-5">
+          <form onSubmit={handleResetPassword} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-white placeholder-gray-500"
-                placeholder="admin@example.com"
-              />
+              <label htmlFor="reset-email" className="mb-1.5 block text-sm font-semibold text-slate-800">Email</label>
+              <input id="reset-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={field} placeholder="you@example.com" />
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Sending...' : 'Send Reset Link'}
-            </button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => { setMode('login'); setError(''); setResetSuccess(''); }}
-                className="text-sm text-emerald-400 hover:text-emerald-300"
-              >
-                Back to Sign In
-              </button>
-            </div>
+            <button type="submit" disabled={loading} className="qb qb-blue qb-lg mt-2 w-full">{loading ? 'Sending…' : 'Send Reset Link'}</button>
+            <p className="text-center">
+              <button type="button" onClick={() => { setMode('login'); setError(''); setResetSuccess(''); }} className={linkBtn}>Back to Sign In</button>
+            </p>
           </form>
         )}
 
-        <div className="mt-8 text-center text-xs text-gray-500 space-y-2">
-          <p className="border-t border-white/10 pt-4">
-            <strong className="text-gray-400">Tip:</strong> If login fails, disable ad blockers or privacy extensions for this site.
-          </p>
-          <p>&copy; {new Date().getFullYear()} InsuredByCam</p>
-        </div>
+        <p className="mt-6 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">If sign-in fails, turn off ad blockers or privacy extensions for this site.</p>
       </div>
+      <p className="mt-6 text-xs text-blue-200">© {new Date().getFullYear()} Cam Wiley Agency, Inc.</p>
     </div>
   );
 };

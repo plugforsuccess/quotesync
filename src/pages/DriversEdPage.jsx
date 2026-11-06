@@ -4,6 +4,7 @@
 // their discount, with an apply form), in the consumer site's look — royal-blue hero with the shared nav, white
 // cards, deep-blue headings, the fluorescent green as the accent. No black.
 import { useState } from 'react';
+import { rateCheckStart } from '../lib/rateCheckStart';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight, Loader2, Share2, PenLine, BadgeDollarSign } from 'lucide-react';
 import { T } from '../components/SiteCopy';
@@ -231,11 +232,11 @@ export default function GeorgiaDriverEducationPage() {
             <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <a href={RETURNING_CUSTOMER_LINK} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">
-                <T k="pages.driversedpage.e432d4">Already enrolled? Continue your course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <T k="pages.driversedpage.e432d4">Already Enrolled? Continue Your Course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
               {/* Same side padding as the pill above, so its text lines up with the pill's text. */}
               <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: GOLD }}>
-                <T k="de.partner.herolink">Become a referral partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <T k="de.partner.herolink">Become a Referral Partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -310,8 +311,8 @@ export default function GeorgiaDriverEducationPage() {
         <div className={`relative ${wrap}`}>
           <h2 className="text-[30px] font-extrabold leading-tight tracking-tight lg:text-[40px]"><T k="pages.driversedpage.35a223">Need an Insurance Quote?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="pages.driversedpage.021418">Snap your declarations page. Cam checks if Allstate can beat it.</T></p>
-          <Link to="/" className="qb qb-gold qb-lg mx-auto mt-7 px-8 text-lg">
-            <T k="pages.driversedpage.725f04">Check my rate</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
+          <Link to={rateCheckStart('drivers_ed')} className="qb qb-gold qb-lg mx-auto mt-7 px-8 text-lg">
+            <T k="pages.driversedpage.725f04">Check My Rate</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         </div>
       </section>

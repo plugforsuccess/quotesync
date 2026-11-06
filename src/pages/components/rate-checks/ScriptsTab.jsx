@@ -102,7 +102,7 @@ export default function ScriptsTab() {
                   {s.kind === 'text' && (
                     <a href={`sms:?&body=${encodeURIComponent(s.text)}`} aria-label={`Text: ${s.name}`}
                       className="inline-flex h-9 w-[8.5rem] items-center justify-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
-                      <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.scriptstab.98ea21">Text it</T>
+                      <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.scriptstab.98ea21">Text It</T>
                     </a>
                   )}
                   {s.pitch && <SendPitch className="h-9 w-[8.5rem] justify-center rounded-full px-3.5" />}

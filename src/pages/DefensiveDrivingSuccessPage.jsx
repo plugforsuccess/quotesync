@@ -42,7 +42,7 @@ export default function DefensiveDrivingSuccessPage() {
             <p className="text-sm text-slate-600 mb-6">Your Georgia 6-Hour Defensive Driving course is ready.</p>
             <Link to="/courses/defensive-driving/portal"
               className="qb qb-blue qb-lg w-full sm:w-auto">
-              Start your course <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+              Start Your Course <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
             </Link>
           </>
         ) : state === 'checking' ? (
@@ -61,7 +61,7 @@ export default function DefensiveDrivingSuccessPage() {
             </p>
             <Link to="/courses/defensive-driving"
               className="qb qb-outline qb-md border-2 border-blue-700 text-blue-700">
-              Back to course
+              Back to Course
             </Link>
           </>
         )}

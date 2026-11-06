@@ -892,7 +892,7 @@ function ReviewAsk({ rc, review }) {
   return (
     <a href={smsHref(rc.phone, customerReviewText(rc.first_name))}
       className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
-      <Star className="h-4 w-4" /> <T k="rc.desk.review.ask">Text them the Google review request</T>
+      <Star className="h-4 w-4" /> <T k="rc.desk.review.ask">Text Them the Google Review Request</T>
     </a>
   );
 }

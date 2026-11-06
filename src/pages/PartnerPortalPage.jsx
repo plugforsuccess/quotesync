@@ -106,7 +106,7 @@ function ReviewCard() {
         <T k="pages.partnerportalpage.e7f45f">An honest Google review about your experience helps other families find Cam. Please mention you’re a referral partner. It’s optional and has nothing to do with your referral fees.</T>
       </p>
       <a href={reviewUrl()} target="_blank" rel="noreferrer" className="qb qb-outline qb-md mt-3 w-full">
-        <T k="pages.partnerportalpage.f82b9a">Write a Google review</T> <ExternalLink className="h-4 w-4" aria-hidden="true" />
+        <T k="pages.partnerportalpage.f82b9a">Write a Google Review</T> <ExternalLink className="h-4 w-4" aria-hidden="true" />
       </a>
     </section>
   );

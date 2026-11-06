@@ -11,8 +11,9 @@
 /* COPY REVIEW: submit this page to Allstate marketing compliance before paid traffic */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { T, CopyImage, useCopyValue } from '../components/SiteCopy';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { persistUtmParams } from '../lib/leadsApi';
+import { T, CopyImage, useCopyValue, EditPagePencil } from '../components/SiteCopy';
 import { TEXT_NUMBER_KEY, textNumber, smsHref } from '../lib/reviews';
 import Dismissible from '../components/Dismissible';
 import BrandLogo from '../components/BrandLogo';
@@ -207,6 +208,20 @@ export default function RateCheckPage() {
     })();
     return () => { cancelled = true; };
   }, [checkQuality, updateItems]);
+
+  // "Check My Rate" from another page (Drivers Ed, the menu) links to /?start=1: open the
+  // flow at its first step (or the policies already started), not the landing page.
+  const location = useLocation();
+  useEffect(() => {
+    if (!ready) return;
+    const q = new URLSearchParams(location.search);
+    if (q.get('start') !== '1') return;
+    persistUtmParams(); // keep where they came from (e.g. utm_source=drivers_ed)
+    q.delete('start');
+    window.history.replaceState(window.history.state, '', `${location.pathname}${q.toString() ? `?${q}` : ''}`);
+    setStep(s => (s === 'results' ? s : itemsRef.current.some(i => i.status === 'draft') ? 'policies' : 'pick'));
+    window.scrollTo(0, 0);
+  }, [ready, location.search, location.pathname]);
 
   // A producer's tagged link: pre-fill what they typed at the booth (draft wins).
   useEffect(() => {
@@ -479,12 +494,12 @@ export default function RateCheckPage() {
       )}
       <span className="min-w-0">
         <span className="block truncate font-bold text-[#0F2D6B]">{invite.promoter_full_name || invite.promoter_name}</span>
-        <span className="block text-xs text-slate-600">shared this with you</span>
+        <span className="block text-xs text-slate-600"><T k="rc.flow.shared-this-with-you">shared this with you</T></span>
       </span>
     </div>
   ) : invite ? (
     <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
-      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : <T k="rc.flow.your-allstate-agent">Your Allstate agent</T>}{' '}<T k="rc.flow.sent-you-this-link">sent you this link</T>
       {invite.event_name ? ` after ${invite.event_name}` : ''}.
     </p>
   ) : null;
@@ -494,7 +509,7 @@ export default function RateCheckPage() {
       initials={invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()} />
   ) : invite ? (
     <p className="mb-6 inline-block rounded-xl bg-white/10 px-3 py-2 text-sm text-white ring-1 ring-white/20">
-      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : <T k="rc.flow.your-allstate-agent">Your Allstate agent</T>}{' '}<T k="rc.flow.sent-you-this-link">sent you this link</T>
       {invite.event_name ? ` after ${invite.event_name}` : ''}.
     </p>
   ) : null;
@@ -503,13 +518,13 @@ export default function RateCheckPage() {
     <>
       {inviteExpired && (
         <Dismissible id="rc.invite-expired" light className="mb-4">
-          <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">That link has expired, but you can still check your rate below.</p>
+          <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700"><T k="rc.flow.that-link-has-expired-but">That link has expired, but you can still check your rate below.</T></p>
         </Dismissible>
       )}
       {resumed && step === 'policies' && (
         <p className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          <span>Welcome back — we kept your progress.</span>
-          <button type="button" onClick={startOver} className="shrink-0 font-semibold underline">Start Over</button>
+          <span><T k="rc.flow.welcome-back-we-kept-your">Welcome back — we kept your progress.</T></span>
+          <button type="button" onClick={startOver} className="shrink-0 font-semibold underline"><T k="rc.flow.start-over">Start Over</T></button>
         </p>
       )}
     </>
@@ -542,11 +557,11 @@ export default function RateCheckPage() {
         untitled: true,
         content: (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <p className="font-semibold text-slate-900">Got another policy?</p>
-            <p className="mt-1 text-sm text-slate-600">A second car, your home, a boat. Bundling often saves the most.</p>
+            <p className="font-semibold text-slate-900"><T k="rc.flow.got-another-policy">Got another policy?</T></p>
+            <p className="mt-1 text-sm text-slate-600"><T k="rc.flow.a-second-car-your-home">A second car, your home, a boat. Bundling often saves the most.</T></p>
             <button type="button" onClick={() => { setStep('policies'); window.scrollTo(0, 0); }}
               className="qb qb-blue qb-md mt-3">
-              <Plus className="h-5 w-5" aria-hidden="true" /> Add More Policies
+              <Plus className="h-5 w-5" aria-hidden="true" />{' '}<T k="rc.flow.add-more-policies">Add More Policies</T>
             </button>
           </div>
         ),
@@ -574,10 +589,10 @@ export default function RateCheckPage() {
 
         {priced.length > 0 && (
           <div className="qc-rise mt-5 rounded-2xl px-5 py-4 text-center text-white shadow-lg shadow-blue-900/20" style={{ background: HERO_BG, animationDelay: '320ms' }}>
-            <p className="text-sm text-blue-100">You pay today</p>
+            <p className="text-sm text-blue-100"><T k="rc.flow.you-pay-today">You pay today</T></p>
             <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span className="sr-only" data-testid="rc-total">{money(total)}</span><span aria-hidden="true"><CountUp value={total} format={money} /></span><span className="text-lg font-semibold text-blue-100"> /yr</span></p>
             <p className="mt-1 text-sm text-blue-100">
-              across {priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''} · the price to beat
+              <T k="rc.flow.across">across</T>{' '}{priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''}{' '}<T k="rc.flow.the-price-to-beat">· the price to beat</T>
             </p>
           </div>
         )}
@@ -591,7 +606,7 @@ export default function RateCheckPage() {
 
         {!reading && (
           <p className="mt-5 text-center text-sm text-slate-500">
-            Not {fields.firstName || 'you'}? <button type="button" onClick={startOver} className="font-semibold underline">Start Over</button>
+            <T k="rc.flow.not">Not</T>{' '}{fields.firstName || 'you'}? <button type="button" onClick={startOver} className="font-semibold underline"><T k="rc.flow.start-over">Start Over</T></button>
           </p>
         )}
       </Shell>
@@ -666,20 +681,20 @@ export default function RateCheckPage() {
           </Field>
           {OTP_ENABLED && phoneDigits.length === 10 && (phoneVerified ? (
             <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700" role="status">
-              <Check className="h-4 w-4" aria-hidden="true" /> Number verified
+              <Check className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.number-verified">Number verified</T>
             </p>
           ) : !otp.sentAt ? (
             <div>
               <button type="button" onClick={requestCode} disabled={otp.status === 'sending'}
                 className="qb qb-outline qb-md w-full">
-                {otp.status === 'sending' ? 'Sending…' : 'Text Me a Code'}
+                {otp.status === 'sending' ? 'Sending…' : <T k="rc.flow.text-me-a-code">Text Me a Code</T>}
               </button>
-              <p className="mt-1.5 px-1 text-xs text-slate-500">We text a 6-digit code to confirm it&apos;s you.</p>
+              <p className="mt-1.5 px-1 text-xs text-slate-500"><T k="rc.flow.we-text-a-6digit-code">We text a 6-digit code to confirm it's you.</T></p>
               {otp.error && <p className="mt-1 px-1 text-sm text-red-600" role="alert">{otp.error}</p>}
             </div>
           ) : (
             <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <label htmlFor="rc-code" className="block text-sm font-semibold text-slate-800">Enter the 6-Digit Code We Texted to {fields.phone}</label>
+              <label htmlFor="rc-code" className="block text-sm font-semibold text-slate-800"><T k="rc.flow.enter-the-6digit-code-we">Enter the 6-Digit Code We Texted to</T>{' '}{fields.phone}</label>
               <div className="mt-2 flex gap-2">
                 <input id="rc-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="123456" value={otp.code}
                   className={`${inputCls} tracking-[0.25em]`}
@@ -690,13 +705,13 @@ export default function RateCheckPage() {
                   }} />
                 <button type="button" onClick={() => checkCode(otp.code)} disabled={otp.code.length !== 6 || otp.status === 'verifying'}
                   className="qb qb-blue qb-md shrink-0">
-                  {otp.status === 'verifying' ? 'Checking…' : 'Verify'}
+                  {otp.status === 'verifying' ? 'Checking…' : <T k="rc.flow.verify">Verify</T>}
                 </button>
               </div>
               {otp.error && <p className="mt-2 text-sm text-red-600" role="alert">{otp.error}</p>}
               <button type="button" onClick={requestCode} disabled={!canResend || otp.status === 'sending'}
                 className="mt-2 text-xs font-semibold text-slate-600 underline disabled:no-underline disabled:opacity-60">
-                {otp.status === 'sending' ? 'Sending…' : canResend ? 'Send a New Code' : 'Send a New Code in 30 Seconds'}
+                {otp.status === 'sending' ? 'Sending…' : canResend ? <T k="rc.flow.send-a-new-code">Send a New Code</T> : <T k="rc.flow.send-a-new-code-30">Send a New Code in 30 Seconds</T>}
               </button>
             </div>
           ))}
@@ -711,18 +726,18 @@ export default function RateCheckPage() {
             </Field>
             <Field label="Where do you live?" htmlFor="rc-housing">
               <select id="rc-housing" value={fields.housing} required onChange={e => setFields(f => ({ ...f, housing: e.target.value }))} className={inputCls}>
-                <option value="">Choose one</option>
+                <option value=""><T k="rc.flow.choose-one">Choose one</T></option>
                 {HOUSING_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </Field>
           </div>
 
           <fieldset className="pt-2">
-            <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Optional</legend>
+            <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="rc.flow.optional">Optional</T></legend>
             <div className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
               <Choice checked={consent} onChange={setConsent} {...CONSENT}>
-                {' '}<Link to="/ratecheck-privacy#sms-terms" className="underline">Text terms</Link>
-                {' · '}<Link to="/privacy" className="underline">Privacy</Link>
+                {' '}<Link to="/ratecheck-privacy#sms-terms" className="underline"><T k="rc.flow.text-terms">Text terms</T></Link>
+                {' · '}<Link to="/privacy" className="underline"><T k="rc.flow.privacy">Privacy</T></Link>
               </Choice>
               <Choice checked={referralConsent} onChange={setReferralConsent} {...REFERRAL_CONSENT} />
             </div>
@@ -771,7 +786,7 @@ export default function RateCheckPage() {
             </button>
           ) : (
             <>
-              <button type="button" disabled className={primaryBtn}>{addedKinds.length} of {wanted.length} Added</button>
+              <button type="button" disabled className={primaryBtn}>{addedKinds.length} of {wanted.length}{' '}<T k="rc.flow.added">Added</T></button>
               {drafts.length > 0 && (
                 <button type="button" onClick={() => goNext()} className="mt-1.5 py-1 text-sm font-semibold text-slate-600 underline underline-offset-4">
                   <T k="rc.guided.partial">Continue With What I Have</T>
@@ -817,7 +832,7 @@ export default function RateCheckPage() {
         <p className="mb-4 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
           <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
           {sent.length === 1 ? '1 policy already sent.' : `${sent.length} policies already sent.`}
-          <button type="button" onClick={() => setStep('results')} className="ml-auto font-semibold underline">View</button>
+          <button type="button" onClick={() => setStep('results')} className="ml-auto font-semibold underline"><T k="rc.flow.view">View</T></button>
         </p>
       )}
 
@@ -846,7 +861,7 @@ export default function RateCheckPage() {
       ) : drafts.length === 0 ? (
         returning ? (
           <>
-            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add Another Policy</h1>
+            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.flow.add-another-policy">Add Another Policy</T></h1>
             <button type="button" onClick={() => openFiles()}
               className="qb qb-blue mt-6 w-full flex-col gap-3 rounded-3xl px-6 py-8">
               <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
@@ -869,12 +884,12 @@ export default function RateCheckPage() {
       ) : (
         <>
           <div className="flex items-end justify-between">
-            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Your Policies</h1>
+            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.flow.your-policies">Your Policies</T></h1>
             <span className="pb-1 text-sm font-semibold text-slate-500 tabular-nums">
               {drafts.length === 1 ? '1 added' : `${drafts.length} added`}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-600">Include every page of each policy. Add every auto, home and umbrella policy you have.</p>
+          <p className="mt-1 text-sm text-slate-600"><T k="rc.flow.include-every-page-of-each">Include every page of each policy. Add every auto, home and umbrella policy you have.</T></p>
 
           <ul className="mt-5 space-y-3">
             {drafts.map((it, n) => (
@@ -887,7 +902,7 @@ export default function RateCheckPage() {
             <li className="flex gap-2">
               <button type="button" onClick={newPolicyPhoto}
                 className="qb qb-lg flex-1 border-2 border-dashed border-blue-300 bg-blue-50/60 font-semibold text-blue-800 active:bg-blue-100">
-                <Camera className="h-5 w-5" aria-hidden="true" /> Add Another Policy
+                <Camera className="h-5 w-5" aria-hidden="true" />{' '}<T k="rc.flow.add-another-policy">Add Another Policy</T>
               </button>
               <button type="button" onClick={() => { setAskingMore(null); openFiles(); }} aria-label="Upload more"
                 className="qb qb-outline w-16 p-0">
@@ -911,7 +926,7 @@ function PickPolicies({ initial, onContinue, onBack }) {
   return (
     <>
       <button type="button" onClick={onBack} className="-ml-1 mb-3 inline-flex items-center gap-1 text-sm font-semibold text-slate-600">
-        <ChevronLeft className="h-4 w-4" aria-hidden="true" /> Back
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.back">Back</T>
       </button>
       <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.pick.title">What Should We Check?</T></h1>
       <p className="mt-2 text-[15px] leading-relaxed text-slate-600"><T k="rc.pick.line">Pick every policy you have. Checking them together usually finds the biggest savings.</T></p>
@@ -921,7 +936,7 @@ function PickPolicies({ initial, onContinue, onBack }) {
           return (
             <button key={k} type="button" onClick={() => toggle(k)} aria-pressed={on}
               className={`relative flex items-center gap-2.5 rounded-2xl border-[1.5px] px-3.5 py-3.5 text-left text-[15px] font-bold text-[#0F2D6B] transition ${on ? 'border-blue-700 bg-blue-50 shadow-[0_0_0_3px_rgba(29,78,216,0.12)]' : 'border-slate-200 bg-white active:bg-slate-50'}`}>
-              <Icon className="h-5 w-5 shrink-0 text-blue-700" aria-hidden="true" /> {label}
+              <Icon className="h-5 w-5 shrink-0 text-blue-700" aria-hidden="true" /> <T k={`rc.kind.${k}`}>{label}</T>
               {on && <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-700 text-white"><Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" /></span>}
             </button>
           );
@@ -929,7 +944,7 @@ function PickPolicies({ initial, onContinue, onBack }) {
       </div>
       <ActionBar>
         <button type="button" disabled={!sel.length} onClick={() => onContinue(KINDS.map(([k]) => k).filter(k => sel.includes(k)))} className={primaryBtn}>
-          {sel.length ? `Continue · ${sel.length} ${sel.length === 1 ? 'Policy' : 'Policies'}` : 'Pick At Least One'}
+          {sel.length ? <><T k="rc.pick.continue">Continue</T> · {sel.length} {sel.length === 1 ? <T k="rc.pick.policy">Policy</T> : <T k="rc.pick.policies">Policies</T>}</> : <T k="rc.pick.none">Pick At Least One</T>}
           {sel.length > 0 && <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />}
         </button>
       </ActionBar>
@@ -948,21 +963,21 @@ function KindSlot({ kind, drafts, renderDraft, onUpload, onCamera }) {
       <div className="flex items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Icon className="h-5 w-5" aria-hidden="true" /></span>
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-[#0F2D6B]">{label}</p>
-          <p className="text-[13px] text-slate-500">{done ? (drafts.length === 1 ? 'Added' : `${drafts.length} policies added`) : 'Not added yet'}</p>
+          <p className="font-bold text-[#0F2D6B]"><T k={`rc.kind.${kind}`}>{label}</T></p>
+          <p className="text-[13px] text-slate-500">{done ? (drafts.length === 1 ? <T k="rc.slot.added">Added</T> : <>{drafts.length} <T k="rc.slot.added-many">policies added</T></>) : <T k="rc.slot.not-added">Not added yet</T>}</p>
         </div>
         {done && <span className="qc-badge qc-badge-sm shrink-0" aria-label="Added"><Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /></span>}
       </div>
       {done ? (
         <>
           <ul className="mt-3 space-y-2">{drafts.map(renderDraft)}</ul>
-          <button type="button" onClick={onUpload} className="mt-2 text-sm font-semibold text-blue-700">+ Another {label.toLowerCase()} Policy</button>
+          <button type="button" onClick={onUpload} className="mt-2 text-sm font-semibold text-blue-700"><T k="rc.flow.another">+ Another</T>{' '}{label.toLowerCase()}{' '}<T k="rc.flow.policy">Policy</T></button>
         </>
       ) : (
         <>
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={onUpload} className="qb qb-blue qb-md flex-1 px-3 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" /> Upload</button>
-            <button type="button" onClick={onCamera} className="qb qb-outline qb-md flex-1 px-3 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" /> Use My Camera</button>
+            <button type="button" onClick={onUpload} className="qb qb-blue qb-md flex-1 px-3 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.upload">Upload</T></button>
+            <button type="button" onClick={onCamera} className="qb qb-outline qb-md flex-1 px-3 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.use-my-camera">Use My Camera</T></button>
           </div>
           <button type="button" onClick={() => setHelp(v => !v)} aria-expanded={help} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-700">
             <T k="rc.slot.help">Where Do I Find It?</T> <ChevronDown className={`h-3.5 w-3.5 transition-transform ${help ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -1041,11 +1056,11 @@ function PartnerHeroStrip({ name, photo, initials }) {
       )}
       <span className={`min-w-0 text-[14px] leading-snug ${stacked ? '' : 'whitespace-nowrap'}`}>
         <span className={`font-bold text-white ${stacked ? 'block truncate' : ''}`}>{name}</span>
-        {stacked ? <span className="block text-blue-100">shared this with you</span> : <span className="text-blue-100"> shared this with you</span>}
+        {stacked ? <span className="block text-blue-100"><T k="rc.flow.shared-this-with-you">shared this with you</T></span> : <span className="text-blue-100">{' '}<T k="rc.flow.shared-this-with-you">shared this with you</T></span>}
       </span>
       {/* The one-line version, measured off-screen. */}
       <span ref={probe} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap text-[14px] font-bold leading-snug">
-        {name} <span className="font-normal">shared this with you</span>
+        {name} <span className="font-normal"><T k="rc.flow.shared-this-with-you">shared this with you</T></span>
       </span>
     </div>
   );
@@ -1099,7 +1114,7 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-slate-900">{name}</p>
           <p className="mt-0.5 text-sm text-slate-500">
-            Policy {n} · <span>{pageCount}</span>{size && ` · ${size}`}
+            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>{size && ` · ${size}`}
           </p>
         </div>
         <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Replace policy ${n}`}
@@ -1121,10 +1136,10 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
           <span className="text-[9px] font-extrabold tracking-wide">PHOTOS</span>
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-900">Photographed policy</p>
+          <p className="font-semibold text-slate-900"><T k="rc.flow.photographed-policy">Photographed policy</T></p>
           <p className="mt-0.5 truncate text-sm text-slate-500">
-            Policy {n} · <span>{pageCount}</span>{size && ` · ${size}`}
-            {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
+            <T k="rc.flow.policy">Policy</T>{' '}{n} · <span>{pageCount}</span>{size && ` · ${size}`}
+            {bad >= 0 && <span className="text-amber-700">{' '}<T k="rc.flow.page">· Page</T>{' '}{bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
           </p>
         </div>
         <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
@@ -1152,21 +1167,21 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
           <button type="button" onClick={onAddPage} aria-label={`Add page ${pages.length + 1} to policy ${n}`}
             className="flex h-14 w-11 flex-col items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
             <Plus className="h-4 w-4" aria-hidden="true" />
-            <span className="text-[10px] font-bold leading-3">Page</span>
+            <span className="text-[10px] font-bold leading-3"><T k="rc.flow.page">Page</T></span>
           </button>
         </li>
       </ul>
 
       {pickedIndex >= 0 && (
         <div className="mt-2 flex items-center gap-2 rounded-xl bg-slate-50 p-2 pl-3 ring-1 ring-slate-200">
-          <span className="flex-1 text-sm font-semibold text-slate-700">Page {pickedIndex + 1}</span>
+          <span className="flex-1 text-sm font-semibold text-slate-700"><T k="rc.flow.page">Page</T>{' '}{pickedIndex + 1}</span>
           <button type="button" onClick={() => { setPicked(null); onRetakePage(picked); }} aria-label={`Retake page ${pickedIndex + 1} of policy ${n}`}
             className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
-            <RotateCcw className="h-4 w-4" aria-hidden="true" /> Retake
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.retake">Retake</T>
           </button>
           <button type="button" onClick={() => { setPicked(null); onRemovePage(picked); }} aria-label={`Remove page ${pickedIndex + 1} of policy ${n}`}
             className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-slate-200">
-            <X className="h-4 w-4" aria-hidden="true" /> Remove
+            <X className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.remove">Remove</T>
           </button>
         </div>
       )}
@@ -1174,22 +1189,22 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
       {onMergeUp && (
         <button type="button" onClick={onMergeUp}
           className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700">
-          Same Policy As Policy {index}? Combine Them
+          <T k="rc.flow.same-policy-as-policy">Same Policy As Policy</T>{' '}{index}<T k="rc.flow.combine-them">? Combine Them</T>
         </button>
       )}
 
       {asking && (
         <div className="mt-2 rounded-xl bg-blue-50 p-3" role="group" aria-label="More pages?">
-          <p className="font-semibold text-slate-900">Does this policy have more pages?</p>
-          <p className="mt-0.5 text-sm text-slate-600">Drivers, cars and coverages are often on page 2 or 3.</p>
+          <p className="font-semibold text-slate-900"><T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T></p>
+          <p className="mt-0.5 text-sm text-slate-600"><T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T></p>
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={onAddPage}
               className="qb qb-blue qb-md flex-1 px-3">
-              <Camera className="h-4 w-4" aria-hidden="true" /> Add Page {pages.length + 1}
+              <Camera className="h-4 w-4" aria-hidden="true" />{' '}<T k="rc.flow.add-page">Add Page</T>{' '}{pages.length + 1}
             </button>
             <button type="button" onClick={onDoneAdding}
               className="qb qb-outline qb-md flex-1 px-3">
-              That's All
+              <T k="rc.flow.thats-all">That's All</T>
             </button>
           </div>
         </div>
@@ -1203,22 +1218,22 @@ function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-slate-900/40" role="dialog" aria-modal="true" aria-label="How should we group these?">
       <div className="w-full max-w-md rounded-t-3xl bg-white px-5 pb-6 pt-5" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-        <p className="text-xl font-extrabold text-slate-900">You picked {count} files</p>
-        <p className="mt-1 text-slate-600">Are they pages of one policy, or more than one policy?</p>
+        <p className="text-xl font-extrabold text-slate-900"><T k="rc.flow.you-picked">You picked</T>{' '}{count}{' '}<T k="rc.flow.files">files</T></p>
+        <p className="mt-1 text-slate-600"><T k="rc.flow.are-they-pages-of-one">Are they pages of one policy, or more than one policy?</T></p>
         <button type="button" onClick={onOne}
           className="qb qb-blue qb-lg mt-5 w-full">
-          One Policy, {count} Pages
+          <T k="rc.flow.one-policy">One Policy,</T>{' '}{count}{' '}<T k="rc.flow.pages">Pages</T>
         </button>
         <button type="button" onClick={onSeparate}
           className="qb qb-outline qb-md mt-3 w-full">
-          {count} Separate Policies
+          {count}{' '}<T k="rc.flow.separate-policies">Separate Policies</T>
         </button>
         <button type="button" onClick={onMix}
           className="qb qb-outline qb-md mt-3 w-full flex-col gap-0">
-          A Mix — I'll Sort Them
-          <span className="text-xs font-normal text-slate-500">e.g. 3 pages of auto and 2 of home</span>
+          <T k="rc.flow.a-mix-ill-sort-them">A Mix — I'll Sort Them</T>
+          <span className="text-xs font-normal text-slate-500"><T k="rc.flow.eg-3-pages-of-auto">e.g. 3 pages of auto and 2 of home</T></span>
         </button>
-        <button type="button" onClick={onCancel} className="mt-2 w-full py-2 text-sm font-medium text-slate-500">Cancel</button>
+        <button type="button" onClick={onCancel} className="mt-2 w-full py-2 text-sm font-medium text-slate-500"><T k="rc.flow.cancel">Cancel</T></button>
       </div>
     </div>
   );
@@ -1239,7 +1254,7 @@ function ResultRow({ item, index, onRetake, onRetry }) {
     detail = <span className="inline-flex items-center gap-1.5 text-blue-700"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />{item.status === 'queued' ? 'Waiting…' : 'Reading…'}</span>;
   } else if (item.status === 'unreadable') {
     title = 'Couldn’t read it';
-    detail = <span className="text-slate-600">Cam will check it</span>;
+    detail = <span className="text-slate-600"><T k="rc.flow.cam-will-check-it">Cam will check it</T></span>;
   } else if (item.status === 'failed') {
     title = `Policy ${index + 1} didn’t send`;
     detail = <span className="text-red-700">{item.error}</span>;
@@ -1259,11 +1274,11 @@ function ResultRow({ item, index, onRetake, onRetry }) {
         </span>
       )}
       {item.status === 'unreadable' && (
-        <button type="button" onClick={onRetake} className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900">Retake</button>
+        <button type="button" onClick={onRetake} className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900"><T k="rc.flow.retake">Retake</T></button>
       )}
       {item.status === 'failed' && (
         <button type="button" onClick={item.pages?.length ? onRetry : onRetake} className="shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-800">
-          {item.pages?.length ? 'Try Again' : 'Retake'}
+          {item.pages?.length ? <T k="rc.flow.try-again">Try Again</T> : <T k="rc.flow.retake">Retake</T>}
         </button>
       )}
     </li>
@@ -1574,7 +1589,7 @@ function TextUs({ className = '' }) {
   if (!number) return null;
   return (
     <a href={smsHref(number, body)} className={`qb qb-outline-dark qb-md w-full ${className}`}>
-      <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textus.cta">Text us</T>
+      <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.textus.cta">Text Us</T>
     </a>
   );
 }
@@ -1626,7 +1641,7 @@ function StartCard({ onStart, onUpload, onDropFiles }) {
       </button>
       <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes</T></p>
       <button type="button" onClick={onUpload} className="mt-3 w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4">
-        <T k="rc.start.shortcut">Have Your Policy Handy? Upload It Now</T><span className="hidden lg:inline"> · Or Drop a PDF Here</span>
+        <T k="rc.start.shortcut">Have Your Policy Handy? Upload It Now</T><span className="hidden lg:inline">{' '}<T k="rc.flow.or-drop-a-pdf-here">· Or Drop a PDF Here</T></span>
       </button>
     </div>
   );
@@ -1842,7 +1857,10 @@ function Shell({ children, step, bar, center = false, wide = false }) {
     <div className="min-h-screen bg-slate-50">
       {styles}
       <header className="mx-auto max-w-md px-4 pt-5">
-        <BrandLogo tone="light" className="shrink-0" />
+        <div className="flex items-center justify-between gap-2">
+          <BrandLogo tone="light" className="shrink-0" />
+          <EditPagePencil tone="light" />
+        </div>
         {step && (
           <ol className="mt-4 grid grid-cols-3 gap-1.5" aria-label={step > STEPS.length ? 'All steps done' : `Step ${step} of 3: ${STEPS[step - 1]}`}>
             {STEPS.map((st, i) => {
@@ -1850,7 +1868,7 @@ function Shell({ children, step, bar, center = false, wide = false }) {
               return (
                 <li key={st} aria-current={state === 'on' ? 'step' : undefined}>
                   <span className={`block h-1.5 rounded-full transition-colors ${state === 'on' ? 'bg-blue-700' : state === 'done' ? 'bg-blue-300' : 'bg-slate-300'}`} />
-                  <span className={`mt-1.5 block text-[11px] font-semibold ${state === 'on' ? 'text-blue-700' : state === 'done' ? 'text-slate-500' : 'text-slate-400'}`}>{i + 1} {st}</span>
+                  <span className={`mt-1.5 block text-[11px] font-semibold ${state === 'on' ? 'text-blue-700' : state === 'done' ? 'text-slate-500' : 'text-slate-400'}`}>{i + 1} <T k={`rc.steps.${i + 1}`}>{st}</T></span>
                 </li>
               );
             })}

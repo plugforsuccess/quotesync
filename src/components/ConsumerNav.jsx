@@ -5,6 +5,7 @@
 // same bar on its own blue band and the light footer.
 
 import { useEffect, useState } from 'react';
+import { rateCheckStart } from '../lib/rateCheckStart';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { T, EditPagePencil } from './SiteCopy';
@@ -76,8 +77,8 @@ export function ConsumerNav({ current }) {
               ))}
             </nav>
             <div className="mt-auto px-5 pb-8">
-              <Link to="/" onClick={() => setOpen(false)} className="qb qb-gold qb-md w-full">
-                Check my rate
+              <Link to={rateCheckStart({ drivers: 'drivers_ed', news: 'newsroom' }[current] || 'menu')} onClick={() => setOpen(false)} className="qb qb-gold qb-md w-full">
+                Check My Rate
               </Link>
             </div>
           </div>
