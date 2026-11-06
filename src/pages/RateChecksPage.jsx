@@ -346,7 +346,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
 
       {/* What they pay now (labeled), then the price with the text button and Start quote. */}
       {bundle
-        ? <div className="mt-3"><CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill></div>
+        ? <div className="mb-2 mt-3"><CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill></div>
         : <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>}
       <div className="mt-1 flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -715,14 +715,17 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
                 </a>
               )}
               <CopyButton text={formatPhone(rc.phone)} label="Copy phone number" className="p-2" />
-              {rc.lead_id && (
-                <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex items-center gap-1 text-primary-600 hover:underline">
-                  <T k="pages.ratecheckspage.9fc953">Lead Record</T> <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
-              )}
             </div>
           )}
-          <GoalHeader household={household} />
+          {/* What to beat, and the lead's record, on one row. */}
+          <div className="mt-3 flex items-baseline justify-between gap-3">
+            <GoalHeader household={household} className="" />
+            {rc.lead_id && (
+              <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex shrink-0 items-center gap-1 text-sm text-primary-600 hover:underline">
+                <T k="pages.ratecheckspage.9fc953">Lead Record</T> <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6 p-5">
@@ -848,6 +851,9 @@ function QuoteBox({ rc, onQuoted }) {
             {enterQuote.isPending ? <T k="pages.ratecheckspage.56a228">{'Saving…'}</T> : justSaved ? <T k="pages.ratecheckspage.838a49">{'Saved ✓'}</T> : outcome ? <T k="pages.ratecheckspage.fb91e2">{'Update'}</T> : <T k="pages.ratecheckspage.efc007">{'Save'}</T>}
           </button>
         </div>
+        {!(parseMoney(premium) > 0) && !outcome && !declined && (
+          <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="ratechecks.quote.save-hint-a">Type the</T> {market} <T k="ratechecks.quote.save-hint-b">price for a year, then Save. It records the quote and tells you if it beats what they pay.</T></p>
+        )}
         {/* Live: what this price saves them, before Save (once saved, the result box below says it). */}
         {!(outcome && parseMoney(premium) === Number(result?.allstate_premium ?? rc.allstate_premium)) && (
           <LiveDelta current={rc.annual_premium} price={parseMoney(premium)} />

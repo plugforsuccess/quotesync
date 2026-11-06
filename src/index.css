@@ -959,3 +959,11 @@ h1, h2, h3 { font-family: var(--font-display); }
 .rc-deck-in { animation: rc-deck-in .28s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes rc-deck-in { from { opacity: .4; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .rc-deck-in { animation: none; } }
+
+/* Quote sheet, light theme: darker accents so vehicle badges, gap pills and
+   "ask the customer" marks read at a glance on white. */
+[data-theme="light"] .qs-sheet {
+  --qs-cyan: #0E6E8C;
+  --qs-warning: #A16207;
+  --qs-warning-border: #CA8A04;
+}

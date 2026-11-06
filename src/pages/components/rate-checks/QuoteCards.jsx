@@ -15,11 +15,11 @@ const tone = (delta) => (delta > 0 ? 'var(--qs-success)' : 'var(--qs-warning)');
 const policyName = (p) => [carrierLabel(p), policyTypeLabel(p.policy_type)].filter(Boolean).join(' ') || 'Not read yet';
 
 /** "Beat $9,916/yr · 1 of 2 quoted · Saves $5,660 so far" — a quote saves; nothing is saved until it binds. */
-export function GoalHeader({ household }) {
+export function GoalHeader({ household, className = 'mt-3' }) {
   const g = householdGoal(household);
   if (g.target == null) return null;
   return (
-    <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }} aria-label="Quote goal">
+    <p className={`${className} flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm`} style={{ color: 'var(--qs-subtle)' }} aria-label="Quote goal">
       <span><T k="pages.components.ratechecks.quotecards.2bb46c">Beat</T> <b style={{ color: 'var(--qs-bright)' }}>{money(g.target)}<T k="pages.components.ratechecks.quotecards.6d8fef">/yr</T></b></span>
       <span aria-hidden="true">·</span>
       <span>{g.quoted} <T k="pages.components.ratechecks.quotecards.8bf885">of</T> {g.total} <T k="pages.components.ratechecks.quotecards.c77184">quoted</T></span>

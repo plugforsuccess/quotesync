@@ -233,6 +233,13 @@ export function autoCoverageGroups(rc) {
     if (k === 'um_uim' && r?.note) r.note = r.note.replace(/^PD\s+deductible/i, 'Deductible');
     liability.push(r || { key: k, label: coverageName(k), value: 'None listed', muted: true });
   }
+  // Uninsured motorist PD always has a row, directly under uninsured motorist (no divider).
+  const um = liability.findIndex(r => r?.key === 'um_uim');
+  if (um >= 0) {
+    let pd = liability.findIndex(r => r?.key === 'umpd');
+    const row_ = pd >= 0 ? liability.splice(pd, 1)[0] : { key: 'umpd', label: coverageName('umpd'), value: null };
+    liability.splice(um + 1, 0, { ...row_, joined: true });
+  }
 
   const physical = [];
   for (const k of AUTO_PHYSICAL) {

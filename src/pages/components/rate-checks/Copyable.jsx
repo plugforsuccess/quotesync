@@ -68,11 +68,11 @@ export function CopyTextButton({ text, children, className = '', style }) {
 
 // Label / value row with a copy button. Value stays plain selectable text.
 // `addOn` marks something the producer must match on the quote (shown in yellow).
-export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone, addOn = false, emptyText = null }) {
+export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone, addOn = false, emptyText = null, joined = false }) {
   const empty = value == null || value === '';
   return (
-    <div className="flex items-start justify-between gap-3 py-2" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      <dt className={`${wide ? 'w-36 sm:w-52' : 'w-32'} shrink-0 text-sm`} style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></dt>
+    <div className={`flex items-start justify-between gap-3 ${joined ? '-mt-1 pb-2' : 'py-2'}`} style={joined ? undefined : { borderTop: '1px solid var(--qs-border)' }}>
+      <dt className={`${wide ? 'w-44 sm:w-52' : 'w-32'} shrink-0 text-sm`} style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></dt>
       <dd className="flex min-w-0 flex-1 items-start justify-end gap-1 text-right text-sm">
         <span className="min-w-0">
           <span className={`select-text break-words ${mono ? 'font-mono' : ''} ${addOn && !empty ? ADD_ON_CLS : ''}`}

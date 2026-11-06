@@ -73,7 +73,7 @@ function Rows({ rows }) {
       )}
       <dl>
         {rest.map(r => (
-          <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} addOn={r.addOn} wide />
+          <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} addOn={r.addOn} wide joined={!!r.joined} />
         ))}
       </dl>
     </>
@@ -231,7 +231,7 @@ function VehicleCard({ rc, v, index, level, n }) {
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums"
           style={VEHICLE_TONE} aria-hidden="true">{n}</span>
-        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
+        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-bright)' }}>
           <span className="sr-only"><T k="pages.components.ratechecks.policysheet.d6af9c">Vehicle</T> {n}: </span>{vehicleTitle(v)}
         </p>
         {level && (
@@ -248,6 +248,7 @@ function VehicleCard({ rc, v, index, level, n }) {
         </p>
       )}
       {vinWarn && <p className="pl-[34px] text-xs text-yellow-600">{vinWarn}</p>}
+      {(lien || hasGapRow) && <div className="ml-[34px] mt-3 h-px w-20" style={{ background: 'var(--qs-border)' }} aria-hidden="true" />}
       {lien && (
         <>
           <p className="mt-3 flex items-center gap-1 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
@@ -287,7 +288,7 @@ export default function PolicySheet({ rc, warning }) {
   const levelOf = (index) => setup?.coverages.length ? setup.vehicles.find(s => s.index === index) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="qs-sheet space-y-6">
       <Section title="Insured">
         <dl>
           <Field label="Name on policy" value={insured} copy />
