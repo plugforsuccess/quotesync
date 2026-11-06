@@ -70,6 +70,8 @@ async function mock(page, state) {
 async function openPartners(page) {
   await page.goto('/agency/leads/rate-checks');
   await page.getByRole('tab', { name: 'Partners' }).click();
+  // Partners show as a list; tap one for their details.
+  await page.getByRole('region', { name: 'Partners' }).getByRole('button', { name: /Javon Yarbrough/ }).click();
   await expect(page.getByRole('heading', { name: 'Javon Yarbrough' })).toBeVisible();
 }
 

@@ -1537,19 +1537,24 @@ const PROMISES = [
   ['calls', 'No call centers, ever'],
 ];
 
-// Owner and agency license, as two labelled details.
-function OwnerDetails({ className }) {
+// Whether the office is open, live: "Open now · replies in about 30 min", or when it
+// opens next. Rechecks every minute. (The agency license is in the footer.)
+function OfficeStatus({ className }) {
+  const [opens, setOpens] = useState(() => nextOpening());
+  useEffect(() => {
+    const t = setInterval(() => setOpens(nextOpening()), 60000);
+    return () => clearInterval(t);
+  }, []);
   return (
-    <dl className={className}>
-      <div>
-        <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Owner</dt>
-        <dd className="whitespace-nowrap text-sm font-semibold text-blue-200/80">{AGENT.name}</dd>
-      </div>
-      <div>
-        <dt className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Agency license</dt>
-        <dd className="text-sm font-semibold tabular-nums text-blue-200/80">#{AGENCY.license}</dd>
-      </div>
-    </dl>
+    <p className={`flex items-center gap-2 text-sm font-semibold text-blue-100 ${className}`} aria-live="polite">
+      <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+        {!opens && <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />}
+        <span className={`relative h-2.5 w-2.5 rounded-full ${opens ? 'bg-amber-300' : 'bg-emerald-400'}`} />
+      </span>
+      {opens
+        ? <span><T k="rc.status.closed">Closed now · opens</T> {opens.label}</span>
+        : <T k="rc.status.open">Open now · replies in about 30 min</T>}
+    </p>
   );
 }
 
@@ -1565,7 +1570,7 @@ function OwnerCard() {
         <div className="min-w-0 flex-1">
           <h2 className="hidden whitespace-nowrap font-black leading-none tracking-tight lg:block lg:text-[30px]" style={{ color: GOLD }}>{AGENCY.short}</h2>
           <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-2.5 lg:text-xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
-          <OwnerDetails className="mt-2.5 flex gap-x-5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:gap-x-8 lg:border-0 lg:pt-0" />
+          <OfficeStatus className="mt-2.5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:border-0 lg:pt-0" />
         </div>
       </div>
       <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">

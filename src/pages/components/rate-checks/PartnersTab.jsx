@@ -7,7 +7,7 @@
 
 import { T } from '../../../components/SiteCopy';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus, Star } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, Download, MessageSquare, Plus, Star } from 'lucide-react';
 import { partnerReviewText, smsHref } from '../../../lib/reviews';
 import { buildText } from '../../../lib/textTemplates';
 import Dismissible from '../../../components/Dismissible';
@@ -55,11 +55,14 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const [month, setMonth] = useState(now);
   const [adding, setAdding] = useState(false);
   const [open, setOpen] = useState(focusId);
+  // The partner whose details are showing; the rest of the time, the list.
+  const [selected, setSelected] = useState(focusId);
 
   // Opened from a partner's name on a lead: expand their card and bring it into view.
   useEffect(() => {
     if (!focusId || isLoading) return;
     setOpen(focusId);
+    setSelected(focusId);
     // Scroll after the applications list above has had a moment to load and push the card down.
     const t = setTimeout(() => document.getElementById(`partner-${focusId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 450);
     return () => clearTimeout(t);
@@ -167,14 +170,55 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         </div>
       )}
 
-      {/* One card per partner */}
-      {promoters.map(p => {
+      {/* Every partner as a row; tap one for their links, numbers and settings. */}
+      {promoters.length > 0 && !promoters.some(p => p.id === selected) && (
+        <section className="dark-card overflow-hidden" style={{ padding: 0 }} aria-label="Partners">
+          <ul>
+            {promoters.map((p, i) => {
+              const { summary: s, plan } = byPartner[p.id] || {};
+              const paid = paidFor(p.id);
+              const owed = paid ? Number(paid.amount) : (plan?.amount || 0) + (plan?.upcoming || 0);
+              return (
+                <li key={p.id} style={i ? { borderTop: '1px solid var(--qs-border)' } : undefined}>
+                  <button type="button" onClick={() => { setSelected(p.id); window.scrollTo({ top: 0 }); }}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-[var(--qs-elevated)] sm:gap-4 sm:px-5" style={{ opacity: p.active ? 1 : 0.6 }}>
+                    <Avatar p={p} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold" style={{ color: 'var(--qs-bright)' }}>{p.name}</span>
+                      <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+                        {!p.active && <Pill>Paused</Pill>}
+                        {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Signed' : 'Not signed'}</Pill>}
+                        <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? 'W-9 on file' : 'W-9 needed'}</Pill>
+                      </span>
+                    </span>
+                    <span className="hidden w-24 shrink-0 text-right sm:block">
+                      <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{monthName(month)}</span>
+                      <span className="block text-sm font-semibold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{s?.month.households || 0} {(s?.month.households || 0) === 1 ? 'household' : 'households'}</span>
+                    </span>
+                    <span className="w-16 shrink-0 text-right sm:w-20">
+                      <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{paid ? 'Paid' : 'Owed'}</span>
+                      <span className="block text-sm font-bold tabular-nums" style={{ color: 'var(--qs-success)' }}>{dollars(owed)}</span>
+                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {/* The open partner */}
+      {promoters.filter(p => p.id === selected).map(p => {
         const { hh = [], summary: s, plan } = byPartner[p.id] || {};
         const paid = paidFor(p.id);
         const expanded = open === p.id;
         const monthRows = hh.filter(h => h.month === month);
         return (
           <section key={p.id} id={`partner-${p.id}`} className="dark-card scroll-mt-24" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
+            <button type="button" onClick={() => setSelected(null)} className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {promoters.length > 1 ? `All partners (${promoters.length})` : 'All partners'}
+            </button>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <PartnerPhoto promoter={p} canEdit={canEdit} />
               <div className="min-w-0 flex-1">
@@ -212,7 +256,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
             <div className="mt-4 grid grid-cols-3 gap-3">
               <Stat label="Households" value={s.month.households} />
-              <Stat label="Owed" value={dollars(paid ? Number(paid.amount) : plan.amount + plan.upcoming)} tone="var(--qs-warning)" />
+              <Stat label="Owed" value={dollars(paid ? Number(paid.amount) : plan.amount + plan.upcoming)} tone="var(--qs-success)" />
               <Stat label="Status" value={paid ? 'Paid' : plan.amount > 0 ? (plan.underMinimum ? `Under ${dollars(rules.minPayout)}` : 'Due now') : plan.upcoming > 0 ? `Pays ${shortDate(plan.upcomingPayDay)}` : '—'} tone={paid ? 'var(--qs-success)' : undefined} />
             </div>
             <div className="mt-3 grid grid-cols-3 gap-3 pt-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
@@ -355,13 +399,24 @@ function PartnerPhoto({ promoter: p, canEdit }) {
   );
 }
 
+// Status as plain text with a colored dot: green done, amber needed, gray otherwise.
 function Pill({ ok, children }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
-      style={ok
-        ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }
-        : { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
-      {ok && <Check className="h-3 w-3" aria-hidden="true" />}{children}
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold"
+      style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)' }}>
+      <span className="h-2 w-2 rounded-full" style={{ background: ok ? '#16A34A' : ok === false ? '#F59E0B' : '#94A3B8' }} aria-hidden="true" />{children}
+    </span>
+  );
+}
+
+// A partner's photo (with their OK) or initials, for the list.
+function Avatar({ p }) {
+  const photo = p.photo_consent_at ? p.photo_url : null;
+  const initials = String(p.name).trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  return (
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold"
+      style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }} aria-hidden="true">
+      {photo ? <img src={photo} alt="" className="h-full w-full object-cover" /> : initials}
     </span>
   );
 }

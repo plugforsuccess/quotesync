@@ -327,7 +327,7 @@ function Layout({ forcePlane = null }) {
               )}
 
               {/* Persona switcher — principals only, hidden if only one persona is available */}
-              <PersonaSwitcher compact />
+              <PersonaSwitcher compact onDark />
 
               {/* Edit website — opens the public Rate Check page with the copy editor on. */}
               {currentAgencyRole === 'principal' && <EditWebsiteButton />}
@@ -433,7 +433,7 @@ function Layout({ forcePlane = null }) {
 
             <div className="mt-4 flex flex-col items-center gap-3">
               {/* Persona switcher — self-hides for single-hat users */}
-              <PersonaSwitcher />
+              <PersonaSwitcher onDark />
               {/* Theme toggle — mobile; hidden on consumer/funnel routes */}
               {showThemeToggle && <ThemeToggle variant="pill" />}
               <UserMenu
@@ -477,7 +477,7 @@ function Layout({ forcePlane = null }) {
                 hats on mobile (on desktop it lives in the header nav).
                 Self-hides for single-hat users. */}
             <div className="px-4 py-3 border-b border-white/10 empty:hidden">
-              <PersonaSwitcher fullWidth />
+              <PersonaSwitcher fullWidth onDark />
             </div>
 
             {/* Drawer nav groups */}
