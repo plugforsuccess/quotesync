@@ -660,7 +660,7 @@ export default function RateCheckPage() {
       },
     ];
     return (
-      <Shell step={4} center>
+      <Shell step={4} center noFooter>
         {fileInputs}
         {banner}
         <div role="status" aria-live="polite" className="text-center">
