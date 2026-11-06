@@ -1546,16 +1546,23 @@ function OfficeStatus({ className }) {
     const t = setInterval(() => setOpens(nextOpening()), 60000);
     return () => clearInterval(t);
   }, []);
+  // The dot, then the state in bold with what it means underneath (no box: it's a
+  // status, not a button), so neither line wraps awkwardly on a phone.
   return (
-    <p className={`flex items-center gap-2 text-sm font-semibold text-blue-100 ${className}`} aria-live="polite">
-      <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+    <div className={`inline-flex items-start gap-2 text-left ${className}`} aria-live="polite">
+      <span className="relative mt-[5px] flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
         {!opens && <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />}
         <span className={`relative h-2.5 w-2.5 rounded-full ${opens ? 'bg-amber-300' : 'bg-emerald-400'}`} />
       </span>
-      {opens
-        ? <span><T k="rc.status.closed">Closed now · opens</T> {opens.label}</span>
-        : <T k="rc.status.open">Open now · replies in about 30 min</T>}
-    </p>
+      <span className="min-w-0 leading-tight">
+        <span className="block whitespace-nowrap text-[15px] font-bold text-white">
+          {opens ? <T k="rc.status.closed.title">Closed now</T> : <T k="rc.status.open.title">Open now</T>}
+        </span>
+        <span className="mt-0.5 block whitespace-nowrap text-[13px] text-blue-200">
+          {opens ? <><T k="rc.status.closed.line">Opens</T> {opens.label}</> : <T k="rc.status.open.line">Replies in about 30 min</T>}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -1584,7 +1591,7 @@ function OwnerCard() {
         <div className="min-w-0 flex-1">
           <h2 className="hidden whitespace-nowrap font-black leading-none tracking-tight lg:block lg:text-[30px]" style={{ color: GOLD }}>{AGENCY.short}</h2>
           <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-2.5 lg:text-xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
-          <OfficeStatus className="mt-2.5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:border-0 lg:pt-0" />
+          <OfficeStatus className="mt-3" />
         </div>
       </div>
       <TextUs className="mt-4" />
