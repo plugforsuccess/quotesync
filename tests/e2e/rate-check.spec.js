@@ -383,6 +383,12 @@ test('a partner link: says who shared it and credits the partner', async ({ page
   expect(posts[0].invite_code).toBe('JVN7K2QX');
 });
 
+test('a producer link skips the landing page and opens the flow, details filled in', async ({ page }, testInfo) => {
+  await partnerLinkUpload(page, testInfo, route => route.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify({ first_name: 'Dana', phone: '4045550199', event_name: 'Covington Expo', producer_name: 'Cam' }) }));
+  await expect(page.getByRole('heading', { name: 'What should we check?' })).toBeVisible();
+});
+
 test('a partner link still credits the partner when the link check fails', async ({ page }, testInfo) => {
   let lookups = 0;
   const { photo, posts } = await partnerLinkUpload(page, testInfo, route => { lookups += 1; return route.fulfill({ status: 429, contentType: 'application/json', body: '{"error":"Rate limit exceeded"}' }); });

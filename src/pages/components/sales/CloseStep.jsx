@@ -7,8 +7,8 @@ import { T } from '../../../components/SiteCopy';
 import { policyTypeLabel } from '../rate-checks/format';
 import { money } from '../rate-checks/ui';
 import { parseMoney, sanitizeMoneyInput } from '../../../lib/money';
-import { LOST } from '../../../lib/sales';
-import { useBindHousehold, useScheduleFollowUp, useLoseHousehold } from '../../../hooks/useSales';
+import { LABEL, LOST, bundleTypeFor } from '../../../lib/sales';
+import { useBindHousehold, useLogBind, useScheduleFollowUp, useLoseHousehold } from '../../../hooks/useSales';
 
 const termOf = (rc) => (Number(rc.term_months) === 6 ? 6 : 12);
 const field = { background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' };
@@ -21,6 +21,13 @@ function Choice({ on, onClick, icon: Icon, children }) {
       style={on ? undefined : { ...card, color: 'var(--qs-bright)' }}>
       <Icon className="h-5 w-5" aria-hidden="true" /> {children}
     </button>
+  );
+}
+
+// Marks a card as the Allstate policy being written.
+function AllstateMark() {
+  return (
+    <img src="/logos/carriers/allstate-horizontal.svg" alt="Allstate" className="h-5 w-auto shrink-0" />
   );
 }
 
@@ -38,7 +45,7 @@ function Bound({ household, leadId }) {
   const [rows, setRows] = useState(() => Object.fromEntries(list.map(rc => [rc.id, {
     on: true,
     premium: rc.allstate_premium != null ? String(Math.round(rc.allstate_premium * termOf(rc) / 12 * 100) / 100) : '',
-    policy: rc.policy_number ? String(rc.policy_number).slice(0, 40) : '',
+    policy: '', // the new Allstate policy's number, not the one they're leaving
   }])));
   const bind = useBindHousehold();
   const set = (id, k, v) => setRows(m => ({ ...m, [id]: { ...m[id], [k]: v } }));
@@ -57,10 +64,13 @@ function Bound({ household, leadId }) {
         const t = termOf(rc);
         return (
           <div key={rc.id} className="rounded-xl p-4" style={{ ...card, opacity: r.on ? 1 : 0.6 }}>
-            <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
-              <input type="checkbox" checked={r.on} onChange={e => set(rc.id, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
-              <T>{policyTypeLabel(rc.policy_type)}</T>
-            </label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
+                <input type="checkbox" checked={r.on} onChange={e => set(rc.id, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
+                <T>{`${policyTypeLabel(rc.policy_type)} New Business`}</T>
+              </label>
+              <AllstateMark />
+            </div>
             {r.on && (
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="block text-xs font-semibold" style={{ color: 'var(--qs-bright)' }}>
@@ -89,13 +99,72 @@ function Bound({ household, leadId }) {
   );
 }
 
+// A lead with no uploaded policy (a winback): what was written, from the saved quote.
+function LeadBound({ lead, agencyId, openQuote }) {
+  const list = (openQuote?.lines || []).map((l, i) => ({ key: `${l.product}-${i}`, product: l.product, term: Number(l.term_months) === 6 ? 6 : 12, premium: l.premium }));
+  const [rows, setRows] = useState(() => Object.fromEntries(list.map(l => [l.key, { on: true, premium: l.premium != null ? String(l.premium) : '', policy: '' }])));
+  const bind = useLogBind();
+  const set = (k, f, v) => setRows(m => ({ ...m, [k]: { ...m[k], [f]: v } }));
+  const picked = list.filter(l => rows[l.key]?.on);
+  const ok = picked.length && picked.every(l => parseMoney(rows[l.key].premium) > 0);
+  if (bind.isSuccess) return <Done><T k="sales.close.bound-done">Bound. The lead is closed as Won and the bind counts on your scorecard.</T></Done>;
+  if (!list.length) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.close.quote-first">Save the quote first; Bound is filled in from it.</T></p>;
+  const cars = Math.max(1, Number(lead.vehicle_count) || 1);
+  return (
+    <form className="space-y-3" onSubmit={(e) => {
+      e.preventDefault();
+      if (!ok) return;
+      const lines = picked.map(l => ({ product: l.product, items: l.product === 'auto' ? cars : 1, premium: rows[l.key].premium, term_months: l.term, policy_number: rows[l.key].policy }));
+      bind.mutate({ agencyId, lead, quoteId: openQuote.id, lines, bundleType: bundleTypeFor(lines.map(l => l.product)), bundleOverridden: false });
+    }}>
+      <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.close.bound-line">Check what you wrote in Allstate and the premium they paid for its term.</T></p>
+      {list.map(l => {
+        const r = rows[l.key];
+        const label = LABEL[l.product] || l.product;
+        return (
+          <div key={l.key} className="rounded-xl p-4" style={{ ...card, opacity: r.on ? 1 : 0.6 }}>
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2.5 font-bold" style={{ color: 'var(--qs-bright)' }}>
+                <input type="checkbox" checked={r.on} onChange={e => set(l.key, 'on', e.target.checked)} className="h-5 w-5 accent-[#2563EB]" />
+                <T>{`${label} New Business`}</T>
+              </label>
+              <AllstateMark />
+            </div>
+            {r.on && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <label className="block text-xs font-semibold" style={{ color: 'var(--qs-bright)' }}>
+                  <T k="sales.close.premium">Premium</T> ({l.term === 6 ? <T k="sales.close.6mo">6 Months</T> : <T k="sales.close.12mo">12 Months</T>})
+                  <span className="relative mt-1 block">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--qs-subtle)' }}>$</span>
+                    <input inputMode="decimal" value={r.premium} onChange={e => set(l.key, 'premium', sanitizeMoneyInput(e.target.value))}
+                      aria-label={`${label} bound premium`} className="w-full rounded-lg py-2.5 pl-7 pr-2 text-base font-semibold tabular-nums" style={field} />
+                  </span>
+                </label>
+                <label className="block text-xs font-semibold" style={{ color: 'var(--qs-bright)' }}>
+                  <T k="sales.close.policy">Policy Number</T> <span style={{ color: 'var(--qs-subtle)' }}>· <T k="sales.close.optional">Optional</T></span>
+                  <input value={r.policy} onChange={e => set(l.key, 'policy', e.target.value)} maxLength={40}
+                    aria-label={`${label} policy number`} className="mt-1 w-full rounded-lg px-3 py-2.5 text-base" style={field} />
+                </label>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {bind.isError && <p className="text-sm text-red-600" role="alert">{bind.error.message}</p>}
+      <button type="submit" disabled={!ok || bind.isPending} className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white disabled:opacity-50">
+        <ShieldCheck className="h-5 w-5" aria-hidden="true" /> {bind.isPending ? <T k="sales.close.saving">Saving…</T> : <><T k="sales.close.mark-bound">Mark Bound</T> · {picked.length} {picked.length === 1 ? <T k="sales.close.policy-1">Policy</T> : <T k="sales.close.policies">Policies</T>}</>}
+      </button>
+    </form>
+  );
+}
+
 const tomorrowAt10 = () => {
   const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0);
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-function FollowUp({ leadId }) {
+function FollowUp({ leadId, withNote = true }) {
   const [at, setAt] = useState(tomorrowAt10);
   const [note, setNote] = useState('');
   const follow = useScheduleFollowUp();
@@ -108,11 +177,11 @@ function FollowUp({ leadId }) {
         <T k="sales.close.when">Call Them Back</T>
         <input type="datetime-local" value={at} onChange={e => setAt(e.target.value)} className="mt-1.5 w-full rounded-lg px-3 py-2.5 text-base" style={field} />
       </label>
-      <label className="block text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>
+      {withNote && <label className="block text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>
         <T k="sales.close.why">Note</T> <span style={{ color: 'var(--qs-subtle)' }}>· <T k="sales.close.optional">Optional</T></span>
         <input value={note} onChange={e => setNote(e.target.value)} maxLength={200} placeholder="e.g. Wants to talk to spouse first"
           className="mt-1.5 w-full rounded-lg px-3 py-2.5 text-base" style={field} />
-      </label>
+      </label>}
       {follow.isError && <p className="text-sm text-red-600" role="alert">{follow.error.message}</p>}
       <button type="submit" disabled={!at || follow.isPending} className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white disabled:opacity-50">
         <CalendarClock className="h-5 w-5" aria-hidden="true" /> {follow.isPending ? <T k="sales.close.saving">Saving…</T> : <T k="sales.close.set-follow">Set Follow-Up</T>}
@@ -148,15 +217,23 @@ function Lost({ leadId }) {
   );
 }
 
-export default function CloseStep({ household }) {
-  const leadId = household[0]?.lead_id || null;
+/**
+ * household: the Rate Check rows. Or, for a lead with no upload (a winback): lead,
+ * agencyId and its open quote. A winback's note is its story, so no note on follow-up.
+ */
+export default function CloseStep({ household = [], lead = null, agencyId = null, openQuote = null }) {
+  const leadId = lead?.id || household[0]?.lead_id || null;
   const [pick, setPick] = useState(null);
-  const total = household.filter(rc => rc.allstate_premium != null).reduce((s, rc) => s + Number(rc.allstate_premium), 0);
+  const total = lead
+    ? (openQuote?.lines || []).reduce((s, l) => s + (Number(l.premium) || 0) * (12 / (Number(l.term_months) || 12)), 0)
+    : household.filter(rc => rc.allstate_premium != null).reduce((s, rc) => s + Number(rc.allstate_premium), 0);
   if (!leadId) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.close.nolead">This upload has no lead yet, so it can’t be closed here.</T></p>;
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.close.title">Close It Out</T></h3>
+        <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>
+          {pick === 'follow' ? <T k="sales.close.h-follow">Follow Up</T> : pick === 'lost' ? <T k="sales.close.h-lost">Lost</T> : <T k="sales.close.h-bound">Policy Bound</T>}
+        </h3>
         {total > 0 && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.close.quoted">Quoted</T> {money(total)}<T k="sales.log.peryear">/yr</T></p>}
       </div>
       <div className="grid grid-cols-3 gap-2">
@@ -164,8 +241,8 @@ export default function CloseStep({ household }) {
         <Choice on={pick === 'follow'} onClick={() => setPick('follow')} icon={CalendarClock}><T k="sales.close.c-follow">Follow Up</T></Choice>
         <Choice on={pick === 'lost'} onClick={() => setPick('lost')} icon={X}><T k="sales.close.c-lost">Lost</T></Choice>
       </div>
-      {pick === 'bound' && <Bound household={household} leadId={leadId} />}
-      {pick === 'follow' && <FollowUp leadId={leadId} />}
+      {pick === 'bound' && (lead ? <LeadBound lead={lead} agencyId={agencyId} openQuote={openQuote} /> : <Bound household={household} leadId={leadId} />)}
+      {pick === 'follow' && <FollowUp leadId={leadId} withNote={lead?.source !== 'winback'} />}
       {pick === 'lost' && <Lost leadId={leadId} />}
     </div>
   );

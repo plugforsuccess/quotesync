@@ -50,7 +50,7 @@ async function mock(page, state) {
 test('log a quote with term premiums, then mark it bound with items and a bundle', async ({ page }) => {
   const state = { quotes: [], binds: [] };
   const writes = await mock(page, state);
-  await page.goto('/agency/leads/L1');
+  await page.goto('/agency/leads/L1/details'); // the old lead page, hidden
   const card = page.locator('div').filter({ has: page.getByRole('heading', { name: /Quotes & Binds/ }) }).last();
   await expect(card.getByRole('button', { name: 'Lost' })).toBeDisabled(); // nothing open yet
 
@@ -88,7 +88,7 @@ test('log a quote with term premiums, then mark it bound with items and a bundle
 test('mark a quote lost with a reason', async ({ page }) => {
   const state = { quotes: [{ id: 'Q9', status: 'open', products: ['renters'], lines: [], quoted_on: '2026-11-01', quoted_premium: 180 }], binds: [] };
   const writes = await mock(page, state);
-  await page.goto('/agency/leads/L1');
+  await page.goto('/agency/leads/L1/details'); // the old lead page, hidden
   const card = page.locator('div').filter({ has: page.getByRole('heading', { name: /Quotes & Binds/ }) }).last();
   await card.getByRole('button', { name: 'Lost' }).click();
   const d = page.getByRole('dialog', { name: 'Mark Lost' });

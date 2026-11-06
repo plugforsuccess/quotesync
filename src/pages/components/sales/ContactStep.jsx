@@ -1,7 +1,7 @@
 // Sales workspace, step 3: contact them about the saved quote. A text written for the
-// result (saves / same / costs more) that the producer can edit, then Send — from the
-// agency's number, never a personal phone. Texts only go to people who agreed to texts
-// and haven't opted out; otherwise it's a call, with the same words as a script.
+// result (saves / same / costs more / quoted) that the producer can edit, then Send —
+// from the agency's number, never a personal phone. Texts only go to people who agreed
+// to texts and haven't opted out; otherwise it's a call, with the same words as a script.
 import { useEffect, useMemo, useState } from 'react';
 import { Phone, Send } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,42 +13,39 @@ import { money } from '../rate-checks/ui';
 import { quoteResult } from './quoteResult';
 import { contactMessage } from './contactMessage';
 
-export default function ContactStep({ household }) {
-  const queryClient = useQueryClient();
+/**
+ * The message and Send / Call for one household.
+ * cur = what they pay now a year (null when unknown), all = the Allstate quote a year.
+ * onTexted runs after a "reply Y" text goes out.
+ */
+export function ContactPanel({ first, phone, leadId, cur, all, consented, onTexted }) {
   const { profile } = useAuth();
-  const lead = household[0] || {};
-  const quoted = household.filter(rc => rc.allstate_premium != null && rc.status !== 'declined');
-  const totals = useMemo(() => {
-    const cur = quoted.reduce((s, rc) => s + (Number(rc.annual_premium) || 0), 0);
-    const all = quoted.reduce((s, rc) => s + (Number(rc.allstate_premium) || 0), 0);
-    return { cur, all, result: quoteResult(cur, all) };
-  }, [quoted]);
-  const kind = totals.result?.kind || null;
+  const result = cur > 0 ? quoteResult(cur, all) : null;
+  const kind = result?.kind || (all > 0 ? 'quoted' : null);
   const producer = (profile?.full_name || '').split(' ')[0] || 'Cam';
-  const draft = kind ? contactMessage(kind, { first: lead.first_name, producer, allstate: totals.all, diff: totals.result.diff }) : '';
+  const draft = kind ? contactMessage(kind, { first, producer, allstate: all, diff: result?.diff }) : '';
   const [text, setText] = useState(draft);
   useEffect(() => { setText(draft); }, [draft]);
 
-  // Opted out on the lead? Agreed to texts on the Rate Check?
+  // Opted out on the lead?
   const { data: optedOut = false } = useQuery({
-    queryKey: ['lead-opt-out', lead.lead_id],
+    queryKey: ['lead-opt-out', leadId],
     queryFn: async () => {
-      const { data } = await supabase.from('leads').select('sms_opted_out').eq('id', lead.lead_id).maybeSingle();
+      const { data } = await supabase.from('leads').select('sms_opted_out').eq('id', leadId).maybeSingle();
       return !!data?.sms_opted_out;
     },
-    enabled: !!lead.lead_id,
+    enabled: !!leadId,
   });
-  const consented = household.some(rc => !!rc.consent_given_at);
-  const canText = !!lead.phone && !!lead.lead_id && consented && !optedOut;
-  const whyNot = !lead.phone ? 'No mobile number on file.'
+  const canText = !!phone && !!leadId && consented && !optedOut;
+  const whyNot = !phone ? 'No mobile number on file.'
     : optedOut ? 'They replied STOP, so no texts.'
-    : !consented ? 'They didn’t agree to texts when they uploaded, so call them instead.' : null;
+    : !consented ? 'They haven’t agreed to texts, so call them instead.' : null;
 
   const [state, setState] = useState({ sending: false, sent: false, error: '' });
   const send = async () => {
     if (!canText || !text.trim()) return;
     setState({ sending: true, sent: false, error: '' });
-    const { error } = await supabase.functions.invoke('send-manual-sms', { body: { lead_id: lead.lead_id, body: text.trim() } });
+    const { error } = await supabase.functions.invoke('send-manual-sms', { body: { lead_id: leadId, body: text.trim() } });
     if (error) {
       let message = error.message;
       try { message = (await error.context?.json())?.error || message; } catch { /* keep */ }
@@ -56,28 +53,20 @@ export default function ContactStep({ household }) {
       setState({ sending: false, sent: false, error: message });
       return;
     }
-    // A "reply Y" text: mark it sent, so a Y back flags them ready to call.
-    if (kind !== 'more') {
-      const now = new Date().toISOString();
-      await supabase.from('rate_checks').update({ quote_ready_texted_at: now }).in('id', quoted.map(rc => rc.id));
-      queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
-    }
+    if (kind !== 'more') await onTexted?.();
     setState({ sending: false, sent: true, error: '' });
   };
-
-  if (!quoted.length) {
-    return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.contact.first">Save the quote first; the message is written from it.</T></p>;
-  }
 
   return (
     <div className="space-y-4">
       <div>
         <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.contact.title">Contact Them</T></h3>
         <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-          <T k="sales.contact.household">Household</T> · {money(totals.all)}<T k="sales.log.peryear">/yr</T> <T k="sales.log.vs">vs</T> {money(totals.cur)}
-          {kind === 'saves' && <> · <b style={{ color: 'var(--qs-success)' }}><T k="sales.log.saves">Saves</T> {money(totals.result.diff)}<T k="sales.log.peryear">/yr</T></b></>}
+          <T k="sales.contact.household">Household</T> · {money(all)}<T k="sales.log.peryear">/yr</T>
+          {cur > 0 && <> <T k="sales.log.vs">vs</T> {money(cur)}</>}
+          {kind === 'saves' && <> · <b style={{ color: 'var(--qs-success)' }}><T k="sales.log.saves">Saves</T> {money(result.diff)}<T k="sales.log.peryear">/yr</T></b></>}
           {kind === 'same' && <> · <b style={{ color: 'var(--qs-bright)' }}><T k="sales.log.same">About the same</T></b></>}
-          {kind === 'more' && <> · <b style={{ color: 'var(--qs-danger)' }}>{money(-totals.result.diff)}<T k="sales.log.peryear">/yr</T> <T k="sales.log.more">more</T></b></>}
+          {kind === 'more' && <> · <b style={{ color: 'var(--qs-danger)' }}>{money(-result.diff)}<T k="sales.log.peryear">/yr</T> <T k="sales.log.more">more</T></b></>}
         </p>
       </div>
 
@@ -94,8 +83,8 @@ export default function ContactStep({ household }) {
       {state.sent && <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }} role="status"><T k="sales.contact.sent">Sent from the agency’s number.</T></p>}
 
       <div className="grid grid-cols-2 gap-2">
-        {lead.phone && (
-          <a href={`tel:+1${lead.phone}`} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-xl text-base font-bold ${canText ? '' : 'bg-primary-600 text-white'}`}
+        {phone && (
+          <a href={`tel:+1${phone}`} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-xl text-base font-bold ${canText ? '' : 'bg-primary-600 text-white'}`}
             style={canText ? { border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' } : undefined}>
             <Phone className="h-5 w-5" aria-hidden="true" /> <T k="sales.contact.call">Call</T>
           </a>
@@ -106,5 +95,27 @@ export default function ContactStep({ household }) {
         </button>
       </div>
     </div>
+  );
+}
+
+/** A household from Rate Check uploads. */
+export default function ContactStep({ household }) {
+  const queryClient = useQueryClient();
+  const lead = household[0] || {};
+  const quoted = useMemo(() => household.filter(rc => rc.allstate_premium != null && rc.status !== 'declined'), [household]);
+  const cur = quoted.reduce((s, rc) => s + (Number(rc.annual_premium) || 0), 0);
+  const all = quoted.reduce((s, rc) => s + (Number(rc.allstate_premium) || 0), 0);
+
+  if (!quoted.length) {
+    return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.contact.first">Save the quote first; the message is written from it.</T></p>;
+  }
+  // A "reply Y" text: mark it sent, so a Y back flags them ready to call.
+  const onTexted = async () => {
+    await supabase.from('rate_checks').update({ quote_ready_texted_at: new Date().toISOString() }).in('id', quoted.map(rc => rc.id));
+    queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
+  };
+  return (
+    <ContactPanel first={lead.first_name} phone={lead.phone} leadId={lead.lead_id} cur={cur} all={all}
+      consented={household.some(rc => !!rc.consent_given_at)} onTexted={onTexted} />
   );
 }

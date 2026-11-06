@@ -98,7 +98,8 @@ const TimeAttendancePage = lazyWithRetry(() => import('./pages/TimeAttendancePag
 const StaffPerformancePage = lazyWithRetry(() => import('./pages/StaffPerformancePage'));
 const AgencyLeadsPage = lazyWithRetry(() => import('./pages/AgencyLeadsPage'));
 const AgencyWinbacksPage = lazyWithRetry(() => import('./pages/AgencyWinbacksPage'));
-const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage'));
+const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage')); // hidden: the old lead page, at /agency/leads/:id/details
+const LeadWorkspacePage = lazyWithRetry(() => import('./pages/LeadWorkspacePage'));
 const RateChecksPage = lazyWithRetry(() => import('./pages/RateChecksPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
@@ -397,8 +398,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* The lead record is the sales workspace. */}
             <Route
               path="agency/leads/:id"
+              element={
+                <ProtectedRoute requiredAgencyRole="producer">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <LeadWorkspacePage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            {/* Hidden: the old lead page. Not linked, still reachable. */}
+            <Route
+              path="agency/leads/:id/details"
               element={
                 <ProtectedRoute requiredAgencyRole="producer">
                   <ErrorBoundary fallback={<PageError />}>
