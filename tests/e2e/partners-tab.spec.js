@@ -197,8 +197,11 @@ test('partner floor: recruit link, activated partners count for their recruiter,
   await page.goto('/agency/leads/rate-checks');
   await page.getByRole('tab', { name: 'Partners' }).click();
   const floor = page.getByRole('region', { name: 'Partner floor' });
-  await expect(floor.getByText('1 / 2').first()).toBeVisible();
-  await expect(floor.getByText(/\/courses\?by=CAMREC01#partners/)).toBeVisible();
+  await expect(floor).toContainText('1of 2');
+  await expect(floor).toContainText('1 more to activate this month.');
+  await expect(floor.getByRole('button', { name: 'Copy Link' })).toBeVisible();
+  await expect(floor.getByRole('link', { name: 'Text It' })).toHaveAttribute('href', /courses%3Fby%3DCAMREC01%23partners/);
+  await expect(floor.getByRole('listitem').filter({ hasText: 'Cam Wiley' })).toContainText('1 / 2');
   await expect(floor.getByRole('listitem').filter({ hasText: 'Amy Producer' })).toContainText('0 / 2');
 
   // The partner's card says who recruited them; adding a partner credits whoever adds them.

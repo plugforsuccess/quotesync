@@ -233,14 +233,14 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.e99180">Paused</T></span>}</h3>
                 <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || 'No contact on file'}</p>
-                <RecruitedBy promoter={p} recruiters={recruiters} canEdit={canEdit}
-                  onChange={(uid) => savePromoter.mutate({ id: p.id, agencyId, recruited_by: uid })} />
               </div>
               <span className="flex flex-wrap justify-end gap-1.5">
                 {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Agreement signed' : 'Agreement not signed'}</Pill>}
                 <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? `W-9 on file${p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ''}` : 'W-9 needed'}</Pill>
               </span>
             </div>
+            <RecruitedBy promoter={p} recruiters={recruiters} canEdit={canEdit}
+              onChange={(uid) => savePromoter.mutate({ id: p.id, agencyId, recruited_by: uid })} />
             {PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at && (
               <Dismissible id={`partners.unsigned.${p.id}`}>
                 <p className="mt-3 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
@@ -495,6 +495,20 @@ const CUSTOMER_BADGE = {
 // The partner floor (Schedule B): each producer's own "Become a Partner" link and how many
 // partners they've activated this month. Activated = signed the agreement AND sent a
 // qualified household. Managers also see everyone's count.
+function FloorSlots({ count, floor, size = 'md' }) {
+  // One slot per partner owed; filled as they activate. Past the floor, a "+n".
+  const big = size === 'md';
+  return (
+    <span className="inline-flex items-center gap-1.5" aria-hidden="true">
+      {Array.from({ length: floor }, (_, i) => (
+        <span key={i} className={`${big ? 'h-2.5 w-8' : 'h-1.5 w-5'} rounded-full`}
+          style={{ background: i < count ? (count >= floor ? 'var(--qs-success)' : 'var(--qs-info)') : 'var(--qs-border)' }} />
+      ))}
+      {count > floor && <span className="text-xs font-bold" style={{ color: 'var(--qs-success)' }}>+{count - floor}</span>}
+    </span>
+  );
+}
+
 function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) {
   const me = recruiters.find(r => r.userId === userId);
   if (!me) return null;
@@ -504,38 +518,55 @@ function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) 
     .map(r => ({ ...r, count: activatedCount(activated, r.userId, month) }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const met = mine >= floor;
+  const link = me.code ? recruitUrl(me.code) : null;
+  const pitch = link ? `Want to earn money sharing a free insurance rate check with people you know? Apply to be a Cam Wiley Agency partner: ${link}` : '';
   return (
-    <section className="dark-card" style={{ padding: 16 }} aria-label="Partner floor">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+    <section className="dark-card" style={{ padding: 0 }} aria-label="Partner floor">
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
           <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="partners.floor.title">Your Partner Floor</T></h3>
-          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="partners.floor.line">A partner counts once they sign the agreement and send a qualified household.</T></p>
+          <span className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-subtle)' }}>{monthName(month)}</span>
         </div>
-        <p className="shrink-0 text-right">
-          <span className="block text-2xl font-extrabold tabular-nums" style={{ color: met ? 'var(--qs-success)' : 'var(--qs-bright)' }}>{mine} / {floor}</span>
-          <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{monthName(month)}</span>
+        <div className="mt-3 flex items-center gap-4">
+          <p className="tabular-nums leading-none" style={{ color: met ? 'var(--qs-success)' : 'var(--qs-bright)' }}>
+            <span className="text-[34px] font-extrabold">{mine}</span>
+            <span className="ml-1 text-lg font-semibold" style={{ color: 'var(--qs-subtle)' }}><T k="partners.floor.of">of</T> {floor}</span>
+          </p>
+          <div className="min-w-0">
+            <FloorSlots count={mine} floor={floor} />
+            <p className="mt-1.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
+              {met ? <T k="partners.floor.met">Floor met this month.</T> : <>{floor - mine} <T k="partners.floor.togo">more to activate this month.</T></>}
+            </p>
+          </div>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--qs-text)' }}>
+          <T k="partners.floor.line">A partner counts once they sign the agreement and send a qualified household.</T>
         </p>
+        {link && (
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <CopyTextButton text={link} className="min-h-[44px] justify-center whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white hover:bg-primary-700">
+              <T k="partners.floor.copy">Copy Link</T>
+            </CopyTextButton>
+            <a href={smsHref('', pitch)} className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold"
+              style={{ border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+              <MessageSquare className="h-4 w-4" aria-hidden="true" /> <T k="partners.floor.text">Text It</T>
+            </a>
+          </div>
+        )}
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: 'var(--qs-elevated)' }} role="progressbar" aria-valuemin={0} aria-valuemax={floor} aria-valuenow={mine} aria-label="Partners activated this month">
-        <div className="h-full rounded-full" style={{ width: `${floor ? Math.min(100, (mine / floor) * 100) : 100}%`, background: met ? 'var(--qs-success)' : 'var(--qs-info)' }} />
-      </div>
-      {me.code && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-xs" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)' }}>{recruitUrl(me.code)}</code>
-          <CopyTextButton text={recruitUrl(me.code)} className="min-h-[36px] rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
-            <T k="partners.floor.copy">Copy My Recruit Link</T>
-          </CopyTextButton>
-        </div>
-      )}
       {canEdit && team.length > 1 && (
-        <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
-          {team.map(r => (
-            <li key={r.userId} className="flex items-center justify-between gap-2 rounded-lg px-3 py-1.5" style={{ background: 'var(--qs-elevated)' }}>
-              <span className="truncate" style={{ color: 'var(--qs-text)' }}>{r.name}</span>
-              <span className="font-semibold tabular-nums" style={{ color: r.count >= floor ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>{r.count} / {floor}</span>
-            </li>
-          ))}
-        </ul>
+        <div style={{ borderTop: '1px solid var(--qs-border)' }}>
+          <p className="px-4 pt-3 text-[11px] font-bold uppercase tracking-[0.12em] sm:px-5" style={{ color: 'var(--qs-subtle)' }}><T k="partners.floor.team">Team This Month</T></p>
+          <ul className="px-4 pb-2 sm:px-5" aria-label="Team partner floor">
+            {team.map((r, i) => (
+              <li key={r.userId} className="flex items-center gap-3 py-2.5" style={i ? { borderTop: '1px solid var(--qs-border)' } : undefined}>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium" style={{ color: 'var(--qs-text)' }}>{r.name}</span>
+                <FloorSlots count={r.count} floor={floor} size="sm" />
+                <span className="w-10 text-right text-sm font-semibold tabular-nums" style={{ color: r.count >= floor ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>{r.count} / {floor}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );
@@ -544,15 +575,19 @@ function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) 
 // Who recruited this partner (credited with them and the households they send).
 function RecruitedBy({ promoter: p, recruiters, canEdit, onChange }) {
   const name = recruiters.find(r => r.userId === p.recruited_by)?.name;
-  if (!canEdit) return name ? <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="partners.recruited-by">Recruited by</T> {name}</p> : null;
   return (
-    <label className="mt-1 inline-flex items-center gap-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-      <T k="partners.recruited-by">Recruited by</T>
-      <select value={p.recruited_by || ''} onChange={(e) => onChange(e.target.value || null)} className="rounded-md px-1.5 py-0.5 text-xs" style={inputStyle} aria-label={`Recruited by, for ${p.name}`}>
-        <option value="">Nobody</option>
-        {recruiters.map(r => <option key={r.userId} value={r.userId}>{r.name}</option>)}
-      </select>
-    </label>
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)' }}>
+      <label htmlFor={`recruited-${p.id}`} className="text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="partners.recruited-by">Recruited By</T></label>
+      {canEdit ? (
+        <select id={`recruited-${p.id}`} value={p.recruited_by || ''} onChange={(e) => onChange(e.target.value || null)}
+          className="min-h-[36px] min-w-[10rem] rounded-lg px-2.5 text-sm font-semibold" style={inputStyle} aria-label={`Recruited by, for ${p.name}`}>
+          <option value="">Nobody</option>
+          {recruiters.map(r => <option key={r.userId} value={r.userId}>{r.name}</option>)}
+        </select>
+      ) : (
+        <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{name || '—'}</span>
+      )}
+    </div>
   );
 }
 
