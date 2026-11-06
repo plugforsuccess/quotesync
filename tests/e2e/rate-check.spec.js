@@ -491,9 +491,9 @@ test('policy checks and who-is-who: expired, no cars, name from the policy, rela
   // The name arrives from the policy; typing a different one asks how they're related.
   await expect(page.getByLabel('First Name')).toHaveValue('Dana');
   await expect(page.getByLabel('Last Name')).toHaveValue('Reyes');
-  await expect(page.getByRole('radio', { name: 'Spouse / Partner' })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: 'Domestic Partner' })).toHaveCount(0);
   await page.getByLabel('First Name').fill('Mike');
-  await expect(page.getByRole('radio', { name: 'Spouse / Partner' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Domestic Partner' })).toBeVisible();
   await page.getByRole('radio', { name: 'Other' }).first().click();
   await page.getByLabel('Describe how you\'re related').fill('my COUSIN!!');
   // Came from a referral link: how they know the person (optional).
@@ -508,4 +508,42 @@ test('policy checks and who-is-who: expired, no cars, name from the policy, rela
     contact_relationship: 'other', contact_relationship_other: 'Cousin',
     referrer_relationship: 'coworker', zip: '30013',
   });
+});
+
+test('a second named insured (husband and wife on one policy) is not asked how they are related', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const photo = testInfo.outputPath('pearson-auto.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  let posted = null;
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    const body = route.request().postDataJSON();
+    if (body?.mode === 'classify') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        policy_type: 'auto', confidence: 'high', zip: '30013', insured_first_name: 'Marcus', insured_last_name: 'Pearson',
+        other_insured_names: ['Lee Ann Pearson'], driver_names: ['Tony Pearson'], expiration_date: '2027-06-01', vehicle_count: 2 }) });
+    }
+    posted = body;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'received', rate_check_id: 'r2', carrier: 'State Farm', policy_type: 'auto', annual_premium: 2100 }) });
+  });
+  await page.goto('/?start=1');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 1 policy/i }).click();
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
+  await chooser.setFiles(photo);
+  await page.getByRole('button', { name: "That's all" }).click();
+  await page.getByRole('button', { name: /^Continue$/ }).click();
+
+  // The wife fills it in: she's a named insured too, so no question.
+  await page.getByLabel('First Name').fill('Lee Ann');
+  await expect(page.getByRole('radio', { name: 'Spouse' })).toHaveCount(0);
+  // A listed driver who isn't a named insured is asked.
+  await page.getByLabel('First Name').fill('Tony');
+  await expect(page.getByRole('radio', { name: 'Child' })).toBeVisible();
+  await page.getByLabel('First Name').fill('Lee Ann');
+
+  await fillContact(page, { skipName: true });
+  await page.getByRole('checkbox').nth(0).check();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
+  await expect.poll(() => posted).not.toBeNull();
+  expect(posted).toMatchObject({ first_name: 'Lee Ann', last_name: 'Pearson', policyholder_name: 'Marcus Pearson', contact_relationship: 'self' });
 });

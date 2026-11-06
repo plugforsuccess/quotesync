@@ -317,7 +317,8 @@ const CLASSIFY_TOOL = {
       zip: { type: ['string', 'null'], description: "The 5-digit ZIP code of the named insured's mailing address (or the insured property), if shown. Null if not shown." },
       insured_first_name: { type: ['string', 'null'], description: 'First name of the first named insured (policyholder), as printed. Null if not shown.' },
       insured_last_name: { type: ['string', 'null'], description: 'Last name of the first named insured (policyholder), as printed. Null if not shown.' },
-      other_names: { type: 'array', items: { type: 'string' }, description: 'Other people named on the policy (second named insured, listed drivers), full names as printed. Empty if none.' },
+      other_insured_names: { type: 'array', items: { type: 'string' }, description: 'Any additional NAMED INSUREDS (e.g. a spouse listed as second named insured), full names as printed. Not drivers. Empty if none.' },
+      driver_names: { type: 'array', items: { type: 'string' }, description: 'Listed drivers who are not named insureds, full names as printed. Empty if none.' },
       expiration_date: { type: ['string', 'null'], description: 'Policy period end date, YYYY-MM-DD. Null if not shown.' },
       vehicle_count: { type: ['integer', 'null'], description: 'For auto: how many vehicles are listed on this page. 0 if it is an auto policy page with no vehicles listed. Null if not auto.' },
     },
@@ -356,7 +357,8 @@ async function classifyPolicy(apiKey: string, base64: string, mediaType: string)
   return {
     policy_type: type, confidence: input.confidence === 'high' ? 'high' : 'low', zip,
     insured_first_name: name(input.insured_first_name), insured_last_name: name(input.insured_last_name),
-    other_names: Array.isArray(input.other_names) ? input.other_names.map(name).filter(Boolean).slice(0, 8) : [],
+    other_insured_names: Array.isArray(input.other_insured_names) ? input.other_insured_names.map(name).filter(Boolean).slice(0, 4) : [],
+    driver_names: Array.isArray(input.driver_names) ? input.driver_names.map(name).filter(Boolean).slice(0, 8) : [],
     expiration_date: expiration,
     vehicle_count: Number.isInteger(input.vehicle_count) ? input.vehicle_count : null,
   }
@@ -986,7 +988,7 @@ Deno.serve(async (req) => {
   const lastName = cleanText(body.last_name, 80)
   // Who the policy belongs to, and how the person filling this in relates to them and
   // to the partner who shared the link (Other is typed; it arrives already normalized).
-  const REL = ['self', 'spouse', 'parent', 'child', 'household', 'other']
+  const REL = ['self', 'spouse', 'domestic_partner', 'parent', 'child', 'household', 'other']
   const REF = ['friend', 'family', 'coworker', 'client', 'other']
   const relationships = {
     policyholder_name: cleanText(body.policyholder_name, 120),

@@ -3,7 +3,7 @@
 // who shared the link. "Other" is typed (40 characters) and tidied for the producer:
 // "my COUSIN!!" → "Cousin", "his step-dad" → "Step-Dad".
 export const POLICYHOLDER_RELATIONSHIPS = [
-  ['spouse', 'Spouse / Partner'], ['parent', 'Parent'], ['child', 'Child'], ['household', 'Someone I Live With'], ['other', 'Other'],
+  ['spouse', 'Spouse'], ['domestic_partner', 'Domestic Partner'], ['parent', 'Parent'], ['child', 'Child'], ['household', 'Someone I Live With'], ['other', 'Other'],
 ];
 export const REFERRER_RELATIONSHIPS = [
   ['friend', 'Friend'], ['family', 'Family'], ['coworker', 'Coworker'], ['client', 'Client of Theirs'], ['other', 'Other'],
@@ -24,11 +24,18 @@ export function normalizeOther(text) {
 
 const bare = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '');
 
-/** Is the typed name the policyholder? Matches first + last, ignoring case, accents and punctuation. */
+/** Is the typed name a policyholder? The first named insured, or any other named insured
+ * (husband and wife both on the policy). Ignores case, accents, punctuation and middle names. */
 export function isPolicyholder(first, last, holder) {
   if (!holder?.first && !holder?.last) return true; // nothing to compare against
   const f = bare(first), l = bare(last);
-  return !!f && !!l && f === bare(holder.first) && l === bare(holder.last);
+  if (!f || !l) return false;
+  if (f === bare(holder.first) && l === bare(holder.last)) return true;
+  return (holder.co || []).some(full => {
+    const w = String(full).trim().split(/\s+/);
+    if (w.length < 2 || bare(w[w.length - 1]) !== l) return false;
+    return bare(w[0]) === f || bare(w.slice(0, -1).join(' ')) === f; // "Lee" or "Lee Ann"
+  });
 }
 
 /** What the producer reads: "Spouse of policyholder Dana Reyes", "Knows Javon: Coworker". */

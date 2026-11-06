@@ -333,7 +333,9 @@ export default function RateCheckPage() {
     checkPolicyType(file).then(r => {
       const typeCheck = {
         state: 'done', read: r?.policy_type || null, confidence: r?.confidence || 'low', zip: r?.zip || null,
-        holder: r?.insured_first_name || r?.insured_last_name ? { first: r.insured_first_name || '', last: r.insured_last_name || '' } : null,
+        holder: r?.insured_first_name || r?.insured_last_name
+          ? { first: r.insured_first_name || '', last: r.insured_last_name || '', co: Array.isArray(r.other_insured_names) ? r.other_insured_names : [] }
+          : null,
         expires: r?.expiration_date || null, cars: Number.isInteger(r?.vehicle_count) ? r.vehicle_count : null,
       };
       const cur = itemsRef.current.find(i => i.id === pol.id);
