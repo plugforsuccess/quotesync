@@ -91,7 +91,7 @@ export default function SaveConfirmationPage() {
               </div>
 
               <p className="text-gray-600 mb-5 leading-relaxed">
-                <T k="pages.saveconfirmationpage.a26181">Sync your current policy and</T> {agentName} <T k="pages.saveconfirmationpage.59a945">can have your comparison ready before the call.</T>
+                <T k="pages.saveconfirmationpage.a26181">Connect your current policy and</T> {agentName} <T k="pages.saveconfirmationpage.59a945">can have your comparison ready before the call.</T>
               </p>
 
               <div className="space-y-3 mb-6">
@@ -115,14 +115,14 @@ export default function SaveConfirmationPage() {
                 <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-8 py-4 rounded-xl transition-all duration-300">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
                   <span className="relative z-10 text-white font-black text-lg">
-                    <T k="pages.saveconfirmationpage.03b047">Sync My Policy</T>
+                    <T k="pages.saveconfirmationpage.03b047">Connect my policy</T>
                   </span>
                   <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:trangray-x-1" />
                 </div>
               </button>
 
               <p className="text-center text-sm text-gray-500 mt-4 font-medium italic">
-                <T k="pages.saveconfirmationpage.c7a2ad">“9 out of 10 people who sync get a better quote.”</T>
+                <T k="pages.saveconfirmationpage.c7a2ad">“9 out of 10 people who connect get a better quote.”</T>
               </p>
             </div>
           </div>

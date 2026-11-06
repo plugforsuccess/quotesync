@@ -1354,7 +1354,7 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           </h3>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          <T k="pages.components.wizard.wizardsteps.a26181">Sync your current policy and</T> {agentName || 'your agent'} <T k="pages.components.wizard.wizardsteps.59a945">can have your comparison ready before the call.</T>
+          <T k="pages.components.wizard.wizardsteps.a26181">Connect your current policy and</T> {agentName || 'your agent'} <T k="pages.components.wizard.wizardsteps.59a945">can have your comparison ready before the call.</T>
         </p>
         <div className="space-y-2 mb-4">
           {[
@@ -1375,7 +1375,7 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           <div className="absolute inset-0 bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 animate-gradient-x"></div>
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-6 py-3.5 rounded-xl">
             <span className="relative z-10 text-white font-bold text-base">
-              <T k="pages.components.wizard.wizardsteps.03b047">Sync My Policy</T>
+              <T k="pages.components.wizard.wizardsteps.03b047">Connect my policy</T>
             </span>
             <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
           </div>
@@ -1427,7 +1427,7 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
     <div>
       <StepHeading><T k="pages.components.wizard.wizardsteps.ef8d35">See your exact savings before the call?</T></StepHeading>
       <StepDescription>
-        <T k="pages.components.wizard.wizardsteps.886ddc">Sync your</T> {displayCarrier} <T k="pages.components.wizard.wizardsteps.6d9135">policy — your agent will have your coverage details ready in advance.</T>
+        <T k="pages.components.wizard.wizardsteps.886ddc">Connect your</T> {displayCarrier} <T k="pages.components.wizard.wizardsteps.6d9135">policy — your agent will have your coverage details ready in advance.</T>
       </StepDescription>
 
       <div className="bg-gradient-to-br from-accent-50 to-white border border-accent-200 rounded-xl p-5 mb-4 max-w-sm mx-auto">
@@ -1452,7 +1452,7 @@ export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-6 py-3.5 rounded-xl">
             <Zap className="relative z-10 w-5 h-5 text-white" />
             <span className="relative z-10 text-white font-bold text-base">
-              {syncing ? 'Opening...' : 'Sync My Policy'}
+              {syncing ? 'Opening...' : 'Connect my policy'}
             </span>
           </div>
         </button>

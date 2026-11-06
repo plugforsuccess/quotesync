@@ -160,7 +160,7 @@ export default function RateCheckPage() {
   const saveDraftPages = (policy) => policy.pages.forEach((pg, order) => saveDraftPhoto({ id: pg.id, file: pg.file, policyId: policy.id, order }));
 
   useEffect(() => {
-    document.title = 'Get a second opinion on your insurance | Cam Wiley Agency';
+    document.title = 'Get a cheaper rate on your insurance | Cam Wiley Agency';
     window.scrollTo(0, 0);
   }, []);
 
@@ -633,7 +633,7 @@ export default function RateCheckPage() {
           <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {drafts.length === 1 ? '1 policy' : `${drafts.length} policies`}
         </button>
         <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.contact.heading">How can Cam reach you?</T></h1>
-        <p className="mt-2 text-slate-600"><T k="rc.contact.line">Cam’s team only reaches out if Allstate can beat your price. No call centers, ever.</T></p>
+        <p className="mt-2 text-slate-600"><T k="rc.contact.line">Cam’s team only reaches out if we can get you a cheaper rate. No call centers, ever.</T></p>
 
         {textNudge && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F2D6B]/50 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="rc-text-title"
@@ -823,7 +823,7 @@ export default function RateCheckPage() {
 
       {guided ? (
         <>
-          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.guided.title">Add your declarations pages</T></h1>
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.guided.title">Upload your policies</T></h1>
           <p className="mt-1.5 text-[15px] text-slate-600"><T k="rc.guided.line">The page that lists your coverages and price. A PDF, photos or screenshots all work.</T></p>
           <ul className="mt-5 space-y-3">
             {wanted.map(k => (
@@ -857,8 +857,8 @@ export default function RateCheckPage() {
             </button>
             <button type="button" onClick={() => openCamera()}
               className="qb qb-outline qb-lg mt-3 w-full flex-col gap-0 font-normal text-slate-700">
-              <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T></span>
-              <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Photograph every page of the declarations</T></span>
+              <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Use my camera instead</T></span>
+              <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Get every page of your policy</T></span>
             </button>
           </>
         ) : (
@@ -962,14 +962,14 @@ function KindSlot({ kind, drafts, renderDraft, onUpload, onCamera }) {
         <>
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={onUpload} className="qb qb-blue qb-md flex-1 px-3 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" /> Upload</button>
-            <button type="button" onClick={onCamera} className="qb qb-outline qb-md flex-1 px-3 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" /> Take photos</button>
+            <button type="button" onClick={onCamera} className="qb qb-outline qb-md flex-1 px-3 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" /> Use my camera</button>
           </div>
           <button type="button" onClick={() => setHelp(v => !v)} aria-expanded={help} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-700">
             <T k="rc.slot.help">Where do I find it?</T> <ChevronDown className={`h-3.5 w-3.5 transition-transform ${help ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
           {help && (
             <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">
-              <T k="rc.slot.helptext">In your insurer’s app or website, open Documents and download the latest declarations page. A paper copy? Tap Take photos and get every page.</T>
+              <T k="rc.slot.helptext">In your insurer’s app or website, open Documents and download your latest policy (the declarations page). A paper copy? Tap Use my camera and get every page.</T>
             </p>
           )}
         </>
@@ -1348,10 +1348,10 @@ function MeetCam({ onUpload }) {
     content: (
       <div className="flex h-full min-h-[300px] flex-col justify-center p-6 text-left" style={{ background: HERO_BG }}>
         <p className="text-[26px] font-extrabold leading-tight text-white [&_b]:text-[#F5D061]"><T k="rc.about.cta.heading">Let’s make sure your insurance **fits your life**.</T></p>
-        <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Get a second look at your current coverage and explore your options with my agency.</T></p>
+        <p className="mt-3 text-[16px] leading-relaxed text-blue-100"><T k="rc.about.cta.line">Check your rate with Cam’s team and see what you could save.</T></p>
         <button type="button" onClick={onUpload}
           className="qb qb-gold qb-lg mt-6 w-full">
-          <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Upload my policy</T>
+          <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.about.cta.upload">Check my rate</T>
         </button>
       </div>
     ),
@@ -1615,7 +1615,7 @@ function StartCard({ onStart, onUpload, onDropFiles }) {
     <div id="rc-upload-card" className={`mt-7 rounded-3xl bg-white p-5 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 transition ${dragging ? 'ring-4 ring-blue-300' : ''}`}
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
       <button type="button" onClick={onStart} className="qb qb-gold qb-lg w-full text-lg">
-        <T k="rc.start.cta">Get started</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+        <T k="rc.start.cta">Check my rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
       </button>
       <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes</T></p>
       <button type="button" onClick={onUpload} className="mt-3 w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4">
@@ -1626,7 +1626,7 @@ function StartCard({ onStart, onUpload, onDropFiles }) {
 }
 
 const HOW = [
-  ['1', Upload, 'Upload your dec page', 'A PDF, photo or screenshot of your current policy.'],
+  ['1', Upload, 'Upload your policy', 'A PDF, photo or screenshot of your current policy.'],
   ['2', ShieldCheck, 'A licensed agent compares', 'Cam’s team prices the same coverage with Allstate.'],
   ['3', MessageSquare, 'Get your quote', 'Usually within 30 minutes during business hours.'],
 ];
@@ -1695,7 +1695,7 @@ function StickyUpload({ onUpload }) {
     <div className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0F2D6B]/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur transition-transform duration-300 lg:hidden ${show ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
       aria-hidden={!show}>
       <button type="button" onClick={onUpload} tabIndex={show ? 0 : -1} className="qb qb-gold qb-md w-full">
-        <T k="rc.sticky.start">Get started</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+        <T k="rc.sticky.start">Check my rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
       </button>
     </div>
   );
@@ -1716,10 +1716,10 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
             <div>
               {note}
               <h1 className="text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#F5D061]">
-                <T k="rc.headline">Get a **second opinion** on your insurance.</T>
+                <T k="rc.headline">Get a **cheaper rate** on your insurance **today**.</T>
               </h1>
               <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
-                <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
+                <T k="rc.subhead">Upload your auto, home or umbrella policy. A licensed agent on Cam’s team checks your rate and texts you your quote, usually within 30 minutes during business hours.</T>
               </p>
               <StartCard onStart={onStart} onUpload={onUpload} onDropFiles={onDropFiles} />
               <ul className="mx-auto mt-5 grid w-fit grid-cols-2 gap-x-6 gap-y-2.5 text-sm text-blue-100 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-5 lg:mx-0 lg:justify-start">
@@ -1751,7 +1751,7 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
           <ExampleText />
           <button type="button" onClick={() => setHowTo(v => !v)} aria-expanded={howTo}
             className="mt-6 inline-flex items-center gap-1.5 font-semibold text-blue-700">
-            <T k="rc.howto.toggle">Can’t find your declarations page?</T>
+            <T k="rc.howto.toggle">Can’t find your policy?</T>
             <ChevronDown className={`h-4 w-4 transition-transform ${howTo ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
           {howTo && (
@@ -1761,10 +1761,10 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
                 <li><T k="rc.howto.2">Open **Documents**. Some insurers call it **Policy Documents** or **Documents & ID Cards**.</T></li>
                 <li><T k="rc.howto.3">Find the most recent declarations page for each policy.</T></li>
                 <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
-                <li><T k="rc.howto.5">Come back here and tap **Get started**.</T></li>
+                <li><T k="rc.howto.5">Come back here and tap **Check my rate**.</T></li>
               </ol>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
-              <p className="mt-1"><T k="rc.howto.paper">Tap **Get started**, then **Take photos**, and photograph every page of the declarations. Lay it flat in good light.</T></p>
+              <p className="mt-1"><T k="rc.howto.paper">Tap **Check my rate**, then **Use my camera**, and photograph every page of the declarations. Lay it flat in good light.</T></p>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.screens.title">Can’t download it?</T></p>
               <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
             </div>
@@ -1798,11 +1798,11 @@ function Landing({ note, onStart, onUpload, onDropFiles }) {
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
           style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(96,165,250,0.35), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
-          <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
-          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
+          <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **cheaper rate**?</T></h2>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your policy. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <button type="button" onClick={onStart} className="qb qb-gold qb-lg flex-1 text-lg">
-              <T k="rc.closing.start">Get started</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+              <T k="rc.closing.start">Check my rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
             </button>
             <button type="button" onClick={onUpload} className="qb qb-outline-dark qb-lg">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload2">Upload now</T>

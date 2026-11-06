@@ -319,13 +319,13 @@ const StoryDetailPage = () => {
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
               <T k="pages.storydetailpage.964a04">Does this touch your policy?</T>
             </h3>
-            <p className="text-gray-600 mb-5"><T k="pages.storydetailpage.f12ac4">Send your declarations page and a licensed agent will check it, usually within 30 minutes during business hours. Or just text Cam the question.</T></p>
+            <p className="text-gray-600 mb-5"><T k="pages.storydetailpage.f12ac4">Upload your policy and a licensed agent will check it, usually within 30 minutes during business hours. Or just text Cam the question.</T></p>
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => handleCTAClick('compare_policy')}
                 className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
               >
-                <T k="pages.storydetailpage.f8feed">Upload my policy</T>
+                <T k="pages.storydetailpage.f8feed">Check my rate</T>
               </button>
               <a
                 href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}

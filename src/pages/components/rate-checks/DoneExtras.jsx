@@ -52,7 +52,7 @@ export function NextTimeline({ texting, opensAt }) {
     { key: 'price', state: 'now', title: <T k="rc.done.step2">Pricing the same coverage with Allstate</T>,
       line: opensAt ? <><T k="rc.done.step2.closed">Starts when the office opens</T> {opensAt}.</> : <T k="rc.done.step2.line">A licensed agent is on it.</T> },
     { key: 'text', state: 'next', title: texting ? <T k="rc.done.step3.text">Cam texts you the number</T> : <T k="rc.done.step3.reach">Cam’s team reaches out</T>,
-      line: <T k="rc.done.step3.line">If we can’t beat your price, we’ll say so.</T> },
+      line: <T k="rc.done.step3.line">If we can’t get you a cheaper rate, we’ll say so.</T> },
   ];
   return (
     <ol className="qc-rise mt-5 rounded-2xl border border-slate-200 bg-white p-4 text-left" style={{ animationDelay: '420ms' }}>
@@ -112,7 +112,7 @@ export function CamCard({ photo }) {
 export function ShareLine() {
   const [copied, setCopied] = useState(false);
   const share = async () => {
-    const data = { title: 'insuredbycam', text: 'Get a second opinion on your insurance:', url: 'https://insuredbycam.com' };
+    const data = { title: 'Cam Wiley Agency', text: 'Get a cheaper rate on your insurance:', url: 'https://insuredbycam.com' };
     try {
       if (navigator.share) { await navigator.share(data); return; }
       await navigator.clipboard.writeText(data.url); setCopied(true); setTimeout(() => setCopied(false), 2000);

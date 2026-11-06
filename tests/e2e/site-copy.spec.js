@@ -127,7 +127,7 @@ test('typing a space in a button label edits the text and does not press the but
   await page.goto('/?edit=1');
   let pickers = 0;
   page.on('filechooser', () => { pickers += 1; });
-  const label = page.getByRole('textbox', { name: /Edit text: Get started/ }).first();
+  const label = page.getByRole('textbox', { name: /Edit text: Check my rate/ }).first();
   await label.click();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.type('Upload my 2 policies');
