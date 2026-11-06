@@ -142,7 +142,7 @@ function SignAgreement({ token, data, onSigned }) {
       {error && <p className="mt-3 text-sm text-red-600" role="alert">{error}</p>}
       <button type="button" onClick={sign} disabled={!ok || busy}
         className="qb qb-blue qb-lg mt-5 w-full text-lg">
-        {busy ? 'Signing…' : 'Sign and Turn on My Link'}
+        {busy ? <T k="pages.partnerportalpage.02d94a">{'Signing…'}</T> : <T k="pages.partnerportalpage.bd1c4d">{'Sign and Turn on My Link'}</T>}
       </button>
     </>
   );
@@ -293,7 +293,7 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <div className="shrink-0 border-t border-slate-200 bg-white px-4 pt-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         {error && <p className="mb-2 text-sm text-red-600" role="alert">{error}</p>}
         {tried && Object.keys(problems).length > 0 && !error && <p className="mb-2 text-sm text-red-600" role="alert"><T k="pages.partnerportalpage.b64e28">Fix the highlighted fields above.</T></p>}
-        <button type="submit" disabled={busy} className="qb qb-blue qb-lg w-full text-lg">{busy ? 'Sending…' : 'Sign W-9'}</button>
+        <button type="submit" disabled={busy} className="qb qb-blue qb-lg w-full text-lg">{busy ? <T k="pages.partnerportalpage.cf7655">{'Sending…'}</T> : <T k="pages.partnerportalpage.0a1b85">{'Sign W-9'}</T>}</button>
       </div>
     </form>
     </W9Modal>
@@ -357,7 +357,7 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
         <p className="text-sm leading-relaxed text-slate-600">
           {photoUrl && !preview
             ? 'People who open your link see your photo next to “' + name + ' shared this with you”'
-            : 'Add a photo so people who open your link know it came from you.'}
+            : <T k="pages.partnerportalpage.8de505">{'Add a photo so people who open your link know it came from you.'}</T>}
         </p>
       </div>
       {preview ? (
@@ -369,17 +369,17 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="qb qb-outline qb-md flex-1"><T k="pages.partnerportalpage.ea4788">Cancel</T></button>
             <button type="button" disabled={!agree || busy} onClick={() => run(() => savePartnerPhoto(token, preview))}
-              className="qb qb-blue qb-md flex-1">{busy ? 'Saving…' : 'Use This Photo'}</button>
+              className="qb qb-blue qb-md flex-1">{busy ? <T k="pages.partnerportalpage.56a228">{'Saving…'}</T> : <T k="pages.partnerportalpage.3dd027">{'Use This Photo'}</T>}</button>
           </div>
         </>
       ) : (
         <div className="mt-3 flex gap-2">
           <button type="button" onClick={() => input.current?.click()} className="qb qb-outline qb-md flex-1">
-            {photoUrl ? 'Change Photo' : 'Add a Photo'}
+            {photoUrl ? <T k="pages.partnerportalpage.6080b4">{'Change Photo'}</T> : <T k="pages.partnerportalpage.64fe2a">{'Add a Photo'}</T>}
           </button>
           {photoUrl && (
             <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="qb qb-outline qb-md flex-1 text-slate-600">
-              {busy ? 'Removing…' : 'Remove'}
+              {busy ? <T k="pages.partnerportalpage.579d7e">{'Removing…'}</T> : <T k="pages.partnerportalpage.e96390">{'Remove'}</T>}
             </button>
           )}
         </div>
@@ -489,7 +489,7 @@ function Earnings({ token, data, onChange }) {
               {m.rows.map((r, i) => (
                 <tr key={i} className="border-t border-slate-100">
                   <td className="px-3 py-2.5 font-semibold text-[#0F2D6B]">{r.first_name}{r.last_initial ? ` ${r.last_initial}.` : ''}</td>
-                  <td className="px-3 py-2.5 text-slate-600">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</td>
+                  <td className="px-3 py-2.5 text-slate-600">{productCase(r.label)}{r.over_cap ? <T k="pages.partnerportalpage.53596f">{' · over this month’s limit'}</T> : ''}</td>
                 </tr>
               ))}
               {m.paid && (

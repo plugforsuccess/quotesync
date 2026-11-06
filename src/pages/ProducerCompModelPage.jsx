@@ -219,7 +219,7 @@ export default function ProducerCompModelPage() {
                 <T k="pages.producercompmodelpage.d930f4">Creating...</T>
               </>
             ) : (
-              'Set Up Compensation Model'
+              <T k="pages.producercompmodelpage.624751">{'Set Up Compensation Model'}</T>
             )}
           </button>
         </div>

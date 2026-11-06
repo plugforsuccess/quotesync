@@ -605,7 +605,7 @@ const TimeAttendancePage = () => {
                   title="Export XLSX with Weekly Detail, Summary, Monthly, YTD, and Attendance Flags"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
-                  {pendingExport && ytdLoading ? 'Preparing...' : 'Export Report'}
+                  {pendingExport && ytdLoading ? <T k="pages.timeattendancepage.f440b5">{'Preparing...'}</T> : <T k="pages.timeattendancepage.95a441">{'Export Report'}</T>}
                 </button>
               )}
             </div>
@@ -705,12 +705,12 @@ const TimeAttendancePage = () => {
                           {displayName}
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: styles.color }}>
-                          {isLate ? '⚠ Not In' : PUNCH_STATUS_LABELS[status]}
+                          {isLate ? <T k="pages.timeattendancepage.15d6bd">{'⚠ Not In'}</T> : PUNCH_STATUS_LABELS[status]}
                         </div>
                         {punch?.start_time && (
                           <div style={{ fontSize: 10, color: 'var(--qs-dim)', marginTop: 2, fontFamily: 'monospace' }}>
                             <T k="pages.timeattendancepage.13b5bf">in</T> {punch.start_time}
-                            {punch.end_time ? ` · out ${punch.end_time}` : ''}
+                            {punch.end_time ? <>{" "}<T k="pages.timeattendancepage.33ab4d">{"· out"}</T>{" "}{punch.end_time}</> : ''}
                           </div>
                         )}
                         {punch?.hours_worked && status === 'clocked_out' && (

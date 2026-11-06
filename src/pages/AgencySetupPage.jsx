@@ -144,7 +144,7 @@ export default function AgencySetupPage() {
               disabled={marking}
               className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
             >
-              {marking ? 'Completing...' : 'Mark Setup Complete'}
+              {marking ? <T k="pages.agencysetuppage.fcb26b">{'Completing...'}</T> : <T k="pages.agencysetuppage.174f89">{'Mark Setup Complete'}</T>}
             </button>
           )}
           <Link

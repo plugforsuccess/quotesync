@@ -105,7 +105,7 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
         <div className="p-8 text-center text-red-600"><T k="pages.components.ratechecks.competitoragents.2cbe15">Error loading competing agents.</T></div>
       ) : rows.length === 0 ? (
         <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-          {data.length === 0 ? 'No agents yet. They show up here when a policy lists the customer’s agent.' : 'No agents match these filters.'}
+          {data.length === 0 ? <T k="pages.components.ratechecks.competitoragents.66eeed">{'No agents yet. They show up here when a policy lists the customer’s agent.'}</T> : <T k="pages.components.ratechecks.competitoragents.9fe773">{'No agents match these filters.'}</T>}
         </div>
       ) : (
         <>
@@ -175,8 +175,8 @@ function AgentCard({ r, open, onToggle, update }) {
           </p>
           {(Number(r.quoted) > 0 || r.avg_annual_premium != null) && (
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-              {r.avg_annual_premium != null && `Avg ${money(r.avg_annual_premium)}/yr`}
-              {Number(r.quoted) > 0 && ` · We win ${r.wins} of ${r.quoted}`}
+              {r.avg_annual_premium != null && <><T k="pages.components.ratechecks.competitoragents.cdc931">{"Avg"}</T>{" "}{money(r.avg_annual_premium)}{"/yr"}</>}
+              {Number(r.quoted) > 0 && <>{" "}<T k="pages.components.ratechecks.competitoragents.b8f1cb">{"· We win"}</T>{" "}{r.wins}{" "}<T k="pages.components.ratechecks.competitoragents.de04fa">{"of"}</T>{" "}{r.quoted}</>}
               {r.avg_savings_when_won != null && <span className="text-green-600"> <T k="pages.components.ratechecks.competitoragents.b28734">· saves</T> {money(r.avg_savings_when_won)}</span>}
             </p>
           )}

@@ -161,7 +161,7 @@ const ArchivedStoriesPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900"><T k="pages.archivedstoriespage.8d833d">Archived Stories</T></h1>
               <p className="text-sm text-gray-500 mt-1">
-                {archivedStories.length} {archivedStories.length === 1 ? 'story' : 'stories'} <T k="pages.archivedstoriespage.0d111f">archived</T>
+                {archivedStories.length} {archivedStories.length === 1 ? <T k="pages.archivedstoriespage.d01593">{'story'}</T> : <T k="pages.archivedstoriespage.e53922">{'stories'}</T>} <T k="pages.archivedstoriespage.0d111f">archived</T>
               </p>
             </div>
           </div>
@@ -235,7 +235,7 @@ const ArchivedStoriesPage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-700">
-                        {story.author_name || 'Unknown'}
+                        {story.author_name || <T k="pages.archivedstoriespage.bc7819">{'Unknown'}</T>}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
@@ -243,7 +243,7 @@ const ArchivedStoriesPage = () => {
                             {formatDate(story.archived_at)}
                           </span>
                           <span className="text-xs text-gray-500 mt-1">
-                            <T k="pages.archivedstoriespage.df3f07">by</T> {story.archived_by_name || 'Unknown'}
+                            <T k="pages.archivedstoriespage.df3f07">by</T> {story.archived_by_name || <T k="pages.archivedstoriespage.bc7819">{'Unknown'}</T>}
                           </span>
                           <span className="text-xs text-gray-400 mt-1">
                             {daysSince} <T k="pages.archivedstoriespage.628b7d">day</T>{daysSince !== 1 ? 's' : ''} <T k="pages.archivedstoriespage.6d0a57">ago</T>
@@ -256,7 +256,7 @@ const ArchivedStoriesPage = () => {
                           story.previous_status === 'in_review' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {story.previous_status || 'draft'}
+                          {story.previous_status || <T k="pages.archivedstoriespage.0e7766">{'draft'}</T>}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium">
@@ -269,7 +269,7 @@ const ArchivedStoriesPage = () => {
                             title="Restore story"
                           >
                             <RotateCcw className="w-4 h-4" />
-                            {restoring === story.id ? 'Restoring...' : 'Restore'}
+                            {restoring === story.id ? <T k="pages.archivedstoriespage.12e054">{'Restoring...'}</T> : <T k="pages.archivedstoriespage.3cbe6d">{'Restore'}</T>}
                           </button>
 
                           {/* Delete Button (only if 7+ days old) */}
@@ -284,7 +284,7 @@ const ArchivedStoriesPage = () => {
                             title={canDelete ? 'Permanently delete' : `Can delete in ${7 - daysSince} day(s)`}
                           >
                             <Trash2 className="w-4 h-4" />
-                            {deleting === story.id ? 'Deleting...' : 'Delete'}
+                            {deleting === story.id ? <T k="pages.archivedstoriespage.e16cac">{'Deleting...'}</T> : <T k="pages.archivedstoriespage.f6fdbe">{'Delete'}</T>}
                           </button>
                         </div>
                       </td>

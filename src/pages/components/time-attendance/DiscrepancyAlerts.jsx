@@ -195,7 +195,7 @@ export function BonusVerificationAlert({ verificationData, month }) {
                     <span>{a.customer}</span>
                     <span className="text-red-400">{a.attemptDate}</span>
                     <span className="text-red-400 italic">
-                      {a.reason === 'invalid_phone' ? 'no phone on file' : 'no RC match'}
+                      {a.reason === 'invalid_phone' ? <T k="pages.components.timeattendance.discrepancyalerts.6d0467">{'no phone on file'}</T> : <T k="pages.components.timeattendance.discrepancyalerts.68292d">{'no RC match'}</T>}
                     </span>
                   </div>
                 ))}

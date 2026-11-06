@@ -2,6 +2,7 @@
 // Yellow banner shown at the top of every admin page when employee
 // verifications are overdue (90+ days since last_verified_at).
 
+import { T } from './SiteCopy';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import Dismissible from './Dismissible';
@@ -44,7 +45,7 @@ export default function VerificationBanner() {
           to="/admin/agency/employees"
           className="text-sm font-medium text-yellow-700 hover:text-yellow-900 whitespace-nowrap"
         >
-          Review Now &rarr;
+          <T k="components.verificationbanner.049e01">Review Now →</T>
         </Link>
       </div>
     </div>

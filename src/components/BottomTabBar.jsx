@@ -1,6 +1,7 @@
 // src/components/BottomTabBar.jsx
 // Mobile-only bottom tab bar for primary navigation (hidden on md: and above)
 
+import { T } from './SiteCopy';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Camera, RotateCcw, Shield, Grid } from 'lucide-react';
 
@@ -63,7 +64,7 @@ function BottomTabBar({ onMorePress, moreActive, drawerOpen = false, agencyRole 
                     active ? 'text-[#1D4ED8]' : 'text-[#546280]'
                   }`}
                 >
-                  {tab.label}
+                  <T>{tab.label}</T>
                 </span>
               </div>
             </NavLink>
@@ -94,7 +95,7 @@ function BottomTabBar({ onMorePress, moreActive, drawerOpen = false, agencyRole 
                 moreOn ? 'text-[#1D4ED8]' : 'text-[#546280]'
               }`}
             >
-              More
+              <T k="components.bottomtabbar.4bab2d">More</T>
             </span>
           </div>
         </button>

@@ -93,7 +93,7 @@ function Age({ rc, now }) {
   if (open && mins >= OVERDUE_MINUTES) {
     return <span className="font-semibold text-red-500" title="The page says we typically text within 30 minutes"><T k="pages.ratecheckspage.5706de">Waiting</T> {ageText(mins)}</span>;
   }
-  return <span style={{ color: 'var(--qs-text)' }}>{mins < 1 ? 'Just now' : `${ageText(mins)} ago`}</span>;
+  return <span style={{ color: 'var(--qs-text)' }}>{mins < 1 ? <T k="pages.ratecheckspage.a69f48">{'Just now'}</T> : <>{ageText(mins)}{" "}<T k="pages.ratecheckspage.f03c0a">{"ago"}</T></>}</span>;
 }
 
 function StatusChip({ status, quiet = false }) {
@@ -154,7 +154,7 @@ function WaitPill({ rc, now }) {
   const mins = minutesSince(rc.created_at, now);
   return (
     <CardPill tone={mins >= OVERDUE_MINUTES ? 'red' : 'neutral'} title="How long they've been waiting on us for a quote" label={`Waiting on us for a quote: ${ageText(mins)}`}>
-      <Clock className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{mins < 1 ? 'Just now' : `Waiting ${ageText(mins)}`}
+      <Clock className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{mins < 1 ? <T k="pages.ratecheckspage.a69f48">{'Just now'}</T> : <><T k="pages.ratecheckspage.33d306">{"Waiting"}</T>{" "}{ageText(mins)}</>}
     </CardPill>
   );
 }
@@ -196,7 +196,7 @@ function WhoIsWho({ rcId, partnerFirst }) {
   if (!lines.length) return null;
   return (
     <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-      {lines.map((l, i) => <span key={i} className="block">{l}{data.contact_relationship === 'other' && i === 0 ? ' · confirm they can make changes' : ''}</span>)}
+      {lines.map((l, i) => <span key={i} className="block">{l}{data.contact_relationship === 'other' && i === 0 ? <T k="pages.ratecheckspage.7e70a2">{' · confirm they can make changes'}</T> : ''}</span>)}
     </p>
   );
 }
@@ -277,12 +277,12 @@ function TabBar({ tab, setTab }) {
         {WORK_TABS.map(({ v, label, short, Icon }) => (
           <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)} className={segment(tab === v)}
             style={tab === v ? undefined : { color: 'var(--qs-text)' }}>
-            <Icon className="hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" /> <span className="truncate sm:hidden">{short || label}</span><span className="hidden truncate sm:inline">{label}</span>
+            <Icon className="hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" /> <span className="truncate sm:hidden"><T>{short || label}</T></span><span className="hidden truncate sm:inline"><T>{label}</T></span>
           </button>
         ))}
         <button type="button" aria-haspopup="dialog" aria-expanded={sheet} onClick={() => setSheet(true)} className={segment(!!moreTab)}
           style={moreTab ? undefined : { color: 'var(--qs-text)' }}>
-          <span className="truncate">{moreTab ? moreTab.short || moreTab.label : 'More'}</span> <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="truncate">{moreTab ? <T>{moreTab.short || moreTab.label}</T> : <T k="pages.ratecheckspage.4bab2d">{'More'}</T>}</span> <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
         </button>
       </div>
       {sheet && (
@@ -298,8 +298,8 @@ function TabBar({ tab, setTab }) {
                       className="flex min-h-[56px] w-full items-center gap-3 px-3 text-left" style={{ borderTop: i ? '1px solid var(--qs-border)' : undefined, background: tab === v ? 'var(--qs-elevated)' : undefined }}>
                       <Icon className="h-5 w-5 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
                       <span className="min-w-0 flex-1">
-                        <span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}>{label}</span>
-                        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{hint}</span>
+                        <span className="block font-semibold" style={{ color: 'var(--qs-bright)' }}><T>{label}</T></span>
+                        <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}><T>{hint}</T></span>
                       </span>
                       {tab === v ? <Check className="h-4 w-4 text-primary-600" aria-label="Current" /> : <ChevronRight className="h-4 w-4" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />}
                     </button>
@@ -327,7 +327,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {/* Who, and how long they've waited on us (top right). */}
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          {personName(h.lead.first_name, h.policies) || 'No name'}
+          {personName(h.lead.first_name, h.policies) || <T k="pages.ratecheckspage.b78fd2">{'No name'}</T>}
           {h.lead.upload_source === 'agent' && <StaffTag />}
         </p>
         {open && <span className="shrink-0"><WaitPill rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>}
@@ -345,7 +345,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
 
       {/* What they pay now (labeled), then the price with the text button and Start quote. */}
-      <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
+      <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>
       <div className="mt-1 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-lg font-bold leading-6 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
@@ -524,7 +524,7 @@ export default function RateChecksPage() {
                     ? <><T k="pages.ratecheckspage.b4e610">Showing</T> {overdue} <T k="pages.ratecheckspage.8de5e1">Waiting 30+ min</T></>
                     : <>{overdue} <T k="pages.ratecheckspage.f9362d">Waiting 30+ min For a Quote</T></>}
                 </span>
-                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show All' : 'Show'}</span>
+                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? <T k="pages.ratecheckspage.b3f854">{'Show All'}</T> : <T k="pages.ratecheckspage.d97d1e">{'Show'}</T>}</span>
               </button>
             )}
 
@@ -553,7 +553,7 @@ export default function RateChecksPage() {
                 <div className="p-8 text-center text-red-600"><T k="pages.ratecheckspage.c71c89">Error loading rate checks. Please try again.</T></div>
               ) : households.length === 0 ? (
                 <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-                  {search ? 'Nobody matches that search.' : filter === 'open' ? 'All caught up — nothing waiting for a quote.' : 'Nothing here yet.'}
+                  {search ? <T k="pages.ratecheckspage.51d8d3">{'Nobody matches that search.'}</T> : filter === 'open' ? <T k="pages.ratecheckspage.b3c2f6">{'All caught up — nothing waiting for a quote.'}</T> : <T k="pages.ratecheckspage.ede1ba">{'Nothing here yet.'}</T>}
                 </div>
               ) : (
                 <>
@@ -580,7 +580,7 @@ export default function RateChecksPage() {
                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
                             <td className="px-4 py-3 text-sm">
                               <div className="font-medium whitespace-nowrap" style={{ color: 'var(--qs-bright)' }}>
-                                {personName(h.lead.first_name, h.policies) || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} <T k="pages.ratecheckspage.94422f">policies</T></span>}{h.lead.upload_source === 'agent' && <StaffTag />}
+                                {personName(h.lead.first_name, h.policies) || <T k="pages.ratecheckspage.b78fd2">{'No name'}</T>}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} <T k="pages.ratecheckspage.94422f">policies</T></span>}{h.lead.upload_source === 'agent' && <StaffTag />}
                               </div>
                               {h.lead.phone && (
                                 <a href={`tel:+1${h.lead.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-primary-600 hover:underline whitespace-nowrap">
@@ -675,16 +675,16 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)', transform: headerHidden ? 'translateY(-100%)' : 'none' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || 'Rate Check'}</h2>
+              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || <T k="pages.ratecheckspage.968f20">{'Rate Check'}</T>}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-                {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
+                {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || <T k="pages.ratecheckspage.a656b7">{'Policy not read yet'}</T>} · <Age rc={rc} now={now} />
               </p>
               <OriginTag rc={rc} className="mt-0.5" />
               <WhoIsWho rcId={rc.id} partnerFirst={rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null} />
               {rc.resubmitted_at && (
                 <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
                   <T k="pages.ratecheckspage.01fa31">Sent again</T> {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                  {rc.resubmit_count > 1 ? ` · ${rc.resubmit_count} times` : ''}
+                  {rc.resubmit_count > 1 ? <>{" · "}{rc.resubmit_count}{" "}<T k="pages.ratecheckspage.7196b5">{"times"}</T></> : ''}
                 </p>
               )}
             </div>
@@ -741,7 +741,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               {canRescan && (
                 <button onClick={() => rescan.mutate({ rateCheckId: rc.id })} disabled={rescan.isPending}
                   className="ml-2 inline-flex items-center gap-1 font-semibold text-primary-600 hover:underline disabled:opacity-50">
-                  <RefreshCw className={`h-3.5 w-3.5 ${rescan.isPending ? 'animate-spin' : ''}`} /> {rescan.isPending ? 'Scanning…' : 'Scan Again'}
+                  <RefreshCw className={`h-3.5 w-3.5 ${rescan.isPending ? 'animate-spin' : ''}`} /> {rescan.isPending ? <T k="pages.ratecheckspage.36c4a0">{'Scanning…'}</T> : <T k="pages.ratecheckspage.8fd265">{'Scan Again'}</T>}
                 </button>
               )}
             </Notice>
@@ -811,7 +811,7 @@ function QuoteBox({ rc, onQuoted }) {
         <>
           <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.318d2e">They pay now</T></p>
           <p className="mt-1 text-4xl font-bold leading-none" style={{ color: 'var(--qs-bright)' }}>
-            {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.6d8fef">/yr</T></span></> : 'Price not read yet'}
+            {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.ratecheckspage.6d8fef">/yr</T></span></> : <T k="pages.ratecheckspage.910ba9">{'Price not read yet'}</T>}
           </p>
           {Number(rc.term_months) === 6 && rc.current_premium != null && (
             <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} <T k="pages.ratecheckspage.cdd738">every 6 months</T></p>
@@ -822,8 +822,8 @@ function QuoteBox({ rc, onQuoted }) {
 
       {bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
-          <div className="text-xl font-extrabold text-green-600"><T k="pages.ratecheckspage.79ec67">Bound with</T> {boundInfo.bound_carrier || 'Allstate'}{boundInfo.bound_premium != null ? ` at ${money(boundInfo.bound_premium)}/yr` : ''}</div>
-          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
+          <div className="text-xl font-extrabold text-green-600"><T k="pages.ratecheckspage.79ec67">Bound with</T> {boundInfo.bound_carrier || <T k="pages.ratecheckspage.921d57">{'Allstate'}</T>}{boundInfo.bound_premium != null ? <>{" "}<T k="pages.ratecheckspage.27e90d">{"at"}</T>{" "}{money(boundInfo.bound_premium)}{"/yr"}</> : ''}</div>
+          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? <>{" "}<T k="pages.ratecheckspage.764f2d">{"· they were paying"}</T>{" "}{money(rc.annual_premium)}</> : ''}</p>
           <ReviewAsk rc={rc} review={boundInfo.review} />
         </div>
       )}
@@ -837,7 +837,7 @@ function QuoteBox({ rc, onQuoted }) {
           </div>
           <button type="submit" disabled={enterQuote.isPending || !(parseMoney(premium) > 0) || declined}
             className="shrink-0 rounded-lg bg-primary-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400 disabled:opacity-60">
-            {enterQuote.isPending ? 'Saving…' : justSaved ? 'Saved ✓' : outcome ? 'Update' : 'Save'}
+            {enterQuote.isPending ? <T k="pages.ratecheckspage.56a228">{'Saving…'}</T> : justSaved ? <T k="pages.ratecheckspage.838a49">{'Saved ✓'}</T> : outcome ? <T k="pages.ratecheckspage.fb91e2">{'Update'}</T> : <T k="pages.ratecheckspage.efc007">{'Save'}</T>}
           </button>
         </div>
         {/* Live: what this price saves them, before Save (once saved, the result box below says it). */}
@@ -904,8 +904,8 @@ function PriceDrop({ current, price, market }) {
       </div>
       {s && (
         <p className="mt-2 text-lg font-extrabold" style={{ color: tone }}>
-          {s.delta > 0 ? `Saves ${money(s.delta)}/yr.` : s.delta < 0 ? `Costs ${money(-s.delta)}/yr more.` : 'Same as they pay.'}
-          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> <T k="pages.ratecheckspage.55453b">That's</T> {Math.abs(s.pct)}% {s.delta > 0 ? 'less!' : 'more.'}</span>}
+          {s.delta > 0 ? <><T k="pages.ratecheckspage.6a29f0">{"Saves"}</T>{" "}{money(s.delta)}{"/yr."}</> : s.delta < 0 ? <><T k="pages.ratecheckspage.799b3e">{"Costs"}</T>{" "}{money(-s.delta)}{"/yr more."}</> : <T k="pages.ratecheckspage.a24792">{'Same as they pay.'}</T>}
+          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> <T k="pages.ratecheckspage.55453b">That's</T> {Math.abs(s.pct)}% {s.delta > 0 ? <T k="pages.ratecheckspage.fc3dda">{'less!'}</T> : <T k="pages.ratecheckspage.4860e4">{'more.'}</T>}</span>}
         </p>
       )}
     </div>
@@ -952,7 +952,7 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
         <input value={premium} onChange={e => setPremium(sanitizeMoneyInput(e.target.value))} inputMode="decimal" className="w-28 rounded-md px-2 py-1.5" style={inputStyle} />
       </label>
       <button type="submit" disabled={!chosen || bind.isPending} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
-        {bind.isPending ? 'Saving…' : 'Mark Bound'}
+        {bind.isPending ? <T k="pages.ratecheckspage.56a228">{'Saving…'}</T> : <T k="pages.ratecheckspage.0e6e8c">{'Mark Bound'}</T>}
       </button>
       {bind.isError && <span className="text-sm text-red-600">{bind.error.message}</span>}
     </form>
@@ -970,7 +970,7 @@ function PolicyDetails({ rc, warning, onRescan, rescanning }) {
           <div className="flex items-center gap-3">
             {onRescan && (
               <button onClick={onRescan} disabled={rescanning} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline disabled:opacity-50">
-                <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? 'animate-spin' : ''}`} /> {rescanning ? 'Scanning…' : 'Scan Again'}
+                <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? 'animate-spin' : ''}`} /> {rescanning ? <T k="pages.ratecheckspage.36c4a0">{'Scanning…'}</T> : <T k="pages.ratecheckspage.8fd265">{'Scan Again'}</T>}
               </button>
             )}
             <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
@@ -1089,7 +1089,7 @@ function PolicyForm({ rc, onDone }) {
       </p>
       <div className="mt-3 flex items-center gap-2">
         <button onClick={save} disabled={update.isPending} className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
-          {update.isPending ? 'Saving…' : 'Save'}
+          {update.isPending ? <T k="pages.ratecheckspage.56a228">{'Saving…'}</T> : <T k="pages.ratecheckspage.efc007">{'Save'}</T>}
         </button>
         <button onClick={onDone} disabled={update.isPending} className="rounded-lg px-3 py-1.5 text-sm" style={inputStyle}><T k="pages.ratecheckspage.ea4788">Cancel</T></button>
         {update.isError && <span className="text-sm text-red-600">{update.error.message}</span>}

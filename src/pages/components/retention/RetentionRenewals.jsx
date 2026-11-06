@@ -211,7 +211,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
 
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, ...consentStyle }}>
             <Phone className="w-3 h-3" />
-            {policy.consent?.autodial_consent ? 'Consented' : 'No consent'}
+            {policy.consent?.autodial_consent ? <T k="pages.components.retention.retentionrenewals.9e6e15">{'Consented'}</T> : <T k="pages.components.retention.retentionrenewals.a22c7e">{'No consent'}</T>}
           </span>
 
           {policy.human_only && policy.human_only_reason && (

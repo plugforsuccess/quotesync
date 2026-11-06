@@ -1,6 +1,7 @@
 // src/components/PhoneCapture.jsx
 // Optional phone capture shown between ZIP and ownsHome steps.
 // NOT a wizard step — dismissable inline card for early SMS follow-up.
+import { T } from './SiteCopy';
 import React, { useState, useCallback } from 'react';
 import { toE164 } from '../utils/phoneFormat';
 import { formatPhoneInput } from '../utils/phoneFormat';
@@ -32,7 +33,7 @@ const PhoneCapture = ({ onSave, onSkip }) => {
   return (
     <div className="text-center mt-4 p-4 bg-primary-50 rounded-xl border border-primary-200">
       <p className="text-sm font-medium text-gray-700 mb-2">
-        Enter your phone to save your progress
+        <T k="components.phonecapture.2cbad3">Enter your phone to save your progress</T>
       </p>
       <div className="flex flex-col sm:flex-row gap-2 max-w-xs mx-auto">
         <input
@@ -49,7 +50,7 @@ const PhoneCapture = ({ onSave, onSkip }) => {
           disabled={phone.replace(/\D/g, '').length !== 10}
           className="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Save &amp; Continue
+          <T k="components.phonecapture.98329f">Save & Continue</T>
         </button>
       </div>
       {error && (
@@ -60,7 +61,7 @@ const PhoneCapture = ({ onSave, onSkip }) => {
         onClick={onSkip}
         className="text-xs text-gray-400 mt-2 bg-transparent border-0 cursor-pointer hover:text-gray-600"
       >
-        Skip
+        <T k="components.phonecapture.3da474">Skip</T>
       </button>
     </div>
   );

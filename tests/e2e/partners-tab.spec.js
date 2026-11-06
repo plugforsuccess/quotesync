@@ -49,8 +49,12 @@ async function mock(page, state) {
     const json = (b, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(b) });
     if (p.startsWith('/auth/v1/user')) return json(user);
     if (p === '/rest/v1/agency_memberships' && (url.searchParams.get('select') || '').includes('recruit_code')) {
-      return json([{ user_id: UID, agency_role: 'principal', status: 'active', recruit_code: 'CAMREC01', profiles: { full_name: 'Cam Wiley', email: user.email } },
-        { user_id: 'amy', agency_role: 'producer', status: 'active', recruit_code: 'AMYREC01', profiles: { full_name: 'Amy Producer', email: 'amy@example.com' } }]);
+      return json([{ user_id: UID, agency_role: 'principal', status: 'active', recruit_code: 'CAMREC01' },
+        { user_id: 'amy', agency_role: 'producer', status: 'active', recruit_code: 'AMYREC01' }]);
+    }
+    // Names come from profiles, looked up by id (memberships don't link to profiles).
+    if (p === '/rest/v1/profiles' && (url.searchParams.get('id') || '').startsWith('in.')) {
+      return json([{ id: UID, full_name: 'Cam Wiley', email: user.email }, { id: 'amy', full_name: 'Amy Producer', email: 'amy@example.com' }]);
     }
     if (p === '/rest/v1/producer_floor_settings') return json(one ? { agency_id: AG, partners_floor: 2 } : [{ agency_id: AG, partners_floor: 2 }]);
     if (p === '/rest/v1/agency_memberships') return json(one ? membership : [membership]);

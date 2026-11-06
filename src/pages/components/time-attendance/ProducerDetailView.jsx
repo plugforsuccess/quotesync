@@ -62,7 +62,7 @@ function StatCard({ label, value, target, unit }) {
       </p>
       {hasTarget && (
         <p className={`text-xs mt-1 ${met ? 'text-emerald-400' : 'text-orange-600'}`}>
-          <T k="pages.components.timeattendance.producerdetailview.f1a035">Target:</T> {target}{unit ? ` ${unit}` : ''} {met ? '(met)' : '(below)'}
+          <T k="pages.components.timeattendance.producerdetailview.f1a035">Target:</T> {target}{unit ? ` ${unit}` : ''} {met ? <T k="pages.components.timeattendance.producerdetailview.dc2c4b">{'(met)'}</T> : <T k="pages.components.timeattendance.producerdetailview.1cf514">{'(below)'}</T>}
         </p>
       )}
     </div>
@@ -272,7 +272,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
                         className={`hover:bg-qs-elevated transition-colors ${isZeroOutbound ? 'bg-amber-900/20' : ''}`}
                       >
                         <td className="px-4 py-2.5 text-sm text-qs-bright font-medium">
-                          {day.date ? formatDayLabel(day.date) : `Day ${idx + 1}`}
+                          {day.date ? formatDayLabel(day.date) : <><T k="pages.components.timeattendance.producerdetailview.987b9c">{"Day"}</T>{" "}{idx + 1}</>}
                         </td>
                         <td className={`px-4 py-2.5 text-sm text-right font-semibold ${isZeroOutbound ? 'text-red-400' : 'text-qs-text'}`}>
                           {ob}

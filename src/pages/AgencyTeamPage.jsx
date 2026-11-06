@@ -200,7 +200,7 @@ export default function AgencyTeamPage() {
                   disabled={inviteUser.isPending}
                   className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
                 >
-                  {inviteUser.isPending ? 'Inviting...' : 'Send Invite'}
+                  {inviteUser.isPending ? <T k="pages.agencyteampage.dc7a6e">{'Inviting...'}</T> : <T k="pages.agencyteampage.c6b719">{'Send Invite'}</T>}
                 </button>
                 <button
                   type="button"
@@ -278,18 +278,18 @@ export default function AgencyTeamPage() {
                             } ${(!emp.membership_id || isSelf || isOwner) ? 'cursor-default' : 'cursor-pointer'}`}
                           >
                             {emp.agency_role === 'principal'
-                              ? 'Principal'
+                              ? <T k="pages.agencyteampage.f3b86b">{'Principal'}</T>
                               : emp.agency_role === 'manager'
-                              ? 'Manager'
+                              ? <T k="pages.agencyteampage.babe30">{'Manager'}</T>
                               : emp.roles?.includes('sales')
-                              ? 'Sales'
+                              ? <T k="pages.agencyteampage.d0edfb">{'Sales'}</T>
                               : emp.roles?.includes('service_inbound') && emp.roles?.includes('service_outbound')
-                              ? 'Service (Both)'
+                              ? <T k="pages.agencyteampage.baf17c">{'Service (Both)'}</T>
                               : emp.roles?.includes('service_outbound')
-                              ? 'Service — Outbound'
+                              ? <T k="pages.agencyteampage.a89ddb">{'Service — Outbound'}</T>
                               : emp.roles?.includes('service_inbound')
-                              ? 'Service — Inbound'
-                              : 'Producer'}
+                              ? <T k="pages.agencyteampage.dd8220">{'Service — Inbound'}</T>
+                              : <T k="pages.agencyteampage.7b7194">{'Producer'}</T>}
                           </button>
                         )}
                       </td>

@@ -80,7 +80,7 @@ function PassFailRow({ label, passed, manual, onToggle }) {
             }`}
           >
             {passed ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-            {passed ? 'Pass' : 'Fail'}
+            {passed ? <T k="pages.components.timeattendance.staffscorecard.d7cd56">{'Pass'}</T> : <T k="pages.components.timeattendance.staffscorecard.2758e3">{'Fail'}</T>}
             <Edit3 className="w-3 h-3 ml-1 text-qs-muted" />
           </button>
         ) : passed ? (
@@ -234,17 +234,17 @@ export default function StaffScorecard({
         }}>
           <div>
             <h3 className="text-lg font-semibold text-qs-bright">
-              {classification === 'full_pto'     && 'PTO Week'}
-              {classification === 'full_sick'    && 'Sick Week'}
-              {classification === 'full_absence' && 'Absence Week'}
+              {classification === 'full_pto'     && <T k="pages.components.timeattendance.staffscorecard.982ed8">{'PTO Week'}</T>}
+              {classification === 'full_sick'    && <T k="pages.components.timeattendance.staffscorecard.1de265">{'Sick Week'}</T>}
+              {classification === 'full_absence' && <T k="pages.components.timeattendance.staffscorecard.afbb52">{'Absence Week'}</T>}
             </h3>
             <p style={{ fontSize: 13, marginTop: 4, color: 'var(--qs-dim)' }}>
               {classification === 'full_pto' &&
-                `${ptoDays} PTO day${ptoDays !== 1 ? 's' : ''} — no calls expected. Week not graded.`}
+                <>{ptoDays}{" "}<T k="pages.components.timeattendance.staffscorecard.86b2d9">{"PTO day"}</T>{ptoDays !== 1 ? 's' : ''}{" "}<T k="pages.components.timeattendance.staffscorecard.fa422b">{"— no calls expected. Week not graded."}</T></>}
               {classification === 'full_sick' &&
-                `${sickDays} sick day${sickDays !== 1 ? 's' : ''} — no calls expected. Week not graded.`}
+                <>{sickDays}{" "}<T k="pages.components.timeattendance.staffscorecard.2c50b0">{"sick day"}</T>{sickDays !== 1 ? 's' : ''}{" "}<T k="pages.components.timeattendance.staffscorecard.fa422b">{"— no calls expected. Week not graded."}</T></>}
               {classification === 'full_absence' &&
-                `${absenceParts.join(', ')} — week not graded.`}
+                <>{absenceParts.join(', ')}{" "}<T k="pages.components.timeattendance.staffscorecard.ff333b">{"— week not graded."}</T></>}
             </p>
             {employeeName && (
               <p className="text-xs text-qs-subtle mt-1">{employeeName}</p>
@@ -285,8 +285,8 @@ export default function StaffScorecard({
             {classification === 'partial_absence' && (
               <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
                 <T k="pages.components.timeattendance.staffscorecard.ecd5e8">Partial week — targets prorated to</T> {workedDays} <T k="pages.components.timeattendance.staffscorecard.1cee00">worked day</T>{workedDays !== 1 ? 's' : ''}.
-                {ptoDays > 0 && ` ${ptoDays} PTO.`}
-                {sickDays > 0 && ` ${sickDays} sick.`}
+                {ptoDays > 0 && <>{" "}{ptoDays}{" "}<T k="pages.components.timeattendance.staffscorecard.e0db9e">{"PTO."}</T></>}
+                {sickDays > 0 && <>{" "}{sickDays}{" "}<T k="pages.components.timeattendance.staffscorecard.5a7eb8">{"sick."}</T></>}
               </p>
             )}
             {classification === 'holiday_reduced' && (
@@ -514,8 +514,8 @@ export default function StaffScorecard({
               <p className="text-xs text-qs-subtle mt-0.5"><T k="pages.components.timeattendance.staffscorecard.cfcc7e">WFH</T></p>
               <p className="text-xs text-qs-subtle mt-0.5">
                 {ytdAttendance.daysWorked > 0
-                  ? `${Math.round((ytdAttendance.wfh / ytdAttendance.daysWorked) * 100)}% of days`
-                  : 'days'}
+                  ? <>{Math.round((ytdAttendance.wfh / ytdAttendance.daysWorked) * 100)}<T k="pages.components.timeattendance.staffscorecard.fc1061">{"% of days"}</T></>
+                  : <T k="pages.components.timeattendance.staffscorecard.5548ae">{'days'}</T>}
               </p>
             </div>
             <div>

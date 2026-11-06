@@ -126,7 +126,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         <div className="dark-card" style={{ padding: 20 }}>
           <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.partnerstab.811aa9">No Partners Yet</T></h3>
           <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
-            <T k="pages.components.ratechecks.partnerstab.bbdbfa">Add someone who'll share your Rate Check link.</T> {PARTNER_AGREEMENT_REQUIRED ? 'They get a private portal to sign the agreement, then their own link that pays per household.' : 'They get their own link that pays per household, and a private portal to see what they’ve earned.'}
+            <T k="pages.components.ratechecks.partnerstab.bbdbfa">Add someone who'll share your Rate Check link.</T> {PARTNER_AGREEMENT_REQUIRED ? <T k="pages.components.ratechecks.partnerstab.7c6168">{'They get a private portal to sign the agreement, then their own link that pays per household.'}</T> : <T k="pages.components.ratechecks.partnerstab.27e431">{'They get their own link that pays per household, and a private portal to see what they’ve earned.'}</T>}
           </p>
           {canEdit && !adding && (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -195,17 +195,17 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-semibold" style={{ color: 'var(--qs-bright)' }}>{p.name}</span>
                       <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                        {!p.active && <Pill>Paused</Pill>}
-                        {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Signed' : 'Not signed'}</Pill>}
-                        <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? 'W-9 on file' : 'W-9 needed'}</Pill>
+                        {!p.active && <Pill><T k="pages.components.ratechecks.partnerstab.c7dfb6">Paused</T></Pill>}
+                        {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? <T k="pages.components.ratechecks.partnerstab.6e3665">{'Signed'}</T> : <T k="pages.components.ratechecks.partnerstab.f0582a">{'Not signed'}</T>}</Pill>}
+                        <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? <T k="pages.components.ratechecks.partnerstab.6aff6f">{'W-9 on file'}</T> : <T k="pages.components.ratechecks.partnerstab.00fff8">{'W-9 needed'}</T>}</Pill>
                       </span>
                     </span>
                     <span className="hidden w-24 shrink-0 text-right sm:block">
                       <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{monthName(month)}</span>
-                      <span className="block text-sm font-semibold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{s?.month.households || 0} {(s?.month.households || 0) === 1 ? 'Household' : 'Households'}</span>
+                      <span className="block text-sm font-semibold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{s?.month.households || 0} {(s?.month.households || 0) === 1 ? <T k="pages.components.ratechecks.partnerstab.52996f">{'Household'}</T> : <T k="pages.components.ratechecks.partnerstab.dbb1c9">{'Households'}</T>}</span>
                     </span>
                     <span className="w-16 shrink-0 text-right sm:w-20">
-                      <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{paid ? 'Paid' : 'Owed'}</span>
+                      <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{paid ? <T k="pages.components.ratechecks.partnerstab.dc9d45">{'Paid'}</T> : <T k="pages.components.ratechecks.partnerstab.89e255">{'Owed'}</T>}</span>
                       <span className="block text-sm font-bold tabular-nums" style={{ color: 'var(--qs-success)' }}>{dollars(owed)}</span>
                     </span>
                     <ChevronRight className="h-5 w-5 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
@@ -226,17 +226,17 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         return (
           <section key={p.id} id={`partner-${p.id}`} className="dark-card scroll-mt-24" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
             <button type="button" onClick={() => setSelected(null)} className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {promoters.length > 1 ? `All Partners (${promoters.length})` : 'All Partners'}
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {promoters.length > 1 ? <><T k="pages.components.ratechecks.partnerstab.1cdf51">{"All Partners ("}</T>{promoters.length}{")"}</> : <T k="pages.components.ratechecks.partnerstab.faff1a">{'All Partners'}</T>}
             </button>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <PartnerPhoto promoter={p} canEdit={canEdit} />
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.e99180">Paused</T></span>}</h3>
-                <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || 'No contact on file'}</p>
+                <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || <T k="pages.components.ratechecks.partnerstab.e4f057">{'No contact on file'}</T>}</p>
               </div>
               <span className="flex flex-wrap justify-end gap-1.5">
-                {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Agreement signed' : 'Agreement not signed'}</Pill>}
-                <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? `W-9 on file${p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ''}` : 'W-9 needed'}</Pill>
+                {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? <T k="pages.components.ratechecks.partnerstab.f4f566">{'Agreement signed'}</T> : <T k="pages.components.ratechecks.partnerstab.4c58cf">{'Agreement not signed'}</T>}</Pill>}
+                <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? <><T k="pages.components.ratechecks.partnerstab.6aff6f">{"W-9 on file"}</T>{p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ''}</> : <T k="pages.components.ratechecks.partnerstab.00fff8">{'W-9 needed'}</T>}</Pill>
               </span>
             </div>
             <RecruitedBy promoter={p} recruiters={recruiters} canEdit={canEdit}
@@ -282,7 +282,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 <button type="button" onClick={() => setOpen(expanded ? null : p.id)} aria-expanded={expanded}
                   className="inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
                   {expanded ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
-                  {monthRows.length} {monthRows.length === 1 ? 'Household' : 'Households'} <T k="pages.components.ratechecks.partnerstab.13b5bf">in</T> {monthLabel(month)}
+                  {monthRows.length} {monthRows.length === 1 ? <T k="pages.components.ratechecks.partnerstab.52996f">{'Household'}</T> : <T k="pages.components.ratechecks.partnerstab.dbb1c9">{'Households'}</T>} <T k="pages.components.ratechecks.partnerstab.13b5bf">in</T> {monthLabel(month)}
                 </button>
               ) : (
                 <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.ef6e5f">No households in</T> {monthLabel(month)} <T k="pages.components.ratechecks.partnerstab.58969e">yet.</T></span>
@@ -320,13 +320,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                   action={p.w9_pdf_path
                     ? <SettingButton onClick={() => partnerW9Url(p.w9_pdf_path).then(url => window.open(url, '_blank', 'noopener')).catch(err => window.alert(err.message))}><T k="pages.components.ratechecks.partnerstab.c3bf44">Open</T></SettingButton>
                     : <SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}>
-                        {p.w9_received_at ? 'Clear' : 'Got paper W-9'}
+                        {p.w9_received_at ? <T k="pages.components.ratechecks.partnerstab.719ea3">{'Clear'}</T> : <T k="pages.components.ratechecks.partnerstab.448550">{'Got paper W-9'}</T>}
                       </SettingButton>} />
                 <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
                 <SettingRow label="Share link"
                   value={p.active ? 'On. New scans from the link count toward pay.' : 'Paused. The link doesn\u2019t take new scans.'}
                   tone={p.active ? 'ok' : 'warn'}
-                  action={<SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}>{p.active ? 'Pause' : 'Turn on'}</SettingButton>} />
+                  action={<SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}>{p.active ? <T k="pages.components.ratechecks.partnerstab.781961">{'Pause'}</T> : <T k="pages.components.ratechecks.partnerstab.26563e">{'Turn on'}</T>}</SettingButton>} />
               </dl>
             )}
 
@@ -336,16 +336,16 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                   <li key={h.key} className="flex items-center justify-between gap-3 px-3 py-2.5" style={i ? { borderTop: '1px solid var(--qs-border)' } : undefined}>
                     <div className="min-w-0">
                       <button type="button" onClick={() => onOpenRateCheck?.(h.scans[0].id)} className="text-left text-sm font-semibold hover:underline" style={{ color: 'var(--qs-bright)' }}>
-                        {h.firstName || 'Unknown'}
+                        {h.firstName || <T k="pages.components.ratechecks.partnerstab.bc7819">{'Unknown'}</T>}
                         <span className="ml-1.5 font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.phone ? formatPhone(h.phone) : ''}</span>
                       </button>
                       <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                        {h.tier ? TIER_LABEL[h.tier] : 'Not qualified'}{h.extras ? ` + ${h.extras} extra ${h.extras === 1 ? 'line' : 'lines'}` : ''}
+                        {h.tier ? TIER_LABEL[h.tier] : <T k="pages.components.ratechecks.partnerstab.be4b39">{'Not qualified'}</T>}{h.extras ? <>{" + "}{h.extras}{" "}<T k="pages.components.ratechecks.partnerstab.b43c4b">{"extra"}</T>{" "}{h.extras === 1 ? 'line' : 'lines'}</> : ''}
                         {h.overCap && <span style={{ color: 'var(--qs-warning)' }}> <T k="pages.components.ratechecks.partnerstab.49f11b">· over the monthly cap</T></span>}
-                        {' · '}<span style={{ color: h.won ? 'var(--qs-success)' : undefined }}>{h.won ? 'Won' : h.quoted ? 'Quoted' : 'Not quoted yet'}</span>
+                        {' · '}<span style={{ color: h.won ? 'var(--qs-success)' : undefined }}>{h.won ? <T k="pages.components.ratechecks.partnerstab.b273fb">{'Won'}</T> : h.quoted ? <T k="pages.components.ratechecks.partnerstab.8e06ee">{'Quoted'}</T> : <T k="pages.components.ratechecks.partnerstab.5d4986">{'Not quoted yet'}</T>}</span>
                         {rules.requireCallConfirm && h.tier && (
                           <span style={{ color: h.confirmed ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>
-                            {' · '}{h.confirmed ? 'Replied Y' : h.texted ? 'Waiting on Y' : 'Not texted yet'}
+                            {' · '}{h.confirmed ? <T k="pages.components.ratechecks.partnerstab.75a6eb">{'Replied Y'}</T> : h.texted ? <T k="pages.components.ratechecks.partnerstab.75d372">{'Waiting on Y'}</T> : <T k="pages.components.ratechecks.partnerstab.9f4495">{'Not texted yet'}</T>}
                           </span>
                         )}
                       </p>
@@ -401,7 +401,7 @@ function PartnerPhoto({ promoter: p, canEdit }) {
         <button type="button" onClick={() => (photo ? setPhoto.mutate({ promoter: p, dataUrl: null }) : input.current?.click())}
           disabled={setPhoto.isPending} className="text-[11px] font-semibold text-primary-600"
           aria-label={photo ? `Remove ${first}'s photo` : `Add ${first}'s photo`}>
-          {setPhoto.isPending ? 'Saving…' : photo ? 'Remove' : 'Add Photo'}
+          {setPhoto.isPending ? <T k="pages.components.ratechecks.partnerstab.56a228">{'Saving…'}</T> : photo ? <T k="pages.components.ratechecks.partnerstab.e96390">{'Remove'}</T> : <T k="pages.components.ratechecks.partnerstab.560a4b">{'Add Photo'}</T>}
         </button>
       )}
       {error && <p className="max-w-[7rem] text-center text-[11px] text-red-500">{error}</p>}
@@ -480,7 +480,7 @@ function CapControl({ value, onSave }) {
             className="h-9 w-16 rounded-lg px-2 text-right text-sm tabular-nums" style={inputStyle} placeholder="none" autoFocus />
           <SettingButton onClick={() => { onSave(draft ? Number(draft) : null); setEditing(false); }}><T k="pages.components.ratechecks.partnerstab.c9cc8c">Save</T></SettingButton>
         </span>
-      ) : <SettingButton onClick={() => { setDraft(value ?? ''); setEditing(true); }}>{value ? 'Change' : 'Set limit'}</SettingButton>} />
+      ) : <SettingButton onClick={() => { setDraft(value ?? ''); setEditing(true); }}>{value ? <T k="pages.components.ratechecks.partnerstab.64fbd9">{'Change'}</T> : <T k="pages.components.ratechecks.partnerstab.634082">{'Set limit'}</T>}</SettingButton>} />
   );
 }
 
@@ -608,7 +608,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
   return (
     <section className="dark-card" style={{ padding: 16 }} aria-label="Partner applications">
       <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>
-        {apps.length === 1 ? '1 Person Wants to Be a Partner' : `${apps.length} People Want to Be Partners`}
+        {apps.length === 1 ? <T k="pages.components.ratechecks.partnerstab.b1357a">{'1 Person Wants to Be a Partner'}</T> : <>{apps.length}{" "}<T k="pages.components.ratechecks.partnerstab.398113">{"People Want to Be Partners"}</T></>}
       </h3>
       <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.28fa07">From the Drivers Ed page. Add them, then send them their portal link.</T></p>
       <ul className="mt-3 space-y-2">
@@ -629,7 +629,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
                   className="min-h-[36px] rounded-lg px-3 text-sm font-semibold" style={inputStyle}><T k="pages.components.ratechecks.partnerstab.c8a59e">Dismiss</T></button>
                 <button type="button" onClick={() => add(a)} disabled={busy === a.id}
                   className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white disabled:opacity-60">
-                  <Plus className="h-4 w-4" aria-hidden="true" /> {busy === a.id ? 'Adding…' : 'Add As Partner'}
+                  <Plus className="h-4 w-4" aria-hidden="true" /> {busy === a.id ? <T k="pages.components.ratechecks.partnerstab.ffb2e6">{'Adding…'}</T> : <T k="pages.components.ratechecks.partnerstab.840a9d">{'Add As Partner'}</T>}
                 </button>
               </div>
             )}
@@ -699,7 +699,7 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       {anyAddress && !fullAddress && <p className="text-xs md:col-span-3" style={{ color: 'var(--qs-warning)' }}><T k="pages.components.ratechecks.partnerstab.4ff75f">Finish the address (street, city, state and 5-digit ZIP), or clear it.</T></p>}
 
       <button type="submit" disabled={!ok || save.isPending} className="h-11 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white disabled:opacity-50 md:col-start-3">
-        {save.isPending ? 'Adding…' : 'Add Partner'}
+        {save.isPending ? <T k="pages.components.ratechecks.partnerstab.ffb2e6">{'Adding…'}</T> : <T k="pages.components.ratechecks.partnerstab.1fb935">{'Add Partner'}</T>}
       </button>
       {save.error && <p className="text-sm text-red-500 md:col-span-3">{save.error.message}</p>}
     </form>
@@ -742,7 +742,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
           hint="When their quote is ready we text them; a household pays once they reply Y to set up a call.">
           {draft
             ? <input type="checkbox" checked={!!v.requireCallConfirm} onChange={set('requireCallConfirm')} aria-label="Pay only after the customer replies Y" className="h-5 w-5 accent-blue-600" />
-            : <span className="text-sm font-bold" style={{ color: v.requireCallConfirm ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>{v.requireCallConfirm ? 'On' : 'Off'}</span>}
+            : <span className="text-sm font-bold" style={{ color: v.requireCallConfirm ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>{v.requireCallConfirm ? <T k="pages.components.ratechecks.partnerstab.e0049a">{'On'}</T> : <T k="pages.components.ratechecks.partnerstab.e3de5a">{'Off'}</T>}</span>}
         </RuleRow>
         {!v.requireCallConfirm && (
           <RuleRow title="Otherwise pays once quoted, or after" hint="So a slow week at the desk doesn't cost the partner.">
@@ -796,7 +796,7 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
       <dl className="mt-2">
         {rows.map(t => (
           <div key={t.key} className="flex items-center justify-between gap-3 py-2.5" style={{ borderTop: '1px solid var(--qs-border)' }}>
-            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}>{t.label}{t.key === EXTRA_LINE.key ? `, Up To ${EXTRA_LINE_CAP}` : ''}</dt>
+            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}>{t.label}{t.key === EXTRA_LINE.key ? <><T k="pages.components.ratechecks.partnerstab.37eac1">{", Up To"}</T>{" "}{EXTRA_LINE_CAP}</> : ''}</dt>
             <dd>
               {draft ? (
                 <span className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>$

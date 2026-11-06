@@ -193,8 +193,8 @@ const AdminAuditPage = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-2"><T k="pages.adminauditpage.bf0bc8">No Audit Logs Found</T></h2>
             <p className="text-gray-600">
               {eventTypeFilter === 'all'
-                ? 'No audit events have been recorded yet.'
-                : `No events with type "${EVENT_TYPE_CONFIG[eventTypeFilter]?.label || eventTypeFilter}"`}
+                ? <T k="pages.adminauditpage.98b164">{'No audit events have been recorded yet.'}</T>
+                : <><T k="pages.adminauditpage.1a3379">{"No events with type \""}</T>{EVENT_TYPE_CONFIG[eventTypeFilter]?.label || eventTypeFilter}{"\""}</>}
             </p>
           </div>
         ) : (

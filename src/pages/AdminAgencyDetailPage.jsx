@@ -390,7 +390,7 @@ const AdminAgencyDetailPage = () => {
 
             {showRuleForm && (
               <div className="dark-card" style={{ padding: 24 }}>
-                <h3 style={{ fontWeight: 500, color: 'var(--qs-bright)', marginBottom: 16 }}>{editingRule ? 'Edit Rule' : 'New Routing Rule'}</h3>
+                <h3 style={{ fontWeight: 500, color: 'var(--qs-bright)', marginBottom: 16 }}>{editingRule ? <T k="pages.adminagencydetailpage.9c1a77">{'Edit Rule'}</T> : <T k="pages.adminagencydetailpage.7aba55">{'New Routing Rule'}</T>}</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label style={labelStyle}><T k="pages.adminagencydetailpage.3af25e">Rule Type</T></label>
@@ -494,17 +494,17 @@ const AdminAgencyDetailPage = () => {
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                           <td style={tdStyle}>
                             <span style={{ ...rts, padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
-                              {rule.rule_type || 'geographic'}
+                              {rule.rule_type || <T k="pages.adminagencydetailpage.8765e9">{'geographic'}</T>}
                             </span>
                           </td>
-                          <td style={{ ...tdStyle, color: 'var(--qs-bright)' }}>{rule.state || 'All'}</td>
+                          <td style={{ ...tdStyle, color: 'var(--qs-bright)' }}>{rule.state || <T k="pages.adminagencydetailpage.6a7208">{'All'}</T>}</td>
                           <td style={{ ...tdStyle, color: 'var(--qs-dim)' }}>{rule.zip_prefix || rule.zip || '-'}</td>
                           <td style={{ ...tdStyle, color: 'var(--qs-dim)' }}>
                             {rule.min_score != null || rule.max_score != null ? `${rule.min_score ?? 0} - ${rule.max_score ?? 100}` : '-'}
                           </td>
                           <td style={{ ...tdStyle, color: 'var(--qs-dim)', textTransform: 'capitalize' }}>{rule.carrier_filter?.replace('_', ' ') || '-'}</td>
                           <td style={{ ...tdStyle, color: 'var(--qs-dim)' }}>{rule.priority_tier}</td>
-                          <td style={{ ...tdStyle, color: rule.capacity_enabled ? '#34D399' : 'var(--qs-subtle)' }}>{rule.capacity_enabled ? 'Active' : 'Disabled'}</td>
+                          <td style={{ ...tdStyle, color: rule.capacity_enabled ? '#34D399' : 'var(--qs-subtle)' }}>{rule.capacity_enabled ? <T k="pages.adminagencydetailpage.a733b8">{'Active'}</T> : <T k="pages.adminagencydetailpage.f4f447">{'Disabled'}</T>}</td>
                           <td style={{ ...tdStyle, textAlign: 'right' }}>
                             <button onClick={() => handleDeleteRule(rule.id)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'none', color: '#F87171', cursor: 'pointer' }}>
                               <Trash2 size={14} />
@@ -679,7 +679,7 @@ const AdminAgencyDetailPage = () => {
                 disabled={impersonating}
                 style={{ ...btnPrimary, opacity: impersonating ? 0.6 : 1 }}
               >
-                {impersonating ? 'Starting...' : 'Enter Agency View'}
+                {impersonating ? <T k="pages.adminagencydetailpage.0b7f4f">{'Starting...'}</T> : <T k="pages.adminagencydetailpage.420848">{'Enter Agency View'}</T>}
               </button>
             </div>
           </div>

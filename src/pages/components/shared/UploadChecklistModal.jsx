@@ -57,8 +57,8 @@ export default function UploadChecklistModal({
             <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--qs-bright)',
               margin: 0, marginBottom: 4 }}>
               {totalActionable > 0
-                ? `${totalActionable} Item${totalActionable > 1 ? 's' : ''} Need${totalActionable === 1 ? 's' : ''} Your Attention`
-                : 'All Reports Current ✓'
+                ? <>{totalActionable}{" "}<T k="pages.components.shared.uploadchecklistmodal.ecdda5">{"Item"}</T>{totalActionable > 1 ? 's' : ''}{" "}<T k="pages.components.shared.uploadchecklistmodal.ed4855">{"Need"}</T>{totalActionable === 1 ? 's' : ''}{" "}<T k="pages.components.shared.uploadchecklistmodal.dcf01f">{"Your Attention"}</T></>
+                : <T k="pages.components.shared.uploadchecklistmodal.af9af9">{'All Reports Current ✓'}</T>
               }
             </h2>
             <p style={{ fontSize: 12, color: 'var(--qs-muted)', margin: 0 }}>
@@ -213,7 +213,7 @@ export default function UploadChecklistModal({
               color: totalActionable > 0 ? 'var(--qs-text)' : '#10B981',
             }}
           >
-            {totalActionable > 0 ? 'Dismiss' : 'All Clear — Close'}
+            {totalActionable > 0 ? <T k="pages.components.shared.uploadchecklistmodal.70afe9">{'Dismiss'}</T> : <T k="pages.components.shared.uploadchecklistmodal.d20e9e">{'All Clear — Close'}</T>}
           </button>
         </div>
       </div>

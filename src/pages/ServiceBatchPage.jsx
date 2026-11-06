@@ -238,7 +238,7 @@ export default function ServiceBatchPage() {
             borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
           }}
         >
-          {showAdd ? 'Close' : '+ Log Task'}
+          {showAdd ? <T k="pages.servicebatchpage.bbfa77">{'Close'}</T> : <T k="pages.servicebatchpage.c8c8d7">{'+ Log Task'}</T>}
         </button>
       </div>
 
@@ -321,7 +321,7 @@ export default function ServiceBatchPage() {
           background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)', borderRadius: 10,
           padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--qs-danger)', fontWeight: 600,
         }}>
-          ⏰ {overdue} {overdue === 1 ? 'task has' : 'tasks have'} <T k="pages.servicebatchpage.eccf1b">been waiting more than a day — let's clear</T> {overdue === 1 ? 'it' : 'them'} <T k="pages.servicebatchpage.1b242e">first.</T>
+          ⏰ {overdue} {overdue === 1 ? <T k="pages.servicebatchpage.3d5deb">{'task has'}</T> : <T k="pages.servicebatchpage.2ef775">{'tasks have'}</T>} <T k="pages.servicebatchpage.eccf1b">been waiting more than a day — let's clear</T> {overdue === 1 ? <T k="pages.servicebatchpage.6c5522">{'it'}</T> : <T k="pages.servicebatchpage.98910a">{'them'}</T>} <T k="pages.servicebatchpage.1b242e">first.</T>
         </div>
       )}
 
@@ -351,7 +351,7 @@ export default function ServiceBatchPage() {
                       ...NEUTRAL_CHIP }}>{cfg.label}</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', textDecoration: 'line-through', opacity: 0.85 }}>{task.title}</span>
                     <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--qs-dim)' }}>
-                      ✓ {empName[task.completed_by_id] || 'Unknown'} · {fmtShortDate(task.completed_at)}
+                      ✓ {empName[task.completed_by_id] || <T k="pages.servicebatchpage.bc7819">{'Unknown'}</T>} · {fmtShortDate(task.completed_at)}
                     </span>
                   </div>
                   {(task.customer_name || task.policy_no) && (
@@ -400,8 +400,8 @@ export default function ServiceBatchPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 2 }}>
-              {sortedTasks.length} <T k="pages.servicebatchpage.8c4526">open ·</T> {sortBy === 'overdue' ? 'most overdue first'
-                : sortBy === 'created_desc' ? 'newest first' : 'oldest first'}
+              {sortedTasks.length} <T k="pages.servicebatchpage.8c4526">open ·</T> {sortBy === 'overdue' ? <T k="pages.servicebatchpage.5896e9">{'most overdue first'}</T>
+                : sortBy === 'created_desc' ? <T k="pages.servicebatchpage.a21da8">{'newest first'}</T> : <T k="pages.servicebatchpage.b560d3">{'oldest first'}</T>}
             </div>
             {sortedTasks.map(task => (
               <TaskRow key={task.id} task={task}
@@ -619,7 +619,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, flexWrap: 'wrap',
           fontSize: 11, color: 'var(--qs-subtle)' }}>
-          <span><T k="pages.servicebatchpage.4adcbd">📝 Logged by</T> {empName[task.created_by_id] || 'Unknown'} · {fmtShortDate(task.created_at)}</span>
+          <span><T k="pages.servicebatchpage.4adcbd">📝 Logged by</T> {empName[task.created_by_id] || <T k="pages.servicebatchpage.bc7819">{'Unknown'}</T>} · {fmtShortDate(task.created_at)}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <span>👤</span>
             <select value={task.assigned_to_id || ''} onClick={e => e.stopPropagation()} onChange={e => onAssign?.(e.target.value)}
@@ -650,7 +650,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
           <div style={{ marginTop: 6, fontSize: 11.5, fontWeight: 700,
             color: new Date(task.follow_up_at) <= new Date() ? 'var(--qs-danger)' : 'var(--qs-dim)',
             display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span><T k="pages.servicebatchpage.1a534c">⏰ Follow up</T> {new Date(task.follow_up_at) <= new Date() ? 'due ·' : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+            <span><T k="pages.servicebatchpage.1a534c">⏰ Follow up</T> {new Date(task.follow_up_at) <= new Date() ? <T k="pages.servicebatchpage.1beefa">{'due ·'}</T> : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
             <button onClick={e => { e.stopPropagation(); setFollowUp.mutate({ id: task.id, followUpAt: null }); }}
               style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 11, padding: 0, textDecoration: 'underline' }}><T k="pages.servicebatchpage.01bc6f">Clear</T></button>
           </div>
@@ -705,7 +705,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
               <T k="pages.servicebatchpage.ed68d8">Waiting on customer</T>
             </label>
             <button onClick={submitAttempt} disabled={logAttempt.isPending} style={btnStyle('var(--qs-info)', '#fff')}>
-              {logAttempt.isPending ? 'Logging…' : 'Log'}
+              {logAttempt.isPending ? <T k="pages.servicebatchpage.89805f">{'Logging…'}</T> : <T k="pages.servicebatchpage.8bf95e">{'Log'}</T>}
             </button>
             <button onClick={() => setLogging(false)} style={btnStyle('var(--qs-card)', 'var(--qs-muted)')}><T k="pages.servicebatchpage.ea4788">Cancel</T></button>
           </div>
@@ -833,8 +833,8 @@ function ExpectedCallbacks({ agencyId }) {
                 {cb.customer_name || '—'}
               </div>
               <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-                {cb.customer_phone || 'no phone'} · {cb.reason}
-                {cb.rep_name ? ` · ask for ${cb.rep_name}` : ''}
+                {cb.customer_phone || <T k="pages.servicebatchpage.8ae9fc">{'no phone'}</T>} · {cb.reason}
+                {cb.rep_name ? <>{" "}<T k="pages.servicebatchpage.c82c70">{"· ask for"}</T>{" "}{cb.rep_name}</> : ''}
               </div>
               {/* How long we've been waiting to hear back + how many tries — so a
                   stale, over-contacted callback is visible, not silently aging. */}
@@ -855,7 +855,7 @@ function ExpectedCallbacks({ agencyId }) {
               disabled={logCallback.isPending}
               style={btnStyle('var(--qs-info)', '#fff')}
             >
-              {cb.rep_name ? `📞 On the Line → ${cb.rep_name.split(' ')[0]}` : '📞 They Called — Log It'}
+              {cb.rep_name ? <><T k="pages.servicebatchpage.53db8a">{"📞 On the Line →"}</T>{" "}{cb.rep_name.split(' ')[0]}</> : <T k="pages.servicebatchpage.140eeb">{'📞 They Called — Log It'}</T>}
             </button>
           </div>
         ))}
@@ -1209,7 +1209,7 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
           cursor: canSubmit ? 'pointer' : 'not-allowed', border: 'none',
           background: canSubmit ? 'var(--qs-info)' : 'var(--qs-card)', color: canSubmit ? '#fff' : 'var(--qs-muted)',
           borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
-        }}>{busy ? 'Saving…' : 'Add to Batch'}</button>
+        }}>{busy ? <T k="pages.servicebatchpage.56a228">{'Saving…'}</T> : <T k="pages.servicebatchpage.0ed766">{'Add to Batch'}</T>}</button>
       </div>
       {error && (
         <div style={{ marginTop: 10, fontSize: 12, color: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)',

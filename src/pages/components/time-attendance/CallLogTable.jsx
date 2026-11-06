@@ -223,7 +223,7 @@ export default function CallLogTable({ calls }) {
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                           call.call_direction === 'Outbound' ? 'bg-primary-100 text-primary-700' : 'bg-green-100 text-green-700'
                         }`}>
-                          {call.call_direction === 'Outbound' ? 'Out' : 'In'}
+                          {call.call_direction === 'Outbound' ? <T k="pages.components.timeattendance.calllogtable.220e06">{'Out'}</T> : <T k="pages.components.timeattendance.calllogtable.aef365">{'In'}</T>}
                         </span>
                       </td>
                       <td className="px-4 py-2">
@@ -232,14 +232,14 @@ export default function CallLogTable({ calls }) {
                           call.call_result === 'Not Connected' ? 'text-amber-400' :
                           call.call_result === 'Connected' ? 'text-primary-400' : 'text-emerald-400'
                         }`}>
-                          {call.call_result === 'VM/Missed' ? 'Missed' : call.call_result}
+                          {call.call_result === 'VM/Missed' ? <T k="pages.components.timeattendance.calllogtable.b56400">{'Missed'}</T> : call.call_result}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-right text-qs-dim font-mono">
                         {formatDuration(call.call_length_seconds)}
                       </td>
                       <td className="px-4 py-2 text-qs-dim">
-                        {call.queue_type === 'sales' ? 'Sales' : call.queue_type === 'service' ? 'Service' : '—'}
+                        {call.queue_type === 'sales' ? <T k="pages.components.timeattendance.calllogtable.d0edfb">{'Sales'}</T> : call.queue_type === 'service' ? <T k="pages.components.timeattendance.calllogtable.329cb8">{'Service'}</T> : '—'}
                       </td>
                       <td className="px-4 py-2 text-qs-subtle truncate max-w-[200px]">
                         {contact}

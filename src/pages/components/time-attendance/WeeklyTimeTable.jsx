@@ -494,7 +494,7 @@ export default function WeeklyTimeTable({
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {saving ? 'Saving...' : 'Save Week'}
+          {saving ? <T k="pages.components.timeattendance.weeklytimetable.ae7e88">{'Saving...'}</T> : <T k="pages.components.timeattendance.weeklytimetable.f1d22b">{'Save Week'}</T>}
         </button>
         {msg && (
           <div className={`flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>

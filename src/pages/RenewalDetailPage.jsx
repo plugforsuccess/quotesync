@@ -95,7 +95,7 @@ export default function RenewalDetailPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-red-50 text-red-700 p-4 rounded-lg">
-          {error?.message || 'Policy not found.'}
+          {error?.message || <T k="pages.renewaldetailpage.1786d1">{'Policy not found.'}</T>}
         </div>
       </div>
     );
@@ -199,8 +199,8 @@ export default function RenewalDetailPage() {
           {policy.mortgagee && (
             <div><span className="text-gray-500"><T k="pages.renewaldetailpage.d19a3b">Mortgagee:</T></span> {policy.mortgagee}</div>
           )}
-          <div><span className="text-gray-500"><T k="pages.renewaldetailpage.5abb42">EFT on File:</T></span> {policy.eft_on_file ? 'Yes' : policy.eft_on_file === false ? 'No' : '—'}</div>
-          <div><span className="text-gray-500"><T k="pages.renewaldetailpage.61e95e">Multi-Policy:</T></span> {policy.multi_policy ? 'Yes' : 'No'}</div>
+          <div><span className="text-gray-500"><T k="pages.renewaldetailpage.5abb42">EFT on File:</T></span> {policy.eft_on_file ? <T k="pages.renewaldetailpage.5397e0">{'Yes'}</T> : policy.eft_on_file === false ? <T k="pages.renewaldetailpage.816c52">{'No'}</T> : '—'}</div>
+          <div><span className="text-gray-500"><T k="pages.renewaldetailpage.61e95e">Multi-Policy:</T></span> {policy.multi_policy ? <T k="pages.renewaldetailpage.5397e0">{'Yes'}</T> : <T k="pages.renewaldetailpage.816c52">{'No'}</T>}</div>
           {policy.customer_tenure_years != null && (
             <div><span className="text-gray-500"><T k="pages.renewaldetailpage.967117">Tenure:</T></span> <span className="font-medium">{policy.customer_tenure_years} <T k="pages.renewaldetailpage.84cdc7">year</T>{policy.customer_tenure_years !== 1 ? 's' : ''}</span></div>
           )}
@@ -245,7 +245,7 @@ export default function RenewalDetailPage() {
             <div className="flex items-center gap-4 text-sm">
               <span className={`flex items-center gap-1 font-medium ${consent.autodial_consent ? 'text-green-700' : 'text-red-600'}`}>
                 {consent.autodial_consent ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                <T k="pages.renewaldetailpage.54bc6c">Auto-dial:</T> {consent.autodial_consent ? 'Consented' : 'Not Consented'}
+                <T k="pages.renewaldetailpage.54bc6c">Auto-dial:</T> {consent.autodial_consent ? <T k="pages.renewaldetailpage.9e6e15">{'Consented'}</T> : <T k="pages.renewaldetailpage.99a690">{'Not Consented'}</T>}
               </span>
               {consent.autodial_consent_date && (
                 <span className="text-gray-500"><T k="pages.renewaldetailpage.22a39b">as of</T> {formatDate(consent.autodial_consent_date)}</span>
@@ -300,7 +300,7 @@ export default function RenewalDetailPage() {
                 return <Icon className="w-4 h-4 text-gray-500" />;
               })()}
               <div className="flex-1">
-                <span className="font-medium">{CHANNEL_LABELS[policy.last_contact_channel] || 'Unknown'}</span>
+                <span className="font-medium">{CHANNEL_LABELS[policy.last_contact_channel] || <T k="pages.renewaldetailpage.bc7819">{'Unknown'}</T>}</span>
                 <span className="mx-2 text-gray-300">|</span>
                 <span>{OUTCOME_LABELS[policy.last_contact_outcome] || policy.last_contact_outcome}</span>
               </div>
@@ -370,7 +370,7 @@ export default function RenewalDetailPage() {
             disabled={!assignTo || assignFollowup.isPending}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg disabled:opacity-50"
           >
-            {assignFollowup.isPending ? 'Saving...' : 'Assign'}
+            {assignFollowup.isPending ? <T k="pages.renewaldetailpage.ae7e88">{'Saving...'}</T> : <T k="pages.renewaldetailpage.244492">{'Assign'}</T>}
           </button>
         </div>
       </div>

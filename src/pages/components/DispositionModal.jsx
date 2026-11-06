@@ -147,7 +147,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
                 }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
               >
-                {outcome === 'close' ? 'Back' : 'Cancel'}
+                {outcome === 'close' ? <T k="pages.components.dispositionmodal.b52b36">{'Back'}</T> : <T k="pages.components.dispositionmodal.77dfd2">{'Cancel'}</T>}
               </button>
               <button
                 onClick={handleConfirm}
@@ -158,7 +158,7 @@ export default function DispositionModal({ lead, agencyId, onClose, onConfirm, i
                     : 'bg-red-600 hover:bg-red-700'
                 }`}
               >
-                {isPending ? 'Saving...' : outcome === 'quoted_in_lm' ? 'Confirm Conversion' : 'Confirm Close'}
+                {isPending ? <T k="pages.components.dispositionmodal.ae7e88">{'Saving...'}</T> : outcome === 'quoted_in_lm' ? <T k="pages.components.dispositionmodal.a8c660">{'Confirm Conversion'}</T> : <T k="pages.components.dispositionmodal.148a97">{'Confirm Close'}</T>}
               </button>
             </div>
           )}

@@ -392,7 +392,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
         {/* Notes */}
         <div className="sm:col-span-2">
           <label className="dark-label">
-            <T k="pages.components.timeattendance.timeentryform.f4c6f8">Notes</T> {notesRequired ? <span className="text-red-400"><T k="pages.components.timeattendance.timeentryform.9bfb6e">(Required)</T></span> : '(Optional)'}
+            <T k="pages.components.timeattendance.timeentryform.f4c6f8">Notes</T> {notesRequired ? <span className="text-red-400"><T k="pages.components.timeattendance.timeentryform.9bfb6e">(Required)</T></span> : <T k="pages.components.timeattendance.timeentryform.c53994">{'(Optional)'}</T>}
           </label>
           <textarea
             value={notes}
@@ -412,7 +412,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Saving...' : 'Save Entry'}
+          {saving ? <T k="pages.components.timeattendance.timeentryform.ae7e88">{'Saving...'}</T> : <T k="pages.components.timeattendance.timeentryform.ffb548">{'Save Entry'}</T>}
         </button>
         {msg && (
           <div className={`flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>

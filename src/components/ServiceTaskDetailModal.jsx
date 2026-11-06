@@ -2,6 +2,7 @@
 // and act on it (mark done, reassign) without going to the Service Batch. Used
 // from the household / customer-search surface so an open request is clickable.
 
+import { T } from './SiteCopy';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
@@ -108,7 +109,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
         width: '100%', maxWidth: 560, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', padding: '20px 22px' }}>
 
         {isLoading || !task ? (
-          <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}>Loading…</div>
+          <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}><T k="components.servicetaskdetailmodal.33ce41">Loading…</T></div>
         ) : (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
@@ -141,23 +142,23 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div><div style={lbl}>Status</div><div style={{ fontSize: 13, color: (waiting || parkExpired) ? '#FBBF24' : 'var(--qs-text)' }}>
-                {done ? 'Done'
-                  : waiting ? '⏸️ Waiting on customer'
-                  : parkExpired ? '⏰ Resurfaced — waited too long'
+              <div><div style={lbl}><T k="components.servicetaskdetailmodal.bae7d5">Status</T></div><div style={{ fontSize: 13, color: (waiting || parkExpired) ? '#FBBF24' : 'var(--qs-text)' }}>
+                {done ? <T k="components.servicetaskdetailmodal.e9b450">{'Done'}</T>
+                  : waiting ? <T k="components.servicetaskdetailmodal.c1df52">{'⏸️ Waiting on customer'}</T>
+                  : parkExpired ? <T k="components.servicetaskdetailmodal.c343c6">{'⏰ Resurfaced — waited too long'}</T>
                   : (task.status || 'open').replace(/_/g, ' ')}</div></div>
-              <div><div style={lbl}>Logged</div><div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
+              <div><div style={lbl}><T k="components.servicetaskdetailmodal.567a04">Logged</T></div><div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
                 {new Date(task.created_at).toLocaleDateString()}</div></div>
-              {sla && <div><div style={lbl}>SLA ({SLA_HOURS}h)</div><div style={{ fontSize: 13, fontWeight: 700, color: sla.color }}>{sla.text}</div></div>}
-              {waiting && <div><div style={lbl}>SLA</div><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-muted)' }}>
-                Paused · parked {fmtHm(parkedBusinessMs(task))} · back in {fmtHm(Math.max(0, PARK_CAP_MS - parkedBusinessMs(task)))}</div></div>}
+              {sla && <div><div style={lbl}><T k="components.servicetaskdetailmodal.aa3a56">SLA (</T>{SLA_HOURS}h)</div><div style={{ fontSize: 13, fontWeight: 700, color: sla.color }}>{sla.text}</div></div>}
+              {waiting && <div><div style={lbl}><T k="components.servicetaskdetailmodal.62b12a">SLA</T></div><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-muted)' }}>
+                <T k="components.servicetaskdetailmodal.4b33d1">Paused · parked</T> {fmtHm(parkedBusinessMs(task))} <T k="components.servicetaskdetailmodal.bd3355">· back in</T> {fmtHm(Math.max(0, PARK_CAP_MS - parkedBusinessMs(task)))}</div></div>}
               {!done && task.follow_up_at && (
-                <div><div style={lbl}>Follow up</div><div style={{ fontSize: 13, fontWeight: 700,
+                <div><div style={lbl}><T k="components.servicetaskdetailmodal.4045c6">Follow up</T></div><div style={{ fontSize: 13, fontWeight: 700,
                   color: new Date(task.follow_up_at) <= new Date() ? '#FBBF24' : 'var(--qs-text)' }}>
                   {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</div></div>
               )}
               {done && task.completion_note && (
-                <div style={{ gridColumn: '1 / -1' }}><div style={lbl}>Completion note</div>
+                <div style={{ gridColumn: '1 / -1' }}><div style={lbl}><T k="components.servicetaskdetailmodal.733b0f">Completion note</T></div>
                   <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>{task.completion_note}</div></div>
               )}
             </div>
@@ -165,7 +166,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
             {/* Activity — contact attempts, so the team sees the task is being
                 worked (e.g. "left a voicemail at 10am") before it's done. */}
             <div style={{ marginBottom: 16 }}>
-              <div style={{ ...lbl, marginBottom: 8 }}>Activity{attempts.length ? ` · ${attempts.length}` : ''}</div>
+              <div style={{ ...lbl, marginBottom: 8 }}><T k="components.servicetaskdetailmodal.81c0d9">Activity</T>{attempts.length ? ` · ${attempts.length}` : ''}</div>
 
               {!done && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: attempts.length ? 12 : 0 }}>
@@ -179,7 +180,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     placeholder="Note (optional) — e.g. tried cell, left VM"
                     style={{ ...ctrl, gridColumn: '1 / -1' }} />
                   <label style={{ ...lbl, gridColumn: '1 / -1', textTransform: 'none', letterSpacing: 0, fontWeight: 500, color: 'var(--qs-dim)' }}>
-                    Next Follow-Up (Optional)
+                    <T k="components.servicetaskdetailmodal.4a51e6">Next Follow-Up (Optional)</T>
                     <div style={{ display: 'flex', gap: 5, margin: '6px 0' }} title="Quick follow-up — N days from now">
                       {FOLLOW_UP_QUICK_DAYS.map(days => (
                         <button key={days} type="button" onClick={() => setAtt(a => ({ ...a, followUp: followUpInDays(days) }))}
@@ -195,13 +196,13 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                   <label style={{ gridColumn: '1 / -1', display: 'inline-flex', alignItems: 'center', gap: 6,
                     fontSize: 12.5, color: 'var(--qs-dim)', cursor: 'pointer' }}>
                     <input type="checkbox" checked={att.waiting} onChange={e => setAtt(a => ({ ...a, waiting: e.target.checked }))} />
-                    Waiting on customer (pauses the SLA)
+                    <T k="components.servicetaskdetailmodal.b428c5">Waiting on customer (pauses the SLA)</T>
                   </label>
                   <button type="button" onClick={submitAttempt} disabled={logAttempt.isPending}
                     style={{ gridColumn: '1 / -1', padding: '9px', borderRadius: 8, border: '1px solid var(--qs-border)',
                       background: 'var(--qs-elevated)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 700,
                       cursor: logAttempt.isPending ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                    {logAttempt.isPending ? 'Logging…' : '＋ Log Attempt'}
+                    {logAttempt.isPending ? <T k="components.servicetaskdetailmodal.89805f">{'Logging…'}</T> : <T k="components.servicetaskdetailmodal.9009d8">{'＋ Log Attempt'}</T>}
                   </button>
                 </div>
               )}
@@ -227,7 +228,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
               )}
               {!done && attempts.length === 0 && (
                 <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginTop: 8 }}>
-                  No attempts logged yet — log a call so the team can see it's being worked.
+                  <T k="components.servicetaskdetailmodal.5350e9">No attempts logged yet — log a call so the team can see it's being worked.</T>
                 </div>
               )}
             </div>
@@ -235,7 +236,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
             {!done && (
               <>
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{ ...lbl, marginBottom: 4 }}>Assigned to</div>
+                  <div style={{ ...lbl, marginBottom: 4 }}><T k="components.servicetaskdetailmodal.bb2279">Assigned to</T></div>
                   <select value={task.assigned_to_id || ''} onChange={e => reassign(e.target.value)}
                     style={{ width: '100%', background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
                       borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit' }}>
@@ -257,7 +258,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     background: (needsNote && !note.trim()) ? 'var(--qs-elevated)' : '#10B981',
                     color: (needsNote && !note.trim()) ? 'var(--qs-muted)' : '#fff',
                     fontSize: 14, fontWeight: 700, cursor: (needsNote && !note.trim()) ? 'not-allowed' : 'pointer' }}>
-                  {update.isPending ? 'Saving…' : '✓ Mark Done'}
+                  {update.isPending ? <T k="components.servicetaskdetailmodal.56a228">{'Saving…'}</T> : <T k="components.servicetaskdetailmodal.fbb5d8">{'✓ Mark Done'}</T>}
                 </button>
                 {hardToReach && (
                   <button onClick={finalNotice} disabled={update.isPending}
@@ -265,7 +266,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 10,
                       border: '1px solid #F59E0B55', background: 'transparent', color: '#FBBF24',
                       fontSize: 13, fontWeight: 700, cursor: update.isPending ? 'not-allowed' : 'pointer' }}>
-                    ✉ Final Notice Sent → Close As Unreachable
+                    <T k="components.servicetaskdetailmodal.009c80">✉ Final Notice Sent → Close As Unreachable</T>
                   </button>
                 )}
               </>

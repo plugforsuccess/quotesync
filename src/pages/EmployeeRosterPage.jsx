@@ -282,8 +282,8 @@ const EmployeeRosterPage = () => {
             <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.employeerosterpage.3ddf4c">No Employees Found</T></h2>
             <p className="text-qs-dim">
               {statusFilter === 'all'
-                ? 'Add your first employee to get started.'
-                : `No employees with status "${statusFilter}".`}
+                ? <T k="pages.employeerosterpage.8e0c8b">{'Add your first employee to get started.'}</T>
+                : <><T k="pages.employeerosterpage.2269ed">{"No employees with status \""}</T>{statusFilter}{"\"."}</>}
             </p>
           </div>
         ) : (
@@ -352,7 +352,7 @@ const EmployeeRosterPage = () => {
                           {emp.last_verified_at ? (
                             <span className={isOverdue ? 'text-red-400 font-medium' : 'text-qs-dim'}>
                               {isOverdue
-                                ? `${verificationDays}d ago`
+                                ? <>{verificationDays}<T k="pages.employeerosterpage.2c552b">{"d ago"}</T></>
                                 : formatDate(emp.last_verified_at)}
                             </span>
                           ) : (

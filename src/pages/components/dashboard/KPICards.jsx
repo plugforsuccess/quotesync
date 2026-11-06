@@ -77,7 +77,7 @@ export default function KPICards({ kpis, priorPeriod }) {
         <div className={`text-3xl font-bold ${scoreColor}`}>{avgScore}</div>
         <div className="text-xs mt-1" style={{ color: 'var(--qs-muted)' }}>
           <span className={`inline-block w-2 h-2 rounded-full mr-1 ${avgScore >= 60 ? 'bg-green-500' : avgScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} />
-          {avgScore >= 60 ? 'Good' : avgScore >= 40 ? 'Fair' : 'Low'}
+          {avgScore >= 60 ? <T k="pages.components.dashboard.kpicards.61dedc">{'Good'}</T> : avgScore >= 40 ? <T k="pages.components.dashboard.kpicards.64b985">{'Fair'}</T> : <T k="pages.components.dashboard.kpicards.a12494">{'Low'}</T>}
         </div>
       </div>
 
@@ -89,8 +89,8 @@ export default function KPICards({ kpis, priorPeriod }) {
         <div className={`text-3xl font-bold ${projColor}`}>{projectedMonthly.toLocaleString()}</div>
         <div className={`text-xs mt-1 ${projColor}`}>
           {gapTo700 >= 0
-            ? `On pace for ${projectedMonthly} (+${gapTo700})`
-            : `Tracking to ${projectedMonthly} (${gapTo700} short)`
+            ? <><T k="pages.components.dashboard.kpicards.e35ec2">{"On pace for"}</T>{" "}{projectedMonthly}{" (+"}{gapTo700}{")"}</>
+            : <><T k="pages.components.dashboard.kpicards.c65199">{"Tracking to"}</T>{" "}{projectedMonthly}{" ("}{gapTo700}{" "}<T k="pages.components.dashboard.kpicards.db008f">{"short)"}</T></>
           }
         </div>
       </div>

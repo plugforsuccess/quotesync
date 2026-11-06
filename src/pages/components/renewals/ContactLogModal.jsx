@@ -295,7 +295,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
               disabled={logContact.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg disabled:opacity-50"
             >
-              {logContact.isPending ? 'Saving...' : 'Log Contact'}
+              {logContact.isPending ? <T k="pages.components.renewals.contactlogmodal.ae7e88">{'Saving...'}</T> : <T k="pages.components.renewals.contactlogmodal.32c8b7">{'Log Contact'}</T>}
             </button>
           </div>
         </form>

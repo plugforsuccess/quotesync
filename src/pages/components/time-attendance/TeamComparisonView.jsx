@@ -352,8 +352,8 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
         <h2 className="text-xl font-semibold text-qs-bright mb-2"><T k="pages.components.timeattendance.teamcomparisonview.566a60">No Team Data</T></h2>
         <p className="text-qs-dim">
           {filterLabel
-            ? `No ${filterLabel} data for this week. Upload RingCentral data to see team comparison.`
-            : 'Upload RingCentral data for this week to see team comparison.'}
+            ? <><T k="pages.components.timeattendance.teamcomparisonview.816c52">{"No"}</T>{" "}{filterLabel}{" "}<T k="pages.components.timeattendance.teamcomparisonview.456ea8">{"data for this week. Upload RingCentral data to see team comparison."}</T></>
+            : <T k="pages.components.timeattendance.teamcomparisonview.ad0d6d">{'Upload RingCentral data for this week to see team comparison.'}</T>}
         </p>
       </div>
     );

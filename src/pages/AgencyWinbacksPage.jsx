@@ -27,7 +27,7 @@ function WinbackCard({ lead }) {
             {name}<ChevronRight className="h-4 w-4 opacity-60" aria-hidden="true" />
           </Link>
           <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-            {[w?.line && `Lost ${w.line}`, w?.month].filter(Boolean).join(' · ') || 'Former customer'}
+            {[w?.line && `Lost ${w.line}`, w?.month].filter(Boolean).join(' · ') || <T k="pages.agencywinbackspage.f2863b">{'Former customer'}</T>}
             {lead.zip ? ` · ${lead.zip}` : ''}
           </p>
         </div>

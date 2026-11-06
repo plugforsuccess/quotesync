@@ -109,7 +109,7 @@ export default function DailyBreakdown({ rcData, callLogDaily }) {
                     className={`hover:bg-qs-elevated transition-colors ${isZeroOutbound ? 'bg-red-900/10' : isLow ? 'bg-amber-900/10' : ''}`}
                   >
                     <td className="px-4 py-2.5 text-sm text-qs-bright font-medium">
-                      {day.date ? formatDayLabel(day.date) : `Day ${idx + 1}`}
+                      {day.date ? formatDayLabel(day.date) : <><T k="pages.components.timeattendance.dailybreakdown.987b9c">{"Day"}</T>{" "}{idx + 1}</>}
                     </td>
                     <td className={`px-4 py-2.5 text-sm text-right font-semibold ${isZeroOutbound ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-qs-text'}`}>
                       {outbound}

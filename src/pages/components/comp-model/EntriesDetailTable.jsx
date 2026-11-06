@@ -49,7 +49,7 @@ export default function EntriesDetailTable({ entries }) {
       >
         <FileText className="w-4 h-4 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          <T k="pages.components.compmodel.entriesdetailtable.5b8f8d">Entry Detail (</T>{entries.length} {entries.length === 1 ? 'Entry' : 'Entries'})
+          <T k="pages.components.compmodel.entriesdetailtable.5b8f8d">Entry Detail (</T>{entries.length} {entries.length === 1 ? <T k="pages.components.compmodel.entriesdetailtable.19172e">{'Entry'}</T> : <T k="pages.components.compmodel.entriesdetailtable.f056d0">{'Entries'}</T>})
         </h4>
         {expanded
           ? <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />

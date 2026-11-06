@@ -89,7 +89,7 @@ export default function ScriptsTab() {
               <article key={s.key} className="dark-card" style={{ padding: 16 }} aria-label={s.name}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>{s.name}</h4>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}>{s.kind === 'text' ? 'Text' : 'Say it'}</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}>{s.kind === 'text' ? <T k="pages.components.ratechecks.scriptstab.c3328c">{'Text'}</T> : <T k="pages.components.ratechecks.scriptstab.399773">{'Say it'}</T>}</span>
                 </div>
                 <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{s.when}</p>
                 <div className="mt-3 whitespace-pre-line rounded-lg p-3 text-[15px] leading-relaxed"

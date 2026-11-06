@@ -1,4 +1,5 @@
 // src/pages/InsuranceQuotesPage.jsx
+import { T } from '../components/SiteCopy';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CheckCircle } from 'lucide-react';
 
@@ -215,15 +216,15 @@ export default function InsuranceQuotesPage() {
           </div>
 
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
-            You're All Set!
+            <T k="pages.insurancequotespage.c3c018">You're All Set!</T>
           </h2>
           <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-            Our insurance specialists are reviewing your information. Expect personalized quotes from top providers within 24 hours.
+            <T k="pages.insurancequotespage.df0ec2">Our insurance specialists are reviewing your information. Expect personalized quotes from top providers within 24 hours.</T>
           </p>
 
           <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-2xl p-6 mb-8 border border-primary-100">
-            <p className="text-sm text-gray-700 mb-2">📧 Check your email for confirmation</p>
-            <p className="text-sm text-gray-700">📱 Watch for our call with your quotes</p>
+            <p className="text-sm text-gray-700 mb-2"><T k="pages.insurancequotespage.d3ba48">📧 Check your email for confirmation</T></p>
+            <p className="text-sm text-gray-700"><T k="pages.insurancequotespage.f94094">📱 Watch for our call with your quotes</T></p>
           </div>
 
           <button
@@ -242,7 +243,7 @@ export default function InsuranceQuotesPage() {
             }}
             className="text-primary-600 hover:text-primary-700 font-semibold hover:underline transition"
           >
-            ← Get Another Quote
+            <T k="pages.insurancequotespage.4f8aaf">← Get Another Quote</T>
           </button>
         </div>
       </div>
@@ -309,7 +310,7 @@ export default function InsuranceQuotesPage() {
             href="/success"
             className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-red-600 inline-block"
           >
-            Preview Thank You Page
+            <T k="pages.insurancequotespage.6627f4">Preview Thank You Page</T>
           </a>
         </div>
       )}

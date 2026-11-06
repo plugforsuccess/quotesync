@@ -43,7 +43,7 @@ function Row({ esc, empName, onOpenCase, onResolve, resolving }) {
       </div>
 
       <div style={{ fontSize: 13, color: 'var(--qs-text)', marginTop: 6, fontWeight: 600 }}>
-        {esc.reason || 'Needs a licensed agent'}
+        {esc.reason || <T k="pages.components.retention.escalationsinbox.61148e">{'Needs a licensed agent'}</T>}
       </div>
       {esc.note && (
         <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 3 }}>{esc.note}</div>
@@ -72,7 +72,7 @@ function Row({ esc, empName, onOpenCase, onResolve, resolving }) {
               onClick={() => onResolve(esc.id, note)}
               style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#10B981',
                 color: '#fff', fontSize: 12, fontWeight: 700, cursor: resolving ? 'not-allowed' : 'pointer' }}>
-              {resolving ? '…' : 'Done'}
+              {resolving ? '…' : <T k="pages.components.retention.escalationsinbox.e9b450">{'Done'}</T>}
             </button>
           </div>
         )}

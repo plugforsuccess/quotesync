@@ -119,7 +119,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
                   color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600,
                   opacity: sending || !email.trim() ? 0.5 : 1 }}>
                 <Mail size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-                {sending ? 'Sending...' : 'Send Invite'}
+                {sending ? <T k="pages.components.settings.employeeinvitemodal.c338c1">{'Sending...'}</T> : <T k="pages.components.settings.employeeinvitemodal.c6b719">{'Send Invite'}</T>}
               </button>
             </div>
           </>

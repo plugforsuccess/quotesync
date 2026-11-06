@@ -44,8 +44,8 @@ export default function ScenariosTab({ config, productMix }) {
         <div>
           <p className="text-sm font-semibold text-amber-900">
             {breakEven
-              ? `Break-even: ~${breakEven} items/month at current blended avg (${formatCurrency(blendedAvg)})`
-              : 'Break-even not reached within 200 items/month — review assumptions'}
+              ? <><T k="pages.components.compmodel.scenariostab.d67257">{"Break-even: ~"}</T>{breakEven}{" "}<T k="pages.components.compmodel.scenariostab.159f89">{"items/month at current blended avg ("}</T>{formatCurrency(blendedAvg)}{")"}</>
+              : <T k="pages.components.compmodel.scenariostab.8cdd82">{'Break-even not reached within 200 items/month — review assumptions'}</T>}
           </p>
         </div>
       </div>

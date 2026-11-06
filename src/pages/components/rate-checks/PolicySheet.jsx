@@ -432,7 +432,7 @@ function AutoEndorsements({ rc }) {
             <TileValue value={e.limit || 'Yes'} addOn size={String(e.limit || '').length > 9 ? 'text-base leading-7' : 'text-xl'} />
             <div className="mt-1 flex min-h-[24px] items-center">
               <span className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>
-                {cars > 1 ? `All ${cars} vehicles` : cars === 1 ? 'This vehicle' : 'Whole policy'}
+                {cars > 1 ? <><T k="pages.components.ratechecks.policysheet.6a7208">{"All"}</T>{" "}{cars}{" "}<T k="pages.components.ratechecks.policysheet.3ca8f5">{"vehicles"}</T></> : cars === 1 ? <T k="pages.components.ratechecks.policysheet.bc6f48">{'This vehicle'}</T> : <T k="pages.components.ratechecks.policysheet.bb21dd">{'Whole policy'}</T>}
               </span>
             </div>
           </li>

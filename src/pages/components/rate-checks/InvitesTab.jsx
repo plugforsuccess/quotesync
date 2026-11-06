@@ -139,7 +139,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
           <div className="p-8 text-center text-red-600"><T k="pages.components.ratechecks.invitestab.3c6c93">Error loading links.</T></div>
         ) : matching.length === 0 ? (
           <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-            {invites.length === 0 ? 'No links sent yet. Use “Send a link” for someone who doesn’t have their policy with them.' : 'Nothing matches.'}
+            {invites.length === 0 ? <T k="pages.components.ratechecks.invitestab.34a451">{'No links sent yet. Use “Send a link” for someone who doesn’t have their policy with them.'}</T> : <T k="pages.components.ratechecks.invitestab.9f8576">{'Nothing matches.'}</T>}
           </div>
         ) : (
           <>
@@ -149,7 +149,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
             {expired.length > 0 && (
               <>
                 <button type="button" onClick={() => setShowExpired(v => !v)} className="min-h-[44px] w-full px-4 text-left text-sm font-semibold text-primary-600" style={{ borderTop: '1px solid var(--qs-border)' }}>
-                  {showExpired ? 'Hide Expired' : `Show Expired (${expired.length})`}
+                  {showExpired ? <T k="pages.components.ratechecks.invitestab.2fb10d">{'Hide Expired'}</T> : <><T k="pages.components.ratechecks.invitestab.0a3633">{"Show Expired ("}</T>{expired.length}{")"}</>}
                 </button>
                 {showExpired && <ul className="opacity-60">{expired.map(i => <InviteRow key={i.id} i={i} onOpen={onOpenRateCheck} />)}</ul>}
               </>
@@ -162,7 +162,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Resend link">
           <div className="absolute inset-0 bg-black/50" onClick={() => setResend(null)} />
           <div className="relative w-full max-w-md rounded-xl p-5 shadow-xl" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
-            <h2 className="mb-3 text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.invitestab.4a863f">Resend to</T> {resend.first_name || 'Customer'}</h2>
+            <h2 className="mb-3 text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.invitestab.4a863f">Resend to</T> {resend.first_name || <T k="pages.components.ratechecks.invitestab.0e8574">{'Customer'}</T>}</h2>
             <InviteShare invite={resend} producerName={resend.producer_name || producerName} onDone={() => setResend(null)} />
           </div>
         </div>
@@ -185,7 +185,7 @@ function InviteRow({ i, onOpen, onResend }) {
         </span>
         <div className="min-w-0">
           <p className="flex flex-wrap items-baseline gap-x-2 text-[15px] leading-tight">
-            <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{i.first_name || 'No name'}</span>
+            <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{i.first_name || <T k="pages.components.ratechecks.invitestab.b78fd2">{'No name'}</T>}</span>
             {i.phone && <span className="whitespace-nowrap tabular-nums" style={{ color: 'var(--qs-subtle)' }}>{formatPhone(i.phone)}</span>}
           </p>
           <p className="mt-1 text-xs sm:truncate" style={{ color: 'var(--qs-subtle)' }}>{meta}</p>

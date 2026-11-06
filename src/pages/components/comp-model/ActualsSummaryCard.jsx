@@ -93,8 +93,8 @@ export default function ActualsSummaryCard({
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-yellow-800">
-            <strong>{unattributedCount}</strong> {unattributedCount === 1 ? 'entry' : 'entries'} <T k="pages.components.compmodel.actualssummarycard.42c96b">this month</T>
-            {unattributedCount === 1 ? ' has' : ' have'} <T k="pages.components.compmodel.actualssummarycard.afdd3b">no producer attribution and</T> {unattributedCount === 1 ? 'is' : 'are'} <T k="pages.components.compmodel.actualssummarycard.b378d2">excluded. Re-upload the NB file to resolve.</T>
+            <strong>{unattributedCount}</strong> {unattributedCount === 1 ? <T k="pages.components.compmodel.actualssummarycard.61c412">{'entry'}</T> : <T k="pages.components.compmodel.actualssummarycard.c2e311">{'entries'}</T>} <T k="pages.components.compmodel.actualssummarycard.42c96b">this month</T>
+            {unattributedCount === 1 ? <T k="pages.components.compmodel.actualssummarycard.f6f39f">{' has'}</T> : <T k="pages.components.compmodel.actualssummarycard.ff87ce">{' have'}</T>} <T k="pages.components.compmodel.actualssummarycard.afdd3b">no producer attribution and</T> {unattributedCount === 1 ? <T k="pages.components.compmodel.actualssummarycard.b47f36">{'is'}</T> : <T k="pages.components.compmodel.actualssummarycard.5f9e58">{'are'}</T>} <T k="pages.components.compmodel.actualssummarycard.b378d2">excluded. Re-upload the NB file to resolve.</T>
           </p>
         </div>
       )}

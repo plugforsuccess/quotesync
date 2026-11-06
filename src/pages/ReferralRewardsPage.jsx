@@ -6,6 +6,7 @@
 // automatically by a pg_cron job at the start of the next month.
 // Route: /agency/referrals
 
+import { T } from '../components/SiteCopy';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -203,10 +204,10 @@ export default function ReferralRewardsPage() {
             <Gift className="w-6 h-6" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Referral Rewards</h1>
+            <h1 className="text-2xl font-bold text-gray-900"><T k="pages.referralrewardspage.2bed47">Referral Rewards</T></h1>
             <p className="text-sm text-gray-500">
-              {formatPeriod(period)} drawing &middot; {entries.length}{' '}
-              {entries.length === 1 ? 'entry' : 'entries'}
+              {formatPeriod(period)} <T k="pages.referralrewardspage.01972e">drawing ·</T> {entries.length}{' '}
+              {entries.length === 1 ? <T k="pages.referralrewardspage.61c412">{'entry'}</T> : <T k="pages.referralrewardspage.c2e311">{'entries'}</T>}
             </p>
           </div>
         </div>
@@ -217,7 +218,7 @@ export default function ReferralRewardsPage() {
           className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
         >
           <ExternalLink className="w-4 h-4" />
-          View public page
+          <T k="pages.referralrewardspage.4ea22d">View public page</T>
         </Link>
       </div>
 
@@ -226,19 +227,19 @@ export default function ReferralRewardsPage() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-sm uppercase tracking-wide text-primary-100 mb-1">
-              This month&apos;s jackpot
+              <T k="pages.referralrewardspage.e8a51a">This month's jackpot</T>
             </p>
             <p className="text-4xl sm:text-5xl font-extrabold tabular-nums">
               {money(jackpot)}
             </p>
             <p className="text-xs text-primary-100 mt-1">
-              Grows {money(JACKPOT_PER_ENTRY)} per entry · up to{' '}
+              <T k="pages.referralrewardspage.c4aef2">Grows</T> {money(JACKPOT_PER_ENTRY)} <T k="pages.referralrewardspage.ae7d55">per entry · up to</T>{' '}
               {money(JACKPOT_CEILING)}
             </p>
           </div>
           <div>
             <p className="text-sm uppercase tracking-wide text-primary-100 mb-2">
-              Winner drawn automatically in
+              <T k="pages.referralrewardspage.358952">Winner drawn automatically in</T>
             </p>
             <div className="flex gap-4">
               {[
@@ -258,16 +259,16 @@ export default function ReferralRewardsPage() {
           </div>
         </div>
         <p className="text-xs text-primary-100 mt-4">
-          Entries are created automatically when a referred Georgia lead is
+          <T k="pages.referralrewardspage.d64609">Entries are created automatically when a referred Georgia lead is
           quoted (one per product line). A random GA-resident winner is
-          selected server-side at the start of next month.
+          selected server-side at the start of next month.</T>
         </p>
       </div>
 
       {/* Program health */}
       {ops && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
-          <h2 className="font-semibold text-gray-900 mb-3">Program Health</h2>
+          <h2 className="font-semibold text-gray-900 mb-3"><T k="pages.referralrewardspage.3e7a42">Program Health</T></h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             {[
               ['Entries', ops.entries_total ?? 0],
@@ -297,9 +298,9 @@ export default function ReferralRewardsPage() {
           </div>
           {Number(ops.referrers_missing_state) > 0 && (
             <p className="text-xs text-amber-600 mt-3">
-              {ops.referrers_missing_state} referrer(s) have no state on file
-              and can&apos;t win until it&apos;s set — add it on their entry or
-              link.
+              {ops.referrers_missing_state} <T k="pages.referralrewardspage.5065d4">referrer(s) have no state on file
+              and can't win until it's set — add it on their entry or
+              link.</T>
             </p>
           )}
         </div>
@@ -309,16 +310,16 @@ export default function ReferralRewardsPage() {
         {/* Log a call-in referral */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-            <Plus className="w-4 h-4 text-primary-600" /> Log a Call-in Referral
+            <Plus className="w-4 h-4 text-primary-600" /> <T k="pages.referralrewardspage.fffed5">Log a Call-in Referral</T>
           </h2>
           <p className="text-xs text-gray-500 mb-4">
-            Use this when someone calls in and names who referred them. Quoted
-            web leads are entered automatically — don&apos;t re-add them here.
+            <T k="pages.referralrewardspage.c86079">Use this when someone calls in and names who referred them. Quoted
+            web leads are entered automatically — don't re-add them here.</T>
           </p>
           <form onSubmit={handleAdd} className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Referring Customer's Name{' '}
+                <T k="pages.referralrewardspage.46259a">Referring Customer's Name</T>{' '}
                 <span className="text-red-500">*</span>
               </label>
               <input
@@ -333,7 +334,7 @@ export default function ReferralRewardsPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone <span className="text-gray-400">(Optional)</span>
+                  <T k="pages.referralrewardspage.77064d">Phone</T> <span className="text-gray-400"><T k="pages.referralrewardspage.c53994">(Optional)</T></span>
                 </label>
                 <input
                   type="tel"
@@ -346,7 +347,7 @@ export default function ReferralRewardsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
+                  <T k="pages.referralrewardspage.a72502">State</T>
                 </label>
                 <input
                   type="text"
@@ -359,12 +360,12 @@ export default function ReferralRewardsPage() {
               </div>
             </div>
             <p className="text-xs text-gray-400">
-              Only Georgia-resident referrers are eligible to win the cash
-              prize (anyone may still refer).
+              <T k="pages.referralrewardspage.4de5ce">Only Georgia-resident referrers are eligible to win the cash
+              prize (anyone may still refer).</T>
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Note <span className="text-gray-400">(Optional)</span>
+                <T k="pages.referralrewardspage.2c924e">Note</T> <span className="text-gray-400"><T k="pages.referralrewardspage.c53994">(Optional)</T></span>
               </label>
               <input
                 type="text"
@@ -386,7 +387,7 @@ export default function ReferralRewardsPage() {
               ) : (
                 <Plus className="w-4 h-4" />
               )}
-              Add to This Month's Drawing
+              <T k="pages.referralrewardspage.e272cc">Add to This Month's Drawing</T>
             </button>
           </form>
         </div>
@@ -394,12 +395,12 @@ export default function ReferralRewardsPage() {
         {/* Entry list */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-primary-600" /> This Month's
-            Entries
+            <Users className="w-4 h-4 text-primary-600" /> <T k="pages.referralrewardspage.89fad3">This Month's
+            Entries</T>
           </h2>
           {entries.length === 0 ? (
             <p className="text-sm text-gray-500 py-8 text-center">
-              No referrals logged yet for {formatPeriod(period)}.
+              <T k="pages.referralrewardspage.0dd402">No referrals logged yet for</T> {formatPeriod(period)}.
             </p>
           ) : (
             <ul className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
@@ -420,7 +421,7 @@ export default function ReferralRewardsPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-gray-900 truncate">
-                          {ref?.name || 'Unknown referrer'}
+                          {ref?.name || <T k="pages.referralrewardspage.03af64">{'Unknown referrer'}</T>}
                         </p>
                         <span
                           className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
@@ -429,7 +430,7 @@ export default function ReferralRewardsPage() {
                               : 'bg-gray-100 text-gray-500'
                           }`}
                         >
-                          {isGA ? 'GA · eligible' : 'not eligible to win'}
+                          {isGA ? <T k="pages.referralrewardspage.535ca9">{'GA · eligible'}</T> : <T k="pages.referralrewardspage.e9bed4">{'not eligible to win'}</T>}
                         </span>
                         {entry.product_line && (
                           <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-700 font-medium capitalize">
@@ -439,7 +440,7 @@ export default function ReferralRewardsPage() {
                       </div>
                       {leadName && (
                         <p className="text-sm text-gray-500 truncate">
-                          Referred: {leadName}
+                          <T k="pages.referralrewardspage.653156">Referred:</T> {leadName}
                         </p>
                       )}
                       {entry.note && (
@@ -467,13 +468,13 @@ export default function ReferralRewardsPage() {
       {/* Shareable referral links */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mt-6">
         <h2 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-          <Link2 className="w-4 h-4 text-primary-600" /> Shareable Referral
-          Links
+          <Link2 className="w-4 h-4 text-primary-600" /> <T k="pages.referralrewardspage.ad6e96">Shareable Referral
+          Links</T>
         </h2>
         <p className="text-xs text-gray-500 mb-4">
-          Create a personal link for a customer. Quotes from anyone who uses
+          <T k="pages.referralrewardspage.67d958">Create a personal link for a customer. Quotes from anyone who uses
           it are auto-attributed. Capture their state — only Georgia residents
-          can win.
+          can win.</T>
         </p>
         <form
           onSubmit={handleCreateLink}
@@ -508,7 +509,7 @@ export default function ReferralRewardsPage() {
             disabled={createLink.isPending}
             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg disabled:opacity-50"
           >
-            {createLink.isPending ? 'Creating…' : 'Create Link'}
+            {createLink.isPending ? <T k="pages.referralrewardspage.94d7d8">{'Creating…'}</T> : <T k="pages.referralrewardspage.dc18b6">{'Create Link'}</T>}
           </button>
         </form>
         {linkError && (
@@ -516,7 +517,7 @@ export default function ReferralRewardsPage() {
         )}
         {links.length === 0 ? (
           <p className="text-sm text-gray-500 py-2">
-            No referral links yet.
+            <T k="pages.referralrewardspage.307589">No referral links yet.</T>
           </p>
         ) : (
           <ul className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
@@ -539,7 +540,7 @@ export default function ReferralRewardsPage() {
                             : 'bg-gray-100 text-gray-500'
                         }`}
                       >
-                        {isGA ? 'GA · eligible' : 'not eligible to win'}
+                        {isGA ? <T k="pages.referralrewardspage.535ca9">{'GA · eligible'}</T> : <T k="pages.referralrewardspage.e9bed4">{'not eligible to win'}</T>}
                       </span>
                     </div>
                     <p className="text-xs text-gray-400 truncate">
@@ -553,11 +554,11 @@ export default function ReferralRewardsPage() {
                   >
                     {copiedId === l.id ? (
                       <>
-                        <Check className="w-3.5 h-3.5" /> Copied
+                        <Check className="w-3.5 h-3.5" /> <T k="pages.referralrewardspage.8e3df4">Copied</T>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5" /> Copy
+                        <Copy className="w-3.5 h-3.5" /> <T k="pages.referralrewardspage.af74f7">Copy</T>
                       </>
                     )}
                   </button>
@@ -572,7 +573,7 @@ export default function ReferralRewardsPage() {
       {pastWinners.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 mt-6">
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-500" /> Past Winners
+            <Trophy className="w-4 h-4 text-amber-500" /> <T k="pages.referralrewardspage.47382a">Past Winners</T>
           </h2>
           <ul className="divide-y divide-gray-100">
             {pastWinners.map((d) => {
@@ -591,14 +592,14 @@ export default function ReferralRewardsPage() {
                       {formatPeriod(d.draw_period)}
                     </span>
                     <span className="font-medium text-gray-900 flex-1 truncate">
-                      {won ? d.winner_display_name || '—' : 'No eligible entries'}
+                      {won ? d.winner_display_name || '—' : <T k="pages.referralrewardspage.0ba966">{'No eligible entries'}</T>}
                     </span>
                     <span className="text-gray-400 shrink-0">
                       {won && d.jackpot_cents
                         ? `${money(d.jackpot_cents / 100)} · `
                         : ''}
                       {d.entry_count}{' '}
-                      {d.entry_count === 1 ? 'entry' : 'entries'}
+                      {d.entry_count === 1 ? <T k="pages.referralrewardspage.61c412">{'entry'}</T> : <T k="pages.referralrewardspage.c2e311">{'entries'}</T>}
                     </span>
                   </div>
                   {won && (
@@ -625,14 +626,14 @@ export default function ReferralRewardsPage() {
                             }
                             className="text-[11px] px-2 py-0.5 rounded bg-primary-50 text-primary-700 hover:bg-primary-100"
                           >
-                            Mark Paid (Zelle)
+                            <T k="pages.referralrewardspage.bc6c38">Mark Paid (Zelle)</T>
                           </button>
                           <button
                             type="button"
                             onClick={() => handlePayout(d.id, 'paid', 'ach')}
                             className="text-[11px] px-2 py-0.5 rounded bg-primary-50 text-primary-700 hover:bg-primary-100"
                           >
-                            ACH
+                            <T k="pages.referralrewardspage.bbca7a">ACH</T>
                           </button>
                           <button
                             type="button"
@@ -641,7 +642,7 @@ export default function ReferralRewardsPage() {
                             }
                             className="text-[11px] px-2 py-0.5 rounded bg-gray-50 text-gray-500 hover:bg-gray-100"
                           >
-                            Void
+                            <T k="pages.referralrewardspage.207c7c">Void</T>
                           </button>
                         </span>
                       )}

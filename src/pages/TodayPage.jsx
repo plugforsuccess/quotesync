@@ -635,10 +635,10 @@ export default function TodayPage() {
           <span style={{ fontSize: 18 }}>🗂️</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>
-              {serviceTasks.length} <T k="pages.todaypage.aaabf0">service</T> {serviceTasks.length === 1 ? 'task' : 'tasks'} <T k="pages.todaypage.a232bb">to batch</T>
+              {serviceTasks.length} <T k="pages.todaypage.aaabf0">service</T> {serviceTasks.length === 1 ? <T k="pages.todaypage.7fbb72">{'task'}</T> : <T k="pages.todaypage.55d872">{'tasks'}</T>} <T k="pages.todaypage.a232bb">to batch</T>
             </div>
             <div style={{ fontSize: 12, color: serviceOverdue > 0 ? 'var(--qs-danger)' : 'var(--qs-muted)' }}>
-              {serviceOverdue > 0 ? `${serviceOverdue} past due · ` : ''}<T k="pages.todaypage.024d27">clear in one block, grouped by type</T>
+              {serviceOverdue > 0 ? <>{serviceOverdue}{" "}<T k="pages.todaypage.445284">{"past due ·"}</T>{" "}</> : ''}<T k="pages.todaypage.024d27">clear in one block, grouped by type</T>
             </div>
           </div>
           <span style={{ fontSize: 12, color: 'var(--qs-info)', fontWeight: 600, flexShrink: 0 }}><T k="pages.todaypage.17ce5f">Open Service Batch →</T></span>
@@ -805,7 +805,7 @@ export default function TodayPage() {
               fontSize: 12, color: 'var(--qs-muted)',
               borderTop: '1px solid var(--qs-border)',
             }}>
-              {remainder} <T k="pages.todaypage.addec4">more</T> {remainder === 1 ? 'case' : 'cases'} <T k="pages.todaypage.ab913e">beyond today's target</T>
+              {remainder} <T k="pages.todaypage.addec4">more</T> {remainder === 1 ? <T k="pages.todaypage.640651">{'case'}</T> : <T k="pages.todaypage.f9063c">{'cases'}</T>} <T k="pages.todaypage.ab913e">beyond today's target</T>
               {' · '}
               <a href="/my/queue" style={{ color: 'var(--qs-info)', fontWeight: 600 }}>
                 <T k="pages.todaypage.90a419">Open full queue</T>

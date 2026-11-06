@@ -1,3 +1,4 @@
+import { T } from '../components/SiteCopy';
 import { useState, useRef, useEffect } from "react";
 import { useFunnelAgency } from '../hooks/useFunnelAgency';
 
@@ -138,8 +139,8 @@ export default function PunchPage() {
       {/* PIN Screen */}
       {screen === "pin" && (
         <div style={{ width: "100%", maxWidth: 320, textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 6 }}>Enter Your PIN</div>
-          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 28 }}>4-digit employee code</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 6 }}><T k="pages.punchpage.e7df9a">Enter Your PIN</T></div>
+          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 28 }}><T k="pages.punchpage.2373b5">4-digit employee code</T></div>
 
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }}>
             {[0,1,2,3].map(i => (
@@ -163,7 +164,7 @@ export default function PunchPage() {
             ))}
           </div>
 
-          {loading && <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>Verifying…</div>}
+          {loading && <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}><T k="pages.punchpage.691f43">Verifying…</T></div>}
           {errorMsg && (
             <div style={{ fontSize: 13, color: "var(--qs-danger)", background: "var(--qs-danger-subtle)", borderRadius: 8, padding: "8px 12px" }}>
               {errorMsg}
@@ -176,7 +177,7 @@ export default function PunchPage() {
       {screen === "status" && (
         <div style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
-            {employeeName ? `Hi, ${employeeName}` : "Welcome 👋"}
+            {employeeName ? <><T k="pages.punchpage.cf3314">{"Hi,"}</T>{" "}{employeeName}</> : <T k="pages.punchpage.bafffa">{"Welcome 👋"}</T>}
           </div>
           <div style={{ fontSize: 14, color: "var(--qs-subtle)", marginBottom: 28 }}>
             {STATUS_LABELS[currentStatus]}
@@ -204,7 +205,7 @@ export default function PunchPage() {
           {/* Hours so far */}
           {entry?.hours_worked && (
             <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
-              {entry.hours_worked}h logged today
+              {entry.hours_worked}<T k="pages.punchpage.d09cfc">h logged today</T>
             </div>
           )}
 
@@ -233,12 +234,12 @@ export default function PunchPage() {
                     background: "transparent", color: actionCfg.secondary.color, fontSize: 14, fontWeight: 600,
                     cursor: "pointer", opacity: loading ? 0.6 : 1,
                   }}>
-                  {actionCfg.secondary.label} (Skip Lunch)
+                  {actionCfg.secondary.label} <T k="pages.punchpage.f0d153">(Skip Lunch)</T>
                 </button>
               )}
             </div>
           ) : (
-            <div style={{ fontSize: 16, color: "var(--qs-subtle)", fontWeight: 500 }}>You're all done for today</div>
+            <div style={{ fontSize: 16, color: "var(--qs-subtle)", fontWeight: 500 }}><T k="pages.punchpage.48b249">You're all done for today</T></div>
           )}
 
           {errorMsg && (
@@ -248,7 +249,7 @@ export default function PunchPage() {
           )}
 
           <button onClick={() => { setPin(""); setScreen("pin"); }} style={{ marginTop: 20, background: "transparent", border: "none", color: "var(--qs-muted)", fontSize: 12, cursor: "pointer" }}>
-            ← Different Employee
+            <T k="pages.punchpage.5b28d7">← Different Employee</T>
           </button>
         </div>
       )}
@@ -264,9 +265,9 @@ export default function PunchPage() {
             {lastTime}
           </div>
           {entry?.hours_worked && lastAction === "clock_out" && (
-            <div style={{ fontSize: 14, color: "var(--qs-subtle)" }}>{entry.hours_worked}h total today</div>
+            <div style={{ fontSize: 14, color: "var(--qs-subtle)" }}>{entry.hours_worked}<T k="pages.punchpage.b3f2dd">h total today</T></div>
           )}
-          <div style={{ fontSize: 12, color: "var(--qs-muted)", marginTop: 16 }}>Returning to PIN screen…</div>
+          <div style={{ fontSize: 12, color: "var(--qs-muted)", marginTop: 16 }}><T k="pages.punchpage.3de01b">Returning to PIN screen…</T></div>
         </div>
       )}
     </div>

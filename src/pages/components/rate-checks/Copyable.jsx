@@ -2,6 +2,7 @@
 // One-click copy for anything an agent re-keys elsewhere (address, policy #,
 // VINs, phone) — and the whole policy as a sheet for the Allstate quote.
 
+import { T } from '../../../components/SiteCopy';
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
@@ -60,7 +61,7 @@ export function CopyTextButton({ text, children, className = '', style }) {
   return (
     <button type="button" onClick={() => copy(text)} disabled={!text} className={`inline-flex items-center gap-1.5 ${className}`} style={style}>
       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-      {copied ? 'Copied' : children}
+      {copied ? <T k="pages.components.ratechecks.copyable.8e3df4">{'Copied'}</T> : children}
     </button>
   );
 }
@@ -76,7 +77,7 @@ export function Field({ label, value, copy, mono = false, wide = false, hint, hi
         <span className="min-w-0">
           <span className={`select-text break-words ${mono ? 'font-mono' : ''} ${addOn && !empty ? ADD_ON_CLS : ''}`}
             style={addOn && !empty ? ADD_ON_STYLE : { color: empty ? 'var(--qs-subtle)' : 'var(--qs-bright)' }}>
-            {empty ? 'Not on page' : value}
+            {empty ? <T k="pages.components.ratechecks.copyable.e2e93c">{'Not on page'}</T> : value}
           </span>
           {hint && <span className={`block text-xs ${hintTone === 'warn' ? 'text-yellow-600' : ''}`} style={hintTone === 'warn' ? undefined : { color: 'var(--qs-subtle)' }}>{hint}</span>}
         </span>

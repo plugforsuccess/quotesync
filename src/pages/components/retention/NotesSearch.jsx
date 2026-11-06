@@ -51,7 +51,7 @@ export default function NotesSearch({ agencyId }) {
               <div key={n.id} className="card" style={{ padding: '10px 14px' }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: n.case_type === 'cancel' ? '#EF4444' : '#3B82F6' }}>
-                    {n.case_type === 'cancel' ? 'Cancel' : 'Renewal'}
+                    {n.case_type === 'cancel' ? <T k="pages.components.retention.notessearch.77dfd2">{'Cancel'}</T> : <T k="pages.components.retention.notessearch.578e19">{'Renewal'}</T>}
                   </span>
                   <span style={{ fontSize: 12, color: 'var(--qs-bright)', fontWeight: 600 }}>{n.customer_name || '—'}</span>
                   {n.policy_no && <span style={{ fontSize: 11, color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace" }}>{n.policy_no}</span>}

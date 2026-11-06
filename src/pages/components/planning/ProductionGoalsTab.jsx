@@ -201,7 +201,7 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>{name}</div>
             {isNewHire && (
               <div style={{ fontSize: 11, color: 'var(--qs-warning, #D97706)' }}>
-                <T k="pages.components.planning.productiongoalstab.5d6737">Ramping ·</T> {Number.isFinite(tenureMo) ? `${tenureMo} mo` : 'new'}
+                <T k="pages.components.planning.productiongoalstab.5d6737">Ramping ·</T> {Number.isFinite(tenureMo) ? <>{tenureMo}{" "}<T k="pages.components.planning.productiongoalstab.6adbae">{"mo"}</T></> : <T k="pages.components.planning.productiongoalstab.c2a6b0">{'new'}</T>}
               </div>
             )}
           </div>
@@ -480,7 +480,7 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
               }}>
                 {gap > 0 ? '−' : gap < 0 ? '+' : ''}{money(Math.abs(gap))}
                 <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--qs-subtle)', marginLeft: 6 }}>
-                  {gap > 0 ? 'under' : gap < 0 ? 'over' : 'on plan'}
+                  {gap > 0 ? <T k="pages.components.planning.productiongoalstab.dad64c">{'under'}</T> : gap < 0 ? <T k="pages.components.planning.productiongoalstab.f0fed7">{'over'}</T> : <T k="pages.components.planning.productiongoalstab.a995ee">{'on plan'}</T>}
                 </span>
               </div>
             </div>
@@ -496,7 +496,7 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
               title="Distribute the agency goal across producers by run-rate"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <Wand2 size={14} /> {applying ? 'Applying…' : 'Apply Suggested to All'}
+              <Wand2 size={14} /> {applying ? <T k="pages.components.planning.productiongoalstab.e578c2">{'Applying…'}</T> : <T k="pages.components.planning.productiongoalstab.520ec3">{'Apply Suggested to All'}</T>}
             </button>
           ) : (
             <span style={{ fontSize: 12, color: 'var(--qs-dim)' }}>

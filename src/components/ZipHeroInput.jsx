@@ -1,4 +1,5 @@
 // src/components/ZipHeroInput.jsx
+import { T } from './SiteCopy';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 const isGeorgiaZip = (zipCode) => {
@@ -71,7 +72,7 @@ const ZipHeroInput = ({ onValidZip, onInvalidZip }) => {
           className="px-6 py-4 bg-gradient-to-r from-accent-500 to-accent-600 text-white font-bold text-lg rounded-xl hover:from-accent-600 hover:to-accent-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap"
           style={{ minHeight: '56px' }}
         >
-          Check My Eligibility
+          <T k="components.zipheroinput.ff4cdf">Check My Eligibility</T>
         </button>
       </div>
       {error && (

@@ -178,7 +178,7 @@ export default function HouseholdDetailPage() {
 
       <div style={{ marginTop: 12, marginBottom: 20 }}>
         <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)' }}>
-          {household?.display_name || 'Household'}
+          {household?.display_name || <T k="pages.householddetailpage.52996f">{'Household'}</T>}
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {household?.phone && <span>{household.phone}</span>}
@@ -195,12 +195,12 @@ export default function HouseholdDetailPage() {
               <span>{household.zip}</span>
             </>
           )}
-          {!household?.phone && !household?.email && !household?.zip && 'No contact on file'}
+          {!household?.phone && !household?.email && !household?.zip && <T k="pages.householddetailpage.e4f057">{'No contact on file'}</T>}
         </div>
         <div style={{ fontSize: 12, marginTop: 4, color: lastTouch ? 'var(--qs-dim)' : 'var(--qs-muted)' }}>
           {lastTouch
-            ? <><T k="pages.householddetailpage.8aa5fd">Last touched</T> {new Date(lastTouch.touched_at).toLocaleDateString()}{lastTouch.employee_name ? ` by ${lastTouch.employee_name}` : ''} · {lastTouch.source.replace('_', '-')}{lastTouch.result ? ` (${lastTouch.result.replace(/_/g, ' ')})` : ''}{lastTouch.direction === 'inbound' ? ' · customer called in' : ''}</>
-            : 'Never touched — no logged contact on any queue.'}
+            ? <><T k="pages.householddetailpage.8aa5fd">Last touched</T> {new Date(lastTouch.touched_at).toLocaleDateString()}{lastTouch.employee_name ? <>{" "}<T k="pages.householddetailpage.408158">{"by"}</T>{" "}{lastTouch.employee_name}</> : ''} · {lastTouch.source.replace('_', '-')}{lastTouch.result ? ` (${lastTouch.result.replace(/_/g, ' ')})` : ''}{lastTouch.direction === 'inbound' ? <T k="pages.householddetailpage.2708c8">{' · customer called in'}</T> : ''}</>
+            : <T k="pages.householddetailpage.7b1d8d">{'Never touched — no logged contact on any queue.'}</T>}
         </div>
         {household && (
           <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13 }}>
@@ -281,7 +281,7 @@ export default function HouseholdDetailPage() {
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--qs-dim)', flexShrink: 0 }}>
-                    <span>{t.resolved ? 'Resolved' : t.status.replace(/_/g, ' ')}</span>
+                    <span>{t.resolved ? <T k="pages.householddetailpage.d999ae">{'Resolved'}</T> : t.status.replace(/_/g, ' ')}</span>
                     <span style={{ fontFamily: "'DM Mono', monospace" }}>
                       {new Date(t.created_at).toLocaleDateString()}
                     </span>
@@ -296,7 +296,7 @@ export default function HouseholdDetailPage() {
               style={{ marginTop: 8, background: 'none', border: 'none', color: '#3B82F6',
                 fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
             >
-              {showResolved ? 'Hide Resolved' : `+ ${resolvedTasks.length} Resolved (Last 90 Days)`}
+              {showResolved ? <T k="pages.householddetailpage.d98bec">{'Hide Resolved'}</T> : <>{"+ "}{resolvedTasks.length}{" "}<T k="pages.householddetailpage.d455bf">{"Resolved (Last 90 Days)"}</T></>}
             </button>
           )}
         </div>
@@ -341,7 +341,7 @@ export default function HouseholdDetailPage() {
                   return (
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
                       background: overdue ? '#EF444422' : '#3B82F622', color: overdue ? '#FCA5A5' : '#60A5FA' }}>
-                      📅 {overdue ? 'Callback due' : 'Call back'} {new Date(r.callback_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      📅 {overdue ? <T k="pages.householddetailpage.82fe57">{'Callback due'}</T> : <T k="pages.householddetailpage.d5b475">{'Call back'}</T>} {new Date(r.callback_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </span>
                   );
                 })()}
@@ -400,7 +400,7 @@ export default function HouseholdDetailPage() {
                         border: `1px solid ${t.direction === 'inbound' ? 'rgba(96,165,250,0.45)' : 'var(--qs-border)'}`,
                         color: t.direction === 'inbound' ? '#60A5FA' : 'var(--qs-dim)',
                       }}>
-                      {t.direction === 'inbound' ? '↙ CALLED IN' : '↗ OUTBOUND'}
+                      {t.direction === 'inbound' ? <T k="pages.householddetailpage.8b79d0">{'↙ CALLED IN'}</T> : <T k="pages.householddetailpage.6cc078">{'↗ OUTBOUND'}</T>}
                     </span>
                   )}
                   <span style={{ color: 'var(--qs-text)' }}>

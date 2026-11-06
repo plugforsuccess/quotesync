@@ -244,7 +244,7 @@ export default function ScheduleFormModal({ mode, schedule, existingSchedules, o
             disabled={isPending}
             style={{ ...btnPrimary, opacity: isPending ? 0.5 : 1 }}
           >
-            {isPending ? 'Saving…' : isCreate ? 'Create Schedule' : 'Save Changes'}
+            {isPending ? <T k="pages.components.compschedule.scheduleformmodal.56a228">{'Saving…'}</T> : isCreate ? <T k="pages.components.compschedule.scheduleformmodal.171781">{'Create Schedule'}</T> : <T k="pages.components.compschedule.scheduleformmodal.fa2984">{'Save Changes'}</T>}
           </button>
         </div>
       </form>

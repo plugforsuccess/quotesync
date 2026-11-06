@@ -120,7 +120,7 @@ export default function DailyEarningsTab({ agencyId }) {
               color: mtdAhead ? 'var(--qs-success)' : 'var(--qs-warning)',
             }}>
               {mtdAhead
-                ? `${fmtFull$(mtdCommission - (dailyCumulative.at(-1)?.idealPace ?? 0))} ahead of pace`
+                ? <>{fmtFull$(mtdCommission - (dailyCumulative.at(-1)?.idealPace ?? 0))}{" "}<T k="pages.components.revenue.dailyearningstab.4493a2">{"ahead of pace"}</T></>
                 : `${fmtFull$(Math.abs(mtdGap))} ${mtdGap > 0 ? 'to goal' : 'over goal'}`
               }
             </div>
@@ -231,10 +231,10 @@ export default function DailyEarningsTab({ agencyId }) {
             <T k="pages.components.revenue.dailyearningstab.cb5a4a">Gap to $40k</T>
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: mtdCommission >= COMMISSION_GOAL ? 'var(--qs-success)' : 'var(--qs-warning)' }}>
-            {mtdCommission >= COMMISSION_GOAL ? 'Achieved' : fmtFull$(mtdGap)}
+            {mtdCommission >= COMMISSION_GOAL ? <T k="pages.components.revenue.dailyearningstab.33bc7e">{'Achieved'}</T> : fmtFull$(mtdGap)}
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
-            {mtdCommission >= COMMISSION_GOAL ? 'Goal exceeded' : 'remaining this month'}
+            {mtdCommission >= COMMISSION_GOAL ? <T k="pages.components.revenue.dailyearningstab.649546">{'Goal exceeded'}</T> : <T k="pages.components.revenue.dailyearningstab.922543">{'remaining this month'}</T>}
           </div>
         </div>
         <div
@@ -251,10 +251,10 @@ export default function DailyEarningsTab({ agencyId }) {
               fontSize: 11, color: 'var(--qs-subtle)',
               textTransform: 'uppercase', letterSpacing: '0.05em',
             }}>
-              {earningsMode === 'yesterday' ? 'Yesterday' : 'Today'}
+              {earningsMode === 'yesterday' ? <T k="pages.components.revenue.dailyearningstab.da2483">{'Yesterday'}</T> : <T k="pages.components.revenue.dailyearningstab.24345a">{'Today'}</T>}
             </div>
             <div style={{ fontSize: 10, color: 'var(--qs-info)', fontWeight: 600 }}>
-              {earningsMode === 'yesterday' ? '→ Today' : '→ Yesterday'}
+              {earningsMode === 'yesterday' ? <T k="pages.components.revenue.dailyearningstab.9f8743">{'→ Today'}</T> : <T k="pages.components.revenue.dailyearningstab.1bf798">{'→ Yesterday'}</T>}
             </div>
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-text)' }}>

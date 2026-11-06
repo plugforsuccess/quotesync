@@ -290,7 +290,7 @@ export default function WorkloadDistribution({ agencyId }) {
             ? <><T k="pages.components.retention.workloaddistribution.e2bf9d">Will move</T> <strong style={{ color: 'var(--qs-bright)' }}>{previewCancels}</strong> <T k="pages.components.retention.workloaddistribution.d9b3a3">cancel case</T>{previewCancels !== 1 ? 's' : ''} <T k="pages.components.retention.workloaddistribution.be5d5d">and</T>{' '}
                 <strong style={{ color: 'var(--qs-bright)' }}>{previewRenewals}</strong> <T k="pages.components.retention.workloaddistribution.4b537a">renewal</T>{previewRenewals !== 1 ? 's' : ''}
                 {targetEmp ? <> <T k="pages.components.retention.workloaddistribution.01b6e2">to</T> <strong style={{ color: 'var(--qs-bright)' }}>{empName(targetEmp)}</strong></> : ''}.</>
-            : 'Select a source rep to preview the move.'}
+            : <T k="pages.components.retention.workloaddistribution.07a426">{'Select a source rep to preview the move.'}</T>}
         </div>
 
         {err && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 12, marginBottom: 0 }}>{err}</p>}
@@ -299,7 +299,7 @@ export default function WorkloadDistribution({ agencyId }) {
         <div style={{ marginTop: 16 }}>
           <button className="btn-primary" onClick={handleApply}
             disabled={busy || !sourceId || !targetId || sourceId === targetId}>
-            {busy ? 'Moving…' : 'Apply Reassignment'}
+            {busy ? <T k="pages.components.retention.workloaddistribution.09701b">{'Moving…'}</T> : <T k="pages.components.retention.workloaddistribution.1bbf46">{'Apply Reassignment'}</T>}
           </button>
         </div>
       </div>

@@ -312,8 +312,8 @@ function AttritionTab({ agencyId, currentUserId }) {
         <div style={{ background: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-subtle)" : "var(--qs-success-subtle)", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-border)" : "var(--qs-success-border)"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger)" : "var(--qs-success)", marginBottom: 4 }}>
             {gapAnalysis.pointsDelta > 0
-              ? `⚠ Attrition increased — ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost · New business must exceed this next month to grow`
-              : `✓ Attrition decreased vs prior month`}
+              ? <><T k="pages.components.retention.retentionanalytics.31ff5a">{"⚠ Attrition increased —"}</T>{" "}{gapAnalysis.currentMonth}{": "}{gapAnalysis.currentPoints}{" "}<T k="pages.components.retention.retentionanalytics.23a4d7">{"pts lost · New business must exceed this next month to grow"}</T></>
+              : <><T k="pages.components.retention.retentionanalytics.1fcd94">{"✓ Attrition decreased vs prior month"}</T></>}
           </div>
           <div style={{ fontSize: 12, color: "var(--qs-subtle)" }}>
             {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} <T k="pages.components.retention.retentionanalytics.4e7804">items ·</T> {gapAnalysis.priorPoints} <T k="pages.components.retention.retentionanalytics.c6facd">pts lost  → </T>

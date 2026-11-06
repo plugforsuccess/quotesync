@@ -491,7 +491,7 @@ const NewsroomEditorPage = () => {
                     className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
                   >
                     <Save className="w-4 h-4" />
-                    <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Draft'}</span>
+                    <span className="hidden sm:inline">{saving ? <T k="pages.newsroomeditorpage.ae7e88">{'Saving...'}</T> : <T k="pages.newsroomeditorpage.cc1316">{'Save Draft'}</T>}</span>
                     <span className="sm:hidden"><T k="pages.newsroomeditorpage.c9cc8c">Save</T></span>
                   </button>
 
@@ -520,7 +520,7 @@ const NewsroomEditorPage = () => {
               story.status === 'in_review' ? 'bg-yellow-100 text-yellow-700' :
               'bg-gray-100 text-gray-700'
             }`}>
-              {story.status === 'in_review' ? 'IN REVIEW' : story.status.toUpperCase()}
+              {story.status === 'in_review' ? <T k="pages.newsroomeditorpage.4ae09b">{'IN REVIEW'}</T> : story.status.toUpperCase()}
             </span>
             {id && <span><T k="pages.newsroomeditorpage.6abbc3">• Story ID:</T> {id}</span>}
 
@@ -610,7 +610,7 @@ const NewsroomEditorPage = () => {
               placeholder="story-url-slug"
             />
             <p className="text-xs text-gray-500 mt-1">
-              <T k="pages.newsroomeditorpage.7b28e1">URL: /news/</T>{story.slug || 'your-slug-here'}
+              <T k="pages.newsroomeditorpage.7b28e1">URL: /news/</T>{story.slug || <T k="pages.newsroomeditorpage.a1cac4">{'your-slug-here'}</T>}
             </p>
           </div>
 

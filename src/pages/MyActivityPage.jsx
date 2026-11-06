@@ -120,7 +120,7 @@ function WorkedRows({ worked, k, onCustomer }) {
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
           background: w.kind === 'cancel' ? '#EF444422' : '#3B82F622',
           color: w.kind === 'cancel' ? '#F87171' : '#60A5FA' }}>
-          {w.kind === 'cancel' ? 'CANCEL' : 'RENEWAL'}
+          {w.kind === 'cancel' ? <T k="pages.myactivitypage.1507c4">{'CANCEL'}</T> : <T k="pages.myactivitypage.23cbf4">{'RENEWAL'}</T>}
         </span>
         {nm
           ? <button type="button" onClick={() => onCustomer?.(w.name)} title="Open customer"
@@ -243,7 +243,7 @@ export default function MyActivityPage() {
             <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
               <strong style={{ color: '#B07A0E' }}>{data.totals.saves}</strong> <T k="pages.myactivitypage.c94a10">saves ·</T>{' '}
               <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> ·{' '}
-              {data.totals.attempts} <T k="pages.myactivitypage.f2bb91">calls</T>{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} <T k="pages.myactivitypage.2cb1ad">tasks</T>
+              {data.totals.attempts} <T k="pages.myactivitypage.f2bb91">calls</T>{data.totals.attempts ? <>{" ("}{Math.round((data.totals.reached / data.totals.attempts) * 100)}<T k="pages.myactivitypage.8a5546">{"% reached)"}</T></> : ''} · {data.totals.tasksDone} <T k="pages.myactivitypage.2cb1ad">tasks</T>
             </div>
           )}
         </div>

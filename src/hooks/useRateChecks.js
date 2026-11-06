@@ -589,11 +589,16 @@ export const useRecruiters = (agencyId) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agency_memberships')
-        .select('user_id, agency_role, status, recruit_code, profiles(full_name, email)')
+        .select('user_id, agency_role, status, recruit_code')
         .eq('agency_id', agencyId)
         .eq('status', 'active');
       if (error) throw error;
-      return (data || []).map(m => ({ userId: m.user_id, role: m.agency_role, code: m.recruit_code, name: m.profiles?.full_name || m.profiles?.email || 'Team member' }));
+      const ids = (data || []).map(m => m.user_id);
+      const { data: people } = ids.length
+        ? await supabase.from('profiles').select('id, full_name, email').in('id', ids)
+        : { data: [] };
+      const byId = Object.fromEntries((people || []).map(p => [p.id, p]));
+      return (data || []).map(m => ({ userId: m.user_id, role: m.agency_role, code: m.recruit_code, name: byId[m.user_id]?.full_name || byId[m.user_id]?.email || 'Team member' }));
     },
     enabled: !!agencyId,
   });

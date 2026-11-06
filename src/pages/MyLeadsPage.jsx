@@ -42,7 +42,7 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze, onSales }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright, #fff)' }}>
-            {name || (lead.product_intent ? `${lead.product_intent} lead` : 'New lead')}
+            {name || (lead.product_intent ? <>{lead.product_intent}{" "}<T k="pages.myleadspage.8cb33b">{"lead"}</T></> : <T k="pages.myleadspage.129297">{'New lead'}</T>)}
             {lead.source === 'winback' && (
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4, marginLeft: 8,
@@ -91,8 +91,8 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze, onSales }) {
         <button onClick={() => onLog(lead)} style={btn('primary')}><T k="pages.myleadspage.60866b">Log Touch</T></button>
         <button onClick={() => onFollowup(lead)} style={btn()}><T k="pages.myleadspage.d0a869">📅 Follow-Up</T></button>
         <button onClick={() => onSnooze(lead)} style={btn()}><T k="pages.myleadspage.3dd493">💤 Snooze</T></button>
-        <button onClick={() => onSales(lead, 'quote')} style={btn()}>Quote</button>
-        <button onClick={() => onSales(lead, 'bind')} style={btn()}>Bound</button>
+        <button onClick={() => onSales(lead, 'quote')} style={btn()}><T k="pages.myleadspage.309028">Quote</T></button>
+        <button onClick={() => onSales(lead, 'bind')} style={btn()}><T k="pages.myleadspage.2c346a">Bound</T></button>
         <Link to={`/agency/leads/${lead.id}`} style={{ ...btn(), textDecoration: 'none', display: 'inline-block' }}><T k="pages.myleadspage.a96b08">Open →</T></Link>
       </div>
     </div>

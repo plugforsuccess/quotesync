@@ -2,6 +2,7 @@
 // Route protection component with two-plane RBAC support
 // Supports both platform roles and agency roles
 
+import { T } from './SiteCopy';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { hasPermission } from '../lib/supabase';
@@ -48,14 +49,14 @@ const ProtectedRoute = ({
     return (
       <div className="min-h-screen bg-red-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white border border-red-200 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-red-700 mb-2">Permissions Could Not Be Loaded</h2>
-          <p className="text-sm text-gray-700 mb-4">We couldn't load your permissions. Please retry.</p>
+          <h2 className="text-xl font-semibold text-red-700 mb-2"><T k="components.protectedroute.a899b2">Permissions Could Not Be Loaded</T></h2>
+          <p className="text-sm text-gray-700 mb-4"><T k="components.protectedroute.bc5446">We couldn't load your permissions. Please retry.</T></p>
           <button
             type="button"
             onClick={() => window.location.reload()}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
           >
-            Retry
+            <T k="components.protectedroute.9f5cd8">Retry</T>
           </button>
         </div>
       </div>

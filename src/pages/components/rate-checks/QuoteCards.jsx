@@ -27,7 +27,7 @@ export function GoalHeader({ household }) {
         <>
           <span aria-hidden="true">·</span>
           <span style={{ color: tone(g.saved) }} className="font-semibold">
-            {g.saved > 0 ? `Saves ${money(g.saved)}/yr so far` : g.saved < 0 ? `${money(-g.saved)} more so far` : 'Even so far'}
+            {g.saved > 0 ? <><T k="pages.components.ratechecks.quotecards.6a29f0">{"Saves"}</T>{" "}{money(g.saved)}{"/yr so far"}</> : g.saved < 0 ? <>{money(-g.saved)}{" "}<T k="pages.components.ratechecks.quotecards.f73eb9">{"more so far"}</T></> : <T k="pages.components.ratechecks.quotecards.053946">{'Even so far'}</T>}
           </span>
         </>
       )}
@@ -41,7 +41,7 @@ export function LiveDelta({ current, price, className = '' }) {
   if (!s) return null;
   return (
     <p className={`text-lg font-extrabold ${className}`} style={{ color: tone(s.delta) }} aria-live="polite">
-      {s.delta > 0 ? `Saves them ${money(s.delta)}/yr` : s.delta < 0 ? `${money(-s.delta)}/yr more than they pay` : 'Same as they pay'}
+      {s.delta > 0 ? <><T k="pages.components.ratechecks.quotecards.2e438f">{"Saves them"}</T>{" "}{money(s.delta)}{"/yr"}</> : s.delta < 0 ? `${money(-s.delta)}/yr more than they pay` : <T k="pages.components.ratechecks.quotecards.400a0b">{'Same as they pay'}</T>}
       {s.pct != null && s.delta !== 0 && <span className="font-semibold"> ({Math.abs(s.pct)}%)</span>}
     </p>
   );

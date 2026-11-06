@@ -35,7 +35,7 @@ function Row({ r }) {
           <span style={{ fontSize: 11, color: 'var(--qs-muted)', fontFamily: "'DM Mono', monospace" }}>{r.policy_no}</span>
         )}
         <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--qs-dim)' }}>
-          {r.rep_name || 'Unattributed'} · {fmt$(r.premium)} · {fmtDate(r.resolution_date)}
+          {r.rep_name || <T k="pages.components.retention.saveintegritypanel.610472">{'Unattributed'}</T>} · {fmt$(r.premium)} · {fmtDate(r.resolution_date)}
         </span>
       </div>
       {r.detail && <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{r.detail}</div>}
@@ -68,16 +68,16 @@ export default function SaveIntegrityPanel({ agencyId }) {
               style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--qs-border)',
                 background: 'var(--qs-elevated)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 600,
                 cursor: reconcile.isPending ? 'not-allowed' : 'pointer' }}>
-              {reconcile.isPending ? 'Checking…' : '↻ Reconcile vs Allstate'}
+              {reconcile.isPending ? <T k="pages.components.retention.saveintegritypanel.820d60">{'Checking…'}</T> : <T k="pages.components.retention.saveintegritypanel.e5748e">{'↻ Reconcile vs Allstate'}</T>}
             </button>
             {lastRun != null && (
               <div style={{ fontSize: 11, color: lastRun > 0 ? '#F87171' : 'var(--qs-muted)', marginTop: 4 }}>
-                {lastRun > 0 ? `${lastRun} save${lastRun === 1 ? '' : 's'} flagged reversed` : 'No new reversals'}
+                {lastRun > 0 ? <>{lastRun}{" "}<T k="pages.components.retention.saveintegritypanel.13a4a1">{"save"}</T>{lastRun === 1 ? '' : 's'}{" "}<T k="pages.components.retention.saveintegritypanel.55cb2d">{"flagged reversed"}</T></> : <T k="pages.components.retention.saveintegritypanel.c406f7">{'No new reversals'}</T>}
               </div>
             )}
             {reconcile.isError && (
               <div style={{ fontSize: 11, color: '#F87171', marginTop: 4 }}>
-                {reconcile.error?.message || 'Reconcile failed'}
+                {reconcile.error?.message || <T k="pages.components.retention.saveintegritypanel.bed1cd">{'Reconcile failed'}</T>}
               </div>
             )}
           </div>

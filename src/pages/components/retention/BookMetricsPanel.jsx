@@ -142,7 +142,7 @@ function UploadZone({ agencyId, currentUserId, reportType }) {
         <input ref={fileRef} type="file" accept=".xlsx,.csv" style={{ display: 'none' }}
           onChange={(e) => handleFile(e.target.files[0])} />
         <div style={{ fontSize: 24, marginBottom: 6 }}>📖</div>
-        <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>{busy ? 'Importing…' : 'Drop or click to upload'}</div>
+        <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>{busy ? <T k="pages.components.retention.bookmetricspanel.820599">{'Importing…'}</T> : <T k="pages.components.retention.bookmetricspanel.32a240">{'Drop or click to upload'}</T>}</div>
       </div>
       {msg && <div style={{ fontSize: 12, color: 'var(--qs-success, #10B981)', marginTop: 8 }}>{msg}</div>}
       {err && <div style={{ fontSize: 12, color: 'var(--qs-danger, #EF4444)', marginTop: 8 }}>{err}</div>}
@@ -222,7 +222,7 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
           {trend.length >= 2 ? (
             <div className="card" style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 10 }}>
-                <T k="pages.components.retention.bookmetricspanel.37675d">Book retention trend</T>{goLive ? ' · SOP launch marked' : ''}
+                <T k="pages.components.retention.bookmetricspanel.37675d">Book retention trend</T>{goLive ? <T k="pages.components.retention.bookmetricspanel.8fea07">{' · SOP launch marked'}</T> : ''}
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={trend} margin={{ top: 8, right: 16, bottom: 4, left: -8 }}>
@@ -265,7 +265,7 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
               <tbody>
                 {products.map((p) => (
                   <tr key={p.id} style={{ opacity: p.is_rollup ? 0.55 : 1 }}>
-                    <td>{p.product}{p.is_rollup ? ' (rollup)' : ''}</td>
+                    <td>{p.product}{p.is_rollup ? <T k="pages.components.retention.bookmetricspanel.98e98b">{' (rollup)'}</T> : ''}</td>
                     <td style={{ textAlign: 'right', fontFamily: "'DM Mono', monospace" }}>{p.pif_current ?? '—'}</td>
                     <td style={{ textAlign: 'right', color: deltaColor(p.pif_variance) }}>
                       {p.pif_variance == null ? '—' : `${p.pif_variance >= 0 ? '+' : ''}${p.pif_variance}`}

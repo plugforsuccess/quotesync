@@ -1,4 +1,5 @@
 // src/pages/ProductDetailPage.jsx
+import { T } from '../components/SiteCopy';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Download, Shield, Star, FileText, AlertCircle } from 'lucide-react';
@@ -22,12 +23,12 @@ const ProductDetailPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-4">Product Not Found</h1>
+          <h1 className="text-3xl font-bold text-white mb-4"><T k="pages.productdetailpage.d3114b">Product Not Found</T></h1>
           <Link
             to="/store"
             className="text-accent-400 hover:text-accent-300 transition-colors"
           >
-            ← Back to Store
+            <T k="pages.productdetailpage.f1b5d8">← Back to Store</T>
           </Link>
         </div>
       </div>
@@ -126,7 +127,7 @@ const ProductDetailPage = () => {
           className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Store
+          <T k="pages.productdetailpage.291a44">Back to Store</T>
         </Link>
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-7xl mx-auto">
@@ -137,17 +138,17 @@ const ProductDetailPage = () => {
               {bestseller && (
                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-accent-500 to-accent-600 rounded-full text-xs font-bold text-white">
                   <Star className="w-3 h-3 fill-current" />
-                  Bestseller
+                  <T k="pages.productdetailpage.df042d">Bestseller</T>
                 </div>
               )}
               {isFree && (
                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
-                  FREE
+                  <T k="pages.productdetailpage.4a9768">FREE</T>
                 </div>
               )}
               {discount > 0 && !isFree && (
                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
-                  {discount}% OFF Today
+                  {discount}<T k="pages.productdetailpage.9fdd33">% OFF Today</T>
                 </div>
               )}
             </div>
@@ -172,11 +173,11 @@ const ProductDetailPage = () => {
                 {format}
               </span>
               <span>•</span>
-              <span>{pages} pages</span>
+              <span>{pages} <T k="pages.productdetailpage.eec654">pages</T></span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Download className="w-4 h-4" />
-                Instant download
+                <T k="pages.productdetailpage.a6ee79">Instant download</T>
               </span>
             </div>
 
@@ -184,7 +185,7 @@ const ProductDetailPage = () => {
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 mb-8">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <Check className="w-5 h-5 text-success-400" />
-                What's Included
+                <T k="pages.productdetailpage.2126f1">What's Included</T>
               </h3>
               <ul className="space-y-3">
                 {whatYouGet.map((item, idx) => (
@@ -199,7 +200,7 @@ const ProductDetailPage = () => {
             {/* Benefits */}
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
               <h3 className="text-xl font-bold text-white mb-4">
-                What You'll Learn
+                <T k="pages.productdetailpage.4f0a06">What You'll Learn</T>
               </h3>
               <ul className="space-y-3">
                 {benefits.map((benefit, idx) => (
@@ -235,10 +236,10 @@ const ProductDetailPage = () => {
                       </div>
                     )}
                     <div className="text-5xl font-black text-white mb-2">
-                      {isFree ? 'Free' : `$${price}`}
+                      {isFree ? <T k="pages.productdetailpage.75f527">{'Free'}</T> : `$${price}`}
                     </div>
                     <div className="text-sm text-white/60">
-                      {isFree ? 'Free download • Lifetime access' : 'One-time payment • Lifetime access'}
+                      {isFree ? <T k="pages.productdetailpage.d712a0">{'Free download • Lifetime access'}</T> : <T k="pages.productdetailpage.ab21c1">{'One-time payment • Lifetime access'}</T>}
                     </div>
                   </div>
 
@@ -248,7 +249,7 @@ const ProductDetailPage = () => {
                     disabled={isProcessing}
                     className="w-full py-4 px-6 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-black text-lg rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-accent-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-6"
                   >
-                    {isProcessing ? 'Processing...' : (isFree ? 'Get Free Guide' : 'Buy Now')}
+                    {isProcessing ? <T k="pages.productdetailpage.272bc0">{'Processing...'}</T> : (isFree ? <T k="pages.productdetailpage.d3179e">{'Get Free Guide'}</T> : <T k="pages.productdetailpage.16c2c5">{'Buy Now'}</T>)}
                   </button>
 
                   {/* Trust Badges */}
@@ -256,17 +257,17 @@ const ProductDetailPage = () => {
                     {!isFree && (
                       <div className="flex items-center gap-3 text-sm text-white/70">
                         <Shield className="w-5 h-5 text-success-400 flex-shrink-0" />
-                        <span>Secure checkout with Stripe</span>
+                        <span><T k="pages.productdetailpage.fd66d6">Secure checkout with Stripe</T></span>
                       </div>
                     )}
                     <div className="flex items-center gap-3 text-sm text-white/70">
                       <Download className="w-5 h-5 text-primary-400 flex-shrink-0" />
-                      <span>Instant download after {isFree ? 'signup' : 'purchase'}</span>
+                      <span><T k="pages.productdetailpage.2f6e86">Instant download after</T> {isFree ? <T k="pages.productdetailpage.4e3d91">{'signup'}</T> : <T k="pages.productdetailpage.d376ca">{'purchase'}</T>}</span>
                     </div>
                     {!isFree && (
                       <div className="flex items-center gap-3 text-sm text-white/70">
                         <Check className="w-5 h-5 text-success-400 flex-shrink-0" />
-                        <span>30-day money-back guarantee</span>
+                        <span><T k="pages.productdetailpage.ab8812">30-day money-back guarantee</T></span>
                       </div>
                     )}
                   </div>
@@ -277,8 +278,8 @@ const ProductDetailPage = () => {
                       <AlertCircle className="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-white/70 leading-relaxed">
                         {isFree
-                          ? "After signup, you'll receive an email with your download link. No account or payment required."
-                          : "After purchase, you'll receive an email with your download link. No account required."
+                          ? <T k="pages.productdetailpage.acc7c2">{"After signup, you'll receive an email with your download link. No account or payment required."}</T>
+                          : <T k="pages.productdetailpage.e7eb28">{"After purchase, you'll receive an email with your download link. No account required."}</T>
                         }
                       </p>
                     </div>
@@ -289,9 +290,9 @@ const ProductDetailPage = () => {
               {/* Questions CTA */}
               <div className="mt-6 text-center">
                 <p className="text-sm text-white/60">
-                  Questions?{' '}
+                  <T k="pages.productdetailpage.1ec704">Questions?</T>{' '}
                   <a href="mailto:cameron@insuredbycam.com" className="text-accent-400 hover:text-accent-300 transition-colors">
-                    Email Cameron
+                    <T k="pages.productdetailpage.29cd56">Email Cameron</T>
                   </a>
                 </p>
               </div>
@@ -302,7 +303,7 @@ const ProductDetailPage = () => {
         {/* Full Description Section */}
         <div className="max-w-4xl mx-auto mt-16 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
           <h2 className="text-3xl font-bold text-white mb-6">
-            What's Inside This Guide
+            <T k="pages.productdetailpage.df8fa5">What's Inside This Guide</T>
           </h2>
           <div
             className="prose prose-invert prose-lg max-w-none"

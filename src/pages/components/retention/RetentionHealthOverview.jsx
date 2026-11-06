@@ -213,7 +213,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
       {/* Book-level health */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
-          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.a10b6e">Book health</T> {book?.latestMonth ? `· as of ${book.latestMonth}` : ''}</div>
+          letterSpacing: '0.06em', marginBottom: 10 }}><T k="pages.components.retention.retentionhealthoverview.a10b6e">Book health</T> {book?.latestMonth ? <><T k="pages.components.retention.retentionhealthoverview.dcef14">{"· as of"}</T>{" "}{book.latestMonth}</> : ''}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
           <StatCard label="Net Retention" value={fmtBookPct(netRet)}
             sub="rewrites counted as kept" color={netRet != null && netRet >= NET_RETENTION_TARGET ? 'var(--qs-success)' : 'var(--qs-warning)'}

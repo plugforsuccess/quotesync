@@ -46,7 +46,7 @@ export default function DefensiveOverviewPage() {
     return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6"><T k="pages.defensiveoverviewpage.0f2fdf">You don’t have access to this dashboard.</T></div>;
   }
   if (error || !data) {
-    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6">{error || 'No data.'}</div>;
+    return <div className="min-h-screen bg-gray-950 text-gray-300 flex items-center justify-center p-6">{error || <T k="pages.defensiveoverviewpage.944a5b">{'No data.'}</T>}</div>;
   }
 
   const c = data.counts || {};

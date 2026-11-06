@@ -133,7 +133,7 @@ export default function ScheduleRateEditor({ scheduleId }) {
             className="flex items-center gap-2 px-3 py-1.5 rounded bg-[var(--qs-info)] text-white text-xs font-medium hover:opacity-90 disabled:opacity-50"
           >
             <Save size={14} />
-            {saveRates.isPending ? 'Saving…' : 'Save Rates'}
+            {saveRates.isPending ? <T k="pages.components.compschedule.schedulerateeditor.56a228">{'Saving…'}</T> : <T k="pages.components.compschedule.schedulerateeditor.4505b7">{'Save Rates'}</T>}
           </button>
         </div>
       </div>

@@ -100,7 +100,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
                 disabled={saving}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
               >
-                {saving ? 'Terminating...' : 'Confirm Termination'}
+                {saving ? <T k="pages.components.employees.terminatemodal.bc20cd">{'Terminating...'}</T> : <T k="pages.components.employees.terminatemodal.c455ec">{'Confirm Termination'}</T>}
               </button>
             </div>
           </form>

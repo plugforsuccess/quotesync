@@ -46,7 +46,7 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
           <T k="pages.components.retention.casehandoffextras.afd633">⤴ Escalated to agent — awaiting pickup</T>
         </div>
         <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>
-          {open.reason || 'Needs a licensed agent'}
+          {open.reason || <T k="pages.components.retention.casehandoffextras.61148e">{'Needs a licensed agent'}</T>}
           {open.note ? ` — ${open.note}` : ''}
           {open.created_at ? ` · ${fmtWhen(open.created_at)}` : ''}
         </div>
@@ -97,11 +97,11 @@ export function EscalateCaseBox({ caseType, caseId, onEscalated }) {
           color: escalate.isPending ? 'var(--qs-muted)' : '#fff',
           fontSize: 13, fontWeight: 700, cursor: escalate.isPending ? 'not-allowed' : 'pointer',
         }}>
-        {escalate.isPending ? 'Escalating…' : 'Hand Off to Agent'}
+        {escalate.isPending ? <T k="pages.components.retention.casehandoffextras.5108c7">{'Escalating…'}</T> : <T k="pages.components.retention.casehandoffextras.b90dd4">{'Hand Off to Agent'}</T>}
       </button>
       {escalate.isError && (
         <div style={{ fontSize: 12, color: '#F87171', marginTop: 6 }}>
-          <T k="pages.components.retention.casehandoffextras.b875c0">Couldn't escalate —</T> {escalate.error?.message || 'try again'}.
+          <T k="pages.components.retention.casehandoffextras.b875c0">Couldn't escalate —</T> {escalate.error?.message || <T k="pages.components.retention.casehandoffextras.758bd3">{'try again'}</T>}.
         </div>
       )}
     </div>
@@ -139,7 +139,7 @@ export function LinkedServiceTasks({ caseType, caseId }) {
               <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
                 color: TASK_STATUS_COLOR[t.status] || 'var(--qs-muted)',
                 background: 'var(--qs-card)', whiteSpace: 'nowrap' }}>
-                {t.resolved_on_call ? 'ON CALL' : (t.status || 'open').replace('_', ' ').toUpperCase()}
+                {t.resolved_on_call ? <T k="pages.components.retention.casehandoffextras.a335df">{'ON CALL'}</T> : (t.status || 'open').replace('_', ' ').toUpperCase()}
               </span>
             </div>
           );
@@ -213,11 +213,11 @@ export function ReferToSalesBox({ agencyId, caseType, caseId, customerName, poli
           color: refer.isPending ? 'var(--qs-muted)' : '#fff',
           fontSize: 13, fontWeight: 700, cursor: refer.isPending ? 'not-allowed' : 'pointer',
         }}>
-        {refer.isPending ? 'Referring…' : 'Send to Sales Board'}
+        {refer.isPending ? <T k="pages.components.retention.casehandoffextras.b99bf2">{'Referring…'}</T> : <T k="pages.components.retention.casehandoffextras.95a66b">{'Send to Sales Board'}</T>}
       </button>
       {refer.isError && (
         <div style={{ fontSize: 12, color: '#F87171', marginTop: 6 }}>
-          <T k="pages.components.retention.casehandoffextras.453865">Couldn't refer —</T> {refer.error?.message || 'try again'}.
+          <T k="pages.components.retention.casehandoffextras.453865">Couldn't refer —</T> {refer.error?.message || <T k="pages.components.retention.casehandoffextras.758bd3">{'try again'}</T>}.
         </div>
       )}
     </div>

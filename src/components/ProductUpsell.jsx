@@ -1,4 +1,5 @@
 // src/components/ProductUpsell.jsx
+import { T } from './SiteCopy';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, ArrowRight, Star, CheckCircle } from 'lucide-react';
@@ -70,7 +71,7 @@ const ProductUpsell = ({ context = 'post-quote' }) => {
                 {product.bestseller && (
                   <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-500 rounded-full">
                     <Star className="w-3 h-3 text-white fill-current" />
-                    <span className="text-[10px] font-bold text-white">BESTSELLER</span>
+                    <span className="text-[10px] font-bold text-white"><T k="components.productupsell.491822">BESTSELLER</T></span>
                   </div>
                 )}
               </div>
@@ -101,7 +102,7 @@ const ProductUpsell = ({ context = 'post-quote' }) => {
                 </span>
                 {product.originalPrice && (
                   <span className="text-xs font-bold text-success-600">
-                    Save ${product.originalPrice - product.price}
+                    <T k="components.productupsell.d513b5">Save $</T>{product.originalPrice - product.price}
                   </span>
                 )}
               </div>
@@ -111,7 +112,7 @@ const ProductUpsell = ({ context = 'post-quote' }) => {
                 to={`/store/${product.slug}`}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white text-sm font-bold rounded-lg transition-all duration-300 transform hover:scale-105"
               >
-                Learn More
+                <T k="components.productupsell.378cbb">Learn More</T>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -120,7 +121,7 @@ const ProductUpsell = ({ context = 'post-quote' }) => {
 
         {/* Footer Note */}
         <p className="text-xs text-gray-500 text-center">
-          Instant download • 30-day money-back guarantee • No account required
+          <T k="components.productupsell.c923d7">Instant download • 30-day money-back guarantee • No account required</T>
         </p>
       </div>
     </div>

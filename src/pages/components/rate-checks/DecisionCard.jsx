@@ -48,7 +48,7 @@ export default function DecisionCard({ rc, household = null, compact = false }) 
       {action ? (
         <>
           {/* "(+PUP)": the umbrella isn't unlocked yet; the action below gets it there. */}
-          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}{/PUP/.test(decisionLabel(rc, household) || '') ? '' : ' (+PUP)'}</span>
+          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}{/PUP/.test(decisionLabel(rc, household) || '') ? '' : <T k="pages.components.ratechecks.decisioncard.980ffe">{' (+PUP)'}</T>}</span>
           <h3 className="mt-2 text-lg font-bold leading-snug"><T k={`rc.decision.${action.key}.headline`}>{action.headline}</T></h3>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k={`rc.decision.${action.key}.why`}>{action.why}</T></p>
         </>
@@ -146,7 +146,7 @@ function Question({ q, a, onSave }) {
               <button key={v} type="button" aria-pressed={a?.answer === v} onClick={() => pick({ answer: v, ...(v === 'no' ? { details: null } : {}) })}
                 className={`h-9 flex-1 rounded-md text-sm font-semibold ${a?.answer === v ? 'bg-primary-600 text-white' : ''}`}
                 style={a?.answer === v ? undefined : { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
-                {v === 'yes' ? 'Yes' : 'No'}
+                {v === 'yes' ? <T k="pages.components.ratechecks.decisioncard.5397e0">{'Yes'}</T> : <T k="pages.components.ratechecks.decisioncard.816c52">{'No'}</T>}
               </button>
             ))}
           </div>

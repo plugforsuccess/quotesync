@@ -193,7 +193,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save Targets'}
+                {saving ? <T k="pages.components.timeattendance.targetsmodal.ae7e88">{'Saving...'}</T> : <T k="pages.components.timeattendance.targetsmodal.56564d">{'Save Targets'}</T>}
               </button>
             </div>
           </div>

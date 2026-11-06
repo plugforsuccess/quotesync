@@ -235,8 +235,11 @@ Deno.serve(async (req) => {
     // Applied through a producer's recruit link (/courses?by=CODE): credit that producer.
     const code = String(body.recruit_code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)
     const { data: recruiter } = code
-      ? await supabase.from('agency_memberships').select('user_id, profiles(full_name)')
+      ? await supabase.from('agency_memberships').select('user_id')
           .eq('agency_id', agency.id).eq('recruit_code', code).eq('status', 'active').maybeSingle()
+      : { data: null }
+    const { data: recruiterProfile } = recruiter
+      ? await supabase.from('profiles').select('full_name').eq('id', recruiter.user_id).maybeSingle()
       : { data: null }
     const { error: insErr } = await supabase.from('rate_check_partner_applications').insert({
       agency_id: agency.id, first_name: firstName, last_name: lastName, phone, email,
@@ -249,7 +252,7 @@ Deno.serve(async (req) => {
     const { data: principals } = await supabase.from('agency_memberships').select('user_id')
       .eq('agency_id', agency.id).eq('status', 'active').eq('agency_role', 'principal')
     const name = [firstName, lastName].filter(Boolean).join(' ')
-    const via = recruiter ? `via ${(recruiter as any).profiles?.full_name || 'a producer'}’s recruit link` : 'from Drivers Ed'
+    const via = recruiter ? `via ${recruiterProfile?.full_name || 'a producer'}’s recruit link` : 'from Drivers Ed'
     // The principal reviews it; the producer who recruited them hears about it too.
     const notify = [...new Set([...(principals || []).map((m: any) => m.user_id), ...(recruiter ? [recruiter.user_id] : [])])]
     if (notify.length) {

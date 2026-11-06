@@ -1,4 +1,5 @@
 // pages/StorePage.jsx
+import { T } from '../components/SiteCopy';
 import React, { useState } from 'react';
 import { BookOpen, Filter, Star, TrendingUp, ShoppingBag, Shirt, Package } from 'lucide-react';
 import { products, getFeaturedProducts, getBestsellers, categories } from '../lib/products';
@@ -51,7 +52,7 @@ function StorePage() {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>Digital Products</span>
+              <span><T k="pages.storepage.c24dd9">Digital Products</T></span>
             </button>
             <button
               onClick={() => setProductType('physical')}
@@ -62,25 +63,25 @@ function StorePage() {
               }`}
             >
               <ShoppingBag className="w-4 h-4" />
-              <span>Physical Products</span>
+              <span><T k="pages.storepage.e19ba0">Physical Products</T></span>
             </button>
           </div>
 
           <h1 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
             {productType === 'digital' ? (
               <>
-                Insurance Education
+                <T k="pages.storepage.1becf3">Insurance Education</T>
                 <br />
                 <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent">
-                  That Actually Helps
+                  <T k="pages.storepage.797ff1">That Actually Helps</T>
                 </span>
               </>
             ) : (
               <>
-                Gear & Accessories
+                <T k="pages.storepage.3bad38">Gear & Accessories</T>
                 <br />
                 <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent">
-                  Coming Soon
+                  <T k="pages.storepage.04d2fd">Coming Soon</T>
                 </span>
               </>
             )}
@@ -88,8 +89,8 @@ function StorePage() {
 
           <p className="text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
             {productType === 'digital'
-              ? 'Skip the fluff. Get tactical guides that show you exactly what to look for, what to avoid, and how to stop overpaying.'
-              : 'T-shirts, car accessories, and more. Sign up below to get notified when we launch.'
+              ? <T k="pages.storepage.8977c5">{'Skip the fluff. Get tactical guides that show you exactly what to look for, what to avoid, and how to stop overpaying.'}</T>
+              : <T k="pages.storepage.03a796">{'T-shirts, car accessories, and more. Sign up below to get notified when we launch.'}</T>
             }
           </p>
         </header>
@@ -106,7 +107,7 @@ function StorePage() {
                     : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
                 }`}
               >
-                All Products ({products.length})
+                <T k="pages.storepage.e0001a">All Products (</T>{products.length})
               </button>
               <button
                 onClick={() => setFilter('featured')}
@@ -117,7 +118,7 @@ function StorePage() {
                 }`}
               >
                 <Star className="w-4 h-4" />
-                Featured
+                <T k="pages.storepage.ae31ad">Featured</T>
               </button>
               <button
                 onClick={() => setFilter('bestsellers')}
@@ -128,7 +129,7 @@ function StorePage() {
                 }`}
               >
                 <TrendingUp className="w-4 h-4" />
-                Bestsellers
+                <T k="pages.storepage.83b8e4">Bestsellers</T>
               </button>
             </div>
 
@@ -150,9 +151,9 @@ function StorePage() {
                   <div className="w-20 h-20 bg-gradient-to-br from-accent-500/20 to-accent-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
                     <Shirt className="w-10 h-10 text-white/60" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">T-Shirts</h3>
+                  <h3 className="text-xl font-bold text-white mb-2"><T k="pages.storepage.45fe03">T-Shirts</T></h3>
                   <p className="text-sm text-white/60">
-                    Premium apparel for insurance nerds
+                    <T k="pages.storepage.8d129b">Premium apparel for insurance nerds</T>
                   </p>
                 </div>
               </div>
@@ -164,9 +165,9 @@ function StorePage() {
                   <div className="w-20 h-20 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
                     <Package className="w-10 h-10 text-white/60" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Car Accessories</h3>
+                  <h3 className="text-xl font-bold text-white mb-2"><T k="pages.storepage.df89aa">Car Accessories</T></h3>
                   <p className="text-sm text-white/60">
-                    Practical gear for your vehicle
+                    <T k="pages.storepage.69cd92">Practical gear for your vehicle</T>
                   </p>
                 </div>
               </div>
@@ -178,9 +179,9 @@ function StorePage() {
                   <div className="w-20 h-20 bg-gradient-to-br from-secondary-500/20 to-secondary-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
                     <ShoppingBag className="w-10 h-10 text-white/60" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">& More</h3>
+                  <h3 className="text-xl font-bold text-white mb-2"><T k="pages.storepage.b17f6f">& More</T></h3>
                   <p className="text-sm text-white/60">
-                    Stickers, mugs, and other merch
+                    <T k="pages.storepage.f2f953">Stickers, mugs, and other merch</T>
                   </p>
                 </div>
               </div>
@@ -189,10 +190,10 @@ function StorePage() {
             {/* Notify Me Form */}
             <div className="max-w-xl mx-auto bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 text-center">
               <h3 className="text-2xl font-bold text-white mb-3">
-                Get Notified At Launch
+                <T k="pages.storepage.c572a9">Get Notified At Launch</T>
               </h3>
               <p className="text-white/70 mb-6">
-                Be the first to know when physical products drop. No spam, just launch updates.
+                <T k="pages.storepage.2a2f87">Be the first to know when physical products drop. No spam, just launch updates.</T>
               </p>
               <form className="flex flex-col sm:flex-row gap-3">
                 <input
@@ -204,7 +205,7 @@ function StorePage() {
                   type="submit"
                   className="px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-accent-500/50"
                 >
-                  Notify Me
+                  <T k="pages.storepage.c3f30b">Notify Me</T>
                 </button>
               </form>
             </div>
@@ -215,34 +216,34 @@ function StorePage() {
         {productType === 'digital' && (
           <div className="max-w-4xl mx-auto bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
             <h2 className="text-2xl font-bold text-white mb-4 text-center">
-              Why Buy From Insuredbycam?
+              <T k="pages.storepage.73ccc2">Why Buy From Insuredbycam?</T>
             </h2>
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <div>
                 <div className="w-12 h-12 bg-gradient-to-br from-success-400 to-success-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <span className="text-2xl">✓</span>
                 </div>
-                <h3 className="font-bold text-white mb-2">No Fluff</h3>
+                <h3 className="font-bold text-white mb-2"><T k="pages.storepage.86ed5b">No Fluff</T></h3>
                 <p className="text-sm text-white/70">
-                  Written by a licensed agent who actually sells insurance. Real tactics, not theory.
+                  <T k="pages.storepage.3425dc">Written by a licensed agent who actually sells insurance. Real tactics, not theory.</T>
                 </p>
               </div>
               <div>
                 <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <span className="text-2xl">⚡</span>
                 </div>
-                <h3 className="font-bold text-white mb-2">Instant Access</h3>
+                <h3 className="font-bold text-white mb-2"><T k="pages.storepage.2c21e1">Instant Access</T></h3>
                 <p className="text-sm text-white/70">
-                  Download immediately after purchase. No waiting, no shipping, no hassle.
+                  <T k="pages.storepage.7d2194">Download immediately after purchase. No waiting, no shipping, no hassle.</T>
                 </p>
               </div>
               <div>
                 <div className="w-12 h-12 bg-gradient-to-br from-accent-400 to-accent-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <span className="text-2xl">↻</span>
                 </div>
-                <h3 className="font-bold text-white mb-2">Lifetime Updates</h3>
+                <h3 className="font-bold text-white mb-2"><T k="pages.storepage.27b74f">Lifetime Updates</T></h3>
                 <p className="text-sm text-white/70">
-                  As insurance rules change, so do the guides. Get updates free forever.
+                  <T k="pages.storepage.8b0f4d">As insurance rules change, so do the guides. Get updates free forever.</T>
                 </p>
               </div>
             </div>

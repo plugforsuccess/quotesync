@@ -310,7 +310,7 @@ export default function CadenceSettingsTab({ agencyId, isAgent }) {
                               </div>
                               <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 2 }}>
                                 {isActive
-                                  ? `${freqLabel(freq)} · ${dur} min · ${time}`
+                                  ? <>{freqLabel(freq)}{" · "}{dur}{" "}<T k="pages.components.settings.cadencesettingstab.7092bf">{"min ·"}</T>{" "}{time}</>
                                   : template.description}
                               </div>
                             </div>

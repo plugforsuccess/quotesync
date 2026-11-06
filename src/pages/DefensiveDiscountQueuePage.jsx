@@ -105,7 +105,7 @@ export default function DefensiveDiscountQueuePage() {
           </button>
         </div>
         <p className="text-sm text-gray-400 mb-6">
-          {canEdit ? 'Work each certificate: download, apply the discount, record the policy, and advance the status.' : 'Read-only view.'}
+          {canEdit ? <T k="pages.defensivediscountqueuepage.07a5e2">{'Work each certificate: download, apply the discount, record the policy, and advance the status.'}</T> : <T k="pages.defensivediscountqueuepage.565e07">{'Read-only view.'}</T>}
         </p>
 
         {/* Filters */}
@@ -239,7 +239,7 @@ function QueueRow({ row, staff, canEdit, expanded, onToggle, onChanged }) {
                 <div className="md:col-span-2">
                   <button onClick={() => mutate({ policyRef, notes })} disabled={busy}
                     className="rounded-full px-5 py-2 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950">
-                    {busy ? 'Saving…' : 'Save'}
+                    {busy ? <T k="pages.defensivediscountqueuepage.56a228">{'Saving…'}</T> : <T k="pages.defensivediscountqueuepage.efc007">{'Save'}</T>}
                   </button>
                 </div>
               </div>

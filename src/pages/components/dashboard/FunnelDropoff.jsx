@@ -115,7 +115,7 @@ export default function FunnelDropoff({ funnel }) {
                 <T k="pages.components.dashboard.funneldropoff.2a712c">Your biggest drop-off is at</T> <strong>{worstStep.name}</strong> ({Math.round(worstStep.dropOffPercent)}%).
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--qs-dim)' }}>
-                {STEP_RECOMMENDATIONS[worstStep.name] || 'Review this step for usability issues.'}
+                {STEP_RECOMMENDATIONS[worstStep.name] || <T k="pages.components.dashboard.funneldropoff.560a39">{'Review this step for usability issues.'}</T>}
               </p>
             </div>
           </div>

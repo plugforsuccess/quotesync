@@ -30,7 +30,8 @@ const NEWS = /^\/news(\/[^/]+)?$/;
 const PORTAL = /^\/partner\/[^/]+$/;
 const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, PORTAL, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
 // Pages without the consumer nav (and its pencil) get a corner button.
-const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, INTERNAL, PORTAL];
+// Agency screens use the header pencil ("This Screen"), so no corner button there.
+const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, PORTAL];
 // The last copy seen on this device, so edited text shows at once instead of flashing the default.
 const CACHE = 'qs_site_copy_v1';
 const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE) || 'null') || undefined; } catch { return undefined; } };
@@ -163,7 +164,7 @@ export function SiteCopyProvider({ children }) {
   return (
     <Ctx.Provider value={{ values, editing: on, save, upload, fail: setError, canStartEditing: canEdit && onEditablePage && !on, startEditing: () => setEditing(true) }}>
       {children}
-      {(on || notice) && barHeight > 0 && <style>{`body{padding-top:${barHeight}px}.qs-copy-editing .rc-marquee{animation-play-state:paused}`}</style>}
+      {(on || notice) && barHeight > 0 && <style>{`body{padding-top:${barHeight}px}.qs-copy-editing .rc-marquee{animation-play-state:paused}.qs-copy-editing .truncate:has([contenteditable]),.qs-copy-editing .overflow-hidden:has(>[contenteditable]){overflow:visible}`}</style>}
       {notice && (
         <div ref={bar} className="fixed inset-x-0 top-0 z-[90] bg-[#0F2D6B] px-4 py-2.5 text-center text-sm text-white shadow-lg">
           {user ? 'Only the agency principal can edit the website.' : <>To edit the website, <Link to="/admin-access-8by2X" className="font-semibold text-amber-300 underline">log in</Link> as the agency principal on this site, then choose <b>Edit website</b> in the menu.</>}
@@ -204,6 +205,12 @@ export function SiteCopyProvider({ children }) {
 /** The saved text for `key` (or `fallback`), kept current as edits save. For values
  * that aren't shown as text, like the agency's texting number. */
 // eslint-disable-next-line react-refresh/only-export-components
+/** For the header pencil: can this screen be edited right now, and start editing it. */
+export function useCopyEditor() {
+  const { canStartEditing, startEditing } = useContext(Ctx);
+  return { canStartEditing, startEditing };
+}
+
 export function useCopyValue(key, fallback = '') {
   const { values } = useContext(Ctx);
   const v = values?.[key];

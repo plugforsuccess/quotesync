@@ -58,15 +58,15 @@ export default function DataIngestionHealth() {
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--qs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}><T k="pages.components.admin.dataingestionhealth.d34648">Data Ingestion Health</T></h2>
         <span style={{ fontSize: 12, color: atRisk > 0 ? '#F87171' : 'var(--qs-subtle)' }}>
-          {isLoading ? 'Loading…' : atRisk > 0 ? `${atRisk} agenc${atRisk === 1 ? 'y' : 'ies'} behind on uploads` : 'All agencies current'}
+          {isLoading ? <T k="pages.components.admin.dataingestionhealth.33ce41">{'Loading…'}</T> : atRisk > 0 ? <>{atRisk}{" "}<T k="pages.components.admin.dataingestionhealth.fb7725">{"agenc"}</T>{atRisk === 1 ? 'y' : 'ies'}{" "}<T k="pages.components.admin.dataingestionhealth.cccee4">{"behind on uploads"}</T></> : <T k="pages.components.admin.dataingestionhealth.ad3681">{'All agencies current'}</T>}
         </span>
       </div>
 
       {error ? (
         <div style={{ padding: 20, fontSize: 13, color: 'var(--qs-dim)' }}>
           {String(error.message || error).includes('platform admin')
-            ? 'Platform admin access required.'
-            : 'Could not load ingestion health.'}
+            ? <T k="pages.components.admin.dataingestionhealth.8ed5cd">{'Platform admin access required.'}</T>
+            : <T k="pages.components.admin.dataingestionhealth.2b4e39">{'Could not load ingestion health.'}</T>}
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>

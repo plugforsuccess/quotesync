@@ -8,6 +8,7 @@
 // before making any decisions — otherwise a race condition causes a false
 // "No employee record found" on first navigation after login.
 
+import { T } from './SiteCopy';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
@@ -54,11 +55,11 @@ export default function EmployeeRoute({ children }) {
         <div style={{ maxWidth: 400, textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>
-            No employee record found
+            <T k="components.employeeroute.abcadc">No employee record found</T>
           </div>
           <div style={{ fontSize: 14, color: 'var(--qs-subtle)' }}>
-            Your account isn't linked to an employee profile yet.
-            Contact your agency administrator.
+            <T k="components.employeeroute.f37036">Your account isn't linked to an employee profile yet.
+            Contact your agency administrator.</T>
           </div>
         </div>
       </div>

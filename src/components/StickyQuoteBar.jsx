@@ -1,4 +1,5 @@
 // src/components/StickyQuoteBar.jsx
+import { T } from './SiteCopy';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield } from 'lucide-react';
@@ -67,10 +68,10 @@ const StickyQuoteBar = ({ onGetQuote }) => {
               <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-accent-300 flex-shrink-0" />
               <div>
                 <p className="text-white font-bold text-sm sm:text-base leading-tight">
-                  See your savings in 30 seconds
+                  <T k="components.stickyquotebar.704319">See your savings in 30 seconds</T>
                 </p>
                 <p className="text-white/80 text-xs sm:text-sm hidden sm:block">
-                  Free quote • No obligation • No spam
+                  <T k="components.stickyquotebar.49871e">Free quote • No obligation • No spam</T>
                 </p>
               </div>
             </div>
@@ -83,7 +84,7 @@ const StickyQuoteBar = ({ onGetQuote }) => {
               {/* Shimmer effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-100/50 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
 
-              <span className="relative z-10">Check My Savings</span>
+              <span className="relative z-10"><T k="components.stickyquotebar.7fbec9">Check My Savings</T></span>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
             </button>
           </div>

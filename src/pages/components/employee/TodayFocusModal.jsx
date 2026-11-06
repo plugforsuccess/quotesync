@@ -39,7 +39,7 @@ function Section({ title, color, items, renderRight, onOpen }) {
                   textAlign: 'left', fontFamily: 'inherit',
                   cursor: clickable ? 'pointer' : 'default' }}>
                 <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>
-                  {titleCaseName(it.name) || 'Unknown'}
+                  {titleCaseName(it.name) || <T k="pages.components.employee.todayfocusmodal.bc7819">{'Unknown'}</T>}
                   {it.product && (
                     <span style={{ color: 'var(--qs-muted)', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
                       {productLabel(it.product)}

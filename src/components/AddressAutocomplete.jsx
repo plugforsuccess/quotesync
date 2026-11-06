@@ -2,6 +2,7 @@
 // Production-grade Google Places autocomplete using the gmp-place-autocomplete
 // web component. Race-condition safe, with Geocoder fallback for missing fields.
 // Enterprise hardened: geocoder cache, non-PII telemetry, graceful failure UI.
+import { T } from './SiteCopy';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadGoogleMaps } from "../lib/googleMapsLoader";
 import { parseAddressComponents } from "../utils/parseAddress";
@@ -201,12 +202,12 @@ export default function AddressAutocomplete({
       <div ref={containerRef} />
       {loadState === "loading" && (
         <div className="mt-2 text-xs text-gray-400">
-          Loading address search…
+          <T k="components.addressautocomplete.6cec39">Loading address search…</T>
         </div>
       )}
       {loadState === "failed" && (
         <div className="mt-2 text-xs text-red-500">
-          Address search unavailable. Please enter your address manually.
+          <T k="components.addressautocomplete.bd8759">Address search unavailable. Please enter your address manually.</T>
         </div>
       )}
     </div>

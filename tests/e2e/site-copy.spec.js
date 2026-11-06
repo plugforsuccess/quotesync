@@ -228,3 +228,16 @@ test('every screen of the upload flow can be edited', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Cam is on it/ })).toBeVisible({ timeout: 15000 });
   await check('confirmation');
 });
+
+test('the header pencil edits the agency screen you are on', async ({ page }) => {
+  await mock(page, { loggedIn: true });
+  await page.addInitScript(() => sessionStorage.setItem('qs_checklist_shown_v2', '1')); // skip the daily checklist pop-up
+  await page.route(`${SB}/rest/v1/feature_permissions*`, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ feature_key: 'rate_checks', enabled: true }]) }));
+  await page.goto('/agency/leads/rate-checks');
+  await page.locator('button[aria-label="Edit website"]:visible').click();
+  await page.getByRole('menuitem', { name: /This Screen/ }).click();
+  await expect(page.getByRole('button', { name: 'Done editing' })).toBeVisible();
+  // Lines on the screen are now editable, and there's no second pencil in the corner.
+  expect(await page.locator('[contenteditable="true"]').count()).toBeGreaterThan(1);
+  await expect(page.getByRole('button', { name: 'Edit this page' })).toHaveCount(0);
+});

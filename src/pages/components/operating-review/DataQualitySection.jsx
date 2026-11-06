@@ -112,7 +112,7 @@ export default function DataQualitySection({ agencyId }) {
         {improvement != null && improvement !== 0 && (
           <div style={{ alignSelf: 'center' }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: improvement > 0 ? 'var(--qs-success)' : 'var(--qs-danger)' }}>
-              {improvement > 0 ? '▼' : '▲'} {Math.abs(improvement).toFixed(0)} <T k="pages.components.operatingreview.dataqualitysection.8c9a70">pts</T> {improvement > 0 ? 'improved' : 'worse'}
+              {improvement > 0 ? '▼' : '▲'} {Math.abs(improvement).toFixed(0)} <T k="pages.components.operatingreview.dataqualitysection.8c9a70">pts</T> {improvement > 0 ? <T k="pages.components.operatingreview.dataqualitysection.2ecffa">{'improved'}</T> : <T k="pages.components.operatingreview.dataqualitysection.4f8180">{'worse'}</T>}
             </span>
           </div>
         )}

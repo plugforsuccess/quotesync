@@ -78,7 +78,7 @@ export default function ElasticityCurveChart({ agencyId }) {
         <T k="pages.components.retention.elasticitycurvechart.e67adc">Of resolved renewals in each premium-increase band, the share that stayed.</T>
         {totals.cliff
           ? <> <T k="pages.components.retention.elasticitycurvechart.7a4745">Retention holds until</T> <strong style={{ color: 'var(--qs-bright)' }}>{totals.cliff.change_bucket}</strong><T k="pages.components.retention.elasticitycurvechart.94ed3c">, where it drops to</T> <strong style={{ color: '#F59E0B' }}>{totals.cliff.retention_rate_pct}%</strong> <T k="pages.components.retention.elasticitycurvechart.f47212">— call those first.</T></>
-          : ' Retention is holding across all bands so far.'}
+          : <T k="pages.components.retention.elasticitycurvechart.2fb5fa">{' Retention is holding across all bands so far.'}</T>}
         <span style={{ color: 'var(--qs-dim)' }}> · {totals.policies} <T k="pages.components.retention.elasticitycurvechart.f187f7">resolved renewals · early signal, sharpens with each cycle.</T></span>
       </div>
 

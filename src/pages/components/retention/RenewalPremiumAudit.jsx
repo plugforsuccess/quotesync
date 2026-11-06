@@ -110,7 +110,7 @@ export default function RenewalPremiumAudit({ agencyId }) {
                 </td>
                 <td style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-muted)' }}>{r.policy_no || '—'}</td>
                 <td>{fmtDate(r.resolution_date)}</td>
-                <td style={{ color: 'var(--qs-dim)' }}>{r.autoResolved ? 'Auto' : (r.rep || '—')}</td>
+                <td style={{ color: 'var(--qs-dim)' }}>{r.autoResolved ? <T k="pages.components.retention.renewalpremiumaudit.c614ba">{'Auto'}</T> : (r.rep || '—')}</td>
                 <td>{fmt$(r.offer)}</td>
                 <td>{fmt$(r.paid)}</td>
                 <td style={{ fontWeight: 700, color: diffColor(r.diff) }}>

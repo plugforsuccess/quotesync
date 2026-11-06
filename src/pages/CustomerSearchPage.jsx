@@ -118,7 +118,7 @@ export default function CustomerSearchPage() {
               cursor: 'pointer', border: '1px solid var(--qs-border)',
               background: 'var(--qs-elevated)', color: 'var(--qs-dim)',
             }}>
-            {reconcile.isPending ? 'Rebuilding…' : '↻ Rebuild Directory'}
+            {reconcile.isPending ? <T k="pages.customersearchpage.6ec254">{'Rebuilding…'}</T> : <T k="pages.customersearchpage.f92afc">{'↻ Rebuild Directory'}</T>}
           </button>
         )}
       </div>
@@ -133,7 +133,7 @@ export default function CustomerSearchPage() {
           <button onClick={mergeSelected} disabled={merge.isPending} style={{
             padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
             background: '#3B82F6', color: '#fff', fontSize: 12, fontWeight: 600,
-          }}>{merge.isPending ? 'Merging…' : 'Merge'}</button>
+          }}>{merge.isPending ? <T k="pages.customersearchpage.d80c1e">{'Merging…'}</T> : <T k="pages.customersearchpage.ea8f0d">{'Merge'}</T>}</button>
           <button onClick={() => setSelected([])} style={{
             padding: '5px 12px', borderRadius: 6, cursor: 'pointer',
             border: '1px solid var(--qs-border)', background: 'transparent', color: 'var(--qs-subtle)', fontSize: 12,
@@ -238,7 +238,7 @@ export default function CustomerSearchPage() {
                     {winback && <span style={{ marginLeft: 8 }}><Chip color="#34D399"><T k="pages.customersearchpage.4430e0">♻ Win-back opening</T></Chip></span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 3 }}>
-                    {[c.phone, c.email, c.zip].filter(Boolean).join(' · ') || 'No contact on file'}
+                    {[c.phone, c.email, c.zip].filter(Boolean).join(' · ') || <T k="pages.customersearchpage.e4f057">{'No contact on file'}</T>}
                   </div>
                   </div>
                 </div>

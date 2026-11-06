@@ -555,7 +555,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
               className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
-              {uploading ? 'Uploading...' : 'Confirm Upload'}
+              {uploading ? <T k="pages.components.timeattendance.rcuploadform.070e32">{'Uploading...'}</T> : <T k="pages.components.timeattendance.rcuploadform.8b7898">{'Confirm Upload'}</T>}
             </button>
             <button
               onClick={() => { setPreview(null); if (fileRef.current) fileRef.current.value = ''; }}
@@ -600,7 +600,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
               </div>
               <div className="px-6 py-4">
                 <p className="text-sm text-qs-dim mb-3">
-                  {confirmModal.skippedCount} <T k="pages.components.timeattendance.rcuploadform.f1965a">row</T>{confirmModal.skippedCount > 1 ? 's' : ''} <T k="pages.components.timeattendance.rcuploadform.c8655a">will be skipped because</T> {confirmModal.skippedCount > 1 ? 'these employees don\u2019t' : 'this employee doesn\u2019t'} <T k="pages.components.timeattendance.rcuploadform.801857">match any known employee:</T>
+                  {confirmModal.skippedCount} <T k="pages.components.timeattendance.rcuploadform.f1965a">row</T>{confirmModal.skippedCount > 1 ? 's' : ''} <T k="pages.components.timeattendance.rcuploadform.c8655a">will be skipped because</T> {confirmModal.skippedCount > 1 ? <T k="pages.components.timeattendance.rcuploadform.12123a">{'these employees don\u2019t'}</T> : <T k="pages.components.timeattendance.rcuploadform.d85075">{'this employee doesn\u2019t'}</T>} <T k="pages.components.timeattendance.rcuploadform.801857">match any known employee:</T>
                 </p>
                 <ul className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
                   {confirmModal.unmatchedNames.map((name, i) => (

@@ -136,10 +136,10 @@ export default function MyScorecardPage() {
         </div>
         <div style={{ fontSize: 15, color: 'var(--qs-subtle)' }}>
           {employee?.preferred_name || employee?.first_name} &middot;{' '}
-          {hat === 'sales' ? 'Sales Producer'
-            : scoreType === 'outbound' ? 'Outbound Retention'
-            : scoreType === 'inbound' ? 'Inbound Service'
-            : 'Service'}
+          {hat === 'sales' ? <T k="pages.myscorecardpage.62d80f">{'Sales Producer'}</T>
+            : scoreType === 'outbound' ? <T k="pages.myscorecardpage.9f073c">{'Outbound Retention'}</T>
+            : scoreType === 'inbound' ? <T k="pages.myscorecardpage.8cb72b">{'Inbound Service'}</T>
+            : <T k="pages.myscorecardpage.329cb8">{'Service'}</T>}
         </div>
       </div>
 

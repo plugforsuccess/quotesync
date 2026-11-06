@@ -1,4 +1,5 @@
 // App.jsx
+import { T } from './components/SiteCopy';
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { ShieldOff, Home, Building2 as Building2Icon } from 'lucide-react';
@@ -580,13 +581,13 @@ function App() {
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-6">
                     <ShieldOff className="w-8 h-8 text-red-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">Access Denied</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-3"><T k="app.1647b9">Access Denied</T></h2>
                   <p className="text-gray-500 mb-8">
-                    You don't have permission to view this page. Contact your administrator if you believe this is an error.
+                    <T k="app.2c8352">You don't have permission to view this page. Contact your administrator if you believe this is an error.</T>
                   </p>
                   <a href="/" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors">
                     <Home className="w-4 h-4" />
-                    Go Home
+                    <T k="app.19445d">Go Home</T>
                   </a>
                 </div>
               </div>
@@ -597,15 +598,15 @@ function App() {
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-6">
                     <Building2Icon className="w-8 h-8 text-amber-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">No Agency Access</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-3"><T k="app.0fe3dd">No Agency Access</T></h2>
                   <p className="text-gray-500 mb-8">
-                    You need an active agency membership to access this page. Apply for a partnership or contact support.
+                    <T k="app.1ac156">You need an active agency membership to access this page. Apply for a partnership or contact support.</T>
                   </p>
                   <div className="flex flex-col gap-3">
-                    <a href="/partners/apply" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors">Apply for Partnership</a>
+                    <a href="/partners/apply" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"><T k="app.ea763f">Apply for Partnership</T></a>
                     <a href="/" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors">
                       <Home className="w-4 h-4" />
-                      Go Home
+                      <T k="app.19445d">Go Home</T>
                     </a>
                   </div>
                 </div>

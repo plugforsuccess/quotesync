@@ -289,7 +289,7 @@ const StoryDetailPage = () => {
               <T k="pages.storydetailpage.aa8aa0">Why This Matters</T>
             </h2>
             <p className="text-gray-700 leading-relaxed text-lg">
-              {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
+              {getCategoryContextMessage(story.category) || <T k="pages.storydetailpage.afbb60">{'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}</T>}
             </p>
           </div>
 

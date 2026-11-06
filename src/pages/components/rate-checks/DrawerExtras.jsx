@@ -37,8 +37,8 @@ export function CurrentAgentBox({ rc }) {
       </dl>
       {stats && (
         <p className="mt-2 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-          {Number(stats.rate_checks) === 1 ? 'First customer of theirs we’ve seen.' : `We’ve seen ${stats.rate_checks} of their customers.`}
-          {Number(stats.quoted) > 0 && ` Allstate beat the price ${stats.wins} of ${stats.quoted} times.`}
+          {Number(stats.rate_checks) === 1 ? <T k="pages.components.ratechecks.drawerextras.2e6769">{'First customer of theirs we’ve seen.'}</T> : <><T k="pages.components.ratechecks.drawerextras.4e50b7">{"We’ve seen"}</T>{" "}{stats.rate_checks}{" "}<T k="pages.components.ratechecks.drawerextras.314182">{"of their customers."}</T></>}
+          {Number(stats.quoted) > 0 && <>{" "}<T k="pages.components.ratechecks.drawerextras.c6d6cf">{"Allstate beat the price"}</T>{" "}{stats.wins}{" "}<T k="pages.components.ratechecks.drawerextras.de04fa">{"of"}</T>{" "}{stats.quoted}{" "}<T k="pages.components.ratechecks.drawerextras.11a572">{"times."}</T></>}
         </p>
       )}
       <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.drawerextras.334da6">Never contact this agent about this customer.</T></p>
@@ -83,7 +83,7 @@ export function ReferralBox({ rc }) {
               <input value={line} onChange={e => setLine(e.target.value)} placeholder="What they need, e.g. SR-22" aria-label="What they need" className="rounded px-2 py-1.5" style={inputStyle} />
               <input value={note} onChange={e => setNote(e.target.value)} placeholder="Note for the partner (optional)" aria-label="Note" className="rounded px-2 py-1.5 sm:col-span-2" style={inputStyle} />
               <button type="submit" disabled={!partnerId || create.isPending} className="justify-self-start rounded bg-primary-600 px-3 py-1.5 font-semibold text-white disabled:opacity-50">
-                {create.isPending ? 'Saving…' : 'Log Referral'}
+                {create.isPending ? <T k="pages.components.ratechecks.drawerextras.56a228">{'Saving…'}</T> : <T k="pages.components.ratechecks.drawerextras.1bfedc">{'Log Referral'}</T>}
               </button>
             </form>
           )}
@@ -93,7 +93,7 @@ export function ReferralBox({ rc }) {
       {referrals.length > 0 && (
         <ul className="mt-2 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
           {referrals.map(r => (
-            <li key={r.id}><T k="pages.components.ratechecks.drawerextras.870dc5">Referred to</T> {r.referral_partners?.name || 'a partner'}{r.line ? ` for ${r.line}` : ''}{r.note ? ` — ${r.note}` : ''}
+            <li key={r.id}><T k="pages.components.ratechecks.drawerextras.870dc5">Referred to</T> {r.referral_partners?.name || <T k="pages.components.ratechecks.drawerextras.cedc0c">{'a partner'}</T>}{r.line ? <>{" "}<T k="pages.components.ratechecks.drawerextras.43eef9">{"for"}</T>{" "}{r.line}</> : ''}{r.note ? ` — ${r.note}` : ''}
               <span style={{ color: 'var(--qs-subtle)' }}> · {formatDate(r.created_at)}</span></li>
           ))}
         </ul>

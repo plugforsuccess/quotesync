@@ -4,6 +4,7 @@
 // (scoped via the `.ddc` token layer in index.css). Module overview, a
 // paginated lesson reader with per-section checks, the graded module quiz,
 // the final exam, and the certificate. No seat-time gating.
+import { T } from '../components/SiteCopy';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -141,24 +142,24 @@ export default function DefensiveDrivingPortalPage() {
       <div className="sticky top-0 z-20 ddc-bar backdrop-blur border-b">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <span className="flex min-w-0 items-center gap-2 whitespace-nowrap ddc-sm font-semibold ddc-accent">
-            <BookOpen className="w-4 h-4 shrink-0" /> <span className="sm:hidden">Course</span><span className="hidden sm:inline">Defensive Driving</span>
+            <BookOpen className="w-4 h-4 shrink-0" /> <span className="sm:hidden"><T k="pages.defensivedrivingportalpage.d82b56">Course</T></span><span className="hidden sm:inline"><T k="pages.defensivedrivingportalpage.4fa5c9">Defensive Driving</T></span>
           </span>
           <div className="flex items-center gap-3">
             <AccessibilityControls />
             <button onClick={() => navigate('/')} className="flex items-center gap-1 ddc-xs ddc-link">
-              Exit <X className="w-4 h-4" />
+              <T k="pages.defensivedrivingportalpage.f83b6f">Exit</T> <X className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-10">
-        <p className="ddc-eyebrow mb-2">Your course</p>
+        <p className="ddc-eyebrow mb-2"><T k="pages.defensivedrivingportalpage.444e5d">Your course</T></p>
         <h1 className="ddc-h1 font-black ddc-heading mb-4">{course.title}</h1>
 
         <div className="mb-8">
           <div className="flex items-center justify-between ddc-xs ddc-muted mb-1.5">
-            <span>{completedCount} of {vms.length} modules complete</span>
+            <span>{completedCount} <T k="pages.defensivedrivingportalpage.de04fa">of</T> {vms.length} <T k="pages.defensivedrivingportalpage.4138ff">modules complete</T></span>
             <span>{Math.round((completedCount / vms.length) * 100)}%</span>
           </div>
           <div className="h-2 w-full rounded-full ddc-track overflow-hidden">
@@ -175,15 +176,15 @@ export default function DefensiveDrivingPortalPage() {
             <div className="rounded-xl border ddc-bd ddc-card p-4 flex items-center gap-4 opacity-70">
               <Lock className="w-5 h-5 ddc-faint shrink-0" />
               <div>
-                <p className="font-semibold ddc-heading ddc-base">Final Exam</p>
-                <p className="ddc-xs ddc-muted">Unlocks after all {vms.length} modules are complete.</p>
+                <p className="font-semibold ddc-heading ddc-base"><T k="pages.defensivedrivingportalpage.6c1ccd">Final Exam</T></p>
+                <p className="ddc-xs ddc-muted"><T k="pages.defensivedrivingportalpage.fb42dd">Unlocks after all</T> {vms.length} <T k="pages.defensivedrivingportalpage.5dd2ab">modules are complete.</T></p>
               </div>
             </div>
           )}
         </div>
 
         <p className="mt-8 text-center ddc-sm ddc-muted">
-          Need help? Call <a href="tel:+17707861616" className="ddc-accent font-semibold">(770) 786-1616</a>
+          <T k="pages.defensivedrivingportalpage.ac9b8d">Need help? Call</T> <a href="tel:+17707861616" className="ddc-accent font-semibold">(770) 786-1616</a>
         </p>
       </div>
     </>,
@@ -209,15 +210,15 @@ function ModuleRow({ vm, onOpen }) {
           : <Lock className="w-6 h-6 ddc-faint" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold ddc-heading ddc-base leading-snug break-words">Module {vm.ordinal}: {vm.title}</p>
+        <p className="font-semibold ddc-heading ddc-base leading-snug break-words"><T k="pages.defensivedrivingportalpage.b8ff02">Module</T> {vm.ordinal}: {vm.title}</p>
         <p className="ddc-xs ddc-muted mt-0.5">
-          {vm.completed ? 'Completed' : vm.unlocked ? 'Ready' : 'Complete the previous module to unlock'}
-          {minutesFor(vm.content_ref) ? ` · About ${minutesFor(vm.content_ref)} min` : ''}
+          {vm.completed ? <T k="pages.defensivedrivingportalpage.1798b3">{'Completed'}</T> : vm.unlocked ? <T k="pages.defensivedrivingportalpage.20c7c5">{'Ready'}</T> : <T k="pages.defensivedrivingportalpage.48a406">{'Complete the previous module to unlock'}</T>}
+          {minutesFor(vm.content_ref) ? <>{" "}<T k="pages.defensivedrivingportalpage.11a639">{"· About"}</T>{" "}{minutesFor(vm.content_ref)}{" "}<T k="pages.defensivedrivingportalpage.b6c935">{"min"}</T></> : ''}
         </p>
       </div>
       <button onClick={onOpen} disabled={!vm.unlocked}
         className={`ddc-xs font-semibold rounded-full px-4 py-2 transition ${vm.unlocked ? 'ddc-btn' : 'ddc-soft ddc-faint cursor-not-allowed'}`}>
-        {vm.completed ? 'Review' : 'Start'}
+        {vm.completed ? <T k="pages.defensivedrivingportalpage.e29a79">{'Review'}</T> : <T k="pages.defensivedrivingportalpage.952f37">{'Start'}</T>}
       </button>
     </div>
   );
@@ -258,13 +259,13 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
       <div className="sticky top-0 z-20 ddc-bar backdrop-blur border-b">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <button onClick={onBack} className="ddc-link flex items-center gap-1.5 ddc-sm">
-            <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">All Modules</span>
+            <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline"><T k="pages.defensivedrivingportalpage.22f4d0">All Modules</T></span>
           </button>
-          <span className="ddc-xs ddc-faint">Module {mod.ordinal} of {total}</span>
+          <span className="ddc-xs ddc-faint"><T k="pages.defensivedrivingportalpage.b8ff02">Module</T> {mod.ordinal} <T k="pages.defensivedrivingportalpage.de04fa">of</T> {total}</span>
           <div className="flex items-center gap-3">
             <AccessibilityControls />
             <button onClick={onBack} className="flex items-center gap-1 ddc-xs ddc-link" aria-label="Exit to all modules">
-              Exit <X className="w-4 h-4" />
+              <T k="pages.defensivedrivingportalpage.f83b6f">Exit</T> <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -278,10 +279,10 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <p className="ddc-eyebrow">
-            Module {mod.ordinal}
-            {kind === 'section' && ` · Section ${sectionIdx + 1} of ${sections.length}`}
-            {kind === 'quiz' && ' · Module quiz'}
-            {kind === 'intro' && ' · Introduction'}
+            <T k="pages.defensivedrivingportalpage.b8ff02">Module</T> {mod.ordinal}
+            {kind === 'section' && <>{" "}<T k="pages.defensivedrivingportalpage.c7a10a">{"· Section"}</T>{" "}{sectionIdx + 1}{" "}<T k="pages.defensivedrivingportalpage.de04fa">{"of"}</T>{" "}{sections.length}</>}
+            {kind === 'quiz' && <T k="pages.defensivedrivingportalpage.265005">{' · Module quiz'}</T>}
+            {kind === 'intro' && <T k="pages.defensivedrivingportalpage.e94873">{' · Introduction'}</T>}
           </p>
           <ReadAlongButton read={read} />
         </div>
@@ -294,18 +295,18 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
             )}
             {sections.length > 0 && (
               <div className={`mt-6 rounded-xl border ddc-bd ddc-soft p-5 ${read.at === 2 ? 'ddc-reading' : ''}`}>
-                <p className="ddc-base font-semibold ddc-heading mb-3">In this module</p>
+                <p className="ddc-base font-semibold ddc-heading mb-3"><T k="pages.defensivedrivingportalpage.aa1c94">In this module</T></p>
                 <ol className="space-y-2.5">
                   {sections.map((s, i) => (
                     <li key={i} className="flex gap-3 ddc-sm ddc-text">
                       <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full ddc-btn text-[11px] font-bold">{i + 1}</span>
-                      {s.heading || `Section ${i + 1}`}
+                      {s.heading || <><T k="pages.defensivedrivingportalpage.f2c6b5">{"Section"}</T>{" "}{i + 1}</>}
                     </li>
                   ))}
                 </ol>
               </div>
             )}
-            {!content && <p className="ddc-muted">Content for this module is being prepared.</p>}
+            {!content && <p className="ddc-muted"><T k="pages.defensivedrivingportalpage.f8682d">Content for this module is being prepared.</T></p>}
           </div>
         )}
 
@@ -328,7 +329,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
           <div>
             {content?.takeaways?.length > 0 && (
               <div className={`mb-8 rounded-xl border ddc-cal ddc-cal-key p-5 ${read.at === 0 ? 'ddc-reading' : ''}`}>
-                <p className="flex items-center gap-2 ddc-base font-bold ddc-cal-title mb-3"><ListChecks className="w-5 h-5" /> Key takeaways</p>
+                <p className="flex items-center gap-2 ddc-base font-bold ddc-cal-title mb-3"><ListChecks className="w-5 h-5" /> <T k="pages.defensivedrivingportalpage.efa035">Key takeaways</T></p>
                 <ul className="space-y-2">
                   {content.takeaways.map((t, i) => (
                     <li key={i} className="flex gap-2.5 ddc-sm ddc-text"><CheckCircle2 className="w-4 h-4 ddc-good shrink-0 mt-0.5" /> {t}</li>
@@ -343,23 +344,23 @@ function ModulePlayer({ module: mod, total, onBack, onNext }) {
 
         <div className="mt-10 flex items-center justify-between gap-3 border-t ddc-bd pt-6">
           <button onClick={() => (step === 0 ? onBack() : go(step - 1))} className="ddc-sm ddc-link flex items-center gap-1.5">
-            <ArrowLeft className="w-4 h-4" /> {step === 0 ? 'All Modules' : 'Back'}
+            <ArrowLeft className="w-4 h-4" /> {step === 0 ? <T k="pages.defensivedrivingportalpage.22f4d0">{'All Modules'}</T> : <T k="pages.defensivedrivingportalpage.b52b36">{'Back'}</T>}
           </button>
 
           {kind !== 'quiz' ? (
             <div className="flex items-center gap-3">
-              {kind === 'section' && !sectionGateOk && <span className="ddc-xs ddc-faint hidden sm:inline">Pass the section check</span>}
+              {kind === 'section' && !sectionGateOk && <span className="ddc-xs ddc-faint hidden sm:inline"><T k="pages.defensivedrivingportalpage.6ddf81">Pass the section check</T></span>}
               <button onClick={() => go(step + 1)} disabled={!sectionGateOk}
                 className="ddc-sm ddc-btn rounded-full px-6 py-3 transition flex items-center gap-2">
-                Continue <ArrowRight className="w-4 h-4" />
+                <T k="pages.defensivedrivingportalpage.2e0262">Continue</T> <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           ) : (completed || kcPassed) ? (
             <button onClick={onNext} className="ddc-sm ddc-btn rounded-full px-6 py-3 transition flex items-center gap-2">
-              {isLast ? 'Finish' : 'Next Module'} <ArrowRight className="w-4 h-4" />
+              {isLast ? <T k="pages.defensivedrivingportalpage.b74bde">{'Finish'}</T> : <T k="pages.defensivedrivingportalpage.b64af4">{'Next Module'}</T>} <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
-            <span className="ddc-xs ddc-faint">Pass the quiz to continue</span>
+            <span className="ddc-xs ddc-faint"><T k="pages.defensivedrivingportalpage.68c3cf">Pass the quiz to continue</T></span>
           )}
         </div>
       </div>
@@ -424,7 +425,7 @@ function ReadAlongButton({ read }) {
     <div className="inline-flex items-center gap-1.5">
       <button type="button" onClick={read.playing ? read.stop : read.start}
         className="inline-flex items-center gap-1.5 rounded-full border ddc-bd ddc-card px-3 py-1.5 ddc-xs font-semibold ddc-heading">
-        {read.playing ? <><Square className="h-3.5 w-3.5" aria-hidden="true" /> Stop</> : <><Volume2 className="h-3.5 w-3.5 ddc-accent" aria-hidden="true" /> Read Along</>}
+        {read.playing ? <><Square className="h-3.5 w-3.5" aria-hidden="true" /> <T k="pages.defensivedrivingportalpage.9e2534">Stop</T></> : <><Volume2 className="h-3.5 w-3.5 ddc-accent" aria-hidden="true" /> <T k="pages.defensivedrivingportalpage.f1c468">Read Along</T></>}
       </button>
       <button type="button" onClick={() => { read.setRate(next[0]); if (read.playing) read.stop(); }}
         aria-label={`Reading speed: ${RATES[i][1]}. Tap for ${next[1].toLowerCase()}.`}
@@ -507,7 +508,7 @@ function SectionQuiz({ quiz, defaultPassed, onPass }) {
 
   return (
     <div className="rounded-xl border ddc-bd ddc-card p-5">
-      <p className="ddc-xs uppercase tracking-wider ddc-faint mb-3">Section check</p>
+      <p className="ddc-xs uppercase tracking-wider ddc-faint mb-3"><T k="pages.defensivedrivingportalpage.6def0c">Section check</T></p>
       <div className="space-y-5">
         {quiz.map((qq, qi) => (
           <div key={qi}>
@@ -536,12 +537,12 @@ function SectionQuiz({ quiz, defaultPassed, onPass }) {
       </div>
 
       {passed ? (
-        <p className="mt-4 ddc-sm ddc-good flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Section check passed.</p>
+        <p className="mt-4 ddc-sm ddc-good flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> <T k="pages.defensivedrivingportalpage.b9cf06">Section check passed.</T></p>
       ) : (
         <>
-          {checked && <p className="mt-3 ddc-sm ddc-warn">Not quite — review the highlighted answers and try again.</p>}
+          {checked && <p className="mt-3 ddc-sm ddc-warn"><T k="pages.defensivedrivingportalpage.dfbe83">Not quite — review the highlighted answers and try again.</T></p>}
           <button type="button" onClick={check} disabled={!allAnswered}
-            className="mt-4 ddc-btn rounded-full px-5 py-2.5 ddc-sm transition">Check Answers</button>
+            className="mt-4 ddc-btn rounded-full px-5 py-2.5 ddc-sm transition"><T k="pages.defensivedrivingportalpage.6488f7">Check Answers</T></button>
         </>
       )}
     </div>
@@ -565,9 +566,9 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
 
   useEffect(() => { if (!alreadyPassed) load(); }, [alreadyPassed, load]);
 
-  if (passed) return <p className="ddc-sm ddc-good flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Knowledge check passed.</p>;
-  if (error) return <div className="ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}<button onClick={load} className="underline ml-2">Retry</button></div>;
-  if (!questions) return <div className="ddc-sm ddc-muted flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading knowledge check…</div>;
+  if (passed) return <p className="ddc-sm ddc-good flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> <T k="pages.defensivedrivingportalpage.cee705">Knowledge check passed.</T></p>;
+  if (error) return <div className="ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}<button onClick={load} className="underline ml-2"><T k="pages.defensivedrivingportalpage.9f5cd8">Retry</T></button></div>;
+  if (!questions) return <div className="ddc-sm ddc-muted flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingportalpage.e6c7ff">Loading knowledge check…</T></div>;
 
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
   const submit = async () => {
@@ -582,8 +583,8 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
 
   return (
     <div>
-      <h2 className="ddc-lg font-bold ddc-heading mb-1">Module Quiz</h2>
-      <p className="ddc-xs ddc-muted mb-5">Answer all questions to complete this module. You can retake it if needed.</p>
+      <h2 className="ddc-lg font-bold ddc-heading mb-1"><T k="pages.defensivedrivingportalpage.1669cc">Module Quiz</T></h2>
+      <p className="ddc-xs ddc-muted mb-5"><T k="pages.defensivedrivingportalpage.33b69d">Answer all questions to complete this module. You can retake it if needed.</T></p>
       <div className="space-y-6">
         {questions.map((q, qi) => (
           <fieldset key={q.id}>
@@ -603,14 +604,14 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
       </div>
 
       {result && !result.passed && (
-        <p className="mt-4 ddc-sm ddc-warn">You scored {result.score_pct}% — {result.threshold}% is required to pass. Review the material and try again.
-          <button onClick={load} className="underline ml-2">New Attempt</button></p>
+        <p className="mt-4 ddc-sm ddc-warn"><T k="pages.defensivedrivingportalpage.6a5599">You scored</T> {result.score_pct}% — {result.threshold}<T k="pages.defensivedrivingportalpage.f5e438">% is required to pass. Review the material and try again.</T>
+          <button onClick={load} className="underline ml-2"><T k="pages.defensivedrivingportalpage.f8b194">New Attempt</T></button></p>
       )}
       {error && <p className="mt-4 ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
 
       <button onClick={submit} disabled={!allAnswered || busy}
         className="mt-5 ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
-        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit Answers'}
+        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingportalpage.25bdf9">Submitting…</T></> : <T k="pages.defensivedrivingportalpage.b4eabb">{'Submit Answers'}</T>}
       </button>
     </div>
   );
@@ -643,7 +644,7 @@ function FinalExam({ course, enrollment }) {
   if (passed) {
     return (
       <div className="rounded-xl ddc-cal ddc-cal-key p-5">
-        <div className="flex items-center gap-3 mb-3"><Award className="w-6 h-6 ddc-good" /><p className="font-semibold ddc-heading ddc-base">Final exam passed — course complete!</p></div>
+        <div className="flex items-center gap-3 mb-3"><Award className="w-6 h-6 ddc-good" /><p className="font-semibold ddc-heading ddc-base"><T k="pages.defensivedrivingportalpage.c3807b">Final exam passed — course complete!</T></p></div>
         <CertificateBlock courseSlug={course.slug} />
       </div>
     );
@@ -680,15 +681,15 @@ function FinalExam({ course, enrollment }) {
   };
 
   if (phase === 'loading') {
-    return <div className="rounded-xl border ddc-bd ddc-card p-5 ddc-sm ddc-muted flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading final exam…</div>;
+    return <div className="rounded-xl border ddc-bd ddc-card p-5 ddc-sm ddc-muted flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingportalpage.81ad4b">Loading final exam…</T></div>;
   }
 
   if (phase === 'exam' && exam) {
     const allAnswered = exam.questions.every((q) => answers[q.id]);
     return (
       <div className="rounded-xl border ddc-bd ddc-card p-5">
-        <h3 className="ddc-lg font-bold ddc-heading mb-1">Final Exam</h3>
-        <p className="ddc-xs ddc-muted mb-5">{exam.questions.length} questions · {course.pass_threshold_pct}% to pass</p>
+        <h3 className="ddc-lg font-bold ddc-heading mb-1"><T k="pages.defensivedrivingportalpage.6c1ccd">Final Exam</T></h3>
+        <p className="ddc-xs ddc-muted mb-5">{exam.questions.length} <T k="pages.defensivedrivingportalpage.21292f">questions ·</T> {course.pass_threshold_pct}<T k="pages.defensivedrivingportalpage.d202d9">% to pass</T></p>
         <div className="space-y-6">
           {exam.questions.map((q, qi) => (
             <fieldset key={q.id}>
@@ -708,7 +709,7 @@ function FinalExam({ course, enrollment }) {
         {error && <p className="mt-4 ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
         <button onClick={doSubmit} disabled={!allAnswered || busy}
           className="mt-5 ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
-          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit Exam'}
+          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingportalpage.25bdf9">Submitting…</T></> : <T k="pages.defensivedrivingportalpage.a94dbc">{'Submit Exam'}</T>}
         </button>
       </div>
     );
@@ -716,19 +717,19 @@ function FinalExam({ course, enrollment }) {
 
   return (
     <div className="rounded-xl ddc-cal ddc-cal-key p-5">
-      <div className="flex items-center gap-3 mb-2"><Award className="w-6 h-6 ddc-good" /><p className="font-semibold ddc-heading ddc-base">Final Exam</p></div>
+      <div className="flex items-center gap-3 mb-2"><Award className="w-6 h-6 ddc-good" /><p className="font-semibold ddc-heading ddc-base"><T k="pages.defensivedrivingportalpage.6c1ccd">Final Exam</T></p></div>
       {result && !result.passed && (
-        <p className="ddc-sm ddc-warn mb-3">You scored {result.score_pct}% — {result.threshold}% is required. {result.attempts_remaining > 0 ? `${result.attempts_remaining} attempt(s) remaining.` : 'No attempts remaining — please contact support.'}</p>
+        <p className="ddc-sm ddc-warn mb-3"><T k="pages.defensivedrivingportalpage.6a5599">You scored</T> {result.score_pct}% — {result.threshold}<T k="pages.defensivedrivingportalpage.a98bcf">% is required.</T> {result.attempts_remaining > 0 ? <>{result.attempts_remaining}{" "}<T k="pages.defensivedrivingportalpage.806fe6">{"attempt(s) remaining."}</T></> : <T k="pages.defensivedrivingportalpage.672bc5">{'No attempts remaining — please contact support.'}</T>}</p>
       )}
-      <p className="ddc-xs ddc-muted mb-4">{course.exam_question_count} questions · {course.pass_threshold_pct}% to pass · attempt {Math.min(attemptsUsed + 1, course.retake_limit)} of {course.retake_limit}</p>
+      <p className="ddc-xs ddc-muted mb-4">{course.exam_question_count} <T k="pages.defensivedrivingportalpage.21292f">questions ·</T> {course.pass_threshold_pct}<T k="pages.defensivedrivingportalpage.83fdf8">% to pass · attempt</T> {Math.min(attemptsUsed + 1, course.retake_limit)} <T k="pages.defensivedrivingportalpage.de04fa">of</T> {course.retake_limit}</p>
       {error && <p className="ddc-sm ddc-bad mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
       {remaining <= 0 ? (
-        <p className="ddc-sm ddc-text">No attempts remaining. Please contact support.</p>
+        <p className="ddc-sm ddc-text"><T k="pages.defensivedrivingportalpage.1f295e">No attempts remaining. Please contact support.</T></p>
       ) : inCooldown ? (
-        <p className="ddc-sm ddc-text">You can try again after {cooldownUntil.toLocaleTimeString()}.</p>
+        <p className="ddc-sm ddc-text"><T k="pages.defensivedrivingportalpage.139cec">You can try again after</T> {cooldownUntil.toLocaleTimeString()}.</p>
       ) : (
         <button onClick={start} disabled={busy} className="ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
-          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</> : 'Start Final Exam'}
+          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingportalpage.0b1d6c">Preparing…</T></> : <T k="pages.defensivedrivingportalpage.752db6">{'Start Final Exam'}</T>}
         </button>
       )}
     </div>
@@ -764,14 +765,14 @@ function CertificateBlock({ courseSlug }) {
   return (
     <div>
       <p className="ddc-sm ddc-text mb-3">
-        Your certificate has been generated and forwarded to the agency for your insurance discount review.
-        {uid && <> Certificate ID: <span className="font-mono ddc-heading">{uid}</span>.</>}
+        <T k="pages.defensivedrivingportalpage.5a212c">Your certificate has been generated and forwarded to the agency for your insurance discount review.</T>
+        {uid && <> <T k="pages.defensivedrivingportalpage.df03d6">Certificate ID:</T> <span className="font-mono ddc-heading">{uid}</span>.</>}
       </p>
       {error && <p className="ddc-sm ddc-bad mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
       <button onClick={download} disabled={preparing || downloading} className="ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
-        {preparing ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</>
-          : downloading ? <><Loader2 className="w-4 h-4 animate-spin" /> Opening…</>
-          : <><Download className="w-4 h-4" /> Download Certificate</>}
+        {preparing ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingportalpage.0b1d6c">Preparing…</T></>
+          : downloading ? <><Loader2 className="w-4 h-4 animate-spin" /> <T k="pages.defensivedrivingportalpage.b1b853">Opening…</T></>
+          : <><Download className="w-4 h-4" /> <T k="pages.defensivedrivingportalpage.57959f">Download Certificate</T></>}
       </button>
     </div>
   );

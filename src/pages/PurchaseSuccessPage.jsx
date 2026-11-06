@@ -1,4 +1,5 @@
 // src/pages/PurchaseSuccessPage.jsx
+import { T } from '../components/SiteCopy';
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Download, Mail, ArrowRight, FileText } from 'lucide-react';
@@ -32,12 +33,12 @@ const PurchaseSuccessPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-4">Purchase Not Found</h1>
+          <h1 className="text-3xl font-bold text-white mb-4"><T k="pages.purchasesuccesspage.8bbabc">Purchase Not Found</T></h1>
           <Link
             to="/store"
             className="text-accent-400 hover:text-accent-300 transition-colors"
           >
-            ← Back to Store
+            <T k="pages.purchasesuccesspage.f1b5d8">← Back to Store</T>
           </Link>
         </div>
       </div>
@@ -87,11 +88,11 @@ const PurchaseSuccessPage = () => {
 
         {/* Title */}
         <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
-          Purchase Complete!
+          <T k="pages.purchasesuccesspage.fa0902">Purchase Complete!</T>
         </h1>
 
         <p className="text-lg text-gray-600 mb-8">
-          You now have lifetime access to <span className="font-bold text-gray-900">{product.name}</span>
+          <T k="pages.purchasesuccesspage.180bb4">You now have lifetime access to</T> <span className="font-bold text-gray-900">{product.name}</span>
         </p>
 
         {/* Download Card */}
@@ -101,10 +102,10 @@ const PurchaseSuccessPage = () => {
           <div className="relative">
             <FileText className="w-16 h-16 mx-auto mb-4 text-primary-600" />
             <h2 className="text-xl font-bold text-gray-900 mb-3">
-              Your Guide Is Ready
+              <T k="pages.purchasesuccesspage.3ebf7a">Your Guide Is Ready</T>
             </h2>
             <p className="text-sm text-gray-600 mb-6">
-              Click below to download your {product.format} ({product.pages} pages)
+              <T k="pages.purchasesuccesspage.29c867">Click below to download your</T> {product.format} ({product.pages} <T k="pages.purchasesuccesspage.6883f0">pages)</T>
             </p>
 
             {/* Download Button */}
@@ -116,7 +117,7 @@ const PurchaseSuccessPage = () => {
               className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-bold rounded-xl hover:from-primary-700 hover:to-secondary-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-primary-500/50"
             >
               <Download className="w-5 h-5" />
-              Download Now
+              <T k="pages.purchasesuccesspage.6d56a8">Download Now</T>
             </button>
           </div>
         </div>
@@ -126,11 +127,11 @@ const PurchaseSuccessPage = () => {
           <div className="flex items-start gap-3">
             <Mail className="w-5 h-5 text-gray-500 flex-shrink-0 mt-1" />
             <div className="text-left">
-              <h3 className="font-bold text-gray-900 mb-1">Check Your Email</h3>
+              <h3 className="font-bold text-gray-900 mb-1"><T k="pages.purchasesuccesspage.e80f3c">Check Your Email</T></h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                We've sent your download link and receipt to your email. Can't find it? Check your spam folder or{' '}
+                <T k="pages.purchasesuccesspage.8afea9">We've sent your download link and receipt to your email. Can't find it? Check your spam folder or</T>{' '}
                 <a href="mailto:cameron@insuredbycam.com" className="text-primary-600 hover:text-primary-700 font-semibold">
-                  contact us
+                  <T k="pages.purchasesuccesspage.6cf272">contact us</T>
                 </a>
                 .
               </p>
@@ -140,31 +141,31 @@ const PurchaseSuccessPage = () => {
 
         {/* Next Steps */}
         <div className="bg-white rounded-2xl p-6 mb-8 border border-gray-200 text-left">
-          <h3 className="font-bold text-gray-900 mb-4">What's Next?</h3>
+          <h3 className="font-bold text-gray-900 mb-4"><T k="pages.purchasesuccesspage.b4b55f">What's Next?</T></h3>
           <ul className="space-y-3 text-sm text-gray-700">
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
                 1
               </span>
-              <span>Download your guide and save it somewhere safe</span>
+              <span><T k="pages.purchasesuccesspage.80f2c8">Download your guide and save it somewhere safe</T></span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
                 2
               </span>
-              <span>Read through it (or jump to the sections you need most)</span>
+              <span><T k="pages.purchasesuccesspage.077557">Read through it (or jump to the sections you need most)</T></span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
                 3
               </span>
-              <span>Use the checklists and worksheets to review your own policy</span>
+              <span><T k="pages.purchasesuccesspage.5b85e2">Use the checklists and worksheets to review your own policy</T></span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
                 4
               </span>
-              <span>Have questions? Email Cameron anytime</span>
+              <span><T k="pages.purchasesuccesspage.0a21e0">Have questions? Email Cameron anytime</T></span>
             </li>
           </ul>
         </div>
@@ -175,22 +176,22 @@ const PurchaseSuccessPage = () => {
             to="/store"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
           >
-            Browse More Guides
+            <T k="pages.purchasesuccesspage.8e73a0">Browse More Guides</T>
           </Link>
           <Link
             to="/"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-secondary-700 transition-all"
           >
-            Get Insurance Quote
+            <T k="pages.purchasesuccesspage.c4abc2">Get Insurance Quote</T>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
         {/* Footer Note */}
         <p className="text-xs text-gray-500 mt-8">
-          Your purchase is backed by our 30-day money-back guarantee.
+          <T k="pages.purchasesuccesspage.4892e3">Your purchase is backed by our 30-day money-back guarantee.</T>
           <br />
-          Not happy? Email us for a full refund, no questions asked.
+          <T k="pages.purchasesuccesspage.6fb560">Not happy? Email us for a full refund, no questions asked.</T>
         </p>
       </div>
     </div>

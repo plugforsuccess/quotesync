@@ -204,7 +204,7 @@ export default function AgentAliasManager({ orgId, employees }) {
                   className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
                   <Link2 className="w-3.5 h-3.5" />
-                  {saving || backfilling ? 'Saving...' : 'Save'}
+                  {saving || backfilling ? <T k="pages.components.timeattendance.agentaliasmanager.ae7e88">{'Saving...'}</T> : <T k="pages.components.timeattendance.agentaliasmanager.efc007">{'Save'}</T>}
                 </button>
               </div>
             ))}

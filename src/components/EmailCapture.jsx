@@ -1,4 +1,5 @@
 // src/components/EmailCapture.jsx
+import { T } from './SiteCopy';
 import React, { useState } from 'react';
 import { Mail, CheckCircle, ArrowRight } from 'lucide-react';
 import { trackEmailCapture } from '../lib/analytics';
@@ -33,9 +34,9 @@ const EmailCapture = ({ context = 'general' }) => {
             <CheckCircle className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="font-bold text-success-700 mb-1">You're In!</h3>
+            <h3 className="font-bold text-success-700 mb-1"><T k="components.emailcapture.50dbd5">You're In!</T></h3>
             <p className="text-sm text-success-700/80">
-              Check your email for your first tip on understanding insurance coverage.
+              <T k="components.emailcapture.ca5435">Check your email for your first tip on understanding insurance coverage.</T>
             </p>
           </div>
         </div>
@@ -109,17 +110,17 @@ const EmailCapture = ({ context = 'general' }) => {
           className="w-full py-3 px-6 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
         >
           {isLoading ? (
-            'Subscribing...'
+            <T k="components.emailcapture.b04da4">{'Subscribing...'}</T>
           ) : (
             <>
-              Subscribe
+              <T k="components.emailcapture.d6981f">Subscribe</T>
               <ArrowRight className="w-4 h-4" />
             </>
           )}
         </button>
 
         <p className="text-xs text-gray-500 text-center">
-          We respect your privacy. Unsubscribe anytime.
+          <T k="components.emailcapture.230c91">We respect your privacy. Unsubscribe anytime.</T>
         </p>
       </form>
     </div>

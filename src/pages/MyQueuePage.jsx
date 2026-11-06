@@ -1009,17 +1009,17 @@ export default function MyQueuePage() {
           <div style={factTile}>
             <div style={factLabel}>
               {event.product ? `${event.product} ` : ''}
-              {isLapsed ? 'coverage' : days < 0 ? 'overdue' : 'cancels in'}
+              {isLapsed ? <T k="pages.myqueuepage.6dafbc">{'coverage'}</T> : days < 0 ? <T k="pages.myqueuepage.ba2fff">{'overdue'}</T> : <T k="pages.myqueuepage.6b95ed">{'cancels in'}</T>}
             </div>
             <div style={{
               fontSize: factValueSize, fontWeight: 800,
               color: daysColor,
               fontFamily: "'DM Mono', monospace", lineHeight: 1.1,
             }}>
-              {isLapsed ? '⚠ LAPSED' : daysLabel}
+              {isLapsed ? <T k="pages.myqueuepage.ff2683">{'⚠ LAPSED'}</T> : daysLabel}
             </div>
             <div style={{ fontSize: '0.9375rem', color: 'var(--qs-dim)', marginTop: '0.25rem' }}>
-              {isLapsed ? 'since ' : ''}{fmtDate(event.cancel_effective_date)}
+              {isLapsed ? <T k="pages.myqueuepage.2eb888">{'since '}</T> : ''}{fmtDate(event.cancel_effective_date)}
             </div>
           </div>
         </div>
@@ -1043,7 +1043,7 @@ export default function MyQueuePage() {
             fontSize: '0.8125rem', fontWeight: 700, color: 'var(--qs-dim)',
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem',
           }}>
-            {isLapsed ? 'Reinstatement script' : 'Call script'}
+            {isLapsed ? <T k="pages.myqueuepage.cb9d2f">{'Reinstatement script'}</T> : <T k="pages.myqueuepage.766315">{'Call script'}</T>}
           </div>
           <p style={{
             fontSize: 'clamp(1rem, 0.95rem + 0.35vw, 1.1875rem)',
@@ -1279,7 +1279,7 @@ export default function MyQueuePage() {
 
               {event.claim_flag && event.claim_flag !== 'none' && (
                 <span style={{ ...flag, fontWeight: 700 }}>
-                  ⚠ {event.claim_flag === 'open' ? 'Open Claim' : 'Recent Claim'}
+                  ⚠ {event.claim_flag === 'open' ? <T k="pages.myqueuepage.9d62b0">{'Open Claim'}</T> : <T k="pages.myqueuepage.4fcaee">{'Recent Claim'}</T>}
                 </span>
               )}
 
@@ -1319,7 +1319,7 @@ export default function MyQueuePage() {
           <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
             <div style={{ fontSize: 18, fontWeight: 700,
               color: urgent ? 'var(--qs-danger)' : 'var(--qs-bright)' }}>
-              {daysUntil === 0 ? 'Today' : daysUntil < 0 ? 'Overdue' : `${daysUntil}d`}
+              {daysUntil === 0 ? <T k="pages.myqueuepage.24345a">{'Today'}</T> : daysUntil < 0 ? <T k="pages.myqueuepage.07217c">{'Overdue'}</T> : `${daysUntil}d`}
             </div>
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}><T k="pages.myqueuepage.4b537a">renewal</T></div>
             {(() => {
@@ -1364,7 +1364,7 @@ export default function MyQueuePage() {
           {event.premium_change != null && event.premium_change !== 0 && (
             <span style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
               {/* Auto renews on a 6-month term, not annually — label the delta by term. */}
-              ({changePct > 0 ? '+' : ''}{fmt$(event.premium_change)}/{/auto/i.test(event.product || '') ? '6 mo' : 'yr'})
+              ({changePct > 0 ? '+' : ''}{fmt$(event.premium_change)}/{/auto/i.test(event.product || '') ? <T k="pages.myqueuepage.78b913">{'6 mo'}</T> : <T k="pages.myqueuepage.56369f">{'yr'}</T>})
             </span>
           )}
           {lastAtt ? (
@@ -1534,7 +1534,7 @@ export default function MyQueuePage() {
             style={{ fontSize: 13, padding: '6px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
               color: 'var(--qs-subtle)', cursor: refreshing ? 'wait' : 'pointer', opacity: refreshing ? 0.7 : 1 }}>
-            {refreshing ? '↻ Refreshing…' : '↻ Refresh'}
+            {refreshing ? <T k="pages.myqueuepage.ee0950">{'↻ Refreshing…'}</T> : <T k="pages.myqueuepage.9ca7f5">{'↻ Refresh'}</T>}
           </button>
         </div>
       </div>
@@ -1771,7 +1771,7 @@ export default function MyQueuePage() {
                 transition: 'all 0.15s',
               }}
             >
-              {focusMode ? '⚡ Focus Mode' : '☰ Full Queue'}
+              {focusMode ? <T k="pages.myqueuepage.5223d5">{'⚡ Focus Mode'}</T> : <T k="pages.myqueuepage.6c0b99">{'☰ Full Queue'}</T>}
             </button>
           </div>
         </div>
@@ -1955,7 +1955,7 @@ export default function MyQueuePage() {
                   fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)',
                   textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 2px 6px',
                 }}>
-                  {focusMode ? 'Focus — highest saveable first' : 'Full queue — soonest first'}
+                  {focusMode ? <T k="pages.myqueuepage.34fe40">{'Focus — highest saveable first'}</T> : <T k="pages.myqueuepage.e9d118">{'Full queue — soonest first'}</T>}
                 </div>
                 {groupedRenewals.map(g => g.cases.length === 1 ? (
                   <RenewalRow

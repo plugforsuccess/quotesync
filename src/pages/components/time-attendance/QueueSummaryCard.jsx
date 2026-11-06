@@ -133,7 +133,7 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
           <span><T k="pages.components.timeattendance.queuesummarycard.0e5e2f">Data for:</T> {presentDates.map(formatDateShort).join(', ')}</span>
         ) : (
           <span>
-            <T k="pages.components.timeattendance.queuesummarycard.0e5e2f">Data for:</T> {presentDates.map(formatDateShort).join(', ') || 'none'}
+            <T k="pages.components.timeattendance.queuesummarycard.0e5e2f">Data for:</T> {presentDates.map(formatDateShort).join(', ') || <T k="pages.components.timeattendance.queuesummarycard.71f8e7">{'none'}</T>}
             {missingDates.length > 0 && (
               <span className="text-amber-400 ml-1">
                 ({missingDates.map(formatDateShort).join(', ')} <T k="pages.components.timeattendance.queuesummarycard.717e6f">missing)</T>

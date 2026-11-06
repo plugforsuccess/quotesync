@@ -272,8 +272,8 @@ export default function StaffingCapacity({
         <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-1"><T k="pages.components.dashboard.staffingcapacity.aa21f4">Staffing Scenarios</T></h3>
         <p className="text-xs mb-3" style={{ color: 'var(--qs-subtle)' }}>
           {ytdAvgPremium
-            ? `Using YTD actuals: $${Math.round(ytdAvgPremium).toLocaleString()} avg premium · ${ytdCommissionRate.toFixed(1)}% blended rate`
-            : 'Using planner estimates — add revenue entries for actual rates'}
+            ? <><T k="pages.components.dashboard.staffingcapacity.396fd5">{"Using YTD actuals: $"}</T>{Math.round(ytdAvgPremium).toLocaleString()}{" "}<T k="pages.components.dashboard.staffingcapacity.c2f7f6">{"avg premium ·"}</T>{" "}{ytdCommissionRate.toFixed(1)}<T k="pages.components.dashboard.staffingcapacity.bd8232">{"% blended rate"}</T></>
+            : <T k="pages.components.dashboard.staffingcapacity.03a694">{'Using planner estimates — add revenue entries for actual rates'}</T>}
         </p>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">

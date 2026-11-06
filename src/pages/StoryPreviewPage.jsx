@@ -74,7 +74,7 @@ const StoryPreviewPage = () => {
         <div className="text-center max-w-md mx-auto px-4">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2"><T k="pages.storypreviewpage.076198">Preview Not Available</T></h1>
-          <p className="text-gray-600 mb-6">{error || 'Story not found'}</p>
+          <p className="text-gray-600 mb-6">{error || <T k="pages.storypreviewpage.e62320">{'Story not found'}</T>}</p>
           <button
             onClick={() => navigate('/news/dashboard')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
@@ -146,7 +146,7 @@ const StoryPreviewPage = () => {
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6 pb-6 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <span className="font-medium text-gray-900">
-              {story.author_name || 'Unknown Author'}
+              {story.author_name || <T k="pages.storypreviewpage.b33211">{'Unknown Author'}</T>}
             </span>
           </div>
           {story.published_at && (
