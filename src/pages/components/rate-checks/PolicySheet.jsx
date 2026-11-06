@@ -90,7 +90,7 @@ function TileLabel({ children }) {
     </p>
   );
 }
-const TILE_NAME = { comp_deductible: 'Comp deductible', coll_deductible: 'Collision deductible' };
+const TILE_NAME = { comp_deductible: 'Comp Deductible', coll_deductible: 'Collision Deductible' };
 const LEVEL_TONE = {
   full: { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' },
   liability: { color: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)' },
@@ -133,7 +133,7 @@ function CoverageTile({ c, setup, total, wide }) {
   const deductible = c.key === 'comp_deductible' || c.key === 'coll_deductible';
   const rows = setup.vehicles.filter(x => !(deductible && x.level === 'liability'));
   // Glass reads "$0 · Glass deductible" when it's an amount, "Glass" when it's words ("Full glass").
-  const name = c.key === 'glass' ? (c.groups.every(g => /^\$/.test(g.value)) ? 'Glass deductible' : 'Glass') : (TILE_NAME[c.key] || c.label);
+  const name = c.key === 'glass' ? (c.groups.every(g => /^\$/.test(g.value)) ? 'Glass Deductible' : 'Glass') : (TILE_NAME[c.key] || c.label);
   const everyCar = c.same && c.count === total;
   const withIt = setup.vehicles.filter(x => c.groups[0]?.indexes.includes(x.index));
   return (

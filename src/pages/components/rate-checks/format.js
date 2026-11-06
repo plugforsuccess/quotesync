@@ -45,12 +45,12 @@ export function decisionLabel(rc, policies = null) {
 
 // Rule editor vocab (mirrors rate_check_rules check constraints).
 export const RULE_FIELDS = [
-  { value: 'dwelling', label: 'Dwelling limit', kind: 'money', lines: ['home'] },
-  { value: 'home_liability', label: 'Liability limit', kind: 'money', lines: ['home', 'condo', 'renters', 'commercial', 'umbrella'] },
-  { value: 'personal_property', label: 'Personal property limit', kind: 'money', lines: ['home', 'condo', 'renters'] },
-  { value: 'bi_per_person', label: 'Bodily injury per person', kind: 'money', lines: ['auto', 'commercial_auto'] },
-  { value: 'bi_per_accident', label: 'Bodily injury per accident', kind: 'money', lines: ['auto', 'commercial_auto'] },
-  { value: 'pd', label: 'Property damage', kind: 'money', lines: ['auto', 'commercial_auto'] },
+  { value: 'dwelling', label: 'Dwelling Limit', kind: 'money', lines: ['home'] },
+  { value: 'home_liability', label: 'Liability Limit', kind: 'money', lines: ['home', 'condo', 'renters', 'commercial', 'umbrella'] },
+  { value: 'personal_property', label: 'Personal Property Limit', kind: 'money', lines: ['home', 'condo', 'renters'] },
+  { value: 'bi_per_person', label: 'Bodily Injury Per Person', kind: 'money', lines: ['auto', 'commercial_auto'] },
+  { value: 'bi_per_accident', label: 'Bodily Injury Per Accident', kind: 'money', lines: ['auto', 'commercial_auto'] },
+  { value: 'pd', label: 'Property Damage', kind: 'money', lines: ['auto', 'commercial_auto'] },
   { value: 'um_uim', label: 'Uninsured Motorist BI', kind: 'money', lines: ['auto'] },
   { value: 'vehicle_count', label: 'Number of vehicles', kind: 'number', lines: ['auto', 'commercial_auto'] },
   { value: 'driver_count', label: 'Number of drivers', kind: 'number', lines: ['auto', 'commercial_auto'] },
@@ -88,28 +88,29 @@ export const TERM_HINT = {
 };
 
 const COVERAGE_LABELS = {
-  bi_per_person: 'Bodily injury (per person)',
-  bi_per_accident: 'Bodily injury (per accident)',
-  pd: 'Property damage',
+  bi_per_person: 'Bodily Injury (Per Person)',
+  bi_per_accident: 'Bodily Injury (Per Accident)',
+  pd: 'Property Damage',
   um_uim: 'Uninsured Motorist BI',
-  med_pay: 'Medical payments',
-  comp_deductible: 'Comprehensive deductible',
-  coll_deductible: 'Collision deductible',
+  med_pay: 'Medical Payments',
+  comp_deductible: 'Comprehensive Deductible',
+  coll_deductible: 'Collision Deductible',
   rental: 'Rental',
   roadside: 'Roadside',
   dwelling: 'Dwelling',
-  other_structures: 'Other structures',
-  personal_property: 'Personal property',
-  loss_of_use: 'Loss of use',
+  other_structures: 'Other Structures',
+  personal_property: 'Personal Property',
+  loss_of_use: 'Loss of Use',
   liability: 'Liability',
   deductible: 'Deductible',
-  wind_hail_deductible: 'Wind / hail deductible',
+  wind_hail_deductible: 'Wind / Hail Deductible',
 };
 
 export function coverageLabel(key) {
   if (COVERAGE_LABELS[key]) return COVERAGE_LABELS[key];
-  const s = String(key).replace(/_/g, ' ');
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  const small = new Set(['a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on']);
+  return String(key).replace(/_/g, ' ').split(' ')
+    .map((w, i) => (i > 0 && small.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
 }
 
 export function coverageValue(v) {
@@ -219,7 +220,7 @@ export function quoteSheet(rc) {
       if (!setup?.coverages.length) return;
       push('', 'Vehicle coverages:');
       setup.coverages.forEach(c => {
-        const label = { comp_deductible: 'Comp deductible', coll_deductible: 'Collision deductible' }[c.key] || c.label;
+        const label = { comp_deductible: 'Comp Deductible', coll_deductible: 'Collision Deductible' }[c.key] || c.label;
         if (c.same) push(`  ${label}: ${c.groups[0].value}`);
         else {
           push(`  ${label}:`);

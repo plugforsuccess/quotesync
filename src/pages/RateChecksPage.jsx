@@ -644,11 +644,11 @@ export default function RateChecksPage() {
 const SHOW_SEND_A_LINK = false;
 
 // The sales workspace: full screen, one household, in steps. Review the quote sheet,
-// log the Allstate quote, then (next steps) tell them and close.
+// record the Allstate quote, then (next steps) contact them and close.
 const STEPS = [
-  { v: 'review', label: 'Review' },
-  { v: 'log', label: 'Log Quote' },
-  { v: 'tell', label: 'Tell Them', soon: true },
+  { v: 'review', label: 'Quote' },
+  { v: 'log', label: 'Record Quote' },
+  { v: 'tell', label: 'Contact', soon: true },
   { v: 'close', label: 'Close', soon: true },
 ];
 
@@ -767,8 +767,8 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
           <div className="mx-auto max-w-3xl space-y-4 p-5">
             {logged ? (
               <div className="rounded-xl p-4" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }} role="status">
-                <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.logged.title">Quote Logged</T></p>
-                <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}><T k="sales.logged.line">The lead is now Quoted and it counts on your scorecard. Telling them and closing come in the next steps.</T></p>
+                <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.logged.title">Quote Recorded</T></p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}><T k="sales.logged.line">The lead is now Quoted and it counts on your scorecard. Contacting them and closing come in the next steps.</T></p>
                 <button type="button" onClick={() => setLogged(null)} className="mt-3 text-sm font-semibold text-primary-600 underline"><T k="sales.logged.edit">Change the Rates</T></button>
               </div>
             ) : (
@@ -798,7 +798,7 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
           {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
           <button type="button" onClick={() => { setStep('log'); window.scrollTo?.(0, 0); }}
             className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white">
-            <T k="sales.review.next">Quoted It in Allstate? Log the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
+            <T k="sales.review.next">Quoted It in Allstate? Record the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>}
       </div>

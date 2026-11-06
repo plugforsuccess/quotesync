@@ -83,7 +83,7 @@ const rows = [
   { ...base, id: 'a1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 6980, current_premium: 3490, term_months: 6, extracted: { insured_name: 'Stephen Pearson' } },
   { ...base, id: 'h1', carrier: 'State Farm', policy_type: 'home', annual_premium: 2936, current_premium: 2936, term_months: 12, extracted: { insured_name: 'Stephen Pearson' } },
 ];
-test('log a household quote: per-policy term rates, saved as annual, then Quote Logged', async ({ page }) => {
+test('log a household quote: per-policy term rates, saved as annual, then Quote Recorded', async ({ page }) => {
   const writes = await mock(page, { partners: [partner()], rules: null, payouts: [] });
   await page.route(SB + '/rest/v1/rate_checks*', async (route) => {
     const req = route.request(); const u = new URL(req.url());
@@ -95,13 +95,13 @@ test('log a household quote: per-policy term rates, saved as annual, then Quote 
   await page.goto('/agency/leads/rate-checks');
   await page.locator('li').filter({ hasText: 'Stephen' }).first().click();
   await expect(page.getByRole('heading', { name: 'Quote Sheet' })).toBeVisible();
-  await page.getByRole('button', { name: /Log Quote/ }).first().click();
+  await page.getByRole('button', { name: /Record the Quote/ }).click();
   await page.getByLabel(/Allstate 6-month Rate/).fill('2950');
   await page.getByLabel(/Allstate 12-month Rate/).fill('2500');
   await expect(page.getByText('Saves $1,080/yr')).toBeVisible(); // auto: $3,490 vs $2,950 for 6 months
   await expect(page.getByText(/Household · \$8,400\/yr vs \$9,916/)).toBeVisible();
-  await page.getByRole('button', { name: /^Log Quote$/ }).last().click();
-  await page.getByText('Quote Logged').waitFor();
+  await page.getByRole('button', { name: /^Record Quote$/ }).last().click();
+  await page.getByText('Quote Recorded').waitFor();
   // Each policy's rate is saved as annual on its rate check, as the producer who logged it.
   const saved = writes.filter(w => w.table === 'rate_checks');
   expect(saved).toEqual([
