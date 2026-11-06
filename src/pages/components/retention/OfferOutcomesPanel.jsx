@@ -21,7 +21,7 @@ function fmtPct(r) {
 }
 function fmtDate(d) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return new Date(d).toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 }
 
 export default function OfferOutcomesPanel({ agencyId }) {

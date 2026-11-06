@@ -15,7 +15,7 @@ const TYPE_BADGE = {
 
 function fmtWhen(ts) {
   if (!ts) return '';
-  return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return new Date(ts).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function Row({ esc, empName, onOpenCase, onResolve, resolving }) {

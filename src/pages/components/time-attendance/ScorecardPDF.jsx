@@ -232,7 +232,7 @@ export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity,
 
   const weekEnd = new Date(weekStart + 'T00:00:00');
   weekEnd.setDate(weekEnd.getDate() + 6);
-  const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
     <Document>

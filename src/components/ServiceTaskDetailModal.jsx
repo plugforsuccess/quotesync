@@ -154,7 +154,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
               {!done && task.follow_up_at && (
                 <div><div style={lbl}>Follow up</div><div style={{ fontSize: 13, fontWeight: 700,
                   color: new Date(task.follow_up_at) <= new Date() ? '#FBBF24' : 'var(--qs-text)' }}>
-                  {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</div></div>
+                  {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</div></div>
               )}
               {done && task.completion_note && (
                 <div style={{ gridColumn: '1 / -1' }}><div style={lbl}>Completion note</div>
@@ -213,7 +213,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                       fontSize: 12, background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
                       borderRadius: 8, padding: '7px 10px' }}>
                       <span style={{ color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
-                        {new Date(a.attempted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                        {new Date(a.attempted_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                       <span style={{ fontWeight: 700, color: 'var(--qs-text)' }}>
                         {TASK_ATTEMPT_RESULT_MAP[a.result] || a.result}

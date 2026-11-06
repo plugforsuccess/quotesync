@@ -63,7 +63,7 @@ function formatWeekLabel(weekStart) {
   const start = new Date(weekStart + 'T00:00:00');
   const end = new Date(start);
   end.setDate(end.getDate() + 4); // Mon–Fri
-  const opts = { month: 'short', day: 'numeric' };
+  const opts = { month: 'long', day: 'numeric' };
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
 
@@ -770,7 +770,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             {!isPastWeek
               ? "This Week's Upload Status"
               : `Upload Status — Week of ${new Date(weekStart + 'T00:00:00')
-                  .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                  .toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
             }
           </p>
           <div style={{ display: 'flex', gap: 6 }}>
@@ -847,7 +847,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               }}>
                 <span style={{ color: 'var(--qs-text)', fontWeight: 500 }}>
                   {new Date(b.uploaded_at).toLocaleDateString('en-US',
-                    { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                 </span>
                 <span style={{ color: 'var(--qs-muted)', fontSize: 10, maxWidth: 160,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

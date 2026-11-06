@@ -18,7 +18,7 @@ const STATUS_STYLES = {
   completed: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
   archived: 'bg-gray-600/20 text-gray-400 border-gray-600/30',
 };
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—');
 
 export default function DefensiveDiscountQueuePage() {
   const { user, loading: authLoading } = useAuth();

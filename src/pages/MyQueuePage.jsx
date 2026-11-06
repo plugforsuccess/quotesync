@@ -1083,7 +1083,7 @@ export default function MyQueuePage() {
             {event.callback_at && new Date(event.callback_at) > new Date() && (
               <span style={{ ...chip, ...NEUTRAL_CHIP, fontSize: '0.8125rem', fontWeight: 600 }}>
                 <T k="pages.myqueuepage.9aef40">📅 Call back</T> {new Date(event.callback_at).toLocaleString('en-US', {
-                  month: 'short', day: 'numeric',
+                  month: 'long', day: 'numeric',
                   hour: 'numeric', minute: '2-digit',
                 })}
               </span>
@@ -1384,7 +1384,7 @@ export default function MyQueuePage() {
               borderRadius: 4, padding: '1px 7px', flexShrink: 0,
             }}>
               <T k="pages.myqueuepage.9aef40">📅 Call back</T> {new Date(event.callback_at).toLocaleString('en-US', {
-                month: 'short', day: 'numeric',
+                month: 'long', day: 'numeric',
                 hour: 'numeric', minute: '2-digit',
               })}
             </span>

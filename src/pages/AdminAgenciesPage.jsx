@@ -226,7 +226,7 @@ const AdminAgenciesPage = () => {
                         </td>
                         <td style={{ padding: '12px 20px', fontSize: 13, color: 'var(--qs-subtle)' }}>
                           {new Date(agency.created_at).toLocaleDateString('en-US', {
-                            month: 'short', day: 'numeric', year: 'numeric',
+                            month: 'long', day: 'numeric', year: 'numeric',
                           })}
                         </td>
                         <td style={{ padding: '12px 20px', textAlign: 'right' }}>

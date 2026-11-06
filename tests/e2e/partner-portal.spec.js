@@ -112,7 +112,7 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
   // On file: the checklist is gone and only the last 4 show.
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
   await expect(page.getByText('W-9 on file')).toBeVisible();
-  await expect(page.getByText(/Signed \w{3} \d{1,2}, \d{4}/)).toBeVisible();
+  await expect(page.getByText(/Signed [A-Z][a-z]+ \d{1,2}, \d{4}/)).toBeVisible();
   await expect(page.getByText(/1234/)).toHaveCount(0);
   await expect(page.getByText('412-55-1234')).toHaveCount(0);
 });

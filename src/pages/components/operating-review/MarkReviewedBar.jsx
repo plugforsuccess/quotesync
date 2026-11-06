@@ -290,7 +290,7 @@ function HistoryModal({ completions, onClose }) {
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2 }}>
                     <T k="pages.components.operatingreview.markreviewedbar.621761">Reviewed</T> {new Date(c.completed_at).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric', year: 'numeric',
+                      month: 'long', day: 'numeric', year: 'numeric',
                     })}
                   </div>
                   {c.note && (

@@ -261,8 +261,8 @@ export function LeadSalesCard({ lead, agencyId }) {
                     Bound · {items} {items === 1 ? 'item' : 'items'} · {BUNDLE[b.bundle_type]}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {(b.bound_items || []).map(i => `${LABEL[i.product] || i.product}${i.item_count > 1 ? ` ×${i.item_count}` : ''}`).join(' + ')} · {new Date(`${b.bound_on}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    {auto?.first_renewal_on && ` · first renewal ${new Date(`${auto.first_renewal_on}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                    {(b.bound_items || []).map(i => `${LABEL[i.product] || i.product}${i.item_count > 1 ? ` ×${i.item_count}` : ''}`).join(' + ')} · {new Date(`${b.bound_on}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                    {auto?.first_renewal_on && ` · first renewal ${new Date(`${auto.first_renewal_on}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-bold tabular-nums text-green-700" title="Annual">{money(b.bound_premium)}<span className="text-xs font-normal text-gray-400">/yr</span></span>
@@ -277,7 +277,7 @@ export function LeadSalesCard({ lead, agencyId }) {
                   Quote · {STATUS[q.status][0]}{q.status === 'lost' && q.lost_reason ? ` (${lostLabel[q.lost_reason]}${q.auto_closed ? ', after 30 days' : ''})` : ''}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {(q.products || []).map(p => LABEL[p] || p).join(' + ')} · {new Date(`${q.quoted_on}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {(q.products || []).map(p => LABEL[p] || p).join(' + ')} · {new Date(`${q.quoted_on}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                   {q.rate_check_id && ' · from Rate Check'}
                 </p>
               </div>

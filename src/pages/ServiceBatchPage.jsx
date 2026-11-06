@@ -27,7 +27,7 @@ import ServiceTaskDetailModal from '../components/ServiceTaskDetailModal';
 import { formatTaskForAllstate } from '../lib/allstateClipboard';
 import { NEUTRAL_CHIP, DANGER_CHIP } from '../lib/statusChips';
 
-const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '—';
 
 // Compact "how long ago" for a timestamp — d / h / m, coarsest unit that fits.
 function fmtAgo(iso) {
@@ -640,7 +640,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
             </span>
             {task.last_attempt_result && (
               <span><T k="pages.servicebatchpage.151615">· last:</T> {TASK_ATTEMPT_RESULT_MAP[task.last_attempt_result] || task.last_attempt_result}
-                {task.last_attempt_at ? ` · ${new Date(task.last_attempt_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}</span>
+                {task.last_attempt_at ? ` · ${new Date(task.last_attempt_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}</span>
             )}
           </div>
         )}
@@ -650,7 +650,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
           <div style={{ marginTop: 6, fontSize: 11.5, fontWeight: 700,
             color: new Date(task.follow_up_at) <= new Date() ? 'var(--qs-danger)' : 'var(--qs-dim)',
             display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span><T k="pages.servicebatchpage.1a534c">⏰ Follow up</T> {new Date(task.follow_up_at) <= new Date() ? 'due ·' : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+            <span><T k="pages.servicebatchpage.1a534c">⏰ Follow up</T> {new Date(task.follow_up_at) <= new Date() ? 'due ·' : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
             <button onClick={e => { e.stopPropagation(); setFollowUp.mutate({ id: task.id, followUpAt: null }); }}
               style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 11, padding: 0, textDecoration: 'underline' }}><T k="pages.servicebatchpage.01bc6f">Clear</T></button>
           </div>

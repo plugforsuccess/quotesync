@@ -506,7 +506,7 @@ const NewsroomDashboardPage = () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {new Date(story.updated_at).toLocaleDateString('en-US', {
-                        month: 'short',
+                        month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'

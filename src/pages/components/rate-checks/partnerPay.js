@@ -104,8 +104,8 @@ export const payDay = (key) => {
 export const today = (now = Date.now()) => new Date(now).toLocaleDateString('en-CA', { timeZone: TZ });
 /** Whether a month's pay day has come. */
 export const isDue = (key, now = Date.now()) => today(now) >= payDay(key);
-/** "2026-11-21" → "Nov 21" */
-export const shortDate = (ymd) => new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+/** "2026-11-21" → "November 21" */
+export const shortDate = (ymd) => new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 /** "2026-10" → "October" (the month's name, for "October activity") */
 export const monthName = (key) => monthLabel(key).split(' ')[0];
 /** "2026-10" → "October 2026" */

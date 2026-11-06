@@ -51,7 +51,7 @@ function localDay(d = new Date()) { return d.toLocaleDateString('en-CA'); }
 function dayLabel(k) {
   if (k === localDay()) return 'Today';
   if (k === localDay(new Date(Date.now() - 86400000))) return 'Yesterday';
-  return new Date(k + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return new Date(k + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
 }
 function empName(e) { return e.preferred_name || `${e.first_name || ''} ${e.last_name || ''}`.trim(); }
 

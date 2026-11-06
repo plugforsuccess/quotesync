@@ -16,7 +16,7 @@ function money(n) {
 function fmtMonth(d) {
   if (!d) return null;
   const [y, m] = d.split('-');
-  return new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  return new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
 export default function SaveablePremiumTargeting({ agencyId }) {

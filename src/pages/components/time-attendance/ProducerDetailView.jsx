@@ -17,14 +17,14 @@ import { useChartTheme } from '../../../lib/chartTheme';
 
 function formatWeekLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }
 
 function formatWeekRange(weekStart) {
   const start = new Date(weekStart + 'T00:00:00');
   const end = new Date(start);
   end.setDate(end.getDate() + 4);
-  const opts = { month: 'short', day: 'numeric', year: 'numeric' };
+  const opts = { month: 'long', day: 'numeric', year: 'numeric' };
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`;
 }
 

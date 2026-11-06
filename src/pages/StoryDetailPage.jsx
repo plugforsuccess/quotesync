@@ -357,7 +357,7 @@ const StoryDetailPage = () => {
                         {related.preview_hook}
                       </p>
                       <div className="mt-3 text-xs text-gray-500">
-                        {new Date(related.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {new Date(related.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                       </div>
                     </div>
                   </Link>

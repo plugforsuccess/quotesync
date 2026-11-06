@@ -7,7 +7,7 @@ import { useNotesSearch, NOTE_TYPES, NOTE_TYPE_COLOR } from '../../../hooks/useC
 
 function fmtTime(ts) {
   if (!ts) return '';
-  return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return new Date(ts).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 export default function NotesSearch({ agencyId }) {

@@ -13,7 +13,7 @@ function MessageBubble({ message }) {
   const isInbound = message.direction === 'inbound';
   const Icon = CHANNEL_ICONS[message.channel] || MessageSquare;
   const time = new Date(message.created_at).toLocaleString([], {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
   return (
