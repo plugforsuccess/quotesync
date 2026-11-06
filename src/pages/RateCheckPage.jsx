@@ -1383,16 +1383,17 @@ function Prompt({ tone = 'ask', icon: Icon = AlertTriangle, title, children, act
   const ask = tone === 'ask';
   return (
     <div role={role || (ask ? 'alert' : 'status')}
-      className={`${className} rounded-2xl p-3.5 ${ask ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-blue-50 ring-1 ring-blue-100'}`}>
+      className={`${className} relative rounded-2xl p-3.5 ${ask ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-blue-50 ring-1 ring-blue-100'}`}>
+      {/* The deck's count ("1 of 3"): in the card's own color, tucked into the top-right corner. */}
+      {badge && (
+        <span className={`absolute right-2.5 top-2.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums leading-4 ${ask ? 'bg-amber-400 text-[#0F2D6B]' : 'bg-blue-600 text-white'}`}>{badge}</span>
+      )}
       <div className="flex items-start gap-3">
         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${ask ? 'bg-amber-100 text-amber-600' : 'bg-white text-blue-700'}`} aria-hidden="true">
           <Icon className="h-4 w-4" strokeWidth={2.5} />
         </span>
         <div className="min-w-0 flex-1 pt-1">
-          <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-[#0F2D6B]">{title}</p>
-            {badge && <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-500 ring-1 ring-slate-200">{badge}</span>}
-          </div>
+          <p className={`text-[15px] font-semibold leading-snug text-[#0F2D6B] ${badge ? 'pr-12' : ''}`}>{title}</p>
           {children && <p className="mt-1 text-sm leading-relaxed text-slate-600">{children}</p>}
         </div>
       </div>
