@@ -496,9 +496,9 @@ test('policy checks and who-is-who: expired, no cars, name from the policy, rela
   // The name arrives from the policy; typing a different one asks how they're related.
   await expect(page.getByLabel('First Name')).toHaveValue('Dana');
   await expect(page.getByLabel('Last Name')).toHaveValue('Reyes');
-  await expect(page.getByRole('radio', { name: 'Domestic Partner' })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: 'Partner', exact: true })).toHaveCount(0);
   await page.getByLabel('First Name').fill('Mike');
-  await expect(page.getByRole('radio', { name: 'Domestic Partner' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Partner', exact: true })).toBeVisible();
   await page.getByRole('radio', { name: 'Other' }).first().click();
   await page.getByLabel('Describe how you\'re related').fill('my COUSIN!!');
   // Came from a referral link: how they know the person (optional).

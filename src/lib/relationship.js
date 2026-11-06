@@ -3,7 +3,7 @@
 // who shared the link. "Other" is typed (40 characters) and tidied for the producer:
 // "my COUSIN!!" → "Cousin", "his step-dad" → "Step-Dad".
 export const POLICYHOLDER_RELATIONSHIPS = [
-  ['spouse', 'Spouse'], ['domestic_partner', 'Domestic Partner'], ['parent', 'Parent'], ['child', 'Child'], ['household', 'Someone I Live With'], ['other', 'Other'],
+  ['spouse', 'Spouse'], ['domestic_partner', 'Partner'], ['parent', 'Parent'], ['child', 'Child'], ['household', 'Someone I Live With'], ['other', 'Other'],
 ];
 export const REFERRER_RELATIONSHIPS = [
   ['friend', 'Friend'], ['family', 'Family'], ['coworker', 'Coworker'], ['client', 'Client of Theirs'], ['other', 'Other'],

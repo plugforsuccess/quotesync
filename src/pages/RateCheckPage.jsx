@@ -708,7 +708,7 @@ export default function RateCheckPage() {
   // ── Guided step 1: which policies to check ──
   if (step === 'pick') {
     return (
-      <Shell step={1}>
+      <Shell step={1} noFooter>
         <PickPolicies initial={wanted || []} onBack={() => { setStep('policies'); window.scrollTo(0, 0); }}
           onContinue={(list) => { setWanted(list); setStep('policies'); window.scrollTo(0, 0); }} />
       </Shell>
@@ -871,7 +871,7 @@ export default function RateCheckPage() {
     window.scrollTo(0, 0);
   };
   return (
-    <Shell step={2} wide={drafts.length === 0 && !returning && !guided} bar={guided ? (
+    <Shell step={2} wide={drafts.length === 0 && !returning && !guided} noFooter={!(drafts.length === 0 && !returning && !guided)} bar={guided ? (
       <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
         <div className="flex min-w-0 flex-1 flex-col items-stretch">
           {unsure.length > 0 || checking ? (
@@ -1393,12 +1393,13 @@ function PromptDeck({ cards, label }) {
   const [front, ...rest] = live;
   const behind = rest.slice(0, 2);
   const layer = (tone) => tone === 'ask' ? 'bg-amber-100 ring-amber-300' : 'bg-blue-100 ring-blue-200';
+  const step = 9; // each card behind sits up and to the right of the one in front
   return (
-    <section aria-label={label} className="relative mt-3" style={{ marginBottom: behind.length * 11 }}>
+    <section aria-label={label} className="relative mt-3" style={{ paddingTop: behind.length * step, paddingRight: behind.length * step }}>
       {behind.map((c, i) => (
         <div key={c.key} aria-hidden="true"
-          className={`absolute inset-0 rounded-2xl shadow-[0_4px_10px_-6px_rgba(15,45,107,0.3)] ring-1 transition-all duration-300 ${layer(c.tone)}`}
-          style={{ transform: `translateY(${(i + 1) * 11}px) scale(${1 - (i + 1) * 0.05})`, opacity: 1 - i * 0.3, zIndex: 2 - i }} />
+          className={`absolute rounded-2xl shadow-[0_4px_10px_-6px_rgba(15,45,107,0.3)] ring-1 transition-all duration-300 ${layer(c.tone)}`}
+          style={{ top: behind.length * step - (i + 1) * step, right: behind.length * step - (i + 1) * step, bottom: (i + 1) * step, left: (i + 1) * step, opacity: 1 - i * 0.3, zIndex: 2 - i }} />
       ))}
       <div key={front.key} className="rc-deck-in relative z-10 rounded-2xl shadow-[0_6px_16px_-8px_rgba(15,45,107,0.25)]">
         {cloneElement(front.el, { className: '', badge: live.length > 1 ? `1 of ${live.length}` : null })}
