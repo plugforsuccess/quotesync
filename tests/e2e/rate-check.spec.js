@@ -184,7 +184,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   await page.getByRole('button', { name: '2 separate policies' }).click();
   await expect(page.getByText('2 added')).toBeVisible();
   await page.getByTestId('rc-files').setInputFiles(files[0]); // duplicate
-  await expect(page.getByText('You already added that one.')).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'You already added that file.' })).toBeVisible(); // a toast on screen, not a silent skip
   await page.getByTestId('rc-files').setInputFiles(files[2]);
   await expect(page.getByText('3 added')).toBeVisible();
   await page.getByRole('button', { name: 'Remove policy 3' }).click();

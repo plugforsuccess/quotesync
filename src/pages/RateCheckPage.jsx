@@ -126,6 +126,7 @@ export default function RateCheckPage() {
   const setWanted = (list) => { setWantedState(list); writeJSON(WANTED_KEY, list); };
   const kindsRef = useRef(readJSON(KINDS_KEY) || {});
   const policyZipRef = useRef('');
+  const [flash, setFlash] = useState(null); // a policy to point at (a duplicate was picked)
   const checkTypeRef = useRef(() => {});
   const rememberKind = (id, kind) => { if (!kind) return; kindsRef.current = { ...kindsRef.current, [id]: kind }; writeJSON(KINDS_KEY, kindsRef.current); };
   const groupKind = useRef(null);
@@ -342,7 +343,21 @@ export default function RateCheckPage() {
     const have = new Set(itemsRef.current.flatMap(i => (i.pages || []).map(pg => fileKey(pg.file))));
     const fresh = picked.filter(f => !have.has(fileKey(f)));
     const kind = target?.kind || null;
-    if (!target?.mode && fresh.length < picked.length) setNotice(fresh.length ? 'Skipped a photo you already added.' : 'You already added that one.');
+    if (target?.mode !== 'retake' && fresh.length < picked.length) {
+      // Never silent: say so, point at where it already is, and show it.
+      const dupFile = picked.find(f => have.has(fileKey(f)));
+      const owner = itemsRef.current.find(i => (i.pages || []).some(pg => fileKey(pg.file) === fileKey(dupFile)));
+      const where = owner?.kind && KIND[owner.kind] ? ` It’s under ${KIND[owner.kind].label}.` : '';
+      setNotice(fresh.length
+        ? `Skipped ${picked.length - fresh.length === 1 ? 'a file' : `${picked.length - fresh.length} files`} you already added.${where}`
+        : `You already added that file.${where}`);
+      if (owner) {
+        setFlash(owner.id);
+        setTimeout(() => document.querySelector(`[data-policy="${owner.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+        setTimeout(() => setFlash(f => (f === owner.id ? null : f)), 2400);
+      }
+      navigator.vibrate?.([12, 60, 12]);
+    }
 
     if (target?.mode === 'retake') {
       const old = itemsRef.current.find(i => i.id === target.policyId);
@@ -775,7 +790,7 @@ export default function RateCheckPage() {
   const draftCard = (it) => {
     const n = drafts.indexOf(it);
     return (
-      <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id}
+      <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id} flash={flash === it.id}
         mismatch={mismatchOf(it)} onKeep={() => patchItem(it.id, { typeOk: true })}
         onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
         onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
@@ -935,7 +950,11 @@ export default function RateCheckPage() {
         </>
       )}
 
-      {notice && <p className="mt-4 rounded-xl bg-[#0F2D6B] px-3 py-2 text-center text-sm text-white" role="status">{notice}</p>}
+      {notice && (
+        <p className="fixed inset-x-0 bottom-32 z-40 mx-auto flex w-fit max-w-[92%] items-center gap-2 rounded-2xl bg-[#0F2D6B] px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-blue-950/40" role="alert">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[#F5D061]" aria-hidden="true" /> {notice}
+        </p>
+      )}
       {grouping && <GroupSheet count={grouping.length} onOne={() => groupPicked('one')} onSeparate={() => groupPicked('separate')} onMix={() => groupPicked('mix')} onCancel={() => setGrouping(null)} />}
     </Shell>
   );
@@ -1112,7 +1131,7 @@ function Thumb({ item, scanning = false, small = false }) {
 
 // A policy waiting to be sent: its pages in order, each with retake/remove, and an
 // add-page tile. Right after a photo it asks whether the policy has more pages.
-function DraftCard({ item, index, asking, mismatch, onKeep, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
+function DraftCard({ item, index, asking, flash, mismatch, onKeep, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
   const [picked, setPicked] = useState(null); // the page tapped for retake / remove
   const pickedIndex = pages.findIndex(pg => pg.id === picked);
@@ -1133,7 +1152,7 @@ function DraftCard({ item, index, asking, mismatch, onKeep, onAddPage, onDoneAdd
     const pg = pages[0];
     const name = String(pg.file?.name || '').replace(/\.pdf$/i, '') || 'Policy PDF';
     return (
-      <li className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <li data-policy={item.id} className={`${flash ? 'ring-4 ring-amber-300 ' : ''}flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm`}>
         <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100">
           <FileText className="h-5 w-5" />
           <span className="text-[9px] font-extrabold tracking-wide">PDF</span>
@@ -1156,7 +1175,7 @@ function DraftCard({ item, index, asking, mismatch, onKeep, onAddPage, onDoneAdd
     );
   }
   return (
-    <li className={`rounded-2xl border bg-white p-3 shadow-sm ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
+    <li data-policy={item.id} className={`rounded-2xl border bg-white p-3 shadow-sm transition-shadow ${flash ? 'ring-4 ring-amber-300' : ''} ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
       <div className="flex items-center gap-3">
         <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-slate-50 text-slate-500 ring-1 ring-slate-200">
           <Camera className="h-5 w-5" />
