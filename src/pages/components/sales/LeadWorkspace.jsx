@@ -19,7 +19,7 @@ const STEPS = [
   { v: 'review', label: 'Review' },
   { v: 'log', label: 'Quote' },
   { v: 'tell', label: 'Contact' },
-  { v: 'close', label: 'Close' },
+  { v: 'close', label: 'Bind' },
 ];
 const STATUS = { new: 'New', contacted: 'Contacted', quoted: 'Quoted', interested: 'Interested', closed_won: 'Won', closed_lost: 'Lost' };
 const card = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' };
@@ -231,7 +231,7 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
               )}
               <button type="button" onClick={() => go('close')} className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold"
                 style={{ border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
-                <T k="sales.contact.toclose">Next: Close It Out</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <T k="sales.contact.tobind">Next: Bind</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </>
           )}

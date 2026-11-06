@@ -231,7 +231,9 @@ export default function CloseStep({ household = [], lead = null, agencyId = null
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="sales.close.title">Close It Out</T></h3>
+        <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>
+          {pick === 'follow' ? <T k="sales.close.h-follow">Follow Up</T> : pick === 'lost' ? <T k="sales.close.h-lost">Lost</T> : <T k="sales.close.h-bound">Policy Bound</T>}
+        </h3>
         {total > 0 && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.close.quoted">Quoted</T> {money(total)}<T k="sales.log.peryear">/yr</T></p>}
       </div>
       <div className="grid grid-cols-3 gap-2">
