@@ -437,14 +437,11 @@ test('a policy in the wrong slot is caught before anything is sent', async ({ pa
   ]);
   await chooser.setFiles(photo);
   await page.getByRole('button', { name: "That's all" }).click();
-  await expect(page.getByText('This looks like an Auto policy, not Home.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Fix the Policy Marked Above' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Continue with what I have' })).toHaveCount(0);
-
-  // One tap moves it; the Home slot goes back to "Not added yet".
-  await page.getByRole('button', { name: 'Move to Auto' }).click();
-  await expect(page.getByText('This looks like an Auto policy')).toHaveCount(0);
+  // It moves itself to Auto; Home reopens and says what to add. Nothing to tap.
+  await expect(page.getByText('this file is an auto policy.')).toBeVisible();
+  await expect(page.getByText('That file was an auto policy. Add your home policy here.')).toBeVisible();
   await expect(page.getByRole('button', { name: '1 of 2 added' })).toBeDisabled();
   await expect(page.getByText('Not added yet')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /Move to|It’s Right/ })).toHaveCount(0);
   expect(sent).toHaveLength(0); // nothing went to the agency
 });
