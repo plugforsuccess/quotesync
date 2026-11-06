@@ -340,7 +340,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                         <span className="ml-1.5 font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.phone ? formatPhone(h.phone) : ''}</span>
                       </button>
                       <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                        {h.tier ? TIER_LABEL[h.tier] : <T k="pages.components.ratechecks.partnerstab.be4b39">{'Not qualified'}</T>}{h.extras ? <>{" + "}{h.extras}{" "}<T k="pages.components.ratechecks.partnerstab.b43c4b">{"extra"}</T>{" "}{h.extras === 1 ? 'line' : 'lines'}</> : ''}
+                        {h.tier ? TIER_LABEL[h.tier] : <T k="pages.components.ratechecks.partnerstab.be4b39">{'Not qualified'}</T>}{h.landlord ? ' + Landlord' : ''}{h.extras ? <>{" + "}{h.extras}{" "}<T k="pages.components.ratechecks.partnerstab.b43c4b">{"extra"}</T>{" "}{h.extras === 1 ? 'line' : 'lines'}</> : ''}
                         {h.overCap && <span style={{ color: 'var(--qs-warning)' }}> <T k="pages.components.ratechecks.partnerstab.49f11b">· over the monthly cap</T></span>}
                         {' · '}<span style={{ color: h.won ? 'var(--qs-success)' : undefined }}>{h.won ? <T k="pages.components.ratechecks.partnerstab.b273fb">{'Won'}</T> : h.quoted ? <T k="pages.components.ratechecks.partnerstab.8e06ee">{'Quoted'}</T> : <T k="pages.components.ratechecks.partnerstab.5d4986">{'Not quoted yet'}</T>}</span>
                         {rules.requireCallConfirm && h.tier && (

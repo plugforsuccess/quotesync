@@ -61,6 +61,7 @@ const TIERS: [string, string, number][] = [
   ['home_only', 'Home or condo only', 15],
   ['auto_only', 'Auto only', 10],
   ['renters_only', 'Renters only', 2],
+  ['landlord', 'Landlord (paid on its own, on top of the rest)', 10],
 ]
 const EXTRA_LINE_FEE = 5
 const EXTRA_LINE_CAP = 2
@@ -144,6 +145,7 @@ function tierOf(pages: any[]) {
   if (has(['home', 'condo'])) return { tier: 'home_only', base: 1 }
   if (has(['auto'])) return { tier: 'auto_only', base: 1 }
   if (has(['renters'])) return { tier: 'renters_only', base: 1 }
+  if (has(['landlord'])) return { tier: 'landlord', base: 1 }
   return { tier: null, base: 0 }
 }
 
@@ -167,7 +169,9 @@ function earnings(agencyScans: any[], promoterId: string, schedule: Record<strin
     const pages = sorted.filter(rc => QUALIFIES(rc, now, rules.expiredDays))
     const { tier, base } = tierOf(pages)
     if (!tier) return null
-    const extras = Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base))
+    // Landlord is counted on its own: its fee on top of the household's tier.
+    const landlord = tier !== 'landlord' && pages.some((p: any) => p.policy_type === 'landlord')
+    const extras = Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base - (landlord ? 1 : 0)))
     // "Stephen M.": first name as typed, last initial from the dec page's named insured
     // (or a second word the customer typed), so the partner can tell their Stephens apart.
     const typed = (sorted.find(s => s.first_name)?.first_name || '').trim().split(/\s+/)
@@ -176,8 +180,8 @@ function earnings(agencyScans: any[], promoterId: string, schedule: Record<strin
     return {
       first_name: typed[0] || 'Someone',
       last_initial: /^[A-Za-z]/.test(lastWord) ? lastWord[0].toUpperCase() : null,
-      tier, label: LABEL[tier] + (extras ? ` + ${extras} extra` : ''),
-      fee: schedule[tier] + extras * schedule.extra_line,
+      tier, label: LABEL[tier].replace(/ \(.*\)$/, '') + (landlord ? ' + Landlord' : '') + (extras ? ` + ${extras} extra` : ''),
+      fee: schedule[tier] + (landlord ? schedule.landlord : 0) + extras * schedule.extra_line,
       firstAt: pages[0].created_at, month: monthKey(pages[0].created_at),
       pending: rules.requireCallConfirm
         ? !sorted.some((rc: any) => !!rc.call_confirmed_at)

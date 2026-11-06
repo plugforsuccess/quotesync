@@ -11,6 +11,8 @@ export const TIERS = [
   { key: 'home_only', label: 'Home or condo only', fee: 15 },
   { key: 'auto_only', label: 'Auto only', fee: 10 },
   { key: 'renters_only', label: 'Renters only', fee: 2 },
+  // Counted on its own: paid on top of whatever else the household sends.
+  { key: 'landlord', label: 'Landlord', fee: 10 },
 ];
 export const EXTRA_LINE = { key: 'extra_line', label: 'Each extra line (umbrella, a second auto policy)', fee: 5 };
 export const EXTRA_LINE_CAP = 2;
@@ -54,6 +56,7 @@ export function scheduleFrom(rows) {
 const AUTO = new Set(['auto']);
 const HOME = new Set(['home', 'condo']);
 const RENTERS = new Set(['renters']);
+const LANDLORD = 'landlord';
 
 /**
  * A scan counts toward pay: read, not a repeat, not thrown out, not already an
@@ -75,18 +78,25 @@ export const quoted = (rc) => rc.allstate_premium != null || !!rc.quoted_at || [
 /** The customer replied Y to the quote-ready text. */
 export const callConfirmed = (rc) => !!rc.call_confirmed_at;
 
-/** Which tier a household's qualifying pages earn, and how many extra lines on top. */
+/**
+ * Which tier a household's qualifying pages earn, how many extra lines on top, and
+ * whether a landlord policy adds its own fee (landlord is counted separately; a
+ * household that sent only landlord is the 'landlord' tier).
+ */
 export function householdTier(scans, now = Date.now(), expiredDays = EXPIRED_DAYS) {
   const pages = (scans || []).filter(s => qualifies(s, now, expiredDays));
   const has = (set) => pages.some(p => set.has(p.policy_type));
+  const hasLandlord = pages.some(p => p.policy_type === LANDLORD);
   let tier = null, base = 0;
   if (has(AUTO) && has(HOME)) { tier = 'auto_home'; base = 2; }
   else if (has(AUTO) && has(RENTERS)) { tier = 'auto_renters'; base = 2; }
   else if (has(HOME)) { tier = 'home_only'; base = 1; }
   else if (has(AUTO)) { tier = 'auto_only'; base = 1; }
   else if (has(RENTERS)) { tier = 'renters_only'; base = 1; }
-  const extras = tier ? Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base)) : 0;
-  return { tier, extras, pages: pages.length };
+  else if (hasLandlord) { tier = LANDLORD; base = 1; }
+  const landlord = hasLandlord && tier !== LANDLORD;
+  const extras = tier ? Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base - (landlord ? 1 : 0))) : 0;
+  return { tier, landlord, extras, pages: pages.length };
 }
 
 // Months are in the agency's time zone (Georgia), the same as the partner portal.
@@ -152,8 +162,8 @@ export function households(scans, schedule, now = Date.now(), rules = QUOTED_RUL
   return groupHouseholds(scans).map(list => {
     const sorted = [...list].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     const firstQualifying = sorted.find(qualify);
-    const { tier, extras, pages } = householdTier(sorted, now, rules.expiredDays);
-    const fee = tier ? (schedule[tier] ?? 0) + extras * (schedule.extra_line ?? 0) : 0;
+    const { tier, landlord, extras, pages } = householdTier(sorted, now, rules.expiredDays);
+    const fee = tier ? (schedule[tier] ?? 0) + (landlord ? (schedule.landlord ?? 0) : 0) + extras * (schedule.extra_line ?? 0) : 0;
     const firstAt = firstQualifying ? firstQualifying.created_at : null;
     const confirmed = sorted.some(callConfirmed);
     const pays = !!tier && (rules.requireCallConfirm
@@ -168,7 +178,7 @@ export function households(scans, schedule, now = Date.now(), rules = QUOTED_RUL
       scans: sorted,
       pages,
       types: [...new Set(sorted.filter(qualify).map(s => s.policy_type))],
-      tier, extras, fee,
+      tier, landlord, extras, fee,
       pays, pending: !!tier && !pays,
       confirmed,
       texted: sorted.some(s => !!s.quote_ready_texted_at),
