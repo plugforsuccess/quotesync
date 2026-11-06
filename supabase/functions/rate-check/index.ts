@@ -315,6 +315,11 @@ const CLASSIFY_TOOL = {
       policy_type: { type: 'string', enum: CLASSIFY_TYPES, description: 'auto = personal auto; home = homeowners (HO-3/HO-5, dwelling); condo = condo unit owners (HO-6); renters = renters/tenants (HO-4); landlord = rental dwelling (DP-1/DP-3); umbrella = personal umbrella/excess liability; motorcycle; boat = boat or watercraft; other = another insurance policy; not_a_policy = not an insurance declarations page or policy document.' },
       confidence: { type: 'string', enum: ['high', 'low'], description: 'high only if the page clearly shows the policy type.' },
       zip: { type: ['string', 'null'], description: "The 5-digit ZIP code of the named insured's mailing address (or the insured property), if shown. Null if not shown." },
+      insured_first_name: { type: ['string', 'null'], description: 'First name of the first named insured (policyholder), as printed. Null if not shown.' },
+      insured_last_name: { type: ['string', 'null'], description: 'Last name of the first named insured (policyholder), as printed. Null if not shown.' },
+      other_names: { type: 'array', items: { type: 'string' }, description: 'Other people named on the policy (second named insured, listed drivers), full names as printed. Empty if none.' },
+      expiration_date: { type: ['string', 'null'], description: 'Policy period end date, YYYY-MM-DD. Null if not shown.' },
+      vehicle_count: { type: ['integer', 'null'], description: 'For auto: how many vehicles are listed on this page. 0 if it is an auto policy page with no vehicles listed. Null if not auto.' },
     },
     required: ['policy_type', 'confidence'],
   },
@@ -332,8 +337,8 @@ async function classifyPolicy(apiKey: string, base64: string, mediaType: string)
         method: 'POST', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model, max_tokens: 200, tools: [CLASSIFY_TOOL], tool_choice: toolChoice,
-          messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: 'What kind of insurance policy is this, and what is the insured\'s ZIP code? Answer with the policy_type tool.' }] }],
+          model, max_tokens: 400, tools: [CLASSIFY_TOOL], tool_choice: toolChoice,
+          messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: 'What kind of insurance policy is this? Also give the policyholder\'s name, other people named on it, the ZIP code, the policy end date and (for auto) how many vehicles are listed. Answer with the policy_type tool.' }] }],
         }),
       })
     } finally { clearTimeout(timer) }
@@ -346,7 +351,15 @@ async function classifyPolicy(apiKey: string, base64: string, mediaType: string)
   const input = (json.content || []).find((c: any) => c.type === 'tool_use')?.input || {}
   const type = CLASSIFY_TYPES.includes(input.policy_type) ? input.policy_type : null
   const zip = /^\d{5}$/.test(String(input.zip || '').slice(0, 5)) ? String(input.zip).slice(0, 5) : null
-  return { policy_type: type, confidence: input.confidence === 'high' ? 'high' : 'low', zip }
+  const name = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().replace(/\s+/g, ' ').slice(0, 60) : null)
+  const expiration = /^\d{4}-\d{2}-\d{2}$/.test(String(input.expiration_date || '')) ? input.expiration_date : null
+  return {
+    policy_type: type, confidence: input.confidence === 'high' ? 'high' : 'low', zip,
+    insured_first_name: name(input.insured_first_name), insured_last_name: name(input.insured_last_name),
+    other_names: Array.isArray(input.other_names) ? input.other_names.map(name).filter(Boolean).slice(0, 8) : [],
+    expiration_date: expiration,
+    vehicle_count: Number.isInteger(input.vehicle_count) ? input.vehicle_count : null,
+  }
 }
 
 async function extractDecPage(apiKey: string, base64: string, mediaType: string) {
@@ -971,6 +984,17 @@ Deno.serve(async (req) => {
 
   const firstName = cleanText(body.first_name, 80)
   const lastName = cleanText(body.last_name, 80)
+  // Who the policy belongs to, and how the person filling this in relates to them and
+  // to the partner who shared the link (Other is typed; it arrives already normalized).
+  const REL = ['self', 'spouse', 'parent', 'child', 'household', 'other']
+  const REF = ['friend', 'family', 'coworker', 'client', 'other']
+  const relationships = {
+    policyholder_name: cleanText(body.policyholder_name, 120),
+    contact_relationship: REL.includes(String(body.contact_relationship)) ? String(body.contact_relationship) : null,
+    contact_relationship_other: body.contact_relationship === 'other' ? cleanText(body.contact_relationship_other, 40) : null,
+    referrer_relationship: REF.includes(String(body.referrer_relationship)) ? String(body.referrer_relationship) : null,
+    referrer_relationship_other: body.referrer_relationship === 'other' ? cleanText(body.referrer_relationship_other, 40) : null,
+  }
   // Where they live (asked on the form; optional on staff uploads). Drives rules and the lead.
   const HOUSING = ['own', 'rent', 'family', 'retirement']
   const housing = HOUSING.includes(String(body.housing_situation || '')) ? String(body.housing_situation) : null
@@ -1061,6 +1085,7 @@ Deno.serve(async (req) => {
         agency_id: agencyId,
         session_id: sessionId,
         last_name: lastName,
+        ...relationships,
         first_name: firstName,
         phone,
         email,

@@ -12,7 +12,8 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { persistUtmParams } from '../lib/leadsApi';
+import { persistUtmParams, getUtmParams } from '../lib/leadsApi';
+import { POLICYHOLDER_RELATIONSHIPS, REFERRER_RELATIONSHIPS, OTHER_MAX, normalizeOther, isPolicyholder } from '../lib/relationship';
 import { T, CopyImage, useCopyValue, EditPagePencil } from '../components/SiteCopy';
 import { TEXT_NUMBER_KEY, textNumber, smsHref } from '../lib/reviews';
 import Dismissible from '../components/Dismissible';
@@ -91,6 +92,17 @@ const WANTED_KEY = 'rc_wanted_v1';
 // A policy whose file reads (clearly) as another type than its slot: that type, or
 // 'not_a_policy'. Landlord and other lines map to Other. null when it matches or can't tell.
 const READ_AS = { landlord: 'other' };
+// An auto policy whose first page lists no cars, or a policy that already ended: asked on
+// the card ("Add Page" / "It's All There", "Remove It" / "It's Current") before Continue.
+const todayISO = () => new Date().toISOString().slice(0, 10);
+function concernOf(item) {
+  const t = item?.typeCheck;
+  if (t?.state !== 'done') return null;
+  if (t.expires && t.expires < todayISO() && !item.expiredOk) return 'expired';
+  const isAuto = (item.kind || READ_AS[t.read] || t.read) === 'auto';
+  if (isAuto && t.cars === 0 && (item.pages?.length || 0) < 2 && !item.carsOk) return 'no_cars';
+  return null;
+}
 function mismatchOf(item) {
   const t = item?.typeCheck;
   if (!item?.kind || item.typeOk || t?.state !== 'done' || !t.read || t.confidence !== 'high') return null;
@@ -127,6 +139,11 @@ export default function RateCheckPage() {
   const kindsRef = useRef(readJSON(KINDS_KEY) || {});
   const policyZipRef = useRef('');
   const [flash, setFlash] = useState(null); // a policy to point at (a duplicate was picked)
+  // How they relate to the policyholder (when the name isn't theirs) and to the partner.
+  const [rel, setRel] = useState({ holder: '', holderOther: '', referrer: '', referrerOther: '' });
+  const relRef = useRef(rel); relRef.current = rel;
+  const holderRef = useRef(null);
+  const namePrefilled = useRef(false);
   const checkTypeRef = useRef(() => {});
   const rememberKind = (id, kind) => { if (!kind) return; kindsRef.current = { ...kindsRef.current, [id]: kind }; writeJSON(KINDS_KEY, kindsRef.current); };
   const groupKind = useRef(null);
@@ -279,7 +296,8 @@ export default function RateCheckPage() {
         const prepared = await preparePolicy(it.pages.map(pg => pg.file));
         const data = await submitWithRetry(() => submitRateCheck({
           prepared, firstName: f.firstName, lastName: f.lastName, phone: f.phone.replace(/\D/g, ''), email: f.email.trim(),
-          zip: f.zip || policyZipRef.current || '', housingSituation: f.housing, consentGivenAt: grant.consentGivenAt,
+          zip: f.zip || policyZipRef.current || '', housingSituation: f.housing,
+          relationships: relationshipsFor(f), consentGivenAt: grant.consentGivenAt,
           referralConsentGivenAt: grant.referralConsentGivenAt,
           // Always the link's code: the server credits it (or ignores an expired one), so a failed lookup never loses the credit.
           inviteCode: inviteCode || null,
@@ -313,7 +331,11 @@ export default function RateCheckPage() {
     if (!file) return;
     patchItem(pol.id, { typeCheck: { state: 'checking' } });
     checkPolicyType(file).then(r => {
-      const typeCheck = { state: 'done', read: r?.policy_type || null, confidence: r?.confidence || 'low', zip: r?.zip || null };
+      const typeCheck = {
+        state: 'done', read: r?.policy_type || null, confidence: r?.confidence || 'low', zip: r?.zip || null,
+        holder: r?.insured_first_name || r?.insured_last_name ? { first: r.insured_first_name || '', last: r.insured_last_name || '' } : null,
+        expires: r?.expiration_date || null, cars: Number.isInteger(r?.vehicle_count) ? r.vehicle_count : null,
+      };
       const cur = itemsRef.current.find(i => i.id === pol.id);
       if (!cur) return;
       const wrong = mismatchOf({ ...cur, typeCheck });
@@ -486,9 +508,17 @@ export default function RateCheckPage() {
   const emailClean = fields.email.trim().toLowerCase();
   const emailVerified = !EMAIL_OTP_ENABLED || (isEmail(emailClean) && verifiedEmail === emailClean);
   // ZIP comes from the policy (read as it's added); only asked when no policy shows one.
-  const policyZip = drafts.map(d => d.typeCheck?.zip).find(z => /^\d{5}$/.test(z || '')) || '';
+  const policyZip = items.map(d => d.typeCheck?.zip).find(z => /^\d{5}$/.test(z || '')) || '';
   policyZipRef.current = policyZip;
   const needZip = !policyZip && !drafts.some(d => d.typeCheck?.state === 'checking');
+  // The policyholder, from the first policy that shows a name: pre-fills the name fields,
+  // and when they type a different name we ask how they're related (one tap, optional).
+  const holder = items.map(d => d.typeCheck?.holder).find(h => h && (h.first || h.last)) || null;
+  holderRef.current = holder;
+  const holderName = holder ? [holder.first, holder.last].filter(Boolean).join(' ') : '';
+  const askHolder = !!holder && !!fields.firstName.trim() && !!fields.lastName.trim() && !isPolicyholder(fields.firstName, fields.lastName, holder);
+  const partnerFirst = invite?.promoter_name || '';
+  const askReferrer = !!partnerFirst || !!getUtmParams()?.referral_code;
   const missing = [
     !fields.firstName.trim() && 'your first name',
     !fields.lastName.trim() && 'your last name',
@@ -499,6 +529,19 @@ export default function RateCheckPage() {
     needZip && !/^\d{5}$/.test(fields.zip) && 'your ZIP code',
   ].filter(Boolean);
   const contactOk = missing.length === 0;
+
+  // What the upload says about who's who.
+  const relationshipsFor = (f) => {
+    const x = relRef.current; const h = holderRef.current;
+    const mine = !h || isPolicyholder(f.firstName, f.lastName, h);
+    return {
+      policyholderName: h ? [h.first, h.last].filter(Boolean).join(' ') : null,
+      contact: mine ? (h ? 'self' : null) : (x.holder || null),
+      contactOther: !mine && x.holder === 'other' ? normalizeOther(x.holderOther) || null : null,
+      referrer: x.referrer || null,
+      referrerOther: x.referrer === 'other' ? normalizeOther(x.referrerOther) || null : null,
+    };
+  };
 
   // ── Verified by code: the pop-up reports back here ──
   const onCodeVerified = (kind) => {
@@ -671,6 +714,10 @@ export default function RateCheckPage() {
 
   // ── Step 2: contact ──
   if (step === 'you') {
+    if (!namePrefilled.current && holder && !fields.firstName && !fields.lastName) {
+      namePrefilled.current = true;
+      queueMicrotask(() => setFields(f => (f.firstName || f.lastName ? f : { ...f, firstName: cleanName(holder.first), lastName: cleanName(holder.last) })));
+    }
     const canSend = contactOk && drafts.length > 0;
     const send = () => {
       if (!canSend) return;
@@ -726,6 +773,11 @@ export default function RateCheckPage() {
                 onChange={e => setFields(f => ({ ...f, lastName: cleanName(e.target.value) }))} className={inputCls} />
             </Field>
           </div>
+          {askHolder && (
+            <RelationPicker id="rc-rel-holder" legend={<><span className="font-semibold text-slate-900">{holderName}</span> <T k="rc.rel.holder">is your…</T></>}
+              options={POLICYHOLDER_RELATIONSHIPS} value={rel.holder} other={rel.holderOther}
+              onChange={(v) => setRel(x => ({ ...x, holder: v }))} onOther={(t) => setRel(x => ({ ...x, holderOther: t }))} />
+          )}
           <Field label={<T k="rc.contact.mobile">Mobile Number</T>} htmlFor="rc-phone">
             <VerifyField verified={OTP_ENABLED && phoneDigits.length === 10 && phoneVerified}
               canVerify={OTP_ENABLED && phoneDigits.length === 10 && !phoneVerified} onVerify={() => setCodeFor('phone')}>
@@ -753,6 +805,12 @@ export default function RateCheckPage() {
               <input id="rc-zip" inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="30094" required
                 value={fields.zip} onChange={e => setFields(f => ({ ...f, zip: e.target.value.replace(/\D/g, '').slice(0, 5) }))} className={`${inputCls} max-w-[9rem]`} />
             </Field>
+          )}
+
+          {askReferrer && (
+            <RelationPicker id="rc-rel-ref" legend={<><T k="rc.rel.ref">How do you know</T> {partnerFirst || <T k="rc.rel.ref-who">the person who sent you</T>}? <span className="font-normal text-slate-500">(<T k="rc.flow.optional">Optional</T>)</span></>}
+              options={REFERRER_RELATIONSHIPS} value={rel.referrer} other={rel.referrerOther}
+              onChange={(v) => setRel(x => ({ ...x, referrer: v }))} onOther={(t) => setRel(x => ({ ...x, referrerOther: t }))} />
           )}
 
           <fieldset className="pt-2">
@@ -783,7 +841,7 @@ export default function RateCheckPage() {
   // ── Step 2: policies (a checklist of the picked types when guided) ──
   const returning = sent.length > 0 && !!given;
   const guided = !returning && Array.isArray(wanted) && wanted.length > 0;
-  const unsure = drafts.filter(d => mismatchOf(d));
+  const unsure = drafts.filter(d => mismatchOf(d) || concernOf(d));
   const checking = drafts.some(d => d.typeCheck?.state === 'checking');
   const addedKinds = guided ? wanted.filter(k => drafts.some(d => d.kind === k && !mismatchOf(d))) : [];
   const allAdded = guided && addedKinds.length === wanted.length;
@@ -792,6 +850,7 @@ export default function RateCheckPage() {
     return (
       <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id} flash={flash === it.id}
         mismatch={mismatchOf(it)} onKeep={() => patchItem(it.id, { typeOk: true })}
+        concern={concernOf(it)} onConcernOk={(k) => patchItem(it.id, k === 'expired' ? { expiredOk: true } : { carsOk: true })}
         onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
         onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
         onRemove={() => removeItem(it.id)}
@@ -814,7 +873,7 @@ export default function RateCheckPage() {
         <div className="flex min-w-0 flex-1 flex-col items-stretch">
           {unsure.length > 0 || checking ? (
             <button type="button" disabled className={primaryBtn}>
-              {unsure.length ? <T k="rc.check.fix-first">Remove the File Marked Above</T> : <><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> <T k="rc.check.checking">Checking Your Policies…</T></>}
+              {unsure.length ? <T k="rc.check.fix-first">Answer the Question Above</T> : <><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> <T k="rc.check.checking">Checking Your Policies…</T></>}
             </button>
           ) : allAdded ? (
             <button type="button" onClick={() => goNext()} className={primaryBtn}>
@@ -838,8 +897,8 @@ export default function RateCheckPage() {
           className="qb qb-outline h-14 w-14 shrink-0 p-0">
           <Plus className="h-6 w-6" aria-hidden="true" />
         </button>
-        <button type="button" onClick={() => goNext()} className={primaryBtn}>
-          {returning ? (drafts.length === 1 ? 'Send It' : `Send All ${drafts.length}`) : 'Continue'}
+        <button type="button" onClick={() => goNext()} disabled={unsure.length > 0} className={primaryBtn}>
+          {unsure.length > 0 ? <T k="rc.check.fix-first">Answer the Question Above</T> : returning ? (drafts.length === 1 ? 'Send It' : `Send All ${drafts.length}`) : 'Continue'}
           <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-sm tabular-nums">{drafts.length}</span>
         </button>
       </ActionBar>
@@ -1131,7 +1190,7 @@ function Thumb({ item, scanning = false, small = false }) {
 
 // A policy waiting to be sent: its pages in order, each with retake/remove, and an
 // add-page tile. Right after a photo it asks whether the policy has more pages.
-function DraftCard({ item, index, asking, flash, mismatch, onKeep, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
+function DraftCard({ item, index, asking, flash, mismatch, onKeep, concern, onConcernOk, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
   const [picked, setPicked] = useState(null); // the page tapped for retake / remove
   const pickedIndex = pages.findIndex(pg => pg.id === picked);
@@ -1237,6 +1296,24 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, onAddPage, on
           <Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" strokeWidth={3} aria-hidden="true" />
           <span><T k="rc.check.moved">Moved to</T> {KIND[item.kind]?.label}<T k="rc.check.moved-why">: this file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} {(KIND[item.kind]?.label || '').toLowerCase()} <T k="rc.check.moved-policy">policy.</T></span>
         </p>
+      )}
+
+      {concern && !mismatch && (
+        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3" role="alert">
+          <p className="font-semibold text-[#0F2D6B]">
+            {concern === 'expired'
+              ? <><T k="rc.check.expired">This policy ended</T> {new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}. <T k="rc.check.expired-2">Got a newer one?</T></>
+              : <T k="rc.check.no-cars">We don’t see any cars on this page. Add the page that lists your vehicles.</T>}
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {concern === 'expired'
+              ? <button type="button" onClick={onRemove} className="qb qb-blue qb-md flex-1 whitespace-nowrap"><T k="rc.check.replace">Remove It</T></button>
+              : <button type="button" onClick={onAddPage} className="qb qb-blue qb-md flex-1 whitespace-nowrap"><T k="rc.check.add-page">Add Page</T></button>}
+            <button type="button" onClick={() => onConcernOk(concern)} className="qb qb-outline qb-md flex-1 whitespace-nowrap">
+              {concern === 'expired' ? <T k="rc.check.current">It’s Current</T> : <T k="rc.check.all-there">It’s All There</T>}
+            </button>
+          </div>
+        </div>
       )}
 
       {mismatch === 'not_a_policy' && (
@@ -1482,6 +1559,28 @@ function Choice({ checked, onChange, title, fine, children }) {
 
 // Names: letters, spaces, hyphens and apostrophes only (no digits or emoji pasted in).
 const cleanName = (v) => v.replace(/[^\p{L}\s'’.-]/gu, '').replace(/\s{2,}/g, ' ').slice(0, 60);
+
+// One tap: a row of choices; "Other" opens a short typed answer (normalized when sent).
+function RelationPicker({ id, legend, options, value, other, onChange, onOther }) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm text-slate-800">{legend}</legend>
+      <div className="flex flex-wrap gap-2" role="radiogroup">
+        {options.map(([k, label]) => (
+          <button key={k} type="button" role="radio" aria-checked={value === k} onClick={() => onChange(value === k ? '' : k)}
+            className={`h-10 rounded-full border px-4 text-sm font-semibold ${value === k ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-300 bg-white text-slate-700'}`}>
+            <T k={`${id}.${k}`}>{label}</T>
+          </button>
+        ))}
+      </div>
+      {value === 'other' && (
+        <input aria-label="Describe how you're related" value={other} maxLength={OTHER_MAX} placeholder="e.g. Cousin, Roommate"
+          onChange={e => onOther(e.target.value.slice(0, OTHER_MAX))}
+          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" />
+      )}
+    </fieldset>
+  );
+}
 
 // A field with a Verify button inside it (or a Verified badge once done).
 function VerifyField({ verified, canVerify, onVerify, children }) {

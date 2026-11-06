@@ -71,7 +71,9 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const byPartner = useMemo(() => {
     const all = households(scans, schedule, Date.now(), rules);
     return Object.fromEntries(promoters.map(p => {
-      const hh = applyCap(all.filter(h => h.promoterId === p.id), p.monthly_cap);
+      // A partner's own household (same phone as the partner) is never paid as a referral.
+      const own = (h) => !!p.phone && String(h.phone || '').replace(/\D/g, '').slice(-10) === String(p.phone).replace(/\D/g, '').slice(-10);
+      const hh = applyCap(all.filter(h => h.promoterId === p.id && !own(h)), p.monthly_cap);
       const mine = payouts.filter(x => x.promoter_id === p.id);
       return [p.id, { hh, summary: partnerSummary(hh, month), plan: payoutPlan(hh, mine, month, rules.minPayout) }];
     }));

@@ -6,6 +6,9 @@
 import { T } from '../components/SiteCopy';
 import { customerReviewText, smsHref } from '../lib/reviews';
 import { buildText } from '../lib/textTemplates';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
+import { relationshipLine, referrerLine } from '../lib/relationship';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -167,6 +170,35 @@ function personName(first, policies) {
   const firstName = first ? properCase(String(first).trim().split(/\s+/)[0]) : (core[0] ? properCase(core[0]) : null);
   if (!firstName) return last;
   return last && last.toLowerCase() !== firstName.toLowerCase() ? `${firstName} ${last}` : firstName;
+}
+
+// Whose policy it is and how the person who sent it relates to them (and to the partner).
+// Read on its own so the rest of the drawer never depends on these newer columns.
+function WhoIsWho({ rcId, partnerFirst }) {
+  const { data } = useQuery({
+    queryKey: ['rate_check_who', rcId],
+    enabled: !!rcId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data: row, error } = await supabase.from('rate_checks')
+        .select('policyholder_name, contact_relationship, contact_relationship_other, referrer_relationship, referrer_relationship_other')
+        .eq('id', rcId).maybeSingle();
+      return error ? null : row;
+    },
+  });
+  if (!data) return null;
+  const lines = [
+    data.contact_relationship && data.contact_relationship !== 'self'
+      ? relationshipLine(data.contact_relationship, data.contact_relationship_other, data.policyholder_name)
+      : null,
+    referrerLine(data.referrer_relationship, data.referrer_relationship_other, partnerFirst),
+  ].filter(Boolean);
+  if (!lines.length) return null;
+  return (
+    <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
+      {lines.map((l, i) => <span key={i} className="block">{l}{data.contact_relationship === 'other' && i === 0 ? ' · confirm they can make changes' : ''}</span>)}
+    </p>
+  );
 }
 
 function OriginTag({ rc, className = '' }) {
@@ -648,6 +680,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
                 {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
               <OriginTag rc={rc} className="mt-0.5" />
+              <WhoIsWho rcId={rc.id} partnerFirst={rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null} />
               {rc.resubmitted_at && (
                 <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
                   <T k="pages.ratecheckspage.01fa31">Sent again</T> {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}

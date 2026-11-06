@@ -48,14 +48,16 @@ function jpegSize(buf) {
   return null;
 }
 
-async function fillContact(page) {
+async function fillContact(page, { skipName = false } = {}) {
   // The code is texted by rate-check-otp; here it answers "sent" and accepts any code.
   await page.route('**/functions/v1/rate-check-otp', async (route) => {
     const body = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body.mode === 'send' ? { sent: true } : { verified: true }) });
   });
-  await page.getByLabel('First Name').fill('Keisha');
-  await page.getByLabel('Last Name').fill('Example');
+  if (!skipName) {
+    await page.getByLabel('First Name').fill('Keisha');
+    await page.getByLabel('Last Name').fill('Example');
+  }
   await page.getByLabel('Mobile Number').fill('4045551212');
   await expect(page.getByLabel('Mobile Number')).toHaveValue('(404) 555-1212');
   await page.getByLabel('Email', { exact: true }).fill('keisha@example.com');
@@ -452,4 +454,58 @@ test('a policy in the wrong slot is caught before anything is sent', async ({ pa
   await expect(page.getByText('Not added yet')).toHaveCount(1);
   await expect(page.getByRole('button', { name: /Move to|It’s Right/ })).toHaveCount(0);
   expect(sent).toHaveLength(0); // nothing went to the agency
+});
+
+test('policy checks and who-is-who: expired, no cars, name from the policy, relationships', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const photo = testInfo.outputPath('dana-auto.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  let posted = null;
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    const body = route.request().postDataJSON();
+    if (body?.mode === 'classify') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        policy_type: 'auto', confidence: 'high', zip: '30013', insured_first_name: 'Dana', insured_last_name: 'Reyes',
+        other_names: [], expiration_date: '2025-03-01', vehicle_count: 0 }) });
+    }
+    if (body?.mode === 'invite_lookup') return route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    posted = body;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'received', rate_check_id: 'r1', carrier: 'GEICO', policy_type: 'auto', annual_premium: 1400 }) });
+  });
+  await page.goto('/?start=1&ref=FRIEND1');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 1 policy/i }).click();
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
+  await chooser.setFiles(photo);
+  await page.getByRole('button', { name: "That's all" }).click().catch(() => {});
+
+  // Expired: asked first, and Continue waits.
+  await expect(page.getByText(/This policy ended Mar 2025/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Answer the Question Above' })).toBeDisabled();
+  await page.getByRole('button', { name: 'It’s Current' }).click();
+  // Then: no cars on the page.
+  await expect(page.getByText(/We don’t see any cars on this page/)).toBeVisible();
+  await page.getByRole('button', { name: 'It’s All There' }).click();
+  await page.getByRole('button', { name: /^Continue$/ }).click();
+
+  // The name arrives from the policy; typing a different one asks how they're related.
+  await expect(page.getByLabel('First Name')).toHaveValue('Dana');
+  await expect(page.getByLabel('Last Name')).toHaveValue('Reyes');
+  await expect(page.getByText('is your…')).toHaveCount(0);
+  await page.getByLabel('First Name').fill('Mike');
+  await expect(page.getByText('is your…')).toBeVisible();
+  await page.getByRole('radio', { name: 'Other' }).first().click();
+  await page.getByLabel('Describe how you\'re related').fill('my COUSIN!!');
+  // Came from a referral link: how they know the person (optional).
+  await page.getByRole('radio', { name: 'Coworker' }).click();
+
+  await fillContact(page, { skipName: true });
+  await page.getByRole('checkbox').nth(0).check();
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
+  await expect.poll(() => posted).not.toBeNull();
+  expect(posted).toMatchObject({
+    first_name: 'Mike', last_name: 'Reyes', policyholder_name: 'Dana Reyes',
+    contact_relationship: 'other', contact_relationship_other: 'Cousin',
+    referrer_relationship: 'coworker', zip: '30013',
+  });
 });

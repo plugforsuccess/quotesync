@@ -165,7 +165,7 @@ export async function preparePolicy(files) {
  * POST the dec page + contact + consent to the rate-check edge function.
  * Resolves to { status, rate_check_id, carrier, policy_type, annual_premium }.
  */
-export async function submitRateCheck({ prepared, firstName, lastName = '', phone, email, zip, housingSituation, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
+export async function submitRateCheck({ prepared, firstName, lastName = '', relationships = null, phone, email, zip, housingSituation, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
   const utm = getUtmParams();
   const res = await fetch(RATE_CHECK_URL, {
     method: 'POST',
@@ -178,6 +178,11 @@ export async function submitRateCheck({ prepared, firstName, lastName = '', phon
       media_type: prepared.mediaType,
       first_name: firstName.trim(),
       last_name: (lastName || '').trim() || null,
+      ...(relationships ? {
+        policyholder_name: relationships.policyholderName, contact_relationship: relationships.contact,
+        contact_relationship_other: relationships.contactOther, referrer_relationship: relationships.referrer,
+        referrer_relationship_other: relationships.referrerOther,
+      } : {}),
       phone: phone.replace(/\D/g, ''),
       email: String(email || '').trim(),
       zip,
