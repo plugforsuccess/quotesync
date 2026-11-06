@@ -175,7 +175,7 @@ function InviteRow({ i, onOpen, onResend }) {
   const state = stateOf(i);
   const pill = PILL[state];
   const problem = textProblem(i);
-  const meta = [i.source === 'quick_send' ? 'Quick Send' : i.event_name || 'Direct link', i.producer_name && `sent by ${i.producer_name}`, short(i.created_at)].filter(Boolean).join(' · ');
+  const meta = [i.source === 'quick_send' ? 'Quick Send' : i.event_name || 'Direct link', i.producer_name && `Sent by ${i.producer_name}`, short(i.created_at)].filter(Boolean).join(' · ');
   const btn = 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-semibold';
   return (
     <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-5" style={{ borderTop: '1px solid var(--qs-border)' }}>

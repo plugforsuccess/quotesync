@@ -12,12 +12,12 @@ import { quoteHeadline } from './quoteLine';
 // rate_checks.status → what an agent should read.
 export const STATUS = {
   pending:        { label: 'Reading…',     cls: 'bg-gray-100 text-gray-700' },
-  extracted:      { label: 'Needs quote',  cls: 'bg-primary-100 text-primary-700' },
-  extract_failed: { label: 'Couldn’t read', cls: 'bg-red-100 text-red-700' },
+  extracted:      { label: 'Needs Quote',  cls: 'bg-primary-100 text-primary-700' },
+  extract_failed: { label: 'Couldn’t Read', cls: 'bg-red-100 text-red-700' },
   quoted:         { label: 'Quoted',       cls: 'bg-purple-100 text-purple-700' },
-  won:            { label: 'We win',       cls: 'bg-green-100 text-green-700' },
+  won:            { label: 'We Win',       cls: 'bg-green-100 text-green-700' },
   bound:          { label: 'Bound',        cls: 'bg-green-600 text-white' },
-  lost:           { label: 'Can’t beat',   cls: 'bg-gray-200 text-gray-600' },
+  lost:           { label: 'Can’t Beat',   cls: 'bg-gray-200 text-gray-600' },
   declined:       { label: 'Declined',     cls: 'bg-gray-100 text-gray-500' },
 };
 
@@ -26,7 +26,7 @@ export const DECISION = {
   quote_allstate:          { label: 'Quote Allstate P&C',        tone: 'success', cls: 'bg-green-100 text-green-700' },
   quote_allstate_umbrella: { label: 'Quote Allstate Auto + HO + PUP', tone: 'success', cls: 'bg-green-100 text-green-700' },
   expanded_market:         { label: 'Ivantage',                  tone: 'info',    cls: 'bg-primary-100 text-primary-700' },
-  double_check:            { label: 'Double check',              tone: 'warning', cls: 'bg-yellow-100 text-yellow-700' },
+  double_check:            { label: 'Double Check',              tone: 'warning', cls: 'bg-yellow-100 text-yellow-700' },
   manual_review:           { label: 'Manual Review',             tone: 'warning', cls: 'bg-orange-100 text-orange-700' },
   refer:                   { label: 'Refer',                     tone: 'neutral', cls: 'bg-gray-200 text-gray-700' },
 };

@@ -478,7 +478,7 @@ function Layout({ forcePlane = null }) {
                 hats on mobile (on desktop it lives in the header nav).
                 Self-hides for single-hat users. */}
             <div className="px-4 py-3 border-b border-white/10 empty:hidden">
-              <PersonaSwitcher fullWidth onDark />
+              <PersonaSwitcher fullWidth onLight />
             </div>
 
             {/* Drawer nav groups */}

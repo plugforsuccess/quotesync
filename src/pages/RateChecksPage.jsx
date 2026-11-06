@@ -345,7 +345,9 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
 
       {/* What they pay now (labeled), then the price with the text button and Start quote. */}
-      <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>
+      {bundle
+        ? <div className="mt-3"><CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill></div>
+        : <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>}
       <div className="mt-1 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-lg font-bold leading-6 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
@@ -360,17 +362,16 @@ function InboxCard({ h, now, onOpen, onPartner }) {
                 <MessageSquare className="h-5 w-5" aria-hidden="true" />
               </a>
             )}
-            <span className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.ratecheckspage.5002c4">Start quote</T></span>
+            <span className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white"><T k="pages.ratecheckspage.5002c4">Start Quote</T></span>
           </span>
         ) : <StatusChip status={h.status} quiet />}
       </div>
 
       {/* Status: red means we owe them a reply; the renewal is context (amber when close);
           the bundle is a neutral note. */}
-      {(renewal || bundle) && (
+      {renewal && (
         <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t pt-4" style={{ borderColor: 'var(--qs-border)' }}>
-          {renewal && <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>}
-          {bundle && <CardPill><T k="pages.ratecheckspage.6921b0">Bundle opportunity</T></CardPill>}
+          <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>
         </div>
       )}
     </li>
@@ -677,7 +678,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
             <div className="min-w-0">
               <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || <T k="pages.ratecheckspage.968f20">{'Rate Check'}</T>}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-                {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || <T k="pages.ratecheckspage.a656b7">{'Policy not read yet'}</T>} · <Age rc={rc} now={now} />
+                {carrierLabel(rc) || rc.policy_type ? <Age rc={rc} now={now} /> : <><T k="pages.ratecheckspage.a656b7">{'Policy not read yet'}</T> · <Age rc={rc} now={now} /></>}
               </p>
               <OriginTag rc={rc} className="mt-0.5" />
               <WhoIsWho rcId={rc.id} partnerFirst={rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null} />
@@ -709,7 +710,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
               <CopyButton text={formatPhone(rc.phone)} label="Copy phone number" className="p-2" />
               {rc.lead_id && (
                 <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex items-center gap-1 text-primary-600 hover:underline">
-                  <T k="pages.ratecheckspage.9fc953">Lead record</T> <ExternalLink className="w-3.5 h-3.5" />
+                  <T k="pages.ratecheckspage.9fc953">Lead Record</T> <ExternalLink className="w-3.5 h-3.5" />
                 </Link>
               )}
             </div>
@@ -828,7 +829,7 @@ function QuoteBox({ rc, onQuoted }) {
         </div>
       )}
       {!bound && <form onSubmit={submit} className="mt-7 space-y-3">
-        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} <T k="pages.ratecheckspage.f9fce9">price Per Year</T></label>
+        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} <T k="pages.ratecheckspage.f9fce9">Price Per Year</T></label>
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
             {premium && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>}

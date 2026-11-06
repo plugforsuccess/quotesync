@@ -20,13 +20,13 @@ export default function QuickSendCard({ agencyId }) {
       <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
         <T k="pages.components.ratechecks.quicksendcard.e827b4">Text someone the upload link while you're talking to them. Open</T> <span className="font-mono"><T k="pages.components.ratechecks.quicksendcard.13b64e">insuredbycam.com/qs</T></span> <T k="pages.components.ratechecks.quicksendcard.5dc1d0">on your phone and sign in with your Quick Send PIN, no QuoteSync login. PINs are set on the Team page.</T>
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Link to="/qs" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Link to="/qs" className="inline-flex min-h-[44px] items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
           <ExternalLink className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.876873">Open Quick Send</T>
         </Link>
         <button type="button" onClick={() => setShowPhones(v => !v)} aria-expanded={showPhones}
-          className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
-          <Smartphone className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.f90fd6">Signed-in Phones (</T>{devices.length})
+          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
+          <Smartphone className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.quicksendcard.phones">Phones</T> ({devices.length})
         </button>
       </div>
 

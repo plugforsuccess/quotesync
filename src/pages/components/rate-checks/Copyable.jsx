@@ -68,7 +68,7 @@ export function CopyTextButton({ text, children, className = '', style }) {
 
 // Label / value row with a copy button. Value stays plain selectable text.
 // `addOn` marks something the producer must match on the quote (shown in yellow).
-export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone, addOn = false }) {
+export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone, addOn = false, emptyText = null }) {
   const empty = value == null || value === '';
   return (
     <div className="flex items-start justify-between gap-3 py-2" style={{ borderTop: '1px solid var(--qs-border)' }}>
@@ -77,7 +77,7 @@ export function Field({ label, value, copy, mono = false, wide = false, hint, hi
         <span className="min-w-0">
           <span className={`select-text break-words ${mono ? 'font-mono' : ''} ${addOn && !empty ? ADD_ON_CLS : ''}`}
             style={addOn && !empty ? ADD_ON_STYLE : { color: empty ? 'var(--qs-subtle)' : 'var(--qs-bright)' }}>
-            {empty ? <T k="pages.components.ratechecks.copyable.e2e93c">{'Not on page'}</T> : value}
+            {empty ? (emptyText || <T k="pages.components.ratechecks.copyable.e2e93c">{'Not on page'}</T>) : value}
           </span>
           {hint && <span className={`block text-xs ${hintTone === 'warn' ? 'text-yellow-600' : ''}`} style={hintTone === 'warn' ? undefined : { color: 'var(--qs-subtle)' }}><T>{hint}</T></span>}
         </span>
