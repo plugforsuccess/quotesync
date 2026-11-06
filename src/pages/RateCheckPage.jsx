@@ -52,7 +52,8 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // The licensed agent shown on the page (same headshot as the homepage). Two GA
 // licenses: Cam's individual resident license goes under his headshot (the card
 // names him); the agency's resident license goes in the footer next to the agency name.
-const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
+// photo: the full portrait; avatar: a square crop centered on the face, for round photos.
+const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', avatar: '/logos/cameron-avatar.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', license: '209488' };
 // "Meet the Owner" carousel: three photos, each with its story underneath.
 // Family first (it backs up "Family comes first" just above), then the court, then the agency.
@@ -76,6 +77,22 @@ const ABOUT = [
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const fileKey = (f) => `${f.name}|${f.size}|${f.lastModified}`;
 const money = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
+
+// Guided flow: the policy types people pick, and where the picks live on this device.
+const KINDS = [
+  ['auto', 'Auto', Car], ['home', 'Home', House], ['renters', 'Renters', Sofa], ['condo', 'Condo', Building2],
+  ['umbrella', 'Umbrella', Umbrella], ['motorcycle', 'Motorcycle', Motorbike], ['boat', 'Boat', Sailboat], ['other', 'Other', Plus],
+];
+const KIND = Object.fromEntries(KINDS.map(([k, label, Icon]) => [k, { label, Icon }]));
+const WANTED_KEY = 'rc_wanted_v1';
+const KINDS_KEY = 'rc_kinds_v1';
+const readJSON = (key) => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
+const writeJSON = (key, v) => {
+  try {
+    if (v == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(v));
+  } catch { /* private mode */ }
+};
 const isActive = (s) => s === 'queued' || s === 'reading';
 
 export default function RateCheckPage() {
@@ -88,7 +105,14 @@ export default function RateCheckPage() {
   // { mode: 'retake', policyId, pageId } replaces one page.
   const pickTarget = useRef(null);
 
-  const [step, setStep] = useState('policies'); // policies | you | results
+  const [step, setStep] = useState('policies'); // pick | policies | you | results
+  // Guided flow: the policy types they said they have (null = not guided, e.g. "upload it
+  // now"), and each draft policy's type. Both stay on this device with the draft.
+  const [wanted, setWantedState] = useState(() => readJSON(WANTED_KEY));
+  const setWanted = (list) => { setWantedState(list); writeJSON(WANTED_KEY, list); };
+  const kindsRef = useRef(readJSON(KINDS_KEY) || {});
+  const rememberKind = (id, kind) => { if (!kind) return; kindsRef.current = { ...kindsRef.current, [id]: kind }; writeJSON(KINDS_KEY, kindsRef.current); };
+  const groupKind = useRef(null);
   // A policy: { id, pages: [{ id, file, preview, quality }], file, preview (page 1),
   //   status: draft|queued|reading|read|unreadable|failed, result, error }
   const [items, setItems] = useState([]);
@@ -161,7 +185,7 @@ export default function RateCheckPage() {
         });
         byPolicy.forEach((rows, policyId) => {
           const pages = rows.sort((a, b) => a.order - b.order).map(r => ({ id: r.id, file: r.file, preview: previewFor(r.file), quality: null }));
-          restored.push(withPages({ id: policyId, status: 'draft' }, pages));
+          restored.push(withPages({ id: policyId, status: 'draft', kind: kindsRef.current[policyId] || null }, pages));
         });
       }
       const f = session?.fields || draft?.fields;
@@ -241,7 +265,8 @@ export default function RateCheckPage() {
 
   // ── Adding policies and pages, replacing and removing ──
   const newPolicy = (files) => withPages({ id: newId(), status: 'draft' }, files.map(newPage));
-  const addPolicies = (policies) => {
+  const addPolicies = (policies, kind = null) => {
+    if (kind) policies = policies.map(pol => { rememberKind(pol.id, kind); return { ...pol, kind }; });
     updateItems(list => [...list, ...policies]);
     policies.forEach(pol => { saveDraftPages(pol); pol.pages.forEach(pg => checkQuality(pg.id, pg.file)); });
     if (step === 'results') setStep('policies');
@@ -257,7 +282,8 @@ export default function RateCheckPage() {
 
     const have = new Set(itemsRef.current.flatMap(i => (i.pages || []).map(pg => fileKey(pg.file))));
     const fresh = picked.filter(f => !have.has(fileKey(f)));
-    if (!target && fresh.length < picked.length) setNotice(fresh.length ? 'Skipped a photo you already added.' : 'You already added that one.');
+    const kind = target?.kind || null;
+    if (!target?.mode && fresh.length < picked.length) setNotice(fresh.length ? 'Skipped a photo you already added.' : 'You already added that one.');
 
     if (target?.mode === 'retake') {
       const old = itemsRef.current.find(i => i.id === target.policyId);
@@ -302,14 +328,15 @@ export default function RateCheckPage() {
 
     if (fresh.length > 1) {
       // A downloaded PDF already holds every page of one policy, so several PDFs are several policies.
-      if (fresh.every(isPdfName)) { addPolicies(fresh.map(f => newPolicy([f]))); setAskingMore(null); return; }
+      if (fresh.every(isPdfName)) { addPolicies(fresh.map(f => newPolicy([f])), kind); setAskingMore(null); return; }
       // Photos or screenshots could be one policy's pages, several policies, or a mix: ask.
+      groupKind.current = kind;
       setGrouping(fresh);
       if (step === 'results') setStep('policies');
       return;
     }
     const pol = newPolicy(fresh);
-    addPolicies([pol]);
+    addPolicies([pol], kind);
     // A single photo: ask whether this policy has more pages (PDFs usually already do).
     setAskingMore(isPdfName(fresh[0]) ? null : pol.id);
   };
@@ -320,14 +347,16 @@ export default function RateCheckPage() {
     const files = grouping || [];
     setGrouping(null);
     if (!files.length) return;
+    const kind = groupKind.current;
+    groupKind.current = null;
     if (how === 'one') {
       const pol = newPolicy(files);
-      addPolicies([pol]);
+      addPolicies([pol], kind);
       setAskingMore(pol.id);
       return;
     }
     const batch = how === 'mix' ? newId() : null;
-    addPolicies(files.map(f => ({ ...newPolicy([f]), ...(batch ? { batch } : {}) })));
+    addPolicies(files.map(f => ({ ...newPolicy([f]), ...(batch ? { batch } : {}) })), kind);
     setAskingMore(null);
   };
   // "Same policy as above": move this policy's pages onto the end of the one before it.
@@ -372,6 +401,7 @@ export default function RateCheckPage() {
     updateItems(() => []); setFields({ firstName: '', phone: '', email: '', zip: '', housing: '' });
     setOtp({ status: 'idle', code: '', error: '', sentAt: 0 });
     setConsent(false); setReferralConsent(false); setGiven(null); setResumed(false); setStep('policies');
+    setWanted(null); kindsRef.current = {}; writeJSON(KINDS_KEY, null);
     window.scrollTo(0, 0);
   };
 
@@ -428,6 +458,7 @@ export default function RateCheckPage() {
     const ids = drafts.map(d => d.id);
     updateItems(list => list.map(i => (ids.includes(i.id) ? { ...i, status: 'queued' } : i)));
     setStep('results');
+    setWanted(null); // sent: adding more later is the plain upload
     window.scrollTo(0, 0);
     sendQueue(ids, grant);
   };
@@ -521,7 +552,7 @@ export default function RateCheckPage() {
       },
     ];
     return (
-      <Shell step={3} center>
+      <Shell step={4} center>
         {fileInputs}
         {banner}
         <div role="status" aria-live="polite" className="text-center">
@@ -551,7 +582,7 @@ export default function RateCheckPage() {
         )}
 
         {!reading && <NextTimeline texting={!!given?.consentGivenAt} opensAt={opens?.label} />}
-        {!reading && <CamCard photo={AGENT.photo} />}
+        {!reading && <CamCard photo={AGENT.avatar} />}
 
         <Carousel slides={slides} className="mt-5" />
 
@@ -562,6 +593,16 @@ export default function RateCheckPage() {
             Not {fields.firstName || 'you'}? <button type="button" onClick={startOver} className="font-semibold underline">Start over</button>
           </p>
         )}
+      </Shell>
+    );
+  }
+
+  // ── Guided step 1: which policies to check ──
+  if (step === 'pick') {
+    return (
+      <Shell step={1}>
+        <PickPolicies initial={wanted || []} onBack={() => { setStep('policies'); window.scrollTo(0, 0); }}
+          onContinue={(list) => { setWanted(list); setStep('policies'); window.scrollTo(0, 0); }} />
       </Shell>
     );
   }
@@ -578,7 +619,7 @@ export default function RateCheckPage() {
       ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}.`
       : '';
     return (
-      <Shell step={2} bar={
+      <Shell step={3} bar={
         <ActionBar hint={canSend ? null : hint}>
           <button type="button" onClick={send} disabled={!canSend} className={primaryBtn}>
             {drafts.length > 1 ? `Check my ${drafts.length} policies` : 'Check my rate'}
@@ -694,12 +735,25 @@ export default function RateCheckPage() {
     );
   }
 
-  // ── Step 1: policies ──
+  // ── Step 2: policies (a checklist of the picked types when guided) ──
   const returning = sent.length > 0 && !!given;
+  const guided = !returning && Array.isArray(wanted) && wanted.length > 0;
+  const addedKinds = guided ? wanted.filter(k => drafts.some(d => d.kind === k)) : [];
+  const allAdded = guided && addedKinds.length === wanted.length;
+  const draftCard = (it) => {
+    const n = drafts.indexOf(it);
+    return (
+      <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id}
+        onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
+        onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
+        onRemove={() => removeItem(it.id)}
+        onMergeUp={it.batch && drafts[n - 1]?.batch === it.batch ? () => mergeUp(it.id) : null} />
+    );
+  };
   const goNext = (force) => {
     if (!drafts.length) return;
     setMoreNudge(false);
-    if (force !== true && drafts.length === 1 && sent.length === 0 && !nudgedRef.current) {
+    if (force !== true && !guided && drafts.length === 1 && sent.length === 0 && !nudgedRef.current) {
       nudgedRef.current = true; setMoreNudge(true); return;
     }
     if (returning && contactOk) { submit(); return; }
@@ -707,7 +761,26 @@ export default function RateCheckPage() {
     window.scrollTo(0, 0);
   };
   return (
-    <Shell step={1} wide={drafts.length === 0 && !returning} bar={drafts.length > 0 && (
+    <Shell step={2} wide={drafts.length === 0 && !returning && !guided} bar={guided ? (
+      <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
+        <div className="flex min-w-0 flex-1 flex-col items-stretch">
+          {allAdded ? (
+            <button type="button" onClick={() => goNext()} className={primaryBtn}>
+              <T k="rc.guided.continue">Continue</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+            </button>
+          ) : (
+            <>
+              <button type="button" disabled className={primaryBtn}>{addedKinds.length} of {wanted.length} added</button>
+              {drafts.length > 0 && (
+                <button type="button" onClick={() => goNext()} className="mt-1.5 py-1 text-sm font-semibold text-slate-600 underline underline-offset-4">
+                  <T k="rc.guided.partial">Continue with what I have</T>
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </ActionBar>
+    ) : drafts.length > 0 && (
       <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
         <button type="button" onClick={newPolicyPhoto} aria-label="Add another policy"
           className="qb qb-outline h-14 w-14 shrink-0 p-0">
@@ -747,7 +820,29 @@ export default function RateCheckPage() {
         </p>
       )}
 
-      {drafts.length === 0 ? (
+      {guided ? (
+        <>
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.guided.title">Add your declarations pages</T></h1>
+          <p className="mt-1.5 text-[15px] text-slate-600"><T k="rc.guided.line">The page that lists your coverages and price. A PDF, photos or screenshots all work.</T></p>
+          <ul className="mt-5 space-y-3">
+            {wanted.map(k => (
+              <KindSlot key={k} kind={k} drafts={drafts.filter(d => d.kind === k)} renderDraft={draftCard}
+                onUpload={() => { setAskingMore(null); openFiles({ kind: k }); }}
+                onCamera={() => { setAskingMore(null); openCamera({ kind: k }); }} />
+            ))}
+            {drafts.some(d => !d.kind || !wanted.includes(d.kind)) && (
+              <li className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="font-bold text-[#0F2D6B]"><T k="rc.guided.otherfiles">Other files</T></p>
+                <ul className="mt-3 space-y-2">{drafts.filter(d => !d.kind || !wanted.includes(d.kind)).map(draftCard)}</ul>
+              </li>
+            )}
+          </ul>
+          <button type="button" onClick={() => { setStep('pick'); window.scrollTo(0, 0); }}
+            className="mt-4 inline-flex w-full items-center justify-center gap-1.5 py-2 font-semibold text-blue-700">
+            <Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.guided.addtype">Add another type of policy</T>
+          </button>
+        </>
+      ) : drafts.length === 0 ? (
         returning ? (
           <>
             <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add another policy</h1>
@@ -766,7 +861,8 @@ export default function RateCheckPage() {
             </button>
           </>
         ) : (
-          <Landing note={whoSentHero} onUpload={() => openFiles()} onCamera={() => openCamera()}
+          <Landing note={whoSentHero} onStart={() => { setStep('pick'); window.scrollTo(0, 0); }}
+            onUpload={() => { setWanted(null); openFiles(); }}
             onDropFiles={(files) => onPick({ target: { files, value: '' } })} />
         )
       ) : (
@@ -801,9 +897,83 @@ export default function RateCheckPage() {
         </>
       )}
 
-      {notice && <p className="mt-4 rounded-xl bg-slate-900 px-3 py-2 text-center text-sm text-white" role="status">{notice}</p>}
+      {notice && <p className="mt-4 rounded-xl bg-[#0F2D6B] px-3 py-2 text-center text-sm text-white" role="status">{notice}</p>}
       {grouping && <GroupSheet count={grouping.length} onOne={() => groupPicked('one')} onSeparate={() => groupPicked('separate')} onMix={() => groupPicked('mix')} onCancel={() => setGrouping(null)} />}
     </Shell>
+  );
+}
+
+// Guided step 1: tap every policy type to check.
+function PickPolicies({ initial, onContinue, onBack }) {
+  const [sel, setSel] = useState(initial);
+  const toggle = (k) => setSel(list => (list.includes(k) ? list.filter(x => x !== k) : [...list, k]));
+  return (
+    <>
+      <button type="button" onClick={onBack} className="-ml-1 mb-3 inline-flex items-center gap-1 text-sm font-semibold text-slate-600">
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" /> Back
+      </button>
+      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]"><T k="rc.pick.title">What should we check?</T></h1>
+      <p className="mt-2 text-[15px] leading-relaxed text-slate-600"><T k="rc.pick.line">Pick every policy you have. Checking them together usually finds the biggest savings.</T></p>
+      <div className="mt-5 grid grid-cols-2 gap-2.5" role="group" aria-label="Policies to check">
+        {KINDS.map(([k, label, Icon]) => {
+          const on = sel.includes(k);
+          return (
+            <button key={k} type="button" onClick={() => toggle(k)} aria-pressed={on}
+              className={`relative flex items-center gap-2.5 rounded-2xl border-[1.5px] px-3.5 py-3.5 text-left text-[15px] font-bold text-[#0F2D6B] transition ${on ? 'border-blue-700 bg-blue-50 shadow-[0_0_0_3px_rgba(29,78,216,0.12)]' : 'border-slate-200 bg-white active:bg-slate-50'}`}>
+              <Icon className="h-5 w-5 shrink-0 text-blue-700" aria-hidden="true" /> {label}
+              {on && <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-700 text-white"><Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" /></span>}
+            </button>
+          );
+        })}
+      </div>
+      <ActionBar>
+        <button type="button" disabled={!sel.length} onClick={() => onContinue(KINDS.map(([k]) => k).filter(k => sel.includes(k)))} className={primaryBtn}>
+          {sel.length ? `Continue · ${sel.length} ${sel.length === 1 ? 'policy' : 'policies'}` : 'Pick at least one'}
+          {sel.length > 0 && <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />}
+        </button>
+      </ActionBar>
+    </>
+  );
+}
+
+// Guided step 2: one slot per picked type. Empty: upload or take photos, plus where to
+// find it. Filled: the policy's card(s), and room for another of the same type.
+function KindSlot({ kind, drafts, renderDraft, onUpload, onCamera }) {
+  const { label, Icon } = KIND[kind] || KIND.other;
+  const [help, setHelp] = useState(false);
+  const done = drafts.length > 0;
+  return (
+    <li className={`rounded-2xl border-[1.5px] bg-white p-4 ${done ? 'border-blue-200' : 'border-slate-200'}`}>
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-[#0F2D6B]">{label}</p>
+          <p className="text-[13px] text-slate-500">{done ? (drafts.length === 1 ? 'Added' : `${drafts.length} policies added`) : 'Not added yet'}</p>
+        </div>
+        {done && <span className="qc-badge qc-badge-sm shrink-0" aria-label="Added"><Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /></span>}
+      </div>
+      {done ? (
+        <>
+          <ul className="mt-3 space-y-2">{drafts.map(renderDraft)}</ul>
+          <button type="button" onClick={onUpload} className="mt-2 text-sm font-semibold text-blue-700">+ Another {label.toLowerCase()} policy</button>
+        </>
+      ) : (
+        <>
+          <div className="mt-3 flex gap-2">
+            <button type="button" onClick={onUpload} className="qb qb-blue qb-md flex-1 px-3 text-[15px]"><Upload className="h-4 w-4" aria-hidden="true" /> Upload</button>
+            <button type="button" onClick={onCamera} className="qb qb-outline qb-md flex-1 px-3 text-[15px]"><Camera className="h-4 w-4" aria-hidden="true" /> Take photos</button>
+          </div>
+          <button type="button" onClick={() => setHelp(v => !v)} aria-expanded={help} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-700">
+            <T k="rc.slot.help">Where do I find it?</T> <ChevronDown className={`h-3.5 w-3.5 transition-transform ${help ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+          {help && (
+            <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">
+              <T k="rc.slot.helptext">In your insurer’s app or website, open Documents and download the latest declarations page. A paper copy? Tap Take photos and get every page.</T>
+            </p>
+          )}
+        </>
+      )}
+    </li>
   );
 }
 
@@ -1390,9 +1560,8 @@ function OwnerCard() {
       {/* Phones: the name centered across the top, then a big headshot with the rest beside it. */}
       <h2 className="mb-4 whitespace-nowrap text-center text-[clamp(22px,7vw,28px)] font-black leading-none tracking-tight lg:hidden" style={{ color: GOLD }}>{AGENCY.short}</h2>
       <div className="flex items-center gap-3.5 lg:flex-col lg:gap-4 lg:text-center">
-        <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
-          className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
-          style={{ objectPosition: '50% 30%' }} />
+        <img src={AGENT.avatar} alt={AGENT.name} width="160" height="160"
+          className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40" />
         <div className="min-w-0 flex-1">
           <h2 className="hidden whitespace-nowrap font-black leading-none tracking-tight lg:block lg:text-[30px]" style={{ color: GOLD }}>{AGENCY.short}</h2>
           <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-2.5 lg:text-xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
@@ -1413,7 +1582,9 @@ function OwnerCard() {
   );
 }
 
-function UploadCard({ onUpload, onCamera, onDropFiles }) {
+// The first screen's card: one button to start, and a shortcut for
+// people who already have their policy in hand (desktop: drop a PDF on it).
+function StartCard({ onStart, onUpload, onDropFiles }) {
   const [dragging, setDragging] = useState(false);
   const drop = (e) => {
     e.preventDefault(); setDragging(false);
@@ -1421,24 +1592,14 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
     if (files.length) onDropFiles(files);
   };
   return (
-    <div id="rc-upload-card" className="mt-7 rounded-3xl bg-white p-4 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 sm:p-5"
+    <div id="rc-upload-card" className={`mt-7 rounded-3xl bg-white p-5 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 transition ${dragging ? 'ring-4 ring-blue-300' : ''}`}
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
-      <div className={`rounded-2xl border-2 border-dashed p-4 text-center transition-colors sm:p-5 ${dragging ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50/60'}`}>
-        <button type="button" onClick={onUpload}
-          className="qb qb-blue qb-lg w-full text-lg">
-          <Upload className="h-5 w-5" aria-hidden="true" strokeWidth={2.25} /> <T k="rc.upload.title">Upload my policy</T>
-        </button>
-        <p className="mt-2.5 text-sm text-slate-500">
-          <T k="rc.upload.line">PDF, photos or screenshots</T><span className="hidden lg:inline"> · or drag your PDF here</span>
-        </p>
-      </div>
-      <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[13px] text-slate-500">
-        <Layers className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        <T k="rc.upload.multi">Have several policies? Select them all at once.</T>
-      </p>
-      <button type="button" onClick={onCamera}
-        className="qb qb-outline qb-md mt-3 w-full">
-        <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T>
+      <button type="button" onClick={onStart} className="qb qb-gold qb-lg w-full text-lg">
+        <T k="rc.start.cta">Get started</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
+      </button>
+      <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes</T></p>
+      <button type="button" onClick={onUpload} className="mt-3 w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4">
+        <T k="rc.start.shortcut">Have your policy handy? Upload it now</T><span className="hidden lg:inline"> · or drop a PDF here</span>
       </button>
     </div>
   );
@@ -1478,7 +1639,7 @@ function ExampleText() {
         <span className="text-xs text-slate-400">Messages</span>
       </figcaption>
       <div className="mt-4 flex items-end gap-2.5">
-        <img src={AGENT.photo} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[#F5D061]" />
+        <img src={AGENT.avatar} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[#F5D061]" />
         <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200">
           <T k="rc.example.text">Hi Dana, it’s Cam. Same coverage with Allstate comes to</T>{' '}
           <b className="font-bold text-emerald-700">$1,180/yr</b>{' '}
@@ -1514,13 +1675,13 @@ function StickyUpload({ onUpload }) {
     <div className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0F2D6B]/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur transition-transform duration-300 lg:hidden ${show ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
       aria-hidden={!show}>
       <button type="button" onClick={onUpload} tabIndex={show ? 0 : -1} className="qb qb-gold qb-md w-full">
-        <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.sticky.upload">Upload my policies</T>
+        <T k="rc.sticky.start">Get started</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
       </button>
     </div>
   );
 }
 
-function Landing({ note, onUpload, onCamera, onDropFiles }) {
+function Landing({ note, onStart, onUpload, onDropFiles }) {
   useReveal();
   const [howTo, setHowTo] = useState(false);
   return (
@@ -1540,7 +1701,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
               <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
                 <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
               </p>
-              <UploadCard onUpload={onUpload} onCamera={onCamera} onDropFiles={onDropFiles} />
+              <StartCard onStart={onStart} onUpload={onUpload} onDropFiles={onDropFiles} />
               <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-blue-100 lg:justify-start">
                 <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
                 <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
@@ -1579,10 +1740,10 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
                 <li><T k="rc.howto.2">Open **Documents**. Some insurers call it **Policy Documents** or **Documents & ID Cards**.</T></li>
                 <li><T k="rc.howto.3">Find the most recent declarations page for each policy.</T></li>
                 <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
-                <li><T k="rc.howto.5">Come back here and tap **Upload my policy**.</T></li>
+                <li><T k="rc.howto.5">Come back here and tap **Get started**.</T></li>
               </ol>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
-              <p className="mt-1"><T k="rc.howto.paper">Tap **Take photos instead** and photograph every page of the declarations. Lay it flat in good light.</T></p>
+              <p className="mt-1"><T k="rc.howto.paper">Tap **Get started**, then **Take photos**, and photograph every page of the declarations. Lay it flat in good light.</T></p>
               <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.screens.title">Can’t download it?</T></p>
               <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
             </div>
@@ -1602,7 +1763,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
               <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Agency, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
             </p>
           </div>
-          <div className="min-w-0"><MeetCam onUpload={onUpload} /></div>
+          <div className="min-w-0"><MeetCam onUpload={onStart} /></div>
         </div>
       </section>
 
@@ -1619,21 +1780,21 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#F5D061]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={onUpload} className="qb qb-gold qb-lg flex-1 text-lg">
-              <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
+            <button type="button" onClick={onStart} className="qb qb-gold qb-lg flex-1 text-lg">
+              <T k="rc.closing.start">Get started</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
             </button>
-            <button type="button" onClick={onCamera} className="qb qb-outline-dark qb-lg">
-              <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.photos">Take photos</T>
+            <button type="button" onClick={onUpload} className="qb qb-outline-dark qb-lg">
+              <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload2">Upload now</T>
             </button>
           </div>
         </div>
       </section>
-      <StickyUpload onUpload={onUpload} />
+      <StickyUpload onUpload={onStart} />
     </>
   );
 }
 
-const STEPS = ['Policies', 'You', 'Results'];
+const STEPS = ['Policies', 'Upload', 'Contact'];
 // `wide`: the landing page spreads out on desktop (two columns, wider grids); the
 // steps stay one narrow column, which reads better for forms.
 function Shell({ children, step, bar, center = false, wide = false }) {
@@ -1652,13 +1813,19 @@ function Shell({ children, step, bar, center = false, wide = false }) {
   return (
     <div className="min-h-screen bg-slate-50">
       {styles}
-      <header className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 pt-5">
+      <header className="mx-auto max-w-md px-4 pt-5">
         <BrandLogo tone="light" className="shrink-0" />
         {step && (
-          <ol className="flex items-center gap-1.5" aria-label={`Step ${step} of 3: ${STEPS[step - 1]}`}>
-            {STEPS.map((st, i) => (
-              <li key={st} className={`h-1.5 rounded-full transition-all ${i + 1 === step ? 'w-6 bg-blue-700' : i + 1 < step ? 'w-3 bg-blue-300' : 'w-3 bg-slate-300'}`} />
-            ))}
+          <ol className="mt-4 grid grid-cols-3 gap-1.5" aria-label={step > STEPS.length ? 'All steps done' : `Step ${step} of 3: ${STEPS[step - 1]}`}>
+            {STEPS.map((st, i) => {
+              const state = i + 1 === step ? 'on' : i + 1 < step ? 'done' : 'next';
+              return (
+                <li key={st} aria-current={state === 'on' ? 'step' : undefined}>
+                  <span className={`block h-1.5 rounded-full transition-colors ${state === 'on' ? 'bg-blue-700' : state === 'done' ? 'bg-blue-300' : 'bg-slate-300'}`} />
+                  <span className={`mt-1.5 block text-[11px] font-semibold ${state === 'on' ? 'text-blue-700' : state === 'done' ? 'text-slate-500' : 'text-slate-400'}`}>{i + 1} {st}</span>
+                </li>
+              );
+            })}
           </ol>
         )}
       </header>

@@ -278,6 +278,8 @@ test('a policy with several pages goes up as one PDF, and asks about more pages'
   await page.getByTestId('rc-files').setInputFiles([p3]);
   await expect(page.getByText('2 added')).toBeVisible();
   await page.getByRole('button', { name: 'Remove policy 2' }).click();
+  await expect(page.getByRole('button', { name: 'Remove policy 2' })).toHaveCount(0);
+  await page.waitForTimeout(300); // the delete reaches on-device storage
 
   // Pages survive a reload, in order.
   await page.reload();
@@ -378,4 +380,33 @@ test('a partner link still credits the partner when the link check fails', async
   await expect(page.getByText('That link has expired')).toHaveCount(0);
   await sendOne(page, photo);
   expect(posts[0].invite_code).toBe('JVN7K2QX');
+});
+
+test('the guided flow: pick policies, add each one, continue', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const photo = testInfo.outputPath('auto-dec.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  await page.goto('/ratecheck');
+  await page.getByRole('button', { name: /Get started/ }).first().click();
+  await expect(page.getByRole('heading', { name: 'What should we check?' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pick at least one' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 2 policies/ }).click();
+
+  await expect(page.getByRole('heading', { name: 'Add your declarations pages' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '0 of 2 added' })).toBeDisabled();
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Upload', exact: true }).first().click(),
+  ]);
+  await chooser.setFiles(photo);
+  await page.getByRole('button', { name: "That's all" }).click();
+  await expect(page.getByRole('button', { name: '1 of 2 added' })).toBeDisabled();
+  await expect(page.getByText('Not added yet')).toHaveCount(1); // Home still open
+
+  // Picked up front, so no "Only one policy?" prompt: straight to contact.
+  await page.getByRole('button', { name: 'Continue with what I have' }).click();
+  await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Only one policy?' })).toHaveCount(0);
 });
