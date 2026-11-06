@@ -349,10 +349,9 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
 
       {/* What they pay now (labeled), then the price with the text button and Start quote. */}
-      {bundle
-        ? <div className="mb-2 mt-3"><CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill></div>
-        : <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>}
-      <div className="mt-1 flex items-center justify-between gap-3">
+      {/* A bundle shows the price first, then the Bundle Opportunity pill under it. */}
+      {!bundle && <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>}
+      <div className={`${bundle ? 'mt-3' : 'mt-1'} flex items-center justify-between gap-3`}>
         <div className="min-w-0">
           <p className="text-lg font-bold leading-6 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
           {!open && h.delta != null && <p className="text-sm"><Savings delta={h.delta} /></p>}
@@ -370,6 +369,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
           </span>
         ) : <StatusChip status={h.status} quiet />}
       </div>
+      {bundle && <div className="mt-2"><CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill></div>}
 
       {/* Status: red means we owe them a reply; the renewal is context (amber when close);
           the bundle is a neutral note. */}
