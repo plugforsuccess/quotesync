@@ -3,7 +3,8 @@
 // what they text, and what customers and partners get. The owner edits each paragraph
 // with the copy-editor pencil (principals only); whatever's saved is what goes out,
 // automatic or tapped. Blanks fill in when a text is sent.
-import { AlertTriangle, Lock, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Loader2, Lock, Mail, MessageSquare } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { T } from '../../../components/SiteCopy';
@@ -23,6 +24,32 @@ const TIPS = [
   ['Show it live.', 'Upload one on your phone in front of them. Seeing it take a minute is the best pitch.'],
 ];
 const btnCls = 'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold';
+export const EMAIL_ADDRESS_KEY = 'email.footer.address';
+const EMAIL_ADDRESS_UNSET = 'Not set yet';
+
+// Emails the signed-in principal this email, as it would go out (email-test).
+function SendTest({ id }) {
+  const [state, setState] = useState({ busy: false, note: '', error: false });
+  const send = async () => {
+    setState({ busy: true, note: '', error: false });
+    const { data, error } = await supabase.functions.invoke('email-test', { body: { id } });
+    let msg = data?.error;
+    if (error) {
+      try { msg = (await error.context?.json())?.error; } catch { /* not JSON */ }
+      msg = msg || 'Could not send the test.';
+    }
+    setState(msg ? { busy: false, note: msg, error: true } : { busy: false, note: `Sent to ${data.sent_to}.`, error: false });
+  };
+  return (
+    <>
+      <button type="button" onClick={send} disabled={state.busy} className={`${btnCls} bg-primary-600 text-white`}>
+        {state.busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Mail className="h-3.5 w-3.5" aria-hidden="true" />}
+        <T k="pages.components.ratechecks.textstab.send-test">Send Me a Test</T>
+      </button>
+      {state.note && <span role="status" className="basis-full text-right text-xs" style={{ color: state.error ? 'var(--qs-warning)' : 'var(--qs-subtle)' }}>{state.note}</span>}
+    </>
+  );
+}
 
 function Template({ t }) {
   return (
@@ -48,7 +75,14 @@ function Template({ t }) {
           </p>
         )}
         {t.paragraphs.map((p, i) => <p key={i}><T k={`${t.key}.${i + 1}`}>{p}</T></p>)}
-        {t.kind === 'email' && (
+        {t.button && (
+          <p>
+            <span className="inline-flex min-h-[40px] items-center rounded-full px-5 text-sm font-bold" style={{ background: '#F5D061', color: '#0F2D6B' }} title={`Button for ${t.button.link}`}>
+              <T k={`${t.key}.button`}>{t.button.label}</T>
+            </span>
+          </p>
+        )}
+        {t.unsub && (
           <p className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-subtle)' }} title="Added to every reminder email.">
             <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> <T k="pages.components.ratechecks.textstab.unsub">Don’t want these reminders? Unsubscribe.</T>
           </p>
@@ -65,12 +99,14 @@ function Template({ t }) {
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
           {t.blanks.length > 0 && <><T k="pages.components.ratechecks.textstab.bc8104">Fills in:</T> {t.blanks.join(', ')}</>}
+          {t.button && <>{t.blanks.length > 0 && ' · '}<T k="pages.components.ratechecks.textstab.button-note">The gold button opens</T> {t.button.link}</>}
           {t.kind !== 'say' && t.kind !== 'email' && <>{t.blanks.length > 0 && ' · '}{(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/partner/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}</>}
         </p>
-        <span className="flex flex-wrap items-center gap-2">
-          <CopyTextButton text={buildText(t.id, { ...sample, name: '', reviewLink: reviewUrl() })} className={`${btnCls} text-primary-600`} style={box}>
+        <span className="flex flex-wrap items-center justify-end gap-2">
+          {t.kind === 'email' && <SendTest id={t.id} />}
+          {t.kind !== 'email' && <CopyTextButton text={buildText(t.id, { ...sample, name: '', reviewLink: reviewUrl() })} className={`${btnCls} text-primary-600`} style={box}>
             <T k="pages.components.ratechecks.textstab.af74f7">Copy</T>
-          </CopyTextButton>
+          </CopyTextButton>}
           {t.textIt && (
             <a href={`sms:?&body=${encodeURIComponent(buildText(t.id))}`} aria-label={`Text: ${t.name}`} className={`${btnCls} bg-primary-600 text-white`}>
               <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" /> <T k="pages.components.ratechecks.scriptstab.98ea21">Text It</T>
@@ -145,6 +181,16 @@ export default function TextsTab({ agencyId }) {
         </p>
         <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
           <T k="pages.components.ratechecks.textstab.24fb48">The mobile number customers can text from the website. The Text us button shows once this is a 10-digit number.</T>
+        </p>
+      </section>
+
+      <section className="dark-card" style={{ padding: 16 }} aria-label="Email mailing address">
+        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.textstab.email-address">Mailing Address for Emails</T></p>
+        <p className="mt-1 rounded-lg p-2.5 text-[13px]" style={box}>
+          <T k={EMAIL_ADDRESS_KEY}>{EMAIL_ADDRESS_UNSET}</T>
+        </p>
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+          <T k="pages.components.ratechecks.textstab.email-address-note">Shown at the bottom of every email. The law requires a mailing address on reminder emails; a P.O. box works.</T>
         </p>
       </section>
 

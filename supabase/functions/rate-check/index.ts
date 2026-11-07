@@ -23,6 +23,7 @@
 //   (optional) supabase secrets set RATE_CHECK_MODEL=claude-sonnet-4-5
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { EMAIL_TEMPLATES, loadEmailCopy, renderEmail, sendEmail } from '../_shared/email.ts'
 
 // CORS — inline to match create-lead (avoids _shared bundling issues)
 const allowedOrigins = [
@@ -755,21 +756,16 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
-// Tell the producer who sent the link (email via Resend, if configured). In-app
-// notifications are inserted separately; this is for producers away from the app.
-async function emailProducer(supabase: any, userId: string, subject: string, text: string) {
-  const key = Deno.env.get('RESEND_API_KEY')
-  if (!key) return
+// Tell the producer who sent the link (email, in the shared layout with the wording from
+// the Texts & Scripts page). In-app notifications are inserted separately; this is for
+// producers away from the app.
+async function emailProducer(supabase: any, userId: string, vars: Record<string, string>) {
   const { data: profile } = await supabase.from('profiles').select('email').eq('id', userId).maybeSingle()
   if (!profile?.email) return
-  const from = Deno.env.get('RATE_CHECK_EMAIL_FROM') || Deno.env.get('DD_EMAIL_FROM') || 'QuoteSync <noreply@insuredbycam.com>'
   try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [profile.email], subject, text }),
-    })
-    if (!r.ok) console.error('[RATE_CHECK] producer email failed:', r.status, await r.text())
+    const msg = renderEmail({ template: EMAIL_TEMPLATES.rcUpload, saved: await loadEmailCopy(supabase), vars })
+    const r = await sendEmail({ to: [profile.email], ...msg })
+    if (!r.ok) console.error('[RATE_CHECK] producer email failed:', r.error)
   } catch (e) {
     console.error('[RATE_CHECK] producer email error:', (e as Error).message)
   }
@@ -1272,11 +1268,14 @@ Deno.serve(async (req) => {
         message: `${firstName || 'Someone'}${invite.event_name ? ` from ${invite.event_name}` : ''} · ${carrier || 'Unknown carrier'} ${policyType || 'policy'} · ${premiumText}`,
         metadata: { rate_check_id: rateCheckId, lead_id: leadId, invite_id: invite.id, event_name: invite.event_name },
       })
-      const appUrl = Deno.env.get('QUOTESYNC_APP_URL') || 'https://quotesync.vercel.app'
-      await emailProducer(supabase, invite.created_by,
-        `${firstName || 'Your invite'} uploaded their policy${invite.event_name ? ` (${invite.event_name})` : ''}`,
-        `${firstName || 'Someone'} just uploaded a ${carrier || 'policy'}${policyType ? ` ${policyType}` : ''} policy${annualPremium != null ? ` paying $${Math.round(annualPremium).toLocaleString('en-US')}/yr` : ''}.\n\n` +
-        `Open it: ${appUrl}/agency/leads/rate-checks\n\nThe page told them we typically text within 30 minutes during business hours.`)
+      const appUrl = (Deno.env.get('QUOTESYNC_APP_URL') || 'https://insuredbycam.com').replace(/\/+$/, '')
+      await emailProducer(supabase, invite.created_by, {
+        'first name': firstName || 'Someone',
+        'where we met': invite.event_name ? ` (from ${invite.event_name})` : '',
+        carrier: carrier || 'current',
+        premium: annualPremium != null ? `$${Math.round(annualPremium).toLocaleString('en-US')} a year` : 'a price we couldn’t read',
+        'lead link': leadId ? `${appUrl}/agency/leads/${leadId}` : `${appUrl}/agency/leads/rate-checks`,
+      })
     }
 
     // ── 5. Notify agency staff (in-app) ──

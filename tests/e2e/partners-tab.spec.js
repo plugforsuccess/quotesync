@@ -193,6 +193,28 @@ test('Scripts: what to say and text, one tap to copy or text (Texts & Scripts pa
   await expect(page.getByRole('article', { name: 'Ask Them to Share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
 });
 
+test('Emails on Texts & Scripts: button label, unsubscribe only on reminders, Send Me a Test', async ({ page }) => {
+  await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  const tests = [];
+  await page.route(`${SB}/functions/v1/email-test`, async (route) => {
+    tests.push(route.request().postDataJSON());
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sent_to: 'cam@example.com' }) });
+  });
+  await page.goto('/agency/texts');
+  const stall = page.getByRole('article', { name: 'Pick Up Where You Left Off' });
+  await expect(stall.getByText('Continue Your Course')).toBeVisible();
+  await expect(stall.getByText(/Unsubscribe/)).toBeVisible();
+  await expect(stall.getByRole('button', { name: 'Copy' })).toHaveCount(0);
+  const cert = page.getByRole('article', { name: 'Your Certificate Is Ready' });
+  await expect(cert.getByText('Download Your Certificate')).toBeVisible();
+  await expect(cert.getByText(/Unsubscribe/)).toHaveCount(0);
+  const upload = page.getByRole('region', { name: 'Team Emails' }).getByRole('article', { name: 'A Customer Uploaded Their Policy' });
+  await upload.getByRole('button', { name: 'Send Me a Test' }).click();
+  await expect(upload.getByRole('status')).toHaveText('Sent to cam@example.com.');
+  expect(tests).toEqual([{ id: 'rcUpload' }]);
+  await expect(page.getByRole('region', { name: 'Email mailing address' })).toContainText('Not set yet');
+});
+
 test('partner floor: recruit link, activated partners count for their recruiter, new partners credited', async ({ page }) => {
   // Javon signed and sent households this month, recruited by Cam: 1 of 2. A partner who
   // signed but never sent anyone doesn't count.
