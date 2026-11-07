@@ -4,6 +4,7 @@
 import { T } from './SiteCopy';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Camera, RotateCcw, Shield, Grid } from 'lucide-react';
+import { newTabProps } from '../lib/newTab';
 
 // Leads is hidden while the agency focuses on Rate Check partner referrals (the page still works by URL).
 const TABS = [
@@ -40,6 +41,7 @@ function BottomTabBar({ onMorePress, moreActive, drawerOpen = false, agencyRole 
             <NavLink
               key={tab.to}
               to={tab.to}
+              {...newTabProps(tab.to)}
               className="flex flex-col items-center justify-center flex-1 h-full relative group"
             >
               {/* Active pill highlight */}
