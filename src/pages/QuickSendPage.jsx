@@ -174,7 +174,13 @@ function SendForm({ onSignedOut }) {
 
   return (
     <div className="space-y-6">
-      {result ? <SendResult result={result} onAnother={another} /> : (
+      {result ? (
+        <>
+          <SendResult result={result} />
+          {/* Outside the card: the next person is a new step, not part of this send. */}
+          <button type="button" onClick={another} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base font-bold text-blue-700 shadow-sm active:bg-slate-50"><T k="pages.quicksendpage.cc3308">Send Another</T></button>
+        </>
+      ) : (
         <form onSubmit={send} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.quicksendpage.1aeb84">Ask first</T></p>
           <p className="mt-2 border-l-4 border-blue-200 pl-3 text-[15px] leading-relaxed text-slate-700">“{SCRIPT}”</p>
@@ -226,7 +232,7 @@ function SendForm({ onSignedOut }) {
   );
 }
 
-function SendResult({ result, onAnother }) {
+function SendResult({ result }) {
   const { invite, link, already_sent: already } = result;
   const status = invite?.sms_status;
   const name = invite?.first_name || 'them';
@@ -250,10 +256,10 @@ function SendResult({ result, onAnother }) {
 
   const ownText = `Hi${invite?.first_name ? ` ${invite.first_name}` : ''}, it's ${(invite?.producer_name || 'Cam').split(' ')[0]} with Cam Wiley Agency. Here's the link you asked for to upload your policy for a quote: ${link}`;
   const ownHref = `sms:+1${invite?.phone || ''}?&body=${encodeURIComponent(ownText)}`;
-  const headline = ownPhone ? `Text ${name} From Your Phone` : already ? `${name} already has a link` : blocked ? `${name} opted out of texts`
+  const headline = ownPhone ? `${name === 'them' ? 'Their' : `${name}’s`} Link Is Ready` : already ? `${name} already has a link` : blocked ? `${name} opted out of texts`
     : failed ? `Couldn’t text ${name}` : sending ? `Texting ${name}…` : `Texted ${name}`;
   const note = ownPhone
-    ? 'Texts from the agency’s number aren’t live yet. Tap below: Messages opens with the text and link written. The link works for 7 days.'
+    ? 'Messages opens with the text and link written. The link works for 7 days.'
     : already
     ? `${invite?.producer_name ? `${invite.producer_name} sent it` : 'It was sent'} in the last day, so no second text went out. Show the code or copy the link if they need it again.`
     : blocked ? 'They replied STOP to an earlier text, so we can’t text them. Have them scan the code instead.'
@@ -290,11 +296,10 @@ function SendResult({ result, onAnother }) {
 
       {ownPhone && (
         <a href={ownHref} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800">
-          <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="pages.quicksendpage.ownphone">Text From My Phone</T>
+          <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="pages.quicksendpage.sendtext">Send Text</T>
         </a>
       )}
-      <button type="button" onClick={onAnother} className={`${ownPhone ? 'mt-3 border border-slate-300 bg-white text-blue-700 active:bg-slate-50' : 'mt-5 bg-blue-700 text-white shadow-sm active:bg-blue-800'} w-full rounded-xl px-4 py-3.5 text-base font-bold`}><T k="pages.quicksendpage.cc3308">Send Another</T></button>
-      <div className="mt-3 flex items-center justify-center gap-6 text-sm font-semibold text-blue-700">
+      <div className="mt-4 flex items-center justify-center gap-6 text-sm font-semibold text-blue-700">
         <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 py-1">
           {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}{copied ? <T k="pages.quicksendpage.8e3df4">{'Copied'}</T> : <T k="pages.quicksendpage.672d82">{'Copy Link'}</T>}
         </button>

@@ -74,15 +74,16 @@ test('a number that texted STOP is not texted; the link is offered instead', asy
   await expect(page.getByRole('button', { name: 'Hide QR code' })).toBeVisible();
 });
 
-test('before Twilio is live: Text From My Phone opens Messages with the link written', async ({ page }) => {
+test('before Twilio is live: Send Text opens Messages with the link written', async ({ page }) => {
   mockFunction(page, { noTwilio: true });
   await page.goto('/qs');
   await page.getByLabel('Your Quick Send PIN').fill('1234');
   await page.getByLabel('Name', { exact: true }).fill('Keisha');
   await page.getByLabel('Mobile number').fill('4045551212');
   await page.getByRole('button', { name: 'Send Requested DEC Link' }).click();
-  await expect(page.getByText('Text Keisha From Your Phone')).toBeVisible();
-  const own = page.getByRole('link', { name: 'Text From My Phone' });
+  await expect(page.getByText('Keisha’s Link Is Ready')).toBeVisible();
+  await expect(page.getByText(/From Your Phone/i)).toHaveCount(0);
+  const own = page.getByRole('link', { name: 'Send Text' });
   const href = await own.getAttribute('href');
   expect(href.startsWith('sms:+14045551212?&body=')).toBe(true);
   expect(decodeURIComponent(href.split('body=')[1])).toBe("Hi Keisha, it's Cam with Cam Wiley Agency. Here's the link you asked for to upload your policy for a quote: https://insuredbycam.com/r/K7PM2QXD");
