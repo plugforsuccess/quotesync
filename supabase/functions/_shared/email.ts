@@ -74,7 +74,7 @@ export function renderEmail({ template: t, saved, vars, unsubscribeUrl }: Render
 
   const preheader = esc(paragraphs.find(p => !/^(hi|hello|hey)\b/i.test(p)) || '').slice(0, 140)
   const footer = [
-    `<p style="margin:0 0 4px;font-weight:600;color:${NAVY}">${AGENCY} · Allstate Agent</p>`,
+    `<p style="margin:0 0 4px;font-weight:600;color:${NAVY}">${AGENCY} · Allstate Insurance</p>`,
     address ? `<p style="margin:0 0 4px">${esc(address).replace(/\n/g, '<br>')}</p>` : '',
     `<p style="margin:0"><a href="${SITE}" style="color:${MUTED}">insuredbycam.com</a></p>`,
     unsubscribeUrl ? `<p style="margin:12px 0 0">Don’t want these reminders? <a href="${esc(unsubscribeUrl)}" style="color:${MUTED}">Unsubscribe</a>.</p>` : '',
