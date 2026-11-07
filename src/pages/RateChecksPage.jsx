@@ -51,6 +51,7 @@ import LogQuote from './components/sales/LogQuote';
 import ContactStep from './components/sales/ContactStep';
 import CloseStep from './components/sales/CloseStep';
 import LeadHistory from './components/sales/LeadHistory';
+import { TEXT_FROM_OWN_PHONE } from '../lib/textingMode';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -349,11 +350,12 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
 
       {/* What they pay now (labeled), then the price with the text button and Start quote. */}
-      {/* A bundle shows the price first, then the Bundle Opportunity pill under it. */}
+      {/* A bundle stacks the price and the Bundle Opportunity pill, centered beside the buttons. */}
       {!bundle && <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>}
       <div className={`${bundle ? 'mt-3' : 'mt-1'} flex items-center justify-between gap-3`}>
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-col items-start gap-2">
           <p className="text-lg font-bold leading-6 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
+          {bundle && <CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill>}
           {!open && h.delta != null && <p className="text-sm"><Savings delta={h.delta} /></p>}
         </div>
         {open ? (
@@ -369,7 +371,6 @@ function InboxCard({ h, now, onOpen, onPartner }) {
           </span>
         ) : <StatusChip status={h.status} quiet />}
       </div>
-      {bundle && <div className="mt-2"><CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill></div>}
 
       {/* Status: red means we owe them a reply; the renewal is context (amber when close);
           the bundle is a neutral note. */}
@@ -497,8 +498,8 @@ export default function RateChecksPage() {
               className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
               <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline"><T k="pages.ratecheckspage.d008bd">Upload Dec Page</T></span>
             </button>
-            {/* Send a Link is hidden: it had producers text leads from their own numbers.
-                Quick Send (the agency's number) replaces it. */}
+            {/* Send a Link texts from the producer's own number: shown only until Twilio is
+                live (TEXT_FROM_OWN_PHONE); then Quick Send (the agency's number) replaces it. */}
             {SHOW_SEND_A_LINK && (
               <button onClick={() => setInviteOpen(true)}
                 className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
@@ -644,7 +645,8 @@ export default function RateChecksPage() {
 
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
-const SHOW_SEND_A_LINK = false;
+// Send a Link texts from the producer's own phone: on only until Twilio is live.
+const SHOW_SEND_A_LINK = TEXT_FROM_OWN_PHONE;
 
 // The sales workspace: full screen, one household, in steps. Review the quote sheet,
 // save the Allstate quote, then contact them and close.

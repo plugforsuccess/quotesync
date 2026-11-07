@@ -661,8 +661,11 @@ export const AuthProvider = ({ children }) => {
     }, 8000);
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // Supabase calls this while it still holds its auth lock (e.g. inside
+    // signInWithPassword). Any Supabase query awaited here waits on that same
+    // lock, so sign-in never finishes (the hanging Sign In button). Return right
+    // away and do the work on the next tick, as Supabase's docs advise.
+    const handleAuthEvent = async (event, session) => {
         if (!mounted) return;
 
         console.log('[AUTH] state changed', { event, email: session?.user?.email || null });
@@ -761,8 +764,10 @@ export const AuthProvider = ({ children }) => {
           });
           return;
         }
-      }
-    );
+      };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setTimeout(() => { handleAuthEvent(event, session); }, 0);
+    });
 
     // Proactively refresh the session when the tab becomes visible again.
     // Browsers throttle timers in background tabs, so Supabase's internal
