@@ -182,3 +182,13 @@ test('a lead with uploads opens its Rate Check workspace', async ({ page }) => {
   await expect(dialog.getByRole('button', { name: /Quoted It in Allstate/ })).toBeVisible();
   await expect(dialog.getByRole('link', { name: /Lead Record/ })).toHaveCount(0);
 });
+
+test('Quick Send opens in a new tab from agency pages', async ({ page }) => {
+  await mock(page, { partners: [], rules: null, payouts: [] });
+  await page.goto('/agency/leads/rate-checks');
+  await page.getByRole('tab', { name: 'Links' }).click();
+  const links = page.locator('a[href="/qs"]');
+  await expect(links.first()).toBeAttached();
+  const n = await links.count();
+  for (let i = 0; i < n; i += 1) await expect(links.nth(i)).toHaveAttribute('target', '_blank');
+});

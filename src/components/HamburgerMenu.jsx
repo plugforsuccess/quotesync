@@ -5,6 +5,7 @@ import { T } from './SiteCopy';
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { newTabProps } from '../lib/newTab';
 
 function HamburgerMenu({ items }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -110,6 +111,7 @@ function HamburgerMenu({ items }) {
             <NavLink
               key={item.to}
               to={item.to}
+              {...newTabProps(item.to)}
               role="menuitem"
               className={({ isActive }) =>
                 [

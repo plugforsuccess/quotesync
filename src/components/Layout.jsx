@@ -10,6 +10,7 @@ import BrandLogo from './BrandLogo';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
 import BottomTabBar from './BottomTabBar';
+import { newTabProps } from '../lib/newTab';
 import VerificationBanner from './VerificationBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import ThemeToggle from './ThemeToggle';
@@ -497,6 +498,7 @@ function Layout({ forcePlane = null }) {
                     <NavLink
                       key={item.to}
                       to={item.to}
+                      {...newTabProps(item.to)}
                       className={({ isActive }) =>
                         [
                           'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors mx-2 rounded-lg',
@@ -706,6 +708,7 @@ function TabLink({ to, label, end, scrollToQuote, isPrimary }) {
       to={to}
       end={end}
       onClick={handleClick}
+      {...newTabProps(to)}
       className={({ isActive }) => [
         'rounded-full px-4 lg:px-5 py-2 text-sm lg:text-[15px] font-semibold whitespace-nowrap transition-colors',
         isActive ? 'bg-white text-[#0F2D6B] shadow-sm' : isPrimary ? 'bg-white/15 text-white hover:bg-white/25' : 'text-blue-50 hover:bg-white/10 hover:text-white',
@@ -734,6 +737,7 @@ function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
       to={to}
       end={end}
       onClick={handleClick}
+      {...newTabProps(to)}
       className="relative w-full max-w-sm group overflow-hidden"
     >
       {({ isActive }) => (
