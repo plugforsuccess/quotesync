@@ -709,6 +709,9 @@ function AddPartner({ agencyId, userId, save, onDone }) {
 // The agency's payout rules: when a household becomes payable, which pages count,
 // and the smallest payout. The fixed rules (what a household is, what never counts)
 // are listed underneath so the whole policy reads in one place.
+// The "needs texting set up" note under the payout rules: hidden (Cam knows Twilio isn't live).
+const SHOW_TEXTING_ALERT = false;
+
 function RuleRow({ title, hint, children }) {
   return (
     <div className="flex items-center justify-between gap-6 py-2.5 sm:gap-10" style={{ borderTop: '1px solid var(--qs-border)' }}>
@@ -756,7 +759,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
           {num('minPayout', 'Smallest payout', '$')}
         </RuleRow>
       </div>
-      {v.requireCallConfirm && (
+      {SHOW_TEXTING_ALERT && v.requireCallConfirm && (
         <Dismissible id="partners.needs-texting">
           <p className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
             <T k="pages.components.ratechecks.partnerstab.30f8f7">Needs texting set up: until the agency has a Twilio number, the quote-ready text can't go out, so no one can reply Y and partners aren't paid.</T>
