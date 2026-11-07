@@ -94,8 +94,8 @@ test('with the reply-Y rule on, only households that replied Y are owed', async 
   await card.getByRole('button', { name: /2 households in/i }).click();
   await expect(card.getByText('Replied Y')).toBeVisible();
   await expect(card.getByText('Not texted yet')).toBeVisible();
-  // The rules card warns that texting has to be set up.
-  await expect(page.getByText(/until the agency has a Twilio number/)).toBeVisible();
+  // The texting-setup note is hidden.
+  await expect(page.getByText(/until the agency has a Twilio number/)).toHaveCount(0);
 });
 
 test('turning the reply-Y rule off saves it, and quoted households become payable', async ({ page }) => {
@@ -176,21 +176,21 @@ test('Send pitch shares the message and the four screenshots', async ({ page }) 
   for (const [, type, size] of shared.files) { expect(type).toBe('image/jpeg'); expect(size).toBeGreaterThan(20000); }
 });
 
-test('Scripts: what to say and text, one tap to copy or text', async ({ page, context }) => {
+test('Scripts: what to say and text, one tap to copy or text (Texts & Scripts page)', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await mock(page, { partners: [partner()], rules: null, payouts: [] });
   await page.goto('/agency/leads/rate-checks');
   await page.getByRole('tablist').getByRole('button', { name: /^More/ }).click();
-  await page.getByRole('button', { name: /^Scripts/ }).click();
-  await expect(page.getByRole('article', { name: 'Say it in the room' })).toBeVisible();
-  const text = page.getByRole('article', { name: 'Text right after' });
-  const href = await text.getByRole('link', { name: 'Text: Text right after' }).getAttribute('href');
+  await page.getByRole('button', { name: /^Texts & Scripts/ }).click();
+  await expect(page.getByRole('article', { name: 'Say It in the Room' })).toBeVisible();
+  const text = page.getByRole('article', { name: 'Text Right After' });
+  const href = await text.getByRole('link', { name: 'Text: Text Right After' }).getAttribute('href');
   expect(decodeURIComponent(href)).toContain('insuredbycam.com');
   await text.getByRole('button', { name: 'Copy' }).click();
   await expect(text.getByRole('button', { name: 'Copied' })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Check My Rate');
-  await expect(page.getByRole('article', { name: 'Reconnect after a quote that came in high' })).toBeVisible();
-  await expect(page.getByRole('article', { name: 'Ask them to share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Reconnect After a Quote That Came in High' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Ask Them to Share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
 });
 
 test('partner floor: recruit link, activated partners count for their recruiter, new partners credited', async ({ page }) => {

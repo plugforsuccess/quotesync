@@ -45,12 +45,41 @@ function getCorsHeaders(req: Request): Record<string, string> {
   }
 }
 
-// What the person hears, and what they get. Change either? Bump its version.
-const SCRIPT_VERSION = 'qs-script-v1'
-const MESSAGE_VERSION = 'qs-sms-v1'
-const SENDER = 'insuredbycam.com (Cam Wiley Agency, Inc.)'
-const message = (link: string) =>
-  `${SENDER}: Here is the secure link you requested to upload your dec page for an agent-prepared quote: ${link} Reply STOP to opt out.`
+// What the person hears, and what they get. The owner edits both on the Texts & Scripts
+// page (site_copy keys below; defaults kept in step with src/lib/textTemplates.js).
+// Each send records the exact wording and its version: v1 is the original wording,
+// an edited one is versioned by a fingerprint of its text.
+const SCRIPT_KEY = 'script.qs.ask.1'
+const MESSAGE_KEY = 'sms.qs.agency.1'
+const DEFAULT_SCRIPT = "Can I text you a secure link to upload your current dec page? It comes from insuredbycam.com, operated by Cam Wiley Agency, Inc. It's just the link, nothing else."
+const DEFAULT_MESSAGE = 'insuredbycam.com (Cam Wiley Agency, Inc.): Here is the secure link you requested to upload your dec page for an agent-prepared quote: [link]'
+const plainQuotes = (s: string) => s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"')
+
+async function fingerprint(text: string) {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return [...new Uint8Array(hash)].slice(0, 4).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** The saved script and text (or the defaults), with versions. */
+async function wording(supabase: any) {
+  const { data } = await supabase.from('site_copy').select('key, value').in('key', [SCRIPT_KEY, MESSAGE_KEY])
+  const saved = Object.fromEntries((data || []).map((r: any) => [r.key, String(r.value || '').trim()]))
+  const script = plainQuotes(saved[SCRIPT_KEY] || DEFAULT_SCRIPT)
+  const template = plainQuotes(saved[MESSAGE_KEY] || DEFAULT_MESSAGE)
+  return {
+    script,
+    template,
+    scriptVersion: script === DEFAULT_SCRIPT ? 'qs-script-v1' : `qs-script-${await fingerprint(script)}`,
+    messageVersion: template === DEFAULT_MESSAGE ? 'qs-sms-v1' : `qs-sms-${await fingerprint(template)}`,
+  }
+}
+
+/** The text as sent: the link filled in (added if an edit dropped it), and STOP always. */
+function message(template: string, link: string) {
+  let out = template.includes('[link]') ? template.replace(/\[link\]/g, link) : `${template} ${link}`
+  if (!/\bSTOP\b/.test(out)) out += ' Reply STOP to opt out.'
+  return out
+}
 
 const PIN_HOURS = 12
 const INVITE_DAYS = 7
@@ -284,10 +313,12 @@ Deno.serve(async (req) => {
   }
 
   const now = new Date().toISOString()
+  const words = await wording(supabase)
   const { data: invite, error: insErr } = await supabase.from('rate_check_invites').insert({
     agency_id: who.agencyId, created_by: who.userId, producer_name: who.producerName,
     first_name: firstName, phone, source: 'quick_send', request_id: requestId,
-    attested_at: now, script_version: SCRIPT_VERSION, message_version: MESSAGE_VERSION,
+    attested_at: now, script_version: words.scriptVersion, message_version: words.messageVersion,
+    script_text: words.script, message_text: words.template,
     device_id: who.deviceId, sent_with_pin: who.pin,
     expires_at: new Date(Date.now() + INVITE_DAYS * 86400_000).toISOString(),
     sms_status: blocked ? 'blocked' : 'requested', sms_status_at: now,
@@ -305,7 +336,7 @@ Deno.serve(async (req) => {
 
   const { data: agency } = await supabase.from('agencies').select('twilio_from_number').eq('id', who.agencyId).maybeSingle()
   const from = agency?.twilio_from_number || Deno.env.get('TWILIO_PHONE_NUMBER') || ''
-  const sms = await sendSms(phone, from, message(link), callbackUrl)
+  const sms = await sendSms(phone, from, message(words.template, link), callbackUrl)
   const patch = sms.ok
     ? { sms_sid: sms.sid, sms_status: sms.status, sms_status_at: new Date().toISOString() }
     : { sms_status: 'failed', sms_status_at: new Date().toISOString(), sms_error: String(sms.error).slice(0, 300) }

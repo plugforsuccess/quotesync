@@ -11,13 +11,16 @@ export const PITCH_IMAGES = [
   ['4-track-your-earnings.jpg', 'Track your earnings'],
 ];
 
-export const PITCH_TEXT = 'Want to make some extra pocket money? You share your link. When people you know use it to check their insurance rate, you get a referral fee — they don’t have to buy anything. Here’s how it works 👇';
+import { buildText } from '../../../lib/textTemplates.js';
+
+// The pitch text: edited on the Texts & Scripts page (The partner pitch).
+export const pitchText = () => buildText('pitch');
 
 const imageUrl = (file) => `${window.location.origin}/partner-pitch/${file}`;
 
 /** The text alone, with links to the pictures (for a plain text message). */
 export const pitchWithLinks = () =>
-  [PITCH_TEXT, '', ...PITCH_IMAGES.map(([file, label], i) => `${i + 1}. ${label}: ${imageUrl(file)}`)].join('\n');
+  [pitchText(), '', ...PITCH_IMAGES.map(([file, label], i) => `${i + 1}. ${label}: ${imageUrl(file)}`)].join('\n');
 
 /**
  * Opens the share sheet with the text and the four pictures. Resolves 'shared',
@@ -37,7 +40,7 @@ export async function sharePitch() {
   }
   if (!navigator.canShare({ files })) return 'unsupported';
   try {
-    await navigator.share({ text: PITCH_TEXT, files });
+    await navigator.share({ text: pitchText(), files });
     return 'shared';
   } catch (err) {
     return err?.name === 'AbortError' ? 'cancelled' : 'unsupported';

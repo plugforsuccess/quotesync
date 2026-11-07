@@ -14,7 +14,8 @@ const JOSHUAS_LAW_LINK = 'https://insuredbycam.nationaldrivered.com/dc/100038';
 // Joshua's Law (the teen course) is hidden for now, not deleted: true brings back its
 // card, its About panel and the FAQ answers that mention it.
 const SHOW_JOSHUAS_LAW = false;
-const RETURNING_CUSTOMER_LINK = 'https://insuredbycam.nationaldrivered.com/login?returnUrl=/CourseInfo';
+// Hidden: the outside course site's sign-in (Already Enrolled now opens our course portal).
+// const RETURNING_CUSTOMER_LINK = 'https://insuredbycam.nationaldrivered.com/login?returnUrl=/CourseInfo';
 
 const ACCENT = '#39FF88';
 // Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
@@ -247,10 +248,11 @@ export default function GeorgiaDriverEducationPage() {
                 : <T k="de.subhead.dd">Complete Georgia’s 6-hour defensive driving course 100% online, at your own pace, and save on your insurance.</T>}
             </p>
             <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-              <a href={RETURNING_CUSTOMER_LINK} target="_blank" rel="noreferrer"
+              {/* Our own course's portal (it used to go to the outside course site). */}
+              <Link to="/courses/defensive-driving/portal"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">
                 <T k="pages.driversedpage.e432d4">Already Enrolled? Continue Your Course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
+              </Link>
               {/* Same side padding as the pill above, so its text lines up with the pill's text. */}
               <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: GOLD }}>
                 <T k="de.partner.herolink">Become a Referral Partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />

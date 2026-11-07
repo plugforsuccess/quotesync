@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { relationshipLine, referrerLine } from '../lib/relationship';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, History, Link2, Mail, Map as MapIcon,
   MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
@@ -258,9 +258,9 @@ const WORK_TABS = [
   { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
 ];
 const MORE_GROUPS = [
+  // Scripts and Texts moved to their own page (/agency/texts); the old tabs are hidden.
   { title: 'Selling', tabs: [
-    { v: 'scripts', label: 'Scripts', hint: 'What to send people you’d like as partners', Icon: MessageSquare },
-    { v: 'texts', label: 'Texts', hint: 'Every text customers and partners get', Icon: MessageSquare },
+    { v: 'texts-page', to: '/agency/texts', principal: true, label: 'Texts & Scripts', hint: 'Everything you say and text, in one place', Icon: MessageSquare },
   ] },
   { title: 'Insights', tabs: [
     { v: 'map', label: 'Where We Win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
@@ -273,6 +273,12 @@ const MORE_GROUPS = [
 ];
 
 function TabBar({ tab, setTab }) {
+  const navigate = useNavigate();
+  // Texts & Scripts is the principal's page; producers don't see it.
+  const { currentAgencyRole } = useAuth();
+  const groups = MORE_GROUPS
+    .map(g => ({ ...g, tabs: g.tabs.filter(t => !t.principal || currentAgencyRole === 'principal') }))
+    .filter(g => g.tabs.length);
   const [sheet, setSheet] = useState(false);
   const moreTab = MORE_GROUPS.flatMap(g => g.tabs).find(t => t.v === tab);
   const segment = (active) => `flex min-h-[44px] items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold ${active ? 'bg-primary-600 text-white' : ''}`;
@@ -294,12 +300,12 @@ function TabBar({ tab, setTab }) {
         <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="More Rate Checks pages">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSheet(false)} />
           <div className="relative w-full max-w-md rounded-t-2xl p-4 pb-8 sm:rounded-2xl sm:pb-4" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
-            {MORE_GROUPS.map(g => (
+            {groups.map(g => (
               <div key={g.title} className="mb-3 last:mb-0">
                 <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{g.title}</T></p>
                 <div className="overflow-hidden rounded-xl" style={{ border: '1px solid var(--qs-border)' }}>
-                  {g.tabs.map(({ v, label, hint, Icon }, i) => (
-                    <button key={v} type="button" onClick={() => { setTab(v); setSheet(false); }}
+                  {g.tabs.map(({ v, to, label, hint, Icon }, i) => (
+                    <button key={v} type="button" onClick={() => { setSheet(false); if (to) navigate(to); else setTab(v); }}
                       className="flex min-h-[56px] w-full items-center gap-3 px-3 text-left" style={{ borderTop: i ? '1px solid var(--qs-border)' : undefined, background: tab === v ? 'var(--qs-elevated)' : undefined }}>
                       <Icon className="h-5 w-5 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
                       <span className="min-w-0 flex-1">
@@ -660,6 +666,10 @@ const STEPS = [
 export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
   const [step, setStep] = useState('review');
   const [logged, setLogged] = useState(null);
+  // Contact is written from the quote: locked until any policy has an Allstate price.
+  const quoted = !!logged || household.some(p => p.status !== 'declined' && p.allstate_premium != null);
+  const [lockNote, setLockNote] = useState(false);
+  useEffect(() => { if (!lockNote) return undefined; const t = setTimeout(() => setLockNote(false), 4000); return () => clearTimeout(t); }, [lockNote]);
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
@@ -742,11 +752,13 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
           <nav aria-label="Sales steps" className="mt-2.5 flex gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
             {STEPS.map((x, i) => {
               const on = step === x.v;
-              const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && !!logged);
+              const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && quoted);
+              const locked = x.v === 'tell' && !quoted;
               return (
-                <button key={x.v} type="button" disabled={x.soon} onClick={() => setStep(x.v)} aria-current={on ? 'step' : undefined}
+                <button key={x.v} type="button" disabled={x.soon} aria-disabled={locked || undefined}
+                  onClick={() => { if (locked) { setLockNote(true); return; } setLockNote(false); setStep(x.v); }} aria-current={on ? 'step' : undefined}
                   title={x.soon ? 'Coming in the next step' : undefined}
-                  className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} ${locked ? 'cursor-not-allowed opacity-50' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
                   style={on ? undefined : { color: 'var(--qs-bright)' }}>
                   {/* The step number (or ✓ once done), small and light, above the name. */}
                   <span className="text-[10px] font-medium leading-none tabular-nums opacity-70" aria-hidden="true">{done ? '✓' : i + 1}</span>
@@ -755,6 +767,11 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
               );
             })}
           </nav>
+          {lockNote && (
+            <p className="mt-1.5 text-center text-xs font-semibold" style={{ color: 'var(--qs-text)' }} role="status">
+              <T k="sales.steps.contact-locked">Save the quote first. Contact unlocks once it's saved.</T>
+            </p>
+          )}
         </div>
         </div>
 

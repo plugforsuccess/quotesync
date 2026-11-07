@@ -46,3 +46,11 @@ test('the four steps: sent, delivered, opened, uploaded; a failed text stops the
   assert.equal(shortAgo('2026-10-31T11:15:00Z', now), '45m');
   assert.equal(shortAgo('2026-10-31T09:00:00Z', now), '3h');
 });
+
+test('before Twilio: a link texted from the producer’s phone is not a failed send', async () => {
+  const { sendProgress, sendSteps } = await import('../../src/lib/quickSendFormat.js');
+  const own = { sms_status: 'failed', sms_error: 'Texting isn’t set up for this agency.', opened_at: null, upload_count: 0 };
+  assert.equal(sendProgress(own).short, 'Your phone');
+  assert.equal(sendSteps(own).stopped, false);
+  assert.equal(sendProgress({ ...own, sms_error: 'Invalid number' }).short, 'Failed');
+});

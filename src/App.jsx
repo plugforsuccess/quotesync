@@ -100,6 +100,7 @@ const AgencyLeadsPage = lazyWithRetry(() => import('./pages/AgencyLeadsPage'));
 const AgencyWinbacksPage = lazyWithRetry(() => import('./pages/AgencyWinbacksPage'));
 const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage')); // hidden: the old lead page, at /agency/leads/:id/details
 const LeadWorkspacePage = lazyWithRetry(() => import('./pages/LeadWorkspacePage'));
+const TextsScriptsPage = lazyWithRetry(() => import('./pages/TextsScriptsPage'));
 const RateChecksPage = lazyWithRetry(() => import('./pages/RateChecksPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
@@ -393,6 +394,19 @@ function App() {
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <RateChecksPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            {/* Every script and text, in one place. Principals only: they own the wording. */}
+            <Route
+              path="agency/texts"
+              element={
+                <ProtectedRoute requiredAgencyRole="principal">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <TextsScriptsPage />
                     </Suspense>
                   </ErrorBoundary>
                 </ProtectedRoute>

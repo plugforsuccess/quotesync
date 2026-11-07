@@ -139,6 +139,7 @@ test('a winback lead record is the workspace: review, save the quote by product,
   await expect(dialog.getByText('What to Say')).toBeVisible();
   await expect(dialog.getByRole('textbox')).toHaveValue(/new Allstate quote for you: \$4,100 a year/);
   await expect(dialog.getByRole('button', { name: 'Send Text' })).toBeDisabled();
+  await expect(dialog.getByRole('link', { name: 'Send Drivers Ed Link' })).toHaveAttribute('href', /courses%2Fdefensive-driving/);
 
   await dialog.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Close/ }).click();
   await dialog.getByRole('button', { name: 'Bound', exact: true }).click();
@@ -207,4 +208,46 @@ test('Quick Send: the principal can edit its words; the asked-first script stays
   await page.getByRole('button', { name: 'Edit this page' }).click();
   await expect(page.getByRole('textbox', { name: /Edit text: Ask first/i })).toBeVisible();
   await expect(page.locator('[data-copy="fixed"] [contenteditable]')).toHaveCount(0);
+});
+
+test('Texts & Scripts: every script and text in one place, grouped, with the right actions', async ({ page }) => {
+  await mock(page, { partners: [], rules: null, payouts: [] });
+  await page.goto('/agency/texts');
+  await expect(page.getByRole('heading', { name: 'Texts & Scripts' })).toBeVisible();
+  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails']) await expect(page.getByRole('region', { name: g })).toBeVisible();
+  // Reminder emails: subject line and the unsubscribe line, no STOP line.
+  const retake = page.getByRole('article', { name: 'Retake Before Your Discount Lapses' });
+  await expect(retake.getByText('Keep your Allstate defensive driving discount')).toBeVisible();
+  await expect(retake.getByText(/Unsubscribe/)).toBeVisible();
+  await expect(retake.getByText('Reply STOP to opt out.')).toHaveCount(0);
+  for (const n of ['Say It in the Room', 'Send a Link', 'Quick Send: Ask First', 'Quick Send: The Text', 'Nudge', 'Contact: It Saves Them Money', 'Reconnect After a Quote That Came in High', 'The Partner Pitch', 'Welcome a New Partner']) {
+    await expect(page.getByRole('article', { name: n })).toBeVisible();
+  }
+  // Recorded wording says so; broadcast texts open Messages; the pitch sends the pictures.
+  await expect(page.getByRole('article', { name: 'Quick Send: The Text' }).getByText(/Each send records the exact wording/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Text: Text Right After' })).toHaveAttribute('href', /^sms:\?&body=/);
+  await expect(page.getByRole('article', { name: 'The Partner Pitch' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+  // The sample fills in the blanks.
+  await expect(page.getByRole('article', { name: 'Send a Link' }).getByText(/with Allstate\[where we met\]/)).toBeVisible();
+});
+
+test('Rate Checks More opens Texts & Scripts', async ({ page }) => {
+  await mock(page, { partners: [], rules: null, payouts: [] });
+  await page.goto('/agency/leads/rate-checks');
+  await page.locator('[aria-haspopup="dialog"]', { hasText: 'More' }).click();
+  await page.getByRole('button', { name: /Texts & Scripts/ }).click();
+  await expect(page).toHaveURL(/\/agency\/texts$/);
+});
+
+test('Contact is locked until a quote is saved; tapping it says why', async ({ page }) => {
+  await openLead(page);
+  const dialog = page.getByRole('dialog', { name: 'Sales workspace' });
+  const steps = dialog.getByRole('navigation', { name: 'Sales steps' });
+  await expect(steps.getByRole('button', { name: /Contact/ })).toHaveAttribute('aria-disabled', 'true');
+  await steps.getByRole('button', { name: /Contact/ }).click({ force: true }); // a real tap reaches it; Playwright won't click aria-disabled
+  await expect(dialog.getByText("Save the quote first. Contact unlocks once it's saved.")).toBeVisible();
+  await expect(steps.getByRole('button', { name: /Review/ })).toHaveAttribute('aria-current', 'step'); // stayed put
+  // Close stays open: Follow Up and Lost don't need a quote.
+  await steps.getByRole('button', { name: /Close/ }).click();
+  await expect(dialog.getByRole('heading', { name: 'Policy Bound' })).toBeVisible();
 });
