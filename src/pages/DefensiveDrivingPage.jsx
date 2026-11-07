@@ -31,6 +31,7 @@ export default function DefensiveDrivingPage() {
 
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
+  const enrolled = !!enrollment && (enrollment.status === 'active' || enrollment.status === 'completed');
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,7 +84,7 @@ export default function DefensiveDrivingPage() {
           <ConsumerNav current="drivers" />
           <div className="py-10 lg:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-start">
             <div>
-              <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white"><T k="pages.defensivedrivingpage.3401c4">← Drivers Ed</T></Link>
+              <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white"><T k="pages.defensivedrivingpage.back">← Back</T></Link>
               <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: GOLD }}><T k="pages.defensivedrivingpage.9496f3">Defensive Driving · Georgia</T></p>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4">
                 <T>{course.title}</T>
@@ -96,12 +97,19 @@ export default function DefensiveDrivingPage() {
                   <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4" style={{ color: GOLD }} strokeWidth={3} /> <T>{t}</T></li>
                 ))}
               </ul>
-              <div className="flex items-center gap-4">
-                <a href="#enroll" className="qb qb-gold qb-lg px-7">
-                  <T k="pages.defensivedrivingpage.6ba3ba">Enroll For</T> {price}
-                </a>
-                <span className="text-sm text-blue-100"><T k="pages.defensivedrivingpage.47455c">One-time payment</T></span>
-              </div>
+              {/* Already enrolled: the top button goes to the course instead of asking them to pay. */}
+              {enrolled ? (
+                <Link to="/courses/defensive-driving/portal" className="qb qb-gold qb-lg px-7">
+                  <T k="pages.defensivedrivingpage.21acac">Go to Your Course</T>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <a href="#enroll" className="qb qb-gold qb-lg px-7">
+                    <T k="pages.defensivedrivingpage.6ba3ba">Enroll For</T> {price}
+                  </a>
+                  <span className="text-sm text-blue-100"><T k="pages.defensivedrivingpage.47455c">One-time payment</T></span>
+                </div>
+              )}
             </div>
 
             <div id="enroll" className="scroll-mt-24">
@@ -177,9 +185,15 @@ export default function DefensiveDrivingPage() {
                 </li>
               ))}
             </ul>
-            <a href="#enroll" className="qb qb-blue qb-lg px-8">
-              <CreditCard className="w-4 h-4" /> <T k="pages.defensivedrivingpage.e3b2ff">Enroll Now</T>
-            </a>
+            {enrolled ? (
+              <Link to="/courses/defensive-driving/portal" className="qb qb-blue qb-lg px-8">
+                <T k="pages.defensivedrivingpage.21acac">Go to Your Course</T>
+              </Link>
+            ) : (
+              <a href="#enroll" className="qb qb-blue qb-lg px-8">
+                <CreditCard className="w-4 h-4" /> <T k="pages.defensivedrivingpage.e3b2ff">Enroll Now</T>
+              </a>
+            )}
           </div>
         </div>
       </section>
