@@ -85,3 +85,11 @@ test('Enroll buttons on the course page jump to the enroll form', async ({ page 
   await enroll.first().click();
   await expect(page.locator('#enroll')).toBeInViewport();
 });
+
+test('Drivers Ed sends people to our own course, never the outside course site', async ({ page }) => {
+  await page.route('**/*.supabase.co/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto('/courses');
+  await expect(page.getByRole('link', { name: /Already Enrolled\? Continue Your Course/ })).toHaveAttribute('href', '/courses/defensive-driving/portal');
+  await expect(page.getByRole('link', { name: 'Start Defensive Driving Course' })).toHaveAttribute('href', '/courses/defensive-driving');
+  await expect(page.locator('a[href*="nationaldrivered"]')).toHaveCount(0);
+});
