@@ -1,6 +1,7 @@
 // Retakes the four partner-pitch screenshots (public/partner-pitch) from the site as it
 // is now, so what a new partner receives always matches what the site shows.
 //   node scripts/partner-pitch.cjs [base url]   (default http://localhost:4173)
+//   SITE_COPY=site_copy.json node scripts/partner-pitch.cjs   (use the agency's saved wording)
 // Pages are driven with sample data: partner "Alex Johnson", made-up referrals, a sample
 // State Farm PDF and three page photos. Nothing is sent anywhere.
 const { chromium } = require('playwright');
@@ -35,6 +36,14 @@ const portal = () => ({
   ],
 });
 
+// The next Tuesday at 11am Eastern.
+function nextWeekdayMorning() {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + ((9 - d.getUTCDay()) % 7 || 7));
+  d.setUTCHours(16, 0, 0, 0); // 11am EST
+  return d;
+}
+
 // A three-page sample declarations PDF.
 async function samplePdf(file) {
   const doc = await PDFDocument.create();
@@ -67,11 +76,19 @@ async function samplePagePng(browser, file, n) {
   for (let i = 1; i <= 3; i++) { const f = path.join(tmp, `page-${i}.png`); await samplePagePng(browser, f, i); photos.push(f); }
 
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  // A weekday morning (agency time), so the card reads "Open now", not "Closed now".
+  if (ctx.clock) await ctx.clock.setFixedTime(nextWeekdayMorning());
   const page = await ctx.newPage();
   await page.route('**/functions/v1/rate-check', (r) => r.fulfill({ status: 200, contentType: 'application/json',
     body: JSON.stringify({ promoter_name: 'Alex', promoter_full_name: 'Alex Johnson', promoter_initials: 'AJ', promoter_photo_url: null }) }));
   await page.route('**/functions/v1/rate-check-partner', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(portal()) }));
   await page.route(/supabase\.co\/(rest|auth)\//, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  // The agency's saved wording edits, so the shots read like the live site:
+  //   SITE_COPY=/path/site_copy.json  (an export of site_copy: [{ key, value }])
+  if (process.env.SITE_COPY) {
+    const copy = fs.readFileSync(process.env.SITE_COPY, 'utf8');
+    await page.route(/supabase\.co\/rest\/v1\/site_copy/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: copy }));
+  }
 
   // 1. The landing page a friend sees from the partner's link.
   await page.goto(`${BASE}/r/ALEX2026`, { waitUntil: 'networkidle' });
