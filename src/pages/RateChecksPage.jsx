@@ -353,7 +353,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       {/* A bundle stacks the price and the Bundle Opportunity pill, centered beside the buttons. */}
       {!bundle && <p className="mt-3 text-xs leading-none" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? <T k="pages.ratecheckspage.d079c1">{'Total premium · all policies'}</T> : <T k="pages.ratecheckspage.5ece13">{'Current premium'}</T>}</p>}
       <div className={`${bundle ? 'mt-3' : 'mt-1'} flex items-center justify-between gap-3`}>
-        <div className="flex min-w-0 flex-col items-start gap-1">
+        <div className={`flex min-w-0 flex-col ${bundle ? 'items-center' : 'items-start'} gap-1`}>
           <p className="text-lg font-bold leading-6 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
           {bundle && <CardPill><T k="pages.ratecheckspage.6921b0">Bundle Opportunity</T></CardPill>}
           {!open && h.delta != null && <p className="text-sm"><Savings delta={h.delta} /></p>}
