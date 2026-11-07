@@ -194,6 +194,16 @@ export default function TextsTab({ agencyId }) {
         </p>
       </section>
 
+      <section className="dark-card" style={{ padding: 16 }} aria-label="Send tests to">
+        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.textstab.test-to">Send Tests To</T></p>
+        <p className="mt-1 rounded-lg p-2.5 font-mono text-[13px]" style={box}>
+          <T k="email.test.to">Your sign-in email</T>
+        </p>
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+          <T k="pages.components.ratechecks.textstab.test-to-note">Where Send Me a Test emails go. Leave it as is to use your sign-in email.</T>
+        </p>
+      </section>
+
       </section>
 
       <section className="dark-card" style={{ padding: 16 }} aria-label="Tips">

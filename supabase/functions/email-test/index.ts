@@ -2,7 +2,8 @@
 // "Send Me a Test" on the Texts & Scripts page: emails the signed-in principal one email,
 // with the saved wording, the shared layout and sample blanks (Dana, State Farm, …).
 // POST { id: 'ddRetake' | 'ddStall' | 'ddCert' | 'ddStaff' | 'rcUpload' } → { sent_to }.
-// It only ever sends to the caller's own sign-in email, so it can't email anyone else.
+// It sends to the "Send Tests To" address the principal set (site_copy email.test.to), else
+// their own sign-in email.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { EMAIL_TEMPLATES, loadEmailCopy, renderEmail, sendEmail } from '../_shared/email.ts'
@@ -28,9 +29,13 @@ Deno.serve(async (req) => {
   if (!template) return json({ error: 'Unknown email.' }, 400)
 
   const site = (Deno.env.get('SITE_URL') || 'https://insuredbycam.com').replace(/\/+$/, '')
+  const saved = await loadEmailCopy(supabase)
+  // "Send Tests To" on the Texts & Scripts page (principal-only), else the principal's sign-in email.
+  const setTo = (saved['email.test.to'] || '').trim().toLowerCase()
+  const to = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(setTo) ? setTo : user.email
   const msg = renderEmail({
     template,
-    saved: await loadEmailCopy(supabase),
+    saved,
     vars: {
       ...SAMPLE_VARS,
       'course link': `${site}/courses/defensive-driving`,
@@ -41,7 +46,13 @@ Deno.serve(async (req) => {
     // A test shows the unsubscribe line without a working link (it would opt the principal out).
     unsubscribeUrl: template.unsub ? `${site}/` : undefined,
   })
-  const r = await sendEmail({ to: [user.email], ...msg, subject: `[Test] ${msg.subject}` })
+  const r = await sendEmail({ to: [to], ...msg, subject: `[Test] ${msg.subject}` })
+  if (!r.ok && !Deno.env.get('RESEND_API_KEY')) {
+    // Help find a misnamed secret: the names (never the values) that look like it, and which project this is.
+    const near = Object.keys(Deno.env.toObject()).filter(n => /resend|mail|api_?key/i.test(n) && !n.startsWith('SUPABASE_'))
+    const project = (Deno.env.get('SUPABASE_URL') || '').replace(/^https:\/\/|\.supabase\.co.*$/g, '')
+    return json({ error: `${r.error} Project ${project} has ${near.length ? `these similar secrets: ${near.map(n => JSON.stringify(n)).join(', ')}` : 'no secret with a similar name'}.` }, 502)
+  }
   if (!r.ok) return json({ error: r.error }, 502)
-  return json({ sent_to: user.email })
+  return json({ sent_to: to })
 })
