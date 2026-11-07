@@ -711,7 +711,7 @@ function AddPartner({ agencyId, userId, save, onDone }) {
 // are listed underneath so the whole policy reads in one place.
 function RuleRow({ title, hint, children }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderTop: '1px solid var(--qs-border)' }}>
+    <div className="flex items-center justify-between gap-6 py-2.5 sm:gap-10" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <div className="min-w-0">
         <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T>{title}</T></p>
         {hint && <p className="text-xs leading-snug" style={{ color: 'var(--qs-subtle)' }}><T>{hint}</T></p>}
