@@ -33,12 +33,13 @@ export function SealMark({ className = 'h-9 w-9' }) {
   );
 }
 
-export default function BrandLogo({ tone = 'dark', tagline = false, className = '' }) {
+export default function BrandLogo({ tone = 'dark', tagline = false, size = 'md', className = '' }) {
   const dark = tone === 'dark';
-  const name = 'text-[18px]';
-  const mark = 'h-9 w-9';
+  const lg = size === 'lg'; // the sign-in page
+  const name = lg ? 'text-[24px] sm:text-[26px]' : 'text-[18px]';
+  const mark = lg ? 'h-12 w-12 sm:h-[52px] sm:w-[52px]' : 'h-9 w-9';
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+    <span className={`inline-flex items-center ${lg ? 'gap-3' : 'gap-2.5'} ${className}`}>
       <SealMark className={`${mark} shrink-0`} />
       <span className="flex min-w-0 flex-col leading-none">
         <span className={`whitespace-nowrap font-extrabold tracking-tight ${name} ${dark ? 'text-white' : 'text-[#0F2D6B]'}`}

@@ -146,7 +146,7 @@ const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10" style={bg}>
-      <div className="mb-6"><BrandLogo /></div>
+      <div className="mb-8"><BrandLogo size="lg" /></div>
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl shadow-blue-950/30 sm:p-8">
         <h1 className="text-2xl font-extrabold tracking-tight text-[#0F2D6B]">{mode === 'login' ? <T k="pages.loginpage.f8492c">{'Sign In'}</T> : <T k="pages.loginpage.20553f">{'Reset Your Password'}</T>}</h1>
         <p className="mt-1 text-sm text-slate-500">{mode === 'login' ? <T k="pages.loginpage.97ad22">{'Agency workspace'}</T> : <T k="pages.loginpage.e584f6">{'We’ll email you a link to set a new one.'}</T>}</p>
