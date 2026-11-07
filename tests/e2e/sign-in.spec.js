@@ -10,8 +10,10 @@ const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const jwt = `${b64({ alg: 'HS256' })}.${b64({ sub: UID, role: 'authenticated', exp: 4102444800 })}.sig`;
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'cam@example.com', app_metadata: {}, user_metadata: {} };
 
-test('Sign In finishes and leaves the sign-in page', async ({ page }) => {
+async function signIn(page, { frozenTab = false } = {}) {
   const asked = [];
+  // A frozen background tab holding the cross-tab Web Lock Supabase used to use.
+  if (frozenTab) await page.addInitScript(() => { navigator.locks?.request('lock:sb-ghnpzllykteelveezhnv-auth-token', () => new Promise(() => {})); });
   await page.route(`${SB}/**`, (route) => {
     const req = route.request(); const url = new URL(req.url()); const p = url.pathname;
     const one = (req.headers().accept || '').includes('vnd.pgrst.object');
@@ -27,6 +29,18 @@ test('Sign In finishes and leaves the sign-in page', async ({ page }) => {
   await page.getByLabel('Email').fill('cam@example.com');
   await page.getByLabel('Password').fill('secret-pass');
   await page.getByRole('button', { name: 'Sign In' }).click();
+  return asked;
+}
+
+test('Sign In finishes and leaves the sign-in page', async ({ page }) => {
+  const asked = await signIn(page);
   await expect.poll(() => asked.includes('/rest/v1/profiles'), { timeout: 10000 }).toBe(true);
   await expect(page).not.toHaveURL(/admin-access/, { timeout: 10000 });
+});
+
+test('a frozen tab holding the old cross-tab lock does not slow sign-in', async ({ page }) => {
+  const started = Date.now();
+  await signIn(page, { frozenTab: true });
+  await expect(page).not.toHaveURL(/admin-access/, { timeout: 10000 });
+  expect(Date.now() - started).toBeLessThan(4000); // the old lock waited 5s per step
 });

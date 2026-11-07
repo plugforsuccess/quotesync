@@ -1,7 +1,7 @@
 // src/lib/supabase.js
 // Supabase client configuration for QuoteSync with two-plane RBAC support
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, processLock } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -13,54 +13,32 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const browserStorage = typeof window !== 'undefined' ? window.localStorage : undefined;
 
-// Resilient auth lock — prevents the "Sign In button spins forever" hang.
+// Auth lock: one tab only, never across tabs.
 //
-// Supabase serializes every token operation (getSession, token refresh,
-// signInWithPassword) behind a single Web Lock (navigator.locks). The default
-// lock waits indefinitely to acquire. In practice that means: if the lock is
-// held and never released, the next operation hangs forever.
+// Supabase serializes token work (getSession, refresh, signInWithPassword)
+// behind a lock. Its default is a cross-tab Web Lock (navigator.locks). On
+// phones that's the hang behind "Sign In spins" and "Verifying Your Account
+// never finishes": iOS/Edge freeze a background insuredbycam tab (Quick Send,
+// the public site) while it holds that lock, and every step in the tab you're
+// using waits on it. So the lock is per tab (Supabase's processLock). Two tabs
+// may now refresh the token at the same moment; Supabase accepts the second
+// refresh within its reuse window, and the BroadcastChannel below keeps tabs in
+// step, so that's harmless.
 //
-// That's the bug behind the spinning Sign In button — and why it only happens
-// in a normal (non-incognito) browser. A stored session from a previous visit
-// triggers a token refresh on boot that grabs the lock; in Microsoft Edge a
-// background tab put to sleep by "sleeping tabs"/efficiency mode can be frozen
-// while still holding the lock. signInWithPassword() then queues behind it and
-// never resolves. Incognito has no stored session and no sibling tabs, so the
-// lock is free and sign-in fires immediately.
-//
-// This lock caps how long we wait to acquire it. If it can't be acquired in
-// time, we proceed WITHOUT the lock rather than deadlocking. Worst case is a
-// rare, harmless duplicate token refresh — already coordinated across tabs via
-// the BroadcastChannel below — which is strictly better than an infinite hang.
+// It's also capped: if this tab's own lock isn't free within 5s, run unlocked
+// rather than hang.
 const AUTH_LOCK_TIMEOUT_MS = 5000;
 
 async function resilientAuthLock(name, acquireTimeout, fn) {
-  if (typeof navigator === 'undefined' || !navigator?.locks?.request) {
-    // No Web Locks API (older browsers / SSR) — Supabase already falls back to
-    // running unlocked here; mirror that.
-    return await fn();
-  }
-
   const timeout = acquireTimeout > 0 ? acquireTimeout : AUTH_LOCK_TIMEOUT_MS;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-
   try {
-    return await navigator.locks.request(
-      name,
-      { mode: 'exclusive', signal: controller.signal },
-      async () => await fn()
-    );
+    return await processLock(name, timeout, fn);
   } catch (e) {
-    // AbortError = we never got the lock within `timeout`. Run unlocked so the
-    // operation (e.g. sign-in) can complete instead of hanging indefinitely.
-    if (e?.name === 'AbortError') {
-      console.warn(`[AUTH] lock "${name}" not acquired within ${timeout}ms — proceeding without it to avoid a deadlock`);
+    if (e?.isAcquireTimeout) {
+      console.warn(`[AUTH] lock "${name}" not free within ${timeout}ms; running without it to avoid a hang`);
       return await fn();
     }
     throw e;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
