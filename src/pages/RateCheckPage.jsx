@@ -1976,13 +1976,16 @@ function StartCard({ onStart, onUpload, onDropFiles }) {
       <button type="button" onClick={onStart} className="qb qb-gold qb-lg w-full text-lg">
         <T k="rc.start.cta">Check My Rate</T> <ArrowRight className="qb-arrow h-5 w-5" aria-hidden="true" />
       </button>
-      <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes</T></p>
-      <button type="button" onClick={onUpload} className="mt-3 w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4">
+      {SHOW_START_FINE && <p className="mt-2.5 text-center text-[13px] text-slate-500"><T k="rc.start.fine">Free · about 2 minutes</T></p>}
+      <button type="button" onClick={onUpload} className="mt-4 w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4">
         <T k="rc.start.shortcut">Have Your Policy Handy? Upload It Now</T><span className="hidden lg:inline">{' '}<T k="rc.flow.or-drop-a-pdf-here">· Or Drop a PDF Here</T></span>
       </button>
     </div>
   );
 }
+
+// "Free · about 2 minutes" under Check My Rate: hidden (kept for later).
+const SHOW_START_FINE = false;
 
 const HOW = [
   ['1', Upload, 'Upload your policy', 'A PDF, photo or screenshot of your current policy.'],
