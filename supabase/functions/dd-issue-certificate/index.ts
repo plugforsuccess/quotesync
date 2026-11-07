@@ -10,6 +10,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 import fontkit from 'https://esm.sh/@pdf-lib/fontkit@1.1.1'
+import { EMAIL_TEMPLATES, loadEmailCopy, renderEmail, sendEmail } from '../_shared/email.ts'
 
 const allowedOrigins = [
   'https://insuredbycam.com',
@@ -30,21 +31,6 @@ function cors(req: Request): Record<string, string> {
 
 const AGENCY_NAME = Deno.env.get('DD_AGENCY_NAME') || 'Insured by Cam — Wiley-Wilson Agency'
 const BUCKET = 'dd-certificates'
-
-// Best-effort email via Resend (scaffolded behind env vars; no-op if unset).
-async function sendEmail(to: string[], subject: string, html: string) {
-  const key = Deno.env.get('RESEND_API_KEY')
-  const from = Deno.env.get('DD_EMAIL_FROM') || 'Insured by Cam <noreply@insuredbycam.com>'
-  if (!key || to.length === 0) return
-  try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html }),
-    })
-    if (!r.ok) console.error('resend email failed:', r.status, await r.text())
-  } catch (e) { console.error('email error:', e?.message || e) }
-}
 
 function makeCertUid(): string {
   const year = new Date().getUTCFullYear()
@@ -240,19 +226,20 @@ Deno.serve(async (req) => {
     if (created) {
       const base = (Deno.env.get('SITE_URL') || 'https://insuredbycam.com').replace(/\/$/, '')
       const portal = `${base}/courses/defensive-driving/portal`
-      if (user.email) {
-        await sendEmail([user.email], 'Your certificate is ready',
-          `<p>Hi ${studentName},</p>` +
-          `<p>Your <strong>${course.title}</strong> certificate of completion is ready. ` +
-          `<a href="${portal}">Download it here</a>.</p>` +
-          `<p>A copy has been forwarded to the agency for your insurance discount review.</p>`)
-      }
-      const staffTo = (Deno.env.get('DD_STAFF_NOTIFY_EMAILS') || '').split(',').map((s) => s.trim()).filter(Boolean)
-      if (staffTo.length) {
-        await sendEmail(staffTo, 'New defensive-driving certificate in the queue',
-          `<p>A new certificate (<strong>${certUid}</strong>) for ${studentName} has been added to the ` +
-          `Defensive Drivers Discount List.</p>`)
-      }
+      // Best-effort (the shared layout and wording from the Texts & Scripts page); never blocks issuance.
+      try {
+        const saved = await loadEmailCopy(supabase)
+        if (user.email) {
+          const first = String(enr.student_name_snapshot || '').trim().split(/\s+/)[0] || 'there'
+          const r = await sendEmail({ to: [user.email], ...renderEmail({ template: EMAIL_TEMPLATES.ddCert, saved, vars: { 'first name': first, 'certificate link': portal } }) })
+          if (!r.ok) console.error('[DD_CERT] student email:', r.error)
+        }
+        const staffTo = (Deno.env.get('DD_STAFF_NOTIFY_EMAILS') || '').split(',').map((s) => s.trim()).filter(Boolean)
+        if (staffTo.length) {
+          const r = await sendEmail({ to: staffTo, ...renderEmail({ template: EMAIL_TEMPLATES.ddStaff, saved, vars: { 'student name': studentName, 'certificate number': String(certUid), 'queue link': `${base}/defensive-driving/queue` } }) })
+          if (!r.ok) console.error('[DD_CERT] staff email:', r.error)
+        }
+      } catch (e) { console.error('[DD_CERT] email error:', (e as Error).message) }
     }
 
     const { data: signed, error: signErr } = await supabase.storage

@@ -8,7 +8,10 @@
 //
 // kind: 'text' (default) is sent as a text; 'say' is said out loud.
 // textIt: a text with no one person to send it to, so the card opens Messages.
-// kind 'email' has a subject (key `${key}.subject`); the unsubscribe line is added when sent.
+// kind 'email' has a subject (key `${key}.subject`) and is sent in the shared layout
+// (supabase/functions/_shared/email.ts; defaults kept in step with _shared/emailTemplates.ts,
+// checked by tests/unit/emailTemplates.test.mjs). button: the main link as a gold button
+// (label key `${key}.button`). unsub: a reminder, so the unsubscribe line is added when sent.
 //
 // The automatic ones are sent by edge functions that keep a copy of these defaults
 // (rate-check-outcome; rate-check-quick-send for the Quick Send script and text);
@@ -17,7 +20,7 @@ import { copyValue } from './copyValues.js';
 
 export const STOP_LINE = 'Reply STOP to opt out.';
 
-export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails'];
+export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails', 'Team Emails'];
 
 export const TEXT_TEMPLATES = [
   // ── Getting the link out ───────────────────────────────────────────────────
@@ -203,7 +206,7 @@ export const TEXT_TEMPLATES = [
       "Please mention that you're also one of our referral partners. Totally optional, and it has nothing to do with your referral fees.",
     ],
   },
-  // ── Drivers Ed emails (sent by supabase/functions/dd-reminders) ───────────────
+  // ── Drivers Ed emails (dd-reminders; dd-issue-certificate for the certificate) ──
   {
     id: 'ddRetake', group: 'Drivers Ed Emails', key: 'email.dd.retake', kind: 'email', auto: true,
     name: 'Retake Before Your Discount Lapses',
@@ -217,6 +220,7 @@ export const TEXT_TEMPLATES = [
       "When you pass, your new certificate comes straight to us and we'll keep your discount going.",
       'Cam Wiley Agency',
     ],
+    button: { label: 'Retake the Course', link: '[course link]' }, unsub: true,
   },
   {
     id: 'ddStall', group: 'Drivers Ed Emails', key: 'email.dd.stall', kind: 'email', auto: true,
@@ -230,6 +234,45 @@ export const TEXT_TEMPLATES = [
       'Once you pass the final exam, your certificate comes straight to us for your Allstate discount.',
       'Cam Wiley Agency',
     ],
+    button: { label: 'Continue Your Course', link: '[course link]' }, unsub: true,
+  },
+  {
+    id: 'ddCert', group: 'Drivers Ed Emails', key: 'email.dd.cert', kind: 'email', auto: true,
+    name: 'Your Certificate Is Ready',
+    when: 'Emailed the moment a student passes and their certificate is made.',
+    blanks: ['[first name]', '[certificate link]'],
+    subject: 'Your defensive driving certificate is ready',
+    paragraphs: [
+      'Hi [first name],',
+      "Congratulations on passing Georgia's 6-hour defensive driving course! Your certificate is ready: [certificate link]",
+      "A copy already came to us, so you don't need to send it anywhere. We'll review it for your Allstate discount.",
+      'Cam Wiley Agency',
+    ],
+    button: { label: 'Download Your Certificate', link: '[certificate link]' },
+  },
+  // ── Team emails (to you and your producers) ────────────────────────────────
+  {
+    id: 'rcUpload', group: 'Team Emails', key: 'email.rc.upload', kind: 'email', auto: true,
+    name: 'A Customer Uploaded Their Policy',
+    when: 'Emailed to the producer whose link they used, the moment they upload.',
+    blanks: ['[first name]', '[where we met]', '[carrier]', '[premium]', '[lead link]'],
+    subject: '[first name] uploaded their policy',
+    paragraphs: [
+      '[first name][where we met] just uploaded their [carrier] policy, paying [premium].',
+      'The page told them we typically text within 30 minutes during business hours.',
+    ],
+    button: { label: 'Open the Lead', link: '[lead link]' },
+  },
+  {
+    id: 'ddStaff', group: 'Team Emails', key: 'email.dd.staff', kind: 'email', auto: true,
+    name: 'New Drivers Ed Certificate',
+    when: 'Emailed to the staff list (DD_STAFF_NOTIFY_EMAILS in Supabase) when a student passes.',
+    blanks: ['[student name]', '[certificate number]', '[queue link]'],
+    subject: 'New defensive driving certificate: [student name]',
+    paragraphs: [
+      '[student name] passed the defensive driving course. Certificate [certificate number] is in the discount queue: [queue link]',
+    ],
+    button: { label: 'Open the Queue', link: '[queue link]' },
   },
 ];
 
@@ -292,8 +335,8 @@ export function templateWarnings(id) {
   const saved = t.paragraphs.map((p, i) => copyValue(`${t.key}.${i + 1}`, p)).join(' ');
   const w = [];
   if (id === 'ready' && !/\breply\s+y\b/i.test(saved)) w.push('“Reply Y” is missing: their Y is what tells you to call.');
-  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]', '[passed date]', '[deadline]', '[modules done]', '[modules total]'];
-  const addedAtEnd = ['[review link]', '[link]', '[course link]'];
-  for (const b of t.blanks) if (!optional.includes(b) && !saved.toLowerCase().includes(b.toLowerCase())) w.push(`${b} is missing${addedAtEnd.includes(b) ? ': it’s added at the end' : ''}.`);
+  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]', '[passed date]', '[deadline]', '[modules done]', '[modules total]', '[student name]', '[certificate number]', '[premium]'];
+  const addedAtEnd = ['[review link]', '[link]', '[course link]', '[certificate link]', '[queue link]', '[lead link]'];
+  for (const b of t.blanks) if (b !== t.button?.link && !optional.includes(b) && !saved.toLowerCase().includes(b.toLowerCase())) w.push(`${b} is missing${addedAtEnd.includes(b) ? ': it’s added at the end' : ''}.`);
   return w;
 }
