@@ -399,11 +399,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Every script and text, in one place. */}
+            {/* Every script and text, in one place. Principals only: they own the wording. */}
             <Route
               path="agency/texts"
               element={
-                <ProtectedRoute requiredAgencyRole="producer">
+                <ProtectedRoute requiredAgencyRole="principal">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <TextsScriptsPage />

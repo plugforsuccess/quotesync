@@ -260,7 +260,7 @@ const WORK_TABS = [
 const MORE_GROUPS = [
   // Scripts and Texts moved to their own page (/agency/texts); the old tabs are hidden.
   { title: 'Selling', tabs: [
-    { v: 'texts-page', to: '/agency/texts', label: 'Texts & Scripts', hint: 'Everything you say and text, in one place', Icon: MessageSquare },
+    { v: 'texts-page', to: '/agency/texts', principal: true, label: 'Texts & Scripts', hint: 'Everything you say and text, in one place', Icon: MessageSquare },
   ] },
   { title: 'Insights', tabs: [
     { v: 'map', label: 'Where We Win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
@@ -274,6 +274,11 @@ const MORE_GROUPS = [
 
 function TabBar({ tab, setTab }) {
   const navigate = useNavigate();
+  // Texts & Scripts is the principal's page; producers don't see it.
+  const { currentAgencyRole } = useAuth();
+  const groups = MORE_GROUPS
+    .map(g => ({ ...g, tabs: g.tabs.filter(t => !t.principal || currentAgencyRole === 'principal') }))
+    .filter(g => g.tabs.length);
   const [sheet, setSheet] = useState(false);
   const moreTab = MORE_GROUPS.flatMap(g => g.tabs).find(t => t.v === tab);
   const segment = (active) => `flex min-h-[44px] items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold ${active ? 'bg-primary-600 text-white' : ''}`;
@@ -295,7 +300,7 @@ function TabBar({ tab, setTab }) {
         <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="More Rate Checks pages">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSheet(false)} />
           <div className="relative w-full max-w-md rounded-t-2xl p-4 pb-8 sm:rounded-2xl sm:pb-4" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
-            {MORE_GROUPS.map(g => (
+            {groups.map(g => (
               <div key={g.title} className="mb-3 last:mb-0">
                 <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{g.title}</T></p>
                 <div className="overflow-hidden rounded-xl" style={{ border: '1px solid var(--qs-border)' }}>

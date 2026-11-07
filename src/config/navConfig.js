@@ -143,9 +143,7 @@ export const agencyNav = {
       primaryItems.rateChecks,
       primaryItems.winbacks,
     ],
-    secondary: [
-      { to: '/agency/texts', label: 'Texts & Scripts', icon: '💬' },
-    ],
+    secondary: [],
   },
 };
 
