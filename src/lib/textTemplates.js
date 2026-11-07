@@ -133,7 +133,7 @@ export const TEXT_TEMPLATES = [
     name: 'Drivers Ed Link',
     when: 'Send Drivers Ed Link in the Contact step (auto quotes): the course earns the Allstate defensive driving discount.',
     blanks: ['[first name]', '[producer]', '[course link]'],
-    paragraphs: ["Hi [first name], it's [producer] with Cam Wiley Agency. Allstate gives a discount for completing a defensive driving course, and you can take Georgia's 6-hour course online at your own pace: [course link] When you pass, your certificate comes straight to us and we'll add the discount to your Allstate quote if you qualify."],
+    paragraphs: ["Hi [first name], it's [producer] with Cam Wiley Agency. Allstate gives a discount for completing a defensive driving course, and you can take Georgia's 6-hour course online at your own pace: [course link] When you pass, your certificate comes straight to us and we'll add the discount to your Allstate quote."],
   },
   {
     id: 'reconnect', group: 'After a Quote', key: 'script.reconnect', kind: 'say',
