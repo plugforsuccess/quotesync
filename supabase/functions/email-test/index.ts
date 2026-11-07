@@ -42,6 +42,12 @@ Deno.serve(async (req) => {
     unsubscribeUrl: template.unsub ? `${site}/` : undefined,
   })
   const r = await sendEmail({ to: [user.email], ...msg, subject: `[Test] ${msg.subject}` })
+  if (!r.ok && !Deno.env.get('RESEND_API_KEY')) {
+    // Help find a misnamed secret: the names (never the values) that look like it, and which project this is.
+    const near = Object.keys(Deno.env.toObject()).filter(n => /resend|mail|api_?key/i.test(n) && !n.startsWith('SUPABASE_'))
+    const project = (Deno.env.get('SUPABASE_URL') || '').replace(/^https:\/\/|\.supabase\.co.*$/g, '')
+    return json({ error: `${r.error} Project ${project} has ${near.length ? `these similar secrets: ${near.map(n => JSON.stringify(n)).join(', ')}` : 'no secret with a similar name'}.` }, 502)
+  }
   if (!r.ok) return json({ error: r.error }, 502)
   return json({ sent_to: user.email })
 })
