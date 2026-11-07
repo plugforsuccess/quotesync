@@ -796,7 +796,12 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
       <dl className="mt-2">
         {rows.map(t => (
           <div key={t.key} className="flex items-center justify-between gap-3 py-2.5" style={{ borderTop: '1px solid var(--qs-border)' }}>
-            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}><T>{t.label}</T>{t.key === EXTRA_LINE.key ? <><T k="pages.components.ratechecks.partnerstab.37eac1">{", up to"}</T>{" "}{EXTRA_LINE_CAP}</> : ''}</dt>
+            <dt className="text-sm" style={{ color: 'var(--qs-text)' }}>
+              {/* One editable piece per row (the extra-line row used to be split in three, easy to garble). */}
+              {t.key === EXTRA_LINE.key
+                ? <T k="pages.components.ratechecks.partnerstab.extra-lines-row">{`Additional lines, up to ${EXTRA_LINE_CAP}`}</T>
+                : <T>{t.label}</T>}
+            </dt>
             <dd>
               {draft ? (
                 <span className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>$
