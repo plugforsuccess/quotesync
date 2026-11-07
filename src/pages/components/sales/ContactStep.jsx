@@ -3,7 +3,7 @@
 // from the agency's number, never a personal phone. Texts only go to people who agreed
 // to texts and haven't opted out; otherwise it's a call, with the same words as a script.
 import { useEffect, useMemo, useState } from 'react';
-import { Phone, Send } from 'lucide-react';
+import { GraduationCap, Phone, Send } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { T } from '../../../components/SiteCopy';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -12,13 +12,18 @@ import { queryKeys } from '../../../lib/queryKeys';
 import { money } from '../rate-checks/ui';
 import { quoteResult } from './quoteResult';
 import { contactMessage } from './contactMessage';
+import { buildText } from '../../../lib/textTemplates';
+import { TEXT_FROM_OWN_PHONE } from '../../../lib/textingMode';
+
+// The Drivers Ed course page, on the public site's domain.
+const courseLink = () => `${(import.meta.env.VITE_RATE_CHECK_LINK_BASE || window.location.origin).replace(/\/+$/, '')}/courses/defensive-driving`;
 
 /**
  * The message and Send / Call for one household.
  * cur = what they pay now a year (null when unknown), all = the Allstate quote a year.
  * onTexted runs after a "reply Y" text goes out.
  */
-export function ContactPanel({ first, phone, leadId, cur, all, consented, onTexted }) {
+export function ContactPanel({ first, phone, leadId, cur, all, consented, onTexted, autoQuote = false }) {
   const { profile } = useAuth();
   const result = cur > 0 ? quoteResult(cur, all) : null;
   const kind = result?.kind || (all > 0 ? 'quoted' : null);
@@ -94,6 +99,33 @@ export function ContactPanel({ first, phone, leadId, cur, all, consented, onText
           <Send className="h-5 w-5" aria-hidden="true" /> {state.sending ? <T k="sales.contact.sending">Sending…</T> : state.sent ? <T k="sales.contact.sentbtn">Sent</T> : <T k="sales.contact.send">Send Text</T>}
         </button>
       </div>
+
+      {/* Auto quotes: the course earns the Allstate defensive driving discount. Texted from
+          your phone until the agency's number is live; then from the agency's number. */}
+      {autoQuote && phone && !optedOut && <DriversEdLink first={first} producer={producer} phone={phone} leadId={leadId} canText={canText} />}
+    </div>
+  );
+}
+
+function DriversEdLink({ first, producer, phone, leadId, canText }) {
+  const body = buildText('driversEd', { name: first, producer, courseLink: courseLink() });
+  const [state, setState] = useState({ sending: false, sent: false, error: '' });
+  const cls = 'flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl text-sm font-bold';
+  const style = { border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' };
+  const label = <><GraduationCap className="h-5 w-5" aria-hidden="true" /> <T k="sales.contact.drivers-ed">Send Drivers Ed Link</T></>;
+  if (TEXT_FROM_OWN_PHONE) return <a href={`sms:+1${phone}?&body=${encodeURIComponent(body)}`} className={cls} style={style}>{label}</a>;
+  if (!canText) return null;
+  const send = async () => {
+    setState({ sending: true, sent: false, error: '' });
+    const { error } = await supabase.functions.invoke('send-manual-sms', { body: { lead_id: leadId, body } });
+    setState({ sending: false, sent: !error, error: error ? error.message : '' });
+  };
+  return (
+    <div>
+      <button type="button" onClick={send} disabled={state.sending || state.sent} className={`${cls} disabled:opacity-50`} style={style}>
+        {state.sent ? <T k="sales.contact.drivers-ed-sent">Drivers Ed Link Sent</T> : label}
+      </button>
+      {state.error && <p className="mt-1 text-sm text-red-600" role="alert">{state.error}</p>}
     </div>
   );
 }
@@ -116,6 +148,7 @@ export default function ContactStep({ household }) {
   };
   return (
     <ContactPanel first={lead.first_name} phone={lead.phone} leadId={lead.lead_id} cur={cur} all={all}
-      consented={household.some(rc => !!rc.consent_given_at)} onTexted={onTexted} />
+      consented={household.some(rc => !!rc.consent_given_at)} onTexted={onTexted}
+      autoQuote={quoted.some(rc => (rc.policy_type || 'auto') === 'auto')} />
   );
 }

@@ -235,6 +235,7 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
             <>
               {openQuote ? (
                 <ContactPanel first={displayName(lead.first_name)} phone={lead.phone} leadId={lead.id} cur={null} all={quotedTotal}
+                  autoQuote={(openQuote.lines || []).some(l => l.product === 'auto')}
                   consented={!!lead.consent_given_at} />
               ) : (
                 <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="sales.contact.first">Save the quote first; the message is written from it.</T></p>

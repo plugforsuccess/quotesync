@@ -14,7 +14,7 @@ import { TEXT_GROUPS, TEXT_TEMPLATES, STOP_LINE, buildText, segments, templateWa
 import { REVIEW_LINK_KEY, REVIEW_LINK_FALLBACK, reviewUrl, TEXT_NUMBER_KEY, TEXT_NUMBER_UNSET } from '../../../lib/reviews';
 
 const box = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' };
-const sample = { name: 'Dana', carrier: 'State Farm', reviewLink: '[review link]', portalLink: '[portal link]', producer: 'Cam', link: 'https://insuredbycam.com/r/K7PM2QXD', allstate: 8400, savings: 1516 };
+const sample = { name: 'Dana', carrier: 'State Farm', reviewLink: '[review link]', portalLink: '[portal link]', producer: 'Cam', link: 'https://insuredbycam.com/r/K7PM2QXD', allstate: 8400, savings: 1516, courseLink: 'https://insuredbycam.com/courses/defensive-driving' };
 const TIPS = [
   ['Call it your website, not an app.', '“App” makes people think download. Say: “Go to insuredbycam.com on your phone and tap Check My Rate. Nothing to download.”'],
   ['Explain “dec page”.', 'Most people don’t know the term: “the page that lists your cars, coverages and price; it’s in your insurance app or the email from your last renewal.”'],

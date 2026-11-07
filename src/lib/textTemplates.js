@@ -129,6 +129,13 @@ export const TEXT_TEMPLATES = [
     paragraphs: ["Hi [first name], it's [producer] with Cam Wiley Agency. I put together a new Allstate quote for you: [Allstate price] a year. Reply Y and I'll call to go over it."],
   },
   {
+    id: 'driversEd', group: 'After a Quote', key: 'sms.contact.drivers-ed',
+    name: 'Drivers Ed Link',
+    when: 'Send Drivers Ed Link in the Contact step (auto quotes): the course earns the Allstate defensive driving discount.',
+    blanks: ['[first name]', '[producer]', '[course link]'],
+    paragraphs: ["Hi [first name], it's [producer] with Cam Wiley Agency. Allstate gives a discount for completing a defensive driving course, and you can take Georgia's 6-hour course online at your own pace: [course link] When you pass, your certificate comes straight to us and we'll add the discount to your Allstate quote if you qualify."],
+  },
+  {
     id: 'reconnect', group: 'After a Quote', key: 'script.reconnect', kind: 'say',
     name: 'Reconnect After a Quote That Came in High',
     when: 'Someone you quoted before and never followed up with.',
@@ -219,6 +226,7 @@ export function buildText(id, vars = {}) {
     .replace(/\[producer\]/gi, vars.producer || 'Cam')
     .replace(/\[where we met\]/gi, vars.metAt ? ` (we met at ${vars.metAt})` : '')
     .replace(/\[link\]/gi, vars.link || '')
+    .replace(/\[course link\]/gi, vars.courseLink || '')
     .replace(/\[Allstate price\]/gi, usd(vars.allstate))
     .replace(/\[savings\]/gi, usd(vars.savings))
     .replace(/\[carrier\]/gi, vars.carrier || 'current')
@@ -227,6 +235,7 @@ export function buildText(id, vars = {}) {
   let out = body;
   // A text that's meant to carry the link always does, even if an edit dropped it.
   if (vars.link && t.blanks.includes('[link]') && !out.includes(vars.link)) out += ` ${vars.link}`;
+  if (vars.courseLink && t.blanks.includes('[course link]') && !out.includes(vars.courseLink)) out += ` ${vars.courseLink}`;
   // A text that's meant to carry the review link always does, even if an edit dropped it.
   if (vars.reviewLink && t.blanks.includes('[review link]') && !out.includes(vars.reviewLink)) out += `\n\n${vars.reviewLink}`;
   if (t.auto && !/\bSTOP\b/.test(out)) out += `\n\n${STOP_LINE}`;
@@ -251,6 +260,7 @@ export function templateWarnings(id) {
   const w = [];
   if (id === 'ready' && !/\breply\s+y\b/i.test(saved)) w.push('“Reply Y” is missing: their Y is what tells you to call.');
   const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]'];
-  for (const b of t.blanks) if (!optional.includes(b) && !saved.toLowerCase().includes(b.toLowerCase())) w.push(`${b} is missing${b === '[review link]' || b === '[link]' ? ': it’s added at the end' : ''}.`);
+  const addedAtEnd = ['[review link]', '[link]', '[course link]'];
+  for (const b of t.blanks) if (!optional.includes(b) && !saved.toLowerCase().includes(b.toLowerCase())) w.push(`${b} is missing${addedAtEnd.includes(b) ? ': it’s added at the end' : ''}.`);
   return w;
 }

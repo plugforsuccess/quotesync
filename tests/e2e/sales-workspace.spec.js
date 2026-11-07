@@ -118,6 +118,11 @@ test('log a household quote: per-policy term rates, saved as annual, then Quote 
   await page.getByRole('button', { name: /Next: Contact Them/ }).click();
   const box = page.getByLabel('Text Message');
   await expect(box).toHaveValue(/saving you \$1,516\. Reply Y/);
+  // Auto quote: Send Drivers Ed Link opens Messages with the course link (from your phone until Twilio).
+  const de = page.getByRole('link', { name: 'Send Drivers Ed Link' });
+  const deHref = decodeURIComponent(await de.getAttribute('href'));
+  expect(deHref).toMatch(/^sms:\+1\d{10}\?&body=Hi Stephen, it's Cam with Cam Wiley Agency\. Allstate gives a discount for completing a defensive driving course/);
+  expect(deHref).toContain('/courses/defensive-driving');
   await page.getByRole('button', { name: 'Send Text' }).click();
   await expect(page.getByText('Sent from the agency’s number.')).toBeVisible();
   const sms = writes.find(w => (w.table || '').includes('send-manual-sms'));

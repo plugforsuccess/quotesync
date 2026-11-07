@@ -139,6 +139,7 @@ test('a winback lead record is the workspace: review, save the quote by product,
   await expect(dialog.getByText('What to Say')).toBeVisible();
   await expect(dialog.getByRole('textbox')).toHaveValue(/new Allstate quote for you: \$4,100 a year/);
   await expect(dialog.getByRole('button', { name: 'Send Text' })).toBeDisabled();
+  await expect(dialog.getByRole('link', { name: 'Send Drivers Ed Link' })).toHaveAttribute('href', /courses%2Fdefensive-driving/);
 
   await dialog.getByRole('navigation', { name: 'Sales steps' }).getByRole('button', { name: /Close/ }).click();
   await dialog.getByRole('button', { name: 'Bound', exact: true }).click();
