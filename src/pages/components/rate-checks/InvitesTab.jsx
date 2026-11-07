@@ -11,6 +11,7 @@ import { useRateCheckInvites, useRateCheckInviteStats } from '../../../hooks/use
 import { inputStyle, formatPhone, formatDate, money } from './ui';
 import { InviteShare } from './InviteDialog';
 import { inviteUrl, smsUrl } from './invite';
+import { sentFromOwnPhone } from '../../../lib/quickSendFormat';
 import QuickSendCard from './QuickSendCard';
 
 function ago(ts) {
@@ -39,9 +40,11 @@ const PILL = {
 };
 
 // A Quick Send text that never reached them: worth a call or a QR in person instead.
+// Not a problem when they opened it, or when it went from the producer's own phone
+// (before the agency's number is set up).
 const textProblem = (i) => (i.source !== 'quick_send' || i.upload_count > 0 ? null
   : i.sms_status === 'blocked' ? 'Not texted — this number texted STOP'
-    : i.sms_status === 'failed' ? 'Text didn’t go through' : null);
+    : i.sms_status === 'failed' && !i.opened_at && !sentFromOwnPhone(i) ? 'Text didn’t go through' : null);
 
 const nudgeText = (i) => `Hi${i.first_name ? ` ${i.first_name}` : ''}, saw you opened the link — just snap a photo of your dec page and I'll do the rest: ${inviteUrl(i.code)}`;
 

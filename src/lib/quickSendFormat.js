@@ -1,6 +1,13 @@
 // src/lib/quickSendFormat.js
 // Quick Send display helpers — pure (no Supabase), so they're unit-tested.
 
+import { TEXT_FROM_OWN_PHONE } from './textingMode.js';
+
+// The agency's number couldn't text because Twilio isn't set up yet: the producer
+// texted the link from their own phone, so it isn't a failed send.
+export const sentFromOwnPhone = (invite) => TEXT_FROM_OWN_PHONE && invite?.sms_status === 'failed'
+  && /isn.t set up/i.test(invite?.sms_error || '');
+
 // "iPhone · Safari" — so the agency can tell set-up phones apart.
 export function deviceLabel(ua = typeof navigator !== 'undefined' ? navigator.userAgent : '') {
   const device = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
@@ -28,6 +35,7 @@ export function sendProgress(invite) {
   if (invite.upload_count > 0) return { label: 'Uploaded their policy', short: 'Uploaded', tone: 'good' };
   if (invite.opened_at) return { label: 'Opened the link', short: 'Opened', tone: 'good' };
   if (invite.expires_at && Date.parse(invite.expires_at) < Date.now()) return { label: 'Link expired', short: 'Expired', tone: 'muted' };
+  if (sentFromOwnPhone(invite)) return { label: 'Texted from your phone', short: 'Your phone', tone: 'muted' };
   return SEND_STATUS[invite.sms_status] || { label: 'Link ready', short: 'Ready', tone: 'muted' };
 }
 
@@ -36,7 +44,7 @@ export function sendProgress(invite) {
 export const STEPS = ['Sent', 'Delivered', 'Opened', 'Uploaded'];
 export function sendSteps(invite) {
   if (!invite) return { done: 0, stopped: false };
-  const stopped = ['failed', 'blocked'].includes(invite.sms_status) && !invite.opened_at && !(invite.upload_count > 0);
+  const stopped = ['failed', 'blocked'].includes(invite.sms_status) && !sentFromOwnPhone(invite) && !invite.opened_at && !(invite.upload_count > 0);
   const done = invite.upload_count > 0 ? 4 : invite.opened_at ? 3
     : invite.sms_status === 'delivered' ? 2 : invite.sms_status === 'sent' ? 1 : 0;
   return { done, stopped };
