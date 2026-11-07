@@ -28,6 +28,14 @@ export default function QuickSendPage() {
   const [screen, setScreen] = useState('loading'); // loading | signin | ready
   const [me, setMe] = useState(null);              // { producer_first, remembered }
 
+  // Added to the Home Screen from here, the icon is named "Quick Send" (not the site's name).
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    const before = meta?.getAttribute('content');
+    meta?.setAttribute('content', 'Quick Send');
+    return () => { if (meta && before != null) meta.setAttribute('content', before); };
+  }, []);
+
   useEffect(() => {
     document.title = 'Quick Send | insuredbycam';
     let gone = false;
