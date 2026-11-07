@@ -208,3 +208,27 @@ test('Quick Send: the principal can edit its words; the asked-first script stays
   await expect(page.getByRole('textbox', { name: /Edit text: Ask first/i })).toBeVisible();
   await expect(page.locator('[data-copy="fixed"] [contenteditable]')).toHaveCount(0);
 });
+
+test('Texts & Scripts: every script and text in one place, grouped, with the right actions', async ({ page }) => {
+  await mock(page, { partners: [], rules: null, payouts: [] });
+  await page.goto('/agency/texts');
+  await expect(page.getByRole('heading', { name: 'Texts & Scripts' })).toBeVisible();
+  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners']) await expect(page.getByRole('region', { name: g })).toBeVisible();
+  for (const n of ['Say It in the Room', 'Send a Link', 'Quick Send: Ask First', 'Quick Send: The Text', 'Nudge', 'Contact: It Saves Them Money', 'Reconnect After a Quote That Came in High', 'The Partner Pitch', 'Welcome a New Partner']) {
+    await expect(page.getByRole('article', { name: n })).toBeVisible();
+  }
+  // Recorded wording says so; broadcast texts open Messages; the pitch sends the pictures.
+  await expect(page.getByRole('article', { name: 'Quick Send: The Text' }).getByText(/Each send records the exact wording/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Text: Text Right After' })).toHaveAttribute('href', /^sms:\?&body=/);
+  await expect(page.getByRole('article', { name: 'The Partner Pitch' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+  // The sample fills in the blanks.
+  await expect(page.getByRole('article', { name: 'Send a Link' }).getByText(/with Allstate\[where we met\]/)).toBeVisible();
+});
+
+test('Rate Checks More opens Texts & Scripts', async ({ page }) => {
+  await mock(page, { partners: [], rules: null, payouts: [] });
+  await page.goto('/agency/leads/rate-checks');
+  await page.locator('[aria-haspopup="dialog"]', { hasText: 'More' }).click();
+  await page.getByRole('button', { name: /Texts & Scripts/ }).click();
+  await expect(page).toHaveURL(/\/agency\/texts$/);
+});

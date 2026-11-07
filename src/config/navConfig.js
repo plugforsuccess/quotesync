@@ -133,6 +133,7 @@ export const agencyNav = {
       // Opens the public Rate Check page with the copy editor already on.
       { to: '/?edit=1', label: 'Edit Website', icon: '✏️' },
       { to: '/qs', label: 'Quick Send', icon: '📲' },
+      { to: '/agency/texts', label: 'Texts & Scripts', icon: '💬' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
     ],
@@ -142,7 +143,9 @@ export const agencyNav = {
       primaryItems.rateChecks,
       primaryItems.winbacks,
     ],
-    secondary: [],
+    secondary: [
+      { to: '/agency/texts', label: 'Texts & Scripts', icon: '💬' },
+    ],
   },
 };
 

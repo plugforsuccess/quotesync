@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { relationshipLine, referrerLine } from '../lib/relationship';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, History, Link2, Mail, Map as MapIcon,
   MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
@@ -258,9 +258,9 @@ const WORK_TABS = [
   { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
 ];
 const MORE_GROUPS = [
+  // Scripts and Texts moved to their own page (/agency/texts); the old tabs are hidden.
   { title: 'Selling', tabs: [
-    { v: 'scripts', label: 'Scripts', hint: 'What to send people you’d like as partners', Icon: MessageSquare },
-    { v: 'texts', label: 'Texts', hint: 'Every text customers and partners get', Icon: MessageSquare },
+    { v: 'texts-page', to: '/agency/texts', label: 'Texts & Scripts', hint: 'Everything you say and text, in one place', Icon: MessageSquare },
   ] },
   { title: 'Insights', tabs: [
     { v: 'map', label: 'Where We Win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
@@ -273,6 +273,7 @@ const MORE_GROUPS = [
 ];
 
 function TabBar({ tab, setTab }) {
+  const navigate = useNavigate();
   const [sheet, setSheet] = useState(false);
   const moreTab = MORE_GROUPS.flatMap(g => g.tabs).find(t => t.v === tab);
   const segment = (active) => `flex min-h-[44px] items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold ${active ? 'bg-primary-600 text-white' : ''}`;
@@ -298,8 +299,8 @@ function TabBar({ tab, setTab }) {
               <div key={g.title} className="mb-3 last:mb-0">
                 <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}><T>{g.title}</T></p>
                 <div className="overflow-hidden rounded-xl" style={{ border: '1px solid var(--qs-border)' }}>
-                  {g.tabs.map(({ v, label, hint, Icon }, i) => (
-                    <button key={v} type="button" onClick={() => { setTab(v); setSheet(false); }}
+                  {g.tabs.map(({ v, to, label, hint, Icon }, i) => (
+                    <button key={v} type="button" onClick={() => { setSheet(false); if (to) navigate(to); else setTab(v); }}
                       className="flex min-h-[56px] w-full items-center gap-3 px-3 text-left" style={{ borderTop: i ? '1px solid var(--qs-border)' : undefined, background: tab === v ? 'var(--qs-elevated)' : undefined }}>
                       <Icon className="h-5 w-5 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
                       <span className="min-w-0 flex-1">

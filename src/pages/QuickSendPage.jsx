@@ -9,15 +9,15 @@ import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, Loader2, MessageSquare, QrCode, Send, X } from 'lucide-react';
 import { TEXT_FROM_OWN_PHONE } from '../lib/textingMode';
+import { buildText, templateText } from '../lib/textTemplates';
 import {
   quickSend, savedKey, keepKey, forgetKeys, deviceLabel,
   sendProgress, sendSteps, STEPS, shortAgo, isFinal, formatPhoneInput, phoneDigits, validMobile,
 } from '../lib/quickSend';
 
-// What the producer says before sending (recorded on each send as qs-script-v1 by the edge function).
-const SCRIPT =
-  'Can I text you a secure link to upload your current dec page? It comes from insuredbycam.com, operated by ' +
-  'Cam Wiley Agency, Inc. It\'s just the link, nothing else.';
+// What the producer says before sending: edited on the Texts & Scripts page (Quick Send:
+// ask first). The edge function records the saved wording, and its version, on each send.
+const script = () => templateText('qsAsk');
 
 // One dot colour per state, used in the recent list and the result's headline.
 const DOT = { good: 'bg-emerald-500', bad: 'bg-red-500', pending: 'bg-blue-500', muted: 'bg-slate-300' };
@@ -184,7 +184,7 @@ function SendForm({ onSignedOut }) {
         <form onSubmit={send} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.quicksendpage.1aeb84">Ask first</T></p>
           {/* Fixed: each send records this exact script (qs-script-v1) as what they agreed to. */}
-          <p data-copy="fixed" className="mt-2 border-l-4 border-blue-200 pl-3 text-[15px] leading-relaxed text-slate-700">“{SCRIPT}”</p>
+          <p data-copy="fixed" className="mt-2 border-l-4 border-blue-200 pl-3 text-[15px] leading-relaxed text-slate-700">“{script()}”</p>
 
           <div className="mt-5 space-y-4">
             <label className="block">
@@ -255,7 +255,7 @@ function SendResult({ result }) {
     try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard blocked */ }
   };
 
-  const ownText = `Hi${invite?.first_name ? ` ${invite.first_name}` : ''}, it's ${(invite?.producer_name || 'Cam').split(' ')[0]} with Cam Wiley Agency. Here's the link you asked for to upload your policy for a quote: ${link}`;
+  const ownText = buildText('qsOwn', { name: invite?.first_name, producer: (invite?.producer_name || 'Cam').split(' ')[0], link });
   const ownHref = `sms:+1${invite?.phone || ''}?&body=${encodeURIComponent(ownText)}`;
   const headline = ownPhone ? `${name === 'them' ? 'Their' : `${name}’s`} Link Is Ready` : already ? `${name} already has a link` : blocked ? `${name} opted out of texts`
     : failed ? `Couldn’t text ${name}` : sending ? `Texting ${name}…` : `Texted ${name}`;

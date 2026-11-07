@@ -12,6 +12,7 @@ import { inputStyle, formatPhone, formatDate, money } from './ui';
 import { InviteShare } from './InviteDialog';
 import { inviteUrl, smsUrl } from './invite';
 import { sentFromOwnPhone } from '../../../lib/quickSendFormat';
+import { buildText } from '../../../lib/textTemplates';
 import QuickSendCard from './QuickSendCard';
 
 function ago(ts) {
@@ -46,7 +47,8 @@ const textProblem = (i) => (i.source !== 'quick_send' || i.upload_count > 0 ? nu
   : i.sms_status === 'blocked' ? 'Not texted — this number texted STOP'
     : i.sms_status === 'failed' && !i.opened_at && !sentFromOwnPhone(i) ? 'Text didn’t go through' : null);
 
-const nudgeText = (i) => `Hi${i.first_name ? ` ${i.first_name}` : ''}, saw you opened the link — just snap a photo of your dec page and I'll do the rest: ${inviteUrl(i.code)}`;
+// Edited on the Texts & Scripts page (Nudge).
+const nudgeText = (i) => buildText('nudge', { name: i.first_name, link: inviteUrl(i.code) });
 
 function Stat({ label, value }) {
   return (
