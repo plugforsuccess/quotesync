@@ -214,7 +214,12 @@ test('Texts & Scripts: every script and text in one place, grouped, with the rig
   await mock(page, { partners: [], rules: null, payouts: [] });
   await page.goto('/agency/texts');
   await expect(page.getByRole('heading', { name: 'Texts & Scripts' })).toBeVisible();
-  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners']) await expect(page.getByRole('region', { name: g })).toBeVisible();
+  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails']) await expect(page.getByRole('region', { name: g })).toBeVisible();
+  // Reminder emails: subject line and the unsubscribe line, no STOP line.
+  const retake = page.getByRole('article', { name: 'Retake Before Your Discount Lapses' });
+  await expect(retake.getByText('Keep your Allstate defensive driving discount')).toBeVisible();
+  await expect(retake.getByText(/Unsubscribe/)).toBeVisible();
+  await expect(retake.getByText('Reply STOP to opt out.')).toHaveCount(0);
   for (const n of ['Say It in the Room', 'Send a Link', 'Quick Send: Ask First', 'Quick Send: The Text', 'Nudge', 'Contact: It Saves Them Money', 'Reconnect After a Quote That Came in High', 'The Partner Pitch', 'Welcome a New Partner']) {
     await expect(page.getByRole('article', { name: n })).toBeVisible();
   }

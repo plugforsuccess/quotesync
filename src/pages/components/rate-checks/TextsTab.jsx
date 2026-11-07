@@ -14,7 +14,7 @@ import { TEXT_GROUPS, TEXT_TEMPLATES, STOP_LINE, buildText, segments, templateWa
 import { REVIEW_LINK_KEY, REVIEW_LINK_FALLBACK, reviewUrl, TEXT_NUMBER_KEY, TEXT_NUMBER_UNSET } from '../../../lib/reviews';
 
 const box = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' };
-const sample = { name: 'Dana', carrier: 'State Farm', reviewLink: '[review link]', portalLink: '[portal link]', producer: 'Cam', link: 'https://insuredbycam.com/r/K7PM2QXD', allstate: 8400, savings: 1516, courseLink: 'https://insuredbycam.com/courses/defensive-driving' };
+const sample = { passedDate: 'June 4, 2026', deadline: 'March 15, 2029', done: 3, total: 8, name: 'Dana', carrier: 'State Farm', reviewLink: '[review link]', portalLink: '[portal link]', producer: 'Cam', link: 'https://insuredbycam.com/r/K7PM2QXD', allstate: 8400, savings: 1516, courseLink: 'https://insuredbycam.com/courses/defensive-driving' };
 const TIPS = [
   ['Call it your website, not an app.', '“App” makes people think download. Say: “Go to insuredbycam.com on your phone and tap Check My Rate. Nothing to download.”'],
   ['Explain “dec page”.', 'Most people don’t know the term: “the page that lists your cars, coverages and price; it’s in your insurance app or the email from your last renewal.”'],
@@ -31,6 +31,7 @@ function Template({ t }) {
         <h4 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>{t.name}</h4>
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: t.auto ? 'var(--qs-warning)' : 'var(--qs-subtle)' }}>
           {t.kind === 'say' ? <T k="pages.components.ratechecks.textstab.say">{'Say It'}</T>
+            : t.kind === 'email' ? <T k="pages.components.ratechecks.textstab.email">{'Automatic Email'}</T>
             : t.auto ? <T k="pages.components.ratechecks.textstab.ac9041">{'Automatic'}</T> : <T k="pages.components.ratechecks.textstab.826293">{'You send it'}</T>}
         </span>
       </div>
@@ -41,8 +42,18 @@ function Template({ t }) {
         </p>
       )}
       <div className="mt-3 space-y-2.5 rounded-lg p-3 text-[15px] leading-relaxed" style={box}>
+        {t.subject && (
+          <p className="pb-2 font-semibold" style={{ borderBottom: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+            <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.textstab.subject">Subject:</T></span> <T k={`${t.key}.subject`}>{t.subject}</T>
+          </p>
+        )}
         {t.paragraphs.map((p, i) => <p key={i}><T k={`${t.key}.${i + 1}`}>{p}</T></p>)}
-        {t.auto && (
+        {t.kind === 'email' && (
+          <p className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-subtle)' }} title="Added to every reminder email.">
+            <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> <T k="pages.components.ratechecks.textstab.unsub">Don’t want these reminders? Unsubscribe.</T>
+          </p>
+        )}
+        {t.auto && t.kind !== 'email' && (
           <p className="flex items-center gap-1.5" style={{ color: 'var(--qs-subtle)' }} title="Added to every automatic text. Required by law.">
             <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {STOP_LINE}
           </p>
@@ -54,7 +65,7 @@ function Template({ t }) {
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
           {t.blanks.length > 0 && <><T k="pages.components.ratechecks.textstab.bc8104">Fills in:</T> {t.blanks.join(', ')}</>}
-          {t.kind !== 'say' && <>{t.blanks.length > 0 && ' · '}{(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/partner/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}</>}
+          {t.kind !== 'say' && t.kind !== 'email' && <>{t.blanks.length > 0 && ' · '}{(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/partner/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}</>}
         </p>
         <span className="flex flex-wrap items-center gap-2">
           <CopyTextButton text={buildText(t.id, { ...sample, name: '', reviewLink: reviewUrl() })} className={`${btnCls} text-primary-600`} style={box}>

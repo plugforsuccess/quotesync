@@ -8,6 +8,7 @@
 //
 // kind: 'text' (default) is sent as a text; 'say' is said out loud.
 // textIt: a text with no one person to send it to, so the card opens Messages.
+// kind 'email' has a subject (key `${key}.subject`); the unsubscribe line is added when sent.
 //
 // The automatic ones are sent by edge functions that keep a copy of these defaults
 // (rate-check-outcome; rate-check-quick-send for the Quick Send script and text);
@@ -16,7 +17,7 @@ import { copyValue } from './copyValues.js';
 
 export const STOP_LINE = 'Reply STOP to opt out.';
 
-export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners'];
+export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails'];
 
 export const TEXT_TEMPLATES = [
   // ── Getting the link out ───────────────────────────────────────────────────
@@ -202,6 +203,34 @@ export const TEXT_TEMPLATES = [
       "Please mention that you're also one of our referral partners. Totally optional, and it has nothing to do with your referral fees.",
     ],
   },
+  // ── Drivers Ed emails (sent by supabase/functions/dd-reminders) ───────────────
+  {
+    id: 'ddRetake', group: 'Drivers Ed Emails', key: 'email.dd.retake', kind: 'email', auto: true,
+    name: 'Retake Before Your Discount Lapses',
+    when: 'Emailed 60 and 14 days before the deadline: the last renewal before the 36-month certificate ends (or the 36 months, if we don’t have their renewal).',
+    blanks: ['[first name]', '[passed date]', '[deadline]', '[course link]'],
+    subject: 'Keep your Allstate defensive driving discount',
+    paragraphs: [
+      'Hi [first name],',
+      'Your defensive driving certificate from [passed date] needs a refresh by [deadline] to keep your Allstate discount at your next renewal.',
+      "Retake Georgia's 6-hour course online, at your own pace: [course link]",
+      "When you pass, your new certificate comes straight to us and we'll keep your discount going.",
+      'Cam Wiley Agency',
+    ],
+  },
+  {
+    id: 'ddStall', group: 'Drivers Ed Emails', key: 'email.dd.stall', kind: 'email', auto: true,
+    name: 'Pick Up Where You Left Off',
+    when: 'Emailed 3 and 10 days after someone enrolls, if they haven’t passed yet.',
+    blanks: ['[first name]', '[modules done]', '[modules total]', '[course link]'],
+    subject: 'Pick up your defensive driving course where you left off',
+    paragraphs: [
+      'Hi [first name],',
+      "You're [modules done] of [modules total] modules into Georgia's 6-hour defensive driving course. Pick up where you left off: [course link]",
+      'Once you pass the final exam, your certificate comes straight to us for your Allstate discount.',
+      'Cam Wiley Agency',
+    ],
+  },
 ];
 
 const byId = Object.fromEntries(TEXT_TEMPLATES.map(t => [t.id, t]));
@@ -227,6 +256,10 @@ export function buildText(id, vars = {}) {
     .replace(/\[where we met\]/gi, vars.metAt ? ` (we met at ${vars.metAt})` : '')
     .replace(/\[link\]/gi, vars.link || '')
     .replace(/\[course link\]/gi, vars.courseLink || '')
+    .replace(/\[passed date\]/gi, vars.passedDate || '')
+    .replace(/\[deadline\]/gi, vars.deadline || '')
+    .replace(/\[modules done\]/gi, String(vars.done ?? ''))
+    .replace(/\[modules total\]/gi, String(vars.total ?? ''))
     .replace(/\[Allstate price\]/gi, usd(vars.allstate))
     .replace(/\[savings\]/gi, usd(vars.savings))
     .replace(/\[carrier\]/gi, vars.carrier || 'current')
@@ -238,7 +271,7 @@ export function buildText(id, vars = {}) {
   if (vars.courseLink && t.blanks.includes('[course link]') && !out.includes(vars.courseLink)) out += ` ${vars.courseLink}`;
   // A text that's meant to carry the review link always does, even if an edit dropped it.
   if (vars.reviewLink && t.blanks.includes('[review link]') && !out.includes(vars.reviewLink)) out += `\n\n${vars.reviewLink}`;
-  if (t.auto && !/\bSTOP\b/.test(out)) out += `\n\n${STOP_LINE}`;
+  if (t.auto && t.kind !== 'email' && !/\bSTOP\b/.test(out)) out += `\n\n${STOP_LINE}`;
   return plainQuotes(out);
 }
 
@@ -259,7 +292,7 @@ export function templateWarnings(id) {
   const saved = t.paragraphs.map((p, i) => copyValue(`${t.key}.${i + 1}`, p)).join(' ');
   const w = [];
   if (id === 'ready' && !/\breply\s+y\b/i.test(saved)) w.push('“Reply Y” is missing: their Y is what tells you to call.');
-  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]'];
+  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]', '[passed date]', '[deadline]', '[modules done]', '[modules total]'];
   const addedAtEnd = ['[review link]', '[link]', '[course link]'];
   for (const b of t.blanks) if (!optional.includes(b) && !saved.toLowerCase().includes(b.toLowerCase())) w.push(`${b} is missing${addedAtEnd.includes(b) ? ': it’s added at the end' : ''}.`);
   return w;
