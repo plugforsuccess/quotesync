@@ -201,3 +201,14 @@ export async function issueCertificate(courseSlug = DD_COURSE_SLUG) {
   }
   return data; // { certificate_uid, url }
 }
+
+/** The student's certificate for an enrollment (null until issued). */
+export async function getMyCertificate(enrollmentId) {
+  const { data, error } = await supabase
+    .from('dd_certificates')
+    .select('certificate_uid, issued_at, revoked_at')
+    .eq('enrollment_id', enrollmentId)
+    .maybeSingle();
+  if (error) throw error;
+  return data && !data.revoked_at ? data : null;
+}

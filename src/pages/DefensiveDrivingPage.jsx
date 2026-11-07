@@ -14,7 +14,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { getDefensiveDrivingCourse, getMyEnrollment, getModules, createCheckout, formatPrice } from '../lib/ddApi';
+import { getDefensiveDrivingCourse, getMyEnrollment, getModules, createCheckout, formatPrice, getProgress, getExamAttempts, getMyCertificate } from '../lib/ddApi';
+import { studentStatus } from '../lib/ddStudent';
+import { StudentHero, StudentCard } from './components/dd/StudentProgress';
 import { getModuleContent } from '../data/ddCourseContent';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 
@@ -33,6 +35,7 @@ export default function DefensiveDrivingPage() {
   const [enrollment, setEnrollment] = useState(null);
   const enrolled = !!enrollment && (enrollment.status === 'active' || enrollment.status === 'completed');
   const [modules, setModules] = useState([]);
+  const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -51,6 +54,13 @@ export default function DefensiveDrivingPage() {
           if (!active) return;
           setModules(mods || []);
           setEnrollment(enr);
+          // Enrolled: where they stand (progress, exam tries, certificate).
+          if (enr && (enr.status === 'active' || enr.status === 'completed')) {
+            const [progress, attempts, cert] = await Promise.all([
+              getProgress(enr.id).catch(() => []), getExamAttempts(enr.id).catch(() => []), getMyCertificate(enr.id).catch(() => null),
+            ]);
+            if (active) setStudent({ progress, attempts, cert });
+          }
         }
       } catch (err) {
         if (active) setError(err.message || 'Failed to load course.');
@@ -72,6 +82,8 @@ export default function DefensiveDrivingPage() {
     </div>;
   }
   const price = formatPrice(course.price_cents, course.currency);
+  const st = enrolled && student ? studentStatus({ course, enrollment, modules, ...student }) : null;
+  const firstName = (enrollment?.student_name_snapshot || profile?.full_name || '').trim().split(/\s+/)[0] || '';
 
   return (
     <div className="bg-white text-slate-700 min-h-screen">
@@ -89,6 +101,8 @@ export default function DefensiveDrivingPage() {
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4">
                 <T>{course.title}</T>
               </h1>
+              {/* Enrolled: what's next, or the certificate once passed. Everyone else: the pitch. */}
+              {st ? <StudentHero course={course} st={st} firstName={firstName} /> : (<>
               <p className="text-lg text-blue-100 max-w-xl mb-6">
                 <T k="pages.defensivedrivingpage.4cdffd">A self-paced online defensive driving course built to help you earn an auto-insurance premium discount. Complete the modules, pass the final exam, and your certificate is forwarded to the agency automatically.</T>
               </p>
@@ -110,6 +124,7 @@ export default function DefensiveDrivingPage() {
                   <span className="text-sm text-blue-100"><T k="pages.defensivedrivingpage.47455c">One-time payment</T></span>
                 </div>
               )}
+              </>)}
             </div>
 
             <div id="enroll" className="scroll-mt-24">
@@ -120,7 +135,7 @@ export default function DefensiveDrivingPage() {
                   </div>
                 </Dismissible>
               )}
-              <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} />
+              <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} st={st} />
             </div>
           </div>
         </div>
@@ -164,7 +179,8 @@ export default function DefensiveDrivingPage() {
         </div>
       </section>
 
-      {/* ── Pricing ────────────────────────────────────────── */}
+      {/* ── Pricing (not for students who already paid) ─────── */}
+      {!enrolled && (<>
       <section className="border-y border-slate-200 bg-slate-50">
         <div className="max-w-xl mx-auto px-4 py-16 text-center">
           <SectionHeading eyebrow="Simple pricing" title="One price, everything included" center />
@@ -197,6 +213,7 @@ export default function DefensiveDrivingPage() {
           </div>
         </div>
       </section>
+      </>)}
 
       {/* ── FAQ ────────────────────────────────────────────── */}
       <section className="max-w-3xl mx-auto px-4 py-16">
@@ -347,15 +364,17 @@ function FAQ({ items }) {
 }
 
 // ---- Enrollment card (price + auth/checkout) -------------------------------
-function EnrollCard({ course, enrollment, user, profile }) {
+function EnrollCard({ course, enrollment, user, profile, st }) {
   const hasAccess = enrollment && (enrollment.status === 'active' || enrollment.status === 'completed');
   return (
     <div className="rounded-3xl bg-white p-6 text-slate-700 shadow-2xl shadow-blue-950/30 sm:p-7">
-      <div className="flex items-baseline gap-2 mb-4">
-        <span className="text-3xl font-extrabold text-[#0F2D6B]">{formatPrice(course.price_cents, course.currency)}</span>
-        <span className="text-xs text-slate-500"><T k="pages.defensivedrivingpage.771120">one-time</T></span>
-      </div>
-      {hasAccess ? (
+      {!hasAccess && (
+        <div className="flex items-baseline gap-2 mb-4">
+          <span className="text-3xl font-extrabold text-[#0F2D6B]">{formatPrice(course.price_cents, course.currency)}</span>
+          <span className="text-xs text-slate-500"><T k="pages.defensivedrivingpage.771120">one-time</T></span>
+        </div>
+      )}
+      {hasAccess && st ? <StudentCard course={course} st={st} /> : hasAccess ? (
         <div className="space-y-3">
           <p className="flex items-center gap-2 text-sm font-semibold text-[#0F2D6B]">
             <span className="qc-badge qc-badge-sm" aria-hidden="true"><Check className="h-4 w-4" strokeWidth={3} /></span>

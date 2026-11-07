@@ -6,7 +6,7 @@
 // the final exam, and the certificate. No seat-time gating.
 import { T } from '../components/SiteCopy';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Lock, CheckCircle2, Circle, Loader2, AlertCircle, ArrowLeft, ArrowRight, Award, Download,
   Scale, KeyRound, AlertTriangle, Lightbulb, ListChecks, X, BookOpen, Sun, Moon, Volume2, Square,
@@ -55,6 +55,9 @@ function AccessibilityControls() {
 export default function DefensiveDrivingPortalPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  // ?module=<id> (Continue Course on the course page) opens that module if it's unlocked.
+  const [searchParams] = useSearchParams();
+  const startModule = searchParams.get('module');
 
   const [theme, setTheme] = useState(() => localStorage.getItem('dd-theme') || 'light');
   const [size, setSize] = useState(() => localStorage.getItem('dd-size') || 'large');
@@ -88,6 +91,11 @@ export default function DefensiveDrivingPortalPage() {
         const [mods, prog] = await Promise.all([getModules(c.id), getProgress(enr.id)]);
         if (!active) return;
         setCourse(c); setEnrollment(enr); setModules(mods); setProgress(prog);
+        if (startModule) {
+          const done = new Set(prog.filter(p => p.completed_at).map(p => p.module_id));
+          const i = mods.findIndex(m => m.id === startModule);
+          if (i === 0 || (i > 0 && done.has(mods[i - 1].id))) setActiveId(startModule);
+        }
       } catch (err) {
         if (active) setError(err.message || 'Failed to load the course.');
       } finally {
@@ -95,7 +103,7 @@ export default function DefensiveDrivingPortalPage() {
       }
     })();
     return () => { active = false; };
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, startModule]);
 
   const shell = (inner) => (
     <A11yCtx.Provider value={a11y}>
