@@ -7,7 +7,8 @@
 import { T } from '../components/SiteCopy';
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { Check, Copy, Loader2, QrCode, Send, X } from 'lucide-react';
+import { Check, Copy, Loader2, MessageSquare, QrCode, Send, X } from 'lucide-react';
+import { TEXT_FROM_OWN_PHONE } from '../lib/textingMode';
 import {
   quickSend, savedKey, keepKey, forgetKeys, deviceLabel,
   sendProgress, sendSteps, STEPS, shortAgo, isFinal, formatPhoneInput, phoneDigits, validMobile,
@@ -223,7 +224,10 @@ function SendResult({ result, onAnother }) {
   const name = invite?.first_name || 'them';
   const { done, stopped } = sendSteps(invite);
   const blocked = status === 'blocked';
-  const failed = status === 'failed' && stopped;
+  // The agency's number isn't set up yet: send it from the producer's phone instead
+  // (never to someone who replied STOP).
+  const ownPhone = TEXT_FROM_OWN_PHONE && status === 'failed' && /isn.t set up/i.test(invite?.sms_error || '');
+  const failed = status === 'failed' && stopped && !ownPhone;
   const sending = !already && !stopped && done === 0;
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(blocked || failed);
@@ -236,20 +240,24 @@ function SendResult({ result, onAnother }) {
     try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard blocked */ }
   };
 
-  const headline = already ? `${name} already has a link` : blocked ? `${name} opted out of texts`
+  const ownText = `Hi${invite?.first_name ? ` ${invite.first_name}` : ''}, it's ${(invite?.producer_name || 'Cam').split(' ')[0]} with Cam Wiley Agency. Here's the link you asked for to upload your policy for a quote: ${link}`;
+  const ownHref = `sms:+1${invite?.phone || ''}?&body=${encodeURIComponent(ownText)}`;
+  const headline = ownPhone ? `Text ${name} From Your Phone` : already ? `${name} already has a link` : blocked ? `${name} opted out of texts`
     : failed ? `Couldn’t text ${name}` : sending ? `Texting ${name}…` : `Texted ${name}`;
-  const note = already
+  const note = ownPhone
+    ? 'Texts from the agency’s number aren’t live yet. Tap below: Messages opens with the text and link written. The link works for 7 days.'
+    : already
     ? `${invite?.producer_name ? `${invite.producer_name} sent it` : 'It was sent'} in the last day, so no second text went out. Show the code or copy the link if they need it again.`
     : blocked ? 'They replied STOP to an earlier text, so we can’t text them. Have them scan the code instead.'
       : failed ? `${invite?.sms_error ? `${invite.sms_error}. ` : ''}Have them scan the code instead, or check the number and send again.`
         : `Tell ${name} to open the text from insuredbycam.com. The link works for 7 days.`;
-  const tone = blocked || failed ? 'bad' : sending ? 'pending' : 'good';
+  const tone = blocked || failed ? 'bad' : ownPhone ? 'pending' : sending ? 'pending' : 'good';
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" role="status" aria-live="polite">
       <div className="flex items-start gap-3">
         <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tone === 'bad' ? 'bg-red-50 text-red-600' : tone === 'pending' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-600'}`}>
-          {tone === 'bad' ? <X className="h-6 w-6" aria-hidden="true" /> : tone === 'pending' ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" /> : <Check className="h-6 w-6" aria-hidden="true" />}
+          {tone === 'bad' ? <X className="h-6 w-6" aria-hidden="true" /> : ownPhone ? <MessageSquare className="h-6 w-6" aria-hidden="true" /> : tone === 'pending' ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" /> : <Check className="h-6 w-6" aria-hidden="true" />}
         </span>
         <div className="min-w-0">
           <p className="text-xl font-extrabold leading-tight tracking-tight text-slate-900">{headline}</p>
@@ -257,7 +265,7 @@ function SendResult({ result, onAnother }) {
         </div>
       </div>
 
-      {!blocked && !failed && (
+      {!blocked && !failed && !ownPhone && (
         <ol className="mt-5 grid grid-cols-4 gap-1.5" aria-label={`Progress: ${done} of 4 steps`}>
           {STEPS.map((step, i) => (
             <li key={step} className="min-w-0">
@@ -272,7 +280,12 @@ function SendResult({ result, onAnother }) {
 
       {showQr && <canvas ref={canvas} className="mx-auto mt-4 block rounded-lg border border-slate-200" aria-label="QR code for the upload link" />}
 
-      <button type="button" onClick={onAnother} className="mt-5 w-full rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800"><T k="pages.quicksendpage.cc3308">Send Another</T></button>
+      {ownPhone && (
+        <a href={ownHref} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800">
+          <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="pages.quicksendpage.ownphone">Text From My Phone</T>
+        </a>
+      )}
+      <button type="button" onClick={onAnother} className={`${ownPhone ? 'mt-3 border border-slate-300 bg-white text-blue-700 active:bg-slate-50' : 'mt-5 bg-blue-700 text-white shadow-sm active:bg-blue-800'} w-full rounded-xl px-4 py-3.5 text-base font-bold`}><T k="pages.quicksendpage.cc3308">Send Another</T></button>
       <div className="mt-3 flex items-center justify-center gap-6 text-sm font-semibold text-blue-700">
         <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 py-1">
           {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}{copied ? <T k="pages.quicksendpage.8e3df4">{'Copied'}</T> : <T k="pages.quicksendpage.672d82">{'Copy Link'}</T>}

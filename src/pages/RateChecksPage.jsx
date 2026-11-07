@@ -51,6 +51,7 @@ import LogQuote from './components/sales/LogQuote';
 import ContactStep from './components/sales/ContactStep';
 import CloseStep from './components/sales/CloseStep';
 import LeadHistory from './components/sales/LeadHistory';
+import { TEXT_FROM_OWN_PHONE } from '../lib/textingMode';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -497,8 +498,8 @@ export default function RateChecksPage() {
               className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
               <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline"><T k="pages.ratecheckspage.d008bd">Upload Dec Page</T></span>
             </button>
-            {/* Send a Link is hidden: it had producers text leads from their own numbers.
-                Quick Send (the agency's number) replaces it. */}
+            {/* Send a Link texts from the producer's own number: shown only until Twilio is
+                live (TEXT_FROM_OWN_PHONE); then Quick Send (the agency's number) replaces it. */}
             {SHOW_SEND_A_LINK && (
               <button onClick={() => setInviteOpen(true)}
                 className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
@@ -644,7 +645,8 @@ export default function RateChecksPage() {
 
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
-const SHOW_SEND_A_LINK = false;
+// Send a Link texts from the producer's own phone: on only until Twilio is live.
+const SHOW_SEND_A_LINK = TEXT_FROM_OWN_PHONE;
 
 // The sales workspace: full screen, one household, in steps. Review the quote sheet,
 // save the Allstate quote, then contact them and close.

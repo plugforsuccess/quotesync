@@ -2,14 +2,14 @@
 // link, and follows it to Delivered. The edge function is mocked; nothing is texted.
 import { test, expect } from '@playwright/test';
 
-function mockFunction(page, { blocked = false } = {}) {
+function mockFunction(page, { blocked = false, noTwilio = false } = {}) {
   const calls = [];
   let polls = 0;
   const invite = (status) => ({
     id: 'inv-1', code: 'K7PM2QXD', producer_name: 'Cam Wiley', first_name: 'Keisha', phone: '4045551212',
     created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
     opened_at: null, open_count: 0, upload_count: 0, sms_status: status,
-    sms_error: blocked ? 'This number texted STOP' : null,
+    sms_error: blocked ? 'This number texted STOP' : noTwilio ? 'Texting isn’t set up for this agency.' : null,
   });
   page.route('**/functions/v1/rate-check-quick-send', async (route) => {
     const body = route.request().postDataJSON();
@@ -21,7 +21,7 @@ function mockFunction(page, { blocked = false } = {}) {
     if (body.mode === 'recent') return json({ invites: calls.some(c => c.mode === 'send') ? [invite(blocked ? 'blocked' : 'delivered')] : [] });
     if (body.mode === 'send') {
       await new Promise(r => setTimeout(r, 300)); // long enough for a double tap
-      return json({ invite: invite(blocked ? 'blocked' : 'queued'), link: 'https://insuredbycam.com/r/K7PM2QXD' });
+      return json({ invite: invite(blocked ? 'blocked' : noTwilio ? 'failed' : 'queued'), link: 'https://insuredbycam.com/r/K7PM2QXD' });
     }
     if (body.mode === 'status') { polls += 1; return json({ invite: invite(polls > 1 ? 'delivered' : 'sent') }); }
     return json({ error: 'Unknown mode' }, 400);
@@ -72,4 +72,19 @@ test('a number that texted STOP is not texted; the link is offered instead', asy
   // The code to scan comes up on its own when the text can't go.
   await expect(page.getByLabel('QR code for the upload link')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Hide QR code' })).toBeVisible();
+});
+
+test('before Twilio is live: Text From My Phone opens Messages with the link written', async ({ page }) => {
+  mockFunction(page, { noTwilio: true });
+  await page.goto('/qs');
+  await page.getByLabel('Your Quick Send PIN').fill('1234');
+  await page.getByLabel('Name', { exact: true }).fill('Keisha');
+  await page.getByLabel('Mobile number').fill('4045551212');
+  await page.getByRole('button', { name: 'Send Requested DEC Link' }).click();
+  await expect(page.getByText('Text Keisha From Your Phone')).toBeVisible();
+  const own = page.getByRole('link', { name: 'Text From My Phone' });
+  const href = await own.getAttribute('href');
+  expect(href.startsWith('sms:+14045551212?&body=')).toBe(true);
+  expect(decodeURIComponent(href.split('body=')[1])).toBe("Hi Keisha, it's Cam with Cam Wiley Agency. Here's the link you asked for to upload your policy for a quote: https://insuredbycam.com/r/K7PM2QXD");
+  await expect(page.getByText(/Couldn’t text/)).toHaveCount(0);
 });
