@@ -183,7 +183,8 @@ function SendForm({ onSignedOut }) {
       ) : (
         <form onSubmit={send} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.quicksendpage.1aeb84">Ask first</T></p>
-          <p className="mt-2 border-l-4 border-blue-200 pl-3 text-[15px] leading-relaxed text-slate-700">“{SCRIPT}”</p>
+          {/* Fixed: each send records this exact script (qs-script-v1) as what they agreed to. */}
+          <p data-copy="fixed" className="mt-2 border-l-4 border-blue-200 pl-3 text-[15px] leading-relaxed text-slate-700">“{SCRIPT}”</p>
 
           <div className="mt-5 space-y-4">
             <label className="block">
