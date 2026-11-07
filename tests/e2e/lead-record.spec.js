@@ -192,3 +192,19 @@ test('Quick Send opens in a new tab from agency pages', async ({ page }) => {
   const n = await links.count();
   for (let i = 0; i < n; i += 1) await expect(links.nth(i)).toHaveAttribute('target', '_blank');
 });
+
+test('Quick Send: the principal can edit its words; the asked-first script stays fixed', async ({ page }) => {
+  await mock(page, { partners: [], rules: null, payouts: [] });
+  await page.route('**/functions/v1/rate-check-quick-send', (route) => {
+    const body = route.request().postDataJSON();
+    const json = (b) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(b) });
+    if (body.mode === 'whoami') return json({ producer_first: 'Cam', enabled: true, pin: true });
+    if (body.mode === 'recent') return json({ invites: [] });
+    return json({});
+  });
+  await page.addInitScript(() => localStorage.setItem('qs_quick_send_key', 'k'.repeat(43)));
+  await page.goto('/qs');
+  await page.getByRole('button', { name: 'Edit this page' }).click();
+  await expect(page.getByRole('textbox', { name: /Edit text: Ask first/i })).toBeVisible();
+  await expect(page.locator('[data-copy="fixed"] [contenteditable]')).toHaveCount(0);
+});

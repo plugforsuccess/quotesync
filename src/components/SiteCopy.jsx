@@ -28,10 +28,11 @@ const KEY = ['site_copy'];
 const INTERNAL = /^\/(agency|my|admin|news\/(dashboard|editor|archived|standards|preview))(\/|$)/;
 const NEWS = /^\/news(\/[^/]+)?$/;
 const PORTAL = /^\/partner\/[^/]+$/;
-const EDITABLE = [/^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, PORTAL, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
+const QUICK_SEND = /^\/qs$/;
+const EDITABLE = [QUICK_SEND, /^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, PORTAL, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
 // Pages without the consumer nav (and its pencil) get a corner button.
 // Agency screens use the header pencil ("This Screen"), so no corner button there.
-const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, PORTAL];
+const CORNER_BUTTON = [/^\/ratecheck-privacy$/, NEWS, PORTAL, QUICK_SEND];
 // The last copy seen on this device, so edited text shows at once instead of flashing the default.
 const CACHE = 'qs_site_copy_v1';
 const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE) || 'null') || undefined; } catch { return undefined; } };
@@ -193,7 +194,7 @@ export function SiteCopyProvider({ children }) {
         // (bottom-right on agency pages, clear of their header).
         !CORNER_BUTTON.some(re => re.test(pathname)) ? null : (
           <button type="button" onClick={() => setEditing(true)} aria-label="Edit this page" title="Edit this page"
-            className={`fixed right-4 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0F2D6B] text-white shadow-lg ring-2 ring-white ${INTERNAL.test(pathname) || NEWS.test(pathname) ? 'bottom-4' : 'top-4'}`}>
+            className={`fixed right-4 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0F2D6B] text-white shadow-lg ring-2 ring-white ${INTERNAL.test(pathname) || NEWS.test(pathname) || QUICK_SEND.test(pathname) ? 'bottom-4' : 'top-4'}`}>
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </button>
         )
