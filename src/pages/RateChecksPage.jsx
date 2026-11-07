@@ -666,6 +666,10 @@ const STEPS = [
 export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
   const [step, setStep] = useState('review');
   const [logged, setLogged] = useState(null);
+  // Contact is written from the quote: locked until any policy has an Allstate price.
+  const quoted = !!logged || household.some(p => p.status !== 'declined' && p.allstate_premium != null);
+  const [lockNote, setLockNote] = useState(false);
+  useEffect(() => { if (!lockNote) return undefined; const t = setTimeout(() => setLockNote(false), 4000); return () => clearTimeout(t); }, [lockNote]);
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
@@ -748,11 +752,13 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
           <nav aria-label="Sales steps" className="mt-2.5 flex gap-1 rounded-xl p-1" style={{ background: 'var(--qs-elevated)' }}>
             {STEPS.map((x, i) => {
               const on = step === x.v;
-              const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && !!logged);
+              const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && quoted);
+              const locked = x.v === 'tell' && !quoted;
               return (
-                <button key={x.v} type="button" disabled={x.soon} onClick={() => setStep(x.v)} aria-current={on ? 'step' : undefined}
+                <button key={x.v} type="button" disabled={x.soon} aria-disabled={locked || undefined}
+                  onClick={() => { if (locked) { setLockNote(true); return; } setLockNote(false); setStep(x.v); }} aria-current={on ? 'step' : undefined}
                   title={x.soon ? 'Coming in the next step' : undefined}
-                  className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} ${locked ? 'cursor-not-allowed opacity-50' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
                   style={on ? undefined : { color: 'var(--qs-bright)' }}>
                   {/* The step number (or ✓ once done), small and light, above the name. */}
                   <span className="text-[10px] font-medium leading-none tabular-nums opacity-70" aria-hidden="true">{done ? '✓' : i + 1}</span>
@@ -761,6 +767,11 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
               );
             })}
           </nav>
+          {lockNote && (
+            <p className="mt-1.5 text-center text-xs font-semibold" style={{ color: 'var(--qs-text)' }} role="status">
+              <T k="sales.steps.contact-locked">Save the quote first. Contact unlocks once it's saved.</T>
+            </p>
+          )}
         </div>
         </div>
 

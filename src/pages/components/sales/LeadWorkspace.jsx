@@ -105,6 +105,9 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
   const [editing, setEditing] = useState(false);
   const { data: sales } = useLeadSales(lead.id);
   const openQuote = (sales?.quotes || []).find(q => q.status === 'open') || null;
+  // Contact is written from the quote: locked until one is saved.
+  const [lockNote, setLockNote] = useState(false);
+  useEffect(() => { if (!lockNote) return undefined; const t = setTimeout(() => setLockNote(false), 4000); return () => clearTimeout(t); }, [lockNote]);
   const lastQuote = openQuote || (sales?.quotes || [])[0] || null;
   const win = lead.source === 'winback' ? parseWinbackNote(lead.callback_note) : null;
   const name = [displayName(lead.first_name), displayName(lead.last_name)].filter(Boolean).join(' ') || 'No Name';
@@ -167,9 +170,11 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
               {STEPS.map((x, i) => {
                 const on = step === x.v;
                 const done = (x.v === 'review' && step !== 'review') || (x.v === 'log' && !!openQuote);
+                const locked = x.v === 'tell' && !openQuote;
                 return (
-                  <button key={x.v} type="button" onClick={() => go(x.v)} aria-current={on ? 'step' : undefined}
-                    className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''}`}
+                  <button key={x.v} type="button" aria-disabled={locked || undefined}
+                    onClick={() => { if (locked) { setLockNote(true); return; } setLockNote(false); go(x.v); }} aria-current={on ? 'step' : undefined}
+                    className={`flex min-h-[38px] flex-auto flex-col items-center justify-center whitespace-nowrap rounded-lg px-2 py-0.5 text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'bg-primary-600 text-white shadow-sm' : ''} ${locked ? 'cursor-not-allowed opacity-50' : ''}`}
                     style={on ? undefined : { color: 'var(--qs-bright)' }}>
                     <span className="text-[10px] font-medium leading-none tabular-nums opacity-70" aria-hidden="true">{done ? '✓' : i + 1}</span>
                     <T>{x.label}</T>
@@ -177,6 +182,11 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
                 );
               })}
             </nav>
+            {lockNote && (
+              <p className="mt-1.5 text-center text-xs font-semibold" style={{ color: 'var(--qs-text)' }} role="status">
+                <T k="sales.steps.contact-locked">Save the quote first. Contact unlocks once it's saved.</T>
+              </p>
+            )}
           </div>
         </div>
 

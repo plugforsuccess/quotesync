@@ -232,3 +232,16 @@ test('Rate Checks More opens Texts & Scripts', async ({ page }) => {
   await page.getByRole('button', { name: /Texts & Scripts/ }).click();
   await expect(page).toHaveURL(/\/agency\/texts$/);
 });
+
+test('Contact is locked until a quote is saved; tapping it says why', async ({ page }) => {
+  await openLead(page);
+  const dialog = page.getByRole('dialog', { name: 'Sales workspace' });
+  const steps = dialog.getByRole('navigation', { name: 'Sales steps' });
+  await expect(steps.getByRole('button', { name: /Contact/ })).toHaveAttribute('aria-disabled', 'true');
+  await steps.getByRole('button', { name: /Contact/ }).click({ force: true }); // a real tap reaches it; Playwright won't click aria-disabled
+  await expect(dialog.getByText("Save the quote first. Contact unlocks once it's saved.")).toBeVisible();
+  await expect(steps.getByRole('button', { name: /Review/ })).toHaveAttribute('aria-current', 'step'); // stayed put
+  // Close stays open: Follow Up and Lost don't need a quote.
+  await steps.getByRole('button', { name: /Close/ }).click();
+  await expect(dialog.getByRole('heading', { name: 'Policy Bound' })).toBeVisible();
+});
