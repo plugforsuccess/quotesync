@@ -1,7 +1,7 @@
 // supabase/functions/email-test/index.ts
 // "Send Me a Test" on the Texts & Scripts page: emails the signed-in principal one email,
 // with the saved wording, the shared layout and sample blanks (Dana, State Farm, …).
-// POST { id: 'ddRetake' | 'ddStall' | 'ddCert' | 'ddStaff' | 'rcUpload' } → { sent_to }.
+// POST { id: 'ddRetake' | 'ddStall' | 'ddCert' | 'ddStaff' | 'rcUpload' | 'listFollowUp' } → { sent_to }.
 // It sends to the "Send Tests To" address the principal set (site_copy email.test.to), else
 // their own sign-in email.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
       'certificate link': `${site}/courses/defensive-driving/portal`,
       'queue link': `${site}/defensive-driving/queue`,
       'lead link': `${site}/agency/leads/rate-checks`,
+      link: `${site}/?start=1`,
     },
     // A test shows the unsubscribe line without a working link (it would opt the principal out).
     unsubscribeUrl: template.unsub ? `${site}/` : undefined,

@@ -101,6 +101,7 @@ const AgencyWinbacksPage = lazyWithRetry(() => import('./pages/AgencyWinbacksPag
 const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage')); // hidden: the old lead page, at /agency/leads/:id/details
 const LeadWorkspacePage = lazyWithRetry(() => import('./pages/LeadWorkspacePage'));
 const TextsScriptsPage = lazyWithRetry(() => import('./pages/TextsScriptsPage'));
+const ListsPage = lazyWithRetry(() => import('./pages/ListsPage'));
 const RateChecksPage = lazyWithRetry(() => import('./pages/RateChecksPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
@@ -407,6 +408,19 @@ function App() {
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <TextsScriptsPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            {/* Contact lists: the principal makes and imports them; producers add from Quick Send and leads. */}
+            <Route
+              path="agency/lists"
+              element={
+                <ProtectedRoute requiredAgencyRole="principal">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <ListsPage />
                     </Suspense>
                   </ErrorBoundary>
                 </ProtectedRoute>

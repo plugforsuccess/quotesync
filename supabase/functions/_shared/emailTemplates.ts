@@ -69,6 +69,18 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     ],
     button: { label: 'Open the Lead', link: 'lead link' },
   },
+  listFollowUp: {
+    key: 'email.list.followup',
+    subject: '[first name], your 2-minute rate check',
+    paragraphs: [
+      'Hi [first name],',
+      "It was good talking with you. Whenever you're ready, you can check your rate in about 2 minutes: snap a photo of your car or home insurance declarations page, and I'll tell you honestly if I can beat it: [link]",
+      'No pressure, and nobody will blow up your phone.',
+      '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Check My Rate', link: 'link' },
+    unsub: true,
+  },
 }
 
 /** Sample blanks for "Send Me a Test". */
@@ -83,4 +95,5 @@ export const SAMPLE_VARS: Record<string, string> = {
   carrier: 'State Farm',
   premium: '$2,140 a year',
   'where we met': ' (from the Rotary lunch)',
+  producer: 'Cam',
 }

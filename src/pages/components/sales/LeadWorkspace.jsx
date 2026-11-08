@@ -14,6 +14,8 @@ import { CopyButton } from '../rate-checks/Copyable';
 import { ContactPanel } from './ContactStep';
 import CloseStep from './CloseStep';
 import LeadHistory from './LeadHistory';
+import AddToList from '../../../components/lists/AddToList';
+import { useAddToList, useContactLists } from '../../../hooks/useContactLists';
 
 const STEPS = [
   { v: 'review', label: 'Review' },
@@ -211,6 +213,7 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
                 className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white">
                 <T k="sales.review.next">Quoted It in Allstate? Save the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </button>
+              <LeadAddToList lead={lead} />
             </>
           )}
 
@@ -253,5 +256,16 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Not ready (or won't send their dec page): onto one of the principal's lists for follow-up email.
+function LeadAddToList({ lead }) {
+  const { data: lists } = useContactLists();
+  const add = useAddToList();
+  return (
+    <AddToList lists={lists} emptyNote={null}
+      defaults={{ first_name: displayName(lead.first_name), last_name: displayName(lead.last_name), email: lead.email || '', phone: lead.phone || '' }}
+      onAdd={(v) => add.mutateAsync({ ...v, lead_id: lead.id })} />
   );
 }

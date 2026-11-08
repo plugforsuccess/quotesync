@@ -16,6 +16,9 @@
 //   status       { device_key, invite_id }                   → { invite }
 //   recent       { device_key }                              → { invites }
 //   sign_out     { device_key }                              → ends this phone's sign-in
+//   lists        { device_key }                              → { lists: [{ id, name, is_default }] }
+//   add_to_list  { device_key, list_id, first_name, last_name?, email, phone? } → { member, already }
+//                (someone who won't upload: onto a list the principal made, for follow-up email)
 // Twilio delivery callbacks (form-encoded, signed) update sms_status.
 //
 // The text is a one-time link the person asked for during the conversation. Pressing
@@ -274,6 +277,37 @@ Deno.serve(async (req) => {
       .eq('agency_id', who.agencyId).eq('created_by', who.userId).eq('source', 'quick_send')
       .order('created_at', { ascending: false }).limit(10)
     return json({ invites: data || [] }, 200, cors)
+  }
+
+  // ── Lists: the principal makes them; producers add people who won't upload ──
+  if (mode === 'lists') {
+    const { data } = await supabase.from('contact_lists').select('id, name, is_default')
+      .eq('agency_id', who.agencyId).is('archived_at', null).order('is_default', { ascending: false }).order('name')
+    return json({ lists: data || [] }, 200, cors)
+  }
+
+  if (mode === 'add_to_list') {
+    const firstName = cleanText(body.first_name, 80)
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 200)
+    if (!firstName) return json({ error: 'Add their first name.' }, 400, cors)
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email)) return json({ error: 'Enter a valid email.' }, 400, cors)
+    const phoneRaw = String(body.phone || '').replace(/\D/g, '')
+    const phone = phoneRaw ? usPhone(phoneRaw) : null
+    if (phoneRaw && !phone) return json({ error: 'Enter a 10-digit US number, or leave it blank.' }, 400, cors)
+    const { data: list } = await supabase.from('contact_lists').select('id, name')
+      .eq('id', String(body.list_id || '')).eq('agency_id', who.agencyId).is('archived_at', null).maybeSingle()
+    if (!list) return json({ error: 'Pick a list.' }, 400, cors)
+    if (!(await underLimit(supabase, `qs_list:${who.userId}`, 100, 86400))) return json({ error: 'That’s the daily limit for adding people.' }, 429, cors)
+    const { data: member, error } = await supabase.from('contact_list_members').insert({
+      list_id: list.id, agency_id: who.agencyId, first_name: firstName, last_name: cleanText(body.last_name, 80),
+      email, phone, source: 'quick_send', added_by: who.userId, added_by_name: who.producerName,
+    }).select('id, first_name, email').single()
+    if (error) {
+      if (error.code === '23505') return json({ already: true, list: list.name }, 200, cors)
+      console.error('[QUICK_SEND] add to list failed:', error.message)
+      return json({ error: 'Something went wrong. Try again.' }, 500, cors)
+    }
+    return json({ member, list: list.name }, 200, cors)
   }
 
   if (mode !== 'send') return json({ error: 'Unknown mode' }, 400, cors)

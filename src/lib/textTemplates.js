@@ -20,7 +20,7 @@ import { copyValue } from './copyValues.js';
 
 export const STOP_LINE = 'Reply STOP to opt out.';
 
-export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails', 'Team Emails'];
+export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails', 'List Emails', 'Team Emails'];
 
 export const TEXT_TEMPLATES = [
   // ── Getting the link out ───────────────────────────────────────────────────
@@ -249,6 +249,21 @@ export const TEXT_TEMPLATES = [
       'Cam Wiley Agency',
     ],
     button: { label: 'Download Your Certificate', link: '[certificate link]' },
+  },
+  // ── List emails (supabase/functions/list-followups) ────────────────────────
+  {
+    id: 'listFollowUp', group: 'List Emails', key: 'email.list.followup', kind: 'email', auto: true,
+    name: 'Follow-Up After They Didn’t Upload',
+    when: 'Emailed 3 days after a producer adds someone to a list with “Send automatic follow-up” on (set on the Lists page). Never to imported lists.',
+    blanks: ['[first name]', '[producer]', '[link]'],
+    subject: '[first name], your 2-minute rate check',
+    paragraphs: [
+      'Hi [first name],',
+      "It was good talking with you. Whenever you're ready, you can check your rate in about 2 minutes: snap a photo of your car or home insurance declarations page, and I'll tell you honestly if I can beat it: [link]",
+      'No pressure, and nobody will blow up your phone.',
+      '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Check My Rate', link: '[link]' }, unsub: true,
   },
   // ── Team emails (to you and your producers) ────────────────────────────────
   {
