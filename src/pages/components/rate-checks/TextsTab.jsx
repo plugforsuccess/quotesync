@@ -27,12 +27,12 @@ const btnCls = 'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs f
 export const EMAIL_ADDRESS_KEY = 'email.footer.address';
 const EMAIL_ADDRESS_UNSET = 'Not set yet';
 
-// Emails the signed-in principal this email, as it would go out (email-test).
-function SendTest({ id }) {
+// Emails the principal this email, as it would go out (email-test). listId: a list's own wording.
+export function SendTest({ id, listId }) {
   const [state, setState] = useState({ busy: false, note: '', error: false });
   const send = async () => {
     setState({ busy: true, note: '', error: false });
-    const { data, error } = await supabase.functions.invoke('email-test', { body: { id } });
+    const { data, error } = await supabase.functions.invoke('email-test', { body: listId ? { id, list_id: listId } : { id } });
     let msg = data?.error;
     if (error) {
       try { msg = (await error.context?.json())?.error; } catch { /* not JSON */ }

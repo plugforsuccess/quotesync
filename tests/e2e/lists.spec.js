@@ -68,8 +68,20 @@ test('the principal makes a list, sets it as the default with follow-up on, and 
   const detail = page.getByRole('region', { name: 'Didn’t Upload' });
   await detail.getByRole('button', { name: 'Make Default' }).click();
   await expect(detail.getByText(/Default: picked for producers/)).toBeVisible();
-  await detail.getByRole('switch', { name: 'Send automatic follow-up' }).click();
-  await expect(detail.getByRole('switch', { name: 'Send automatic follow-up' })).toHaveAttribute('aria-checked', 'true');
+  await detail.getByRole('switch', { name: 'Send follow-up emails' }).click();
+  await expect(detail.getByRole('switch', { name: 'Send follow-up emails' })).toHaveAttribute('aria-checked', 'true');
+  // The sequence: email 2 on day 7 instead of 10, email 3 off.
+  await detail.getByLabel('Email 2 day').fill('7');
+  await detail.getByLabel('Email 2 day').press('Enter');
+  await detail.getByRole('switch', { name: 'Email 3' }).click();
+  await expect(detail.getByRole('switch', { name: 'Email 3' })).toHaveAttribute('aria-checked', 'false');
+  expect(writes.filter(w => w.method === 'PATCH' && w.body.sequence).at(-1).body.sequence)
+    .toEqual([{ day: 3, on: true }, { day: 7, on: true }, { day: 30, on: false }]);
+  // This list's own wording: the shared emails to start from, each with a test button.
+  await expect(detail.getByText(/Uses the shared emails/)).toBeVisible();
+  await detail.getByRole('button', { name: 'Customize Emails' }).click();
+  await expect(detail.getByRole('article', { name: 'Didn’t Upload email 2' })).toContainText('an honest second opinion');
+  await expect(detail.getByRole('article', { name: 'Didn’t Upload email 1' }).getByRole('button', { name: 'Send Me a Test' })).toBeVisible();
 
   const csv = 'Name,E-mail,Mobile,Group\nDana Smith,Dana@Gmail.com,(404) 555-0123,Frat\nNo Email,,,\nMarcus Lee,marcus@example.com,,Neighbor\n';
   await detail.getByLabel('Spreadsheet to import').setInputFiles({ name: 'contacts.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });

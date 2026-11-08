@@ -1,13 +1,17 @@
 // src/pages/ListsPage.jsx
 // Lists (/agency/lists, principals only): make lists, choose the one producers see picked
-// in Add to List, turn each list's automatic follow-up email on or off, import a
-// spreadsheet, and see who's on each list. Lists are archived, never deleted.
-import { useMemo, useRef, useState } from 'react';
+// in Add to List, set each list's follow-up emails (up to 3, each on its own day; shared
+// wording or the list's own), import a spreadsheet, and see who's on each list and where
+// they are in the follow-ups. Lists are archived, never deleted.
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { Archive, Download, Loader2, Plus, RotateCcw, Search, Star, Upload } from 'lucide-react';
+import { Archive, Download, Loader2, PenLine, Plus, RotateCcw, Search, Star, Upload } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { useContactLists, useImportToList, useListMembers, useSaveList } from '../hooks/useContactLists';
 import { parseImport } from '../lib/contactLists';
+import { copyValue } from '../lib/copyValues';
+import { TEXT_TEMPLATES } from '../lib/textTemplates';
+import { SendTest } from './components/rate-checks/TextsTab';
 
 const card = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' };
 const field = { background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' };
@@ -17,6 +21,104 @@ const btn = 'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounde
 const fmtPhone = (d) => (d && d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : d || '');
 const shortDate = (s) => new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 const SOURCE = { quick_send: 'Quick Send', app: 'Lead workspace', import: 'Imported' };
+const STOPPED = { uploaded: 'Uploaded', quoted: 'Quoted', unsubscribed: 'Unsubscribed' };
+const DEFAULT_SEQUENCE = [{ day: 3, on: true }, { day: 10, on: true }, { day: 30, on: true }];
+const STEP_TEMPLATES = [1, 2, 3].map(n => TEXT_TEMPLATES.find(t => t.id === `listStep${n}`));
+const PER_DAY = 80; // list-followups sends at most this many a day (LIST_EMAILS_PER_DAY)
+
+// One email of a customized list: its own lines (the copy-editor pencil edits them), each
+// starting from the shared wording until it's changed.
+function ListEmail({ list, n }) {
+  const t = STEP_TEMPLATES[n - 1];
+  const key = `email.list.${list.id}.step${n}`;
+  const shared = (part, d) => copyValue(`${t.key}.${part}`, d);
+  return (
+    <article className="rounded-lg p-3 text-[15px] leading-relaxed" style={field} aria-label={`${list.name} email ${n}`}>
+      <p className="pb-2 font-semibold" style={{ ...bright, borderBottom: '1px solid var(--qs-border)' }}>
+        <span className="font-normal" style={subtle}>Email {n} · </span><T k={`${key}.subject`}>{shared('subject', t.subject)}</T>
+      </p>
+      <div className="mt-2 space-y-2" style={bright}>
+        {t.paragraphs.map((d, i) => <p key={i}><T k={`${key}.${i + 1}`}>{shared(i + 1, d)}</T></p>)}
+        <p><span className="inline-flex min-h-[36px] items-center rounded-full px-4 text-sm font-bold" style={{ background: '#F5D061', color: '#0F2D6B' }}><T k={`${key}.button`}>{shared('button', t.button.label)}</T></span></p>
+      </div>
+      <div className="mt-2 flex justify-end"><SendTest id={`listStep${n}`} listId={list.id} /></div>
+    </article>
+  );
+}
+
+function DayInput({ value, onSave, label }) {
+  const [v, setV] = useState(String(value));
+  useEffect(() => setV(String(value)), [value]);
+  const commit = () => {
+    const d = Math.min(365, Math.max(0, Math.round(Number(v))));
+    if (Number.isFinite(d) && d !== value) onSave(d); else setV(String(value));
+  };
+  return (
+    <input inputMode="numeric" value={v} aria-label={label} onChange={e => setV(e.target.value.replace(/\D/g, '').slice(0, 3))}
+      onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+      className="w-14 rounded-lg px-2 py-1.5 text-center text-base font-semibold tabular-nums" style={field} />
+  );
+}
+
+// The list's follow-up emails: on/off, which emails and on what day, whose wording, and how it's going.
+function FollowUps({ list, people }) {
+  const save = useSaveList();
+  const seq = (list.sequence?.length ? list.sequence : DEFAULT_SEQUENCE).slice(0, 3);
+  const setStep = (i, patch) => save.mutate({ id: list.id, sequence: seq.map((st, j) => (j === i ? { ...st, ...patch } : st)) });
+  const sentAt = (i) => people.filter(m => m.steps_sent > i).length;
+  const stopped = Object.keys(STOPPED).map(r => [r, people.filter(m => m.stopped_reason === r).length]).filter(([, c]) => c);
+  return (
+    <div className="rounded-lg p-3" style={field}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold" style={bright}><T k="lists.followup">Send Follow-Up Emails</T></p>
+          <p className="text-xs" style={subtle}><T k="lists.followup-note2">Days count from when someone is added. It stops when they upload, get quoted, or unsubscribe.</T></p>
+        </div>
+        <Switch on={list.follow_up_enabled} label="Send follow-up emails" onChange={(v) => save.mutate({ id: list.id, follow_up_enabled: v })} />
+      </div>
+
+      <ol className="mt-3 space-y-2" aria-label="Follow-up emails">
+        {seq.map((st, i) => (
+          <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Switch on={st.on} label={`Email ${i + 1}`} onChange={(v) => setStep(i, { on: v })} />
+            <span className="text-sm font-semibold" style={st.on ? bright : subtle}>Email {i + 1}</span>
+            <span className="flex items-center gap-1.5 text-sm" style={subtle}>Day <DayInput value={Number(st.day) || 0} label={`Email ${i + 1} day`} onSave={(d) => setStep(i, { day: d })} /></span>
+            {sentAt(i) > 0 && <span className="text-xs" style={subtle}>Sent to {sentAt(i).toLocaleString()}</span>}
+          </li>
+        ))}
+      </ol>
+      {stopped.length > 0 && (
+        <p className="mt-2 text-xs" style={subtle}>Stopped: {stopped.map(([r, c]) => `${c} ${STOPPED[r].toLowerCase()}`).join(', ')}.</p>
+      )}
+      {list.follow_up_enabled && people.some(m => m.source === 'import') && (
+        <p className="mt-2 text-xs" style={subtle}>Up to {PER_DAY} emails go out a day, oldest first, so a big imported list takes a few days to get through.</p>
+      )}
+
+      <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--qs-border)' }}>
+        {list.custom_emails ? (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold" style={bright}><T k="lists.own-emails">This List’s Own Emails</T></p>
+              <button type="button" onClick={() => save.mutate({ id: list.id, custom_emails: false })} className="text-sm font-semibold underline" style={subtle}>
+                <T k="lists.use-shared">Use Shared Emails</T>
+              </button>
+            </div>
+            <p className="mt-0.5 text-xs" style={subtle}><T k="lists.own-note">Turn on the pencil to edit any line. Lines you don’t change stay the same as the shared emails.</T></p>
+            <div className="mt-3 space-y-3">{[1, 2, 3].map(n => <ListEmail key={n} list={list} n={n} />)}</div>
+          </>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm" style={subtle}><T k="lists.shared-note">Uses the shared emails (Texts & Scripts, List Emails).</T></p>
+            <button type="button" onClick={() => save.mutate({ id: list.id, custom_emails: true })} className={btn} style={{ ...card, ...bright }}>
+              <PenLine className="h-4 w-4" aria-hidden="true" /> <T k="lists.customize">Customize Emails</T>
+            </button>
+          </div>
+        )}
+      </div>
+      {save.error && <p className="mt-2 text-sm text-red-600" role="alert">{save.error.message}</p>}
+    </div>
+  );
+}
 
 function Switch({ on, onChange, label }) {
   return (
@@ -80,7 +182,7 @@ function Importer({ list }) {
       {parsed && !imp.isSuccess && (
         <div className="mt-3 rounded-lg p-3 text-sm" style={card} role="status">
           <p style={bright}><b>{parsed.people.length.toLocaleString()}</b> {parsed.people.length === 1 ? 'person' : 'people'} ready from {parsed.file}{skippedText ? `; skipping ${skippedText}` : ''}.</p>
-          <p className="mt-1" style={subtle}><T k="lists.import.note">Imported people never get the automatic follow-up. Anyone already on this list is skipped.</T></p>
+          <p className="mt-1" style={subtle}><T k="lists.import.note2">Anyone already on this list is skipped. If this list’s follow-up emails are on, imported people get them too, in daily waves.</T></p>
           <div className="mt-2.5 flex gap-2">
             <button type="button" disabled={!parsed.people.length || imp.isPending} onClick={() => imp.mutate({ list_id: list.id, people: parsed.people })}
               className={`${btn} bg-primary-600 text-white disabled:opacity-50`}>
@@ -101,8 +203,8 @@ function Importer({ list }) {
 }
 
 function download(list, people) {
-  const rows = [['First Name', 'Last Name', 'Email', 'Phone', 'Notes', 'Added By', 'Added', 'Source', 'Unsubscribed'],
-    ...people.map(m => [m.first_name, m.last_name || '', m.email, fmtPhone(m.phone), m.notes || '', m.added_by_name || '', m.created_at.slice(0, 10), SOURCE[m.source] || m.source, m.unsubscribed ? 'Yes' : ''])];
+  const rows = [['First Name', 'Last Name', 'Email', 'Phone', 'Notes', 'Added By', 'Added', 'Source', 'Emails Sent', 'Stopped', 'Unsubscribed'],
+    ...people.map(m => [m.first_name, m.last_name || '', m.email, fmtPhone(m.phone), m.notes || '', m.added_by_name || '', m.created_at.slice(0, 10), SOURCE[m.source] || m.source, m.steps_sent || 0, STOPPED[m.stopped_reason] || '', m.unsubscribed ? 'Yes' : ''])];
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -151,13 +253,7 @@ function ListDetail({ list, people }) {
           {list.is_default && (
             <p className="flex items-center gap-1.5 text-sm" style={bright}><Star className="h-4 w-4 fill-current text-amber-400" aria-hidden="true" /> <T k="lists.default-note">Default: picked for producers in Add to List.</T></p>
           )}
-          <div className="flex items-start justify-between gap-4 rounded-lg p-3" style={field}>
-            <div>
-              <p className="text-sm font-semibold" style={bright}><T k="lists.followup">Send Automatic Follow-Up</T></p>
-              <p className="text-xs" style={subtle}><T k="lists.followup-note">One email 3 days after a producer adds someone, with the Check My Rate link. Edit it on Texts & Scripts (Follow-Up After They Didn’t Upload).</T></p>
-            </div>
-            <Switch on={list.follow_up_enabled} label="Send automatic follow-up" onChange={(v) => save.mutate({ id: list.id, follow_up_enabled: v })} />
-          </div>
+          <FollowUps list={list} people={people} />
           <div className="flex flex-wrap items-start gap-2">
             <Importer list={list} />
             {people.length > 0 && (
@@ -185,8 +281,10 @@ function ListDetail({ list, people }) {
                   <p className="truncate text-sm" style={subtle}>{m.email}{m.phone ? ` · ${fmtPhone(m.phone)}` : ''}</p>
                 </div>
                 <p className="text-xs" style={subtle}>
-                  {m.unsubscribed ? <span className="font-semibold text-red-600">Unsubscribed</span> : m.followup_sent_at ? `Followed up ${shortDate(m.followup_sent_at)}` : null}
-                  {(m.unsubscribed || m.followup_sent_at) && ' · '}
+                  {m.unsubscribed ? <span className="font-semibold text-red-600">Unsubscribed</span>
+                    : m.stopped_reason ? `Stopped: ${STOPPED[m.stopped_reason]}`
+                    : m.steps_sent ? `Email ${m.steps_sent} sent ${shortDate(m.last_sent_at)}` : null}
+                  {(m.unsubscribed || m.stopped_reason || m.steps_sent > 0) && ' · '}
                   {SOURCE[m.source] || m.source}{m.added_by_name && m.source !== 'import' ? `, ${m.added_by_name.split(' ')[0]}` : ''} · {shortDate(m.created_at)}
                 </p>
               </li>

@@ -1,13 +1,17 @@
 -- Contact lists: the principal makes lists (e.g. "Didn't Upload", "Frat Brothers"); anyone
 -- on the team adds people to them (Quick Send, the lead workspace); the principal imports,
--- manages and emails them. A list can send one automatic follow-up email
--- (supabase/functions/list-followups) a few days after a producer adds someone.
+-- manages and emails them. A list can run a follow-up sequence (up to 3 emails, each on
+-- its own day; supabase/functions/list-followups) that stops when the person uploads,
+-- gets quoted, or unsubscribes. Wording is shared by all lists unless a list is customized.
 -- Hide, don't delete: lists are archived, never removed.
 create table if not exists public.contact_lists (
   id                 uuid primary key default gen_random_uuid(),
   agency_id          uuid not null references public.agencies(id) on delete cascade,
   name               text not null check (length(trim(name)) between 1 and 80),
   follow_up_enabled  boolean not null default false,
+  -- The sequence: [{ day, on }] for emails 1-3; days count from when the person was added.
+  sequence           jsonb not null default '[{"day":3,"on":true},{"day":10,"on":true},{"day":30,"on":true}]'::jsonb,
+  custom_emails      boolean not null default false, -- this list's own wording (email.list.<id>.stepN.*)
   is_default         boolean not null default false,
   archived_at        timestamptz,
   created_by         uuid default auth.uid(),
@@ -30,7 +34,9 @@ create table if not exists public.contact_list_members (
   lead_id           uuid references public.leads(id) on delete set null,
   added_by          uuid default auth.uid(),
   added_by_name     text,
-  followup_sent_at  timestamptz,
+  steps_sent        smallint not null default 0, -- follow-up emails sent so far
+  last_sent_at      timestamptz,
+  stopped_reason    text check (stopped_reason in ('uploaded', 'quoted', 'unsubscribed')),
   created_at        timestamptz not null default now()
 );
 create unique index if not exists contact_list_members_one_email on public.contact_list_members (list_id, lower(email));

@@ -14,7 +14,7 @@ export function useContactLists({ includeArchived = false } = {}) {
     queryKey: [KEY, currentAgencyId, includeArchived],
     enabled: !!currentAgencyId,
     queryFn: async () => {
-      let q = supabase.from('contact_lists').select('id, name, follow_up_enabled, is_default, archived_at, created_at')
+      let q = supabase.from('contact_lists').select('id, name, follow_up_enabled, sequence, custom_emails, is_default, archived_at, created_at')
         .eq('agency_id', currentAgencyId).order('is_default', { ascending: false }).order('name');
       if (!includeArchived) q = q.is('archived_at', null);
       const { data, error } = await q;
@@ -33,7 +33,7 @@ export function useListMembers() {
     queryFn: async () => {
       const [{ data, error }, { data: outs }] = await Promise.all([
         supabase.from('contact_list_members')
-          .select('id, list_id, first_name, last_name, email, phone, notes, source, added_by_name, followup_sent_at, created_at')
+          .select('id, list_id, first_name, last_name, email, phone, notes, source, added_by_name, steps_sent, last_sent_at, stopped_reason, created_at')
           .eq('agency_id', currentAgencyId).order('created_at', { ascending: false }).limit(5000),
         supabase.from('dd_email_opt_outs').select('email'),
       ]);

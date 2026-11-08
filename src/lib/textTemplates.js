@@ -252,9 +252,9 @@ export const TEXT_TEMPLATES = [
   },
   // ── List emails (supabase/functions/list-followups) ────────────────────────
   {
-    id: 'listFollowUp', group: 'List Emails', key: 'email.list.followup', kind: 'email', auto: true,
-    name: 'Follow-Up After They Didn’t Upload',
-    when: 'Emailed 3 days after a producer adds someone to a list with “Send automatic follow-up” on (set on the Lists page). Never to imported lists.',
+    id: 'listStep1', group: 'List Emails', key: 'email.list.step1', kind: 'email', auto: true,
+    name: 'List Follow-Up, Email 1',
+    when: 'Email 1 (day 3 by default). Sent to people on lists with follow-up on (set on the Lists page). Stops when they upload, get quoted, or unsubscribe. A list can have its own wording (Customize Emails on the Lists page).',
     blanks: ['[first name]', '[producer]', '[link]'],
     subject: '[first name], your 2-minute rate check',
     paragraphs: [
@@ -262,6 +262,34 @@ export const TEXT_TEMPLATES = [
       "It was good talking with you. Whenever you're ready, you can check your rate in about 2 minutes: snap a photo of your car or home insurance declarations page, and I'll tell you honestly if I can beat it: [link]",
       'No pressure, and nobody will blow up your phone.',
       '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Check My Rate', link: '[link]' }, unsub: true,
+  },
+  {
+    id: 'listStep2', group: 'List Emails', key: 'email.list.step2', kind: 'email', auto: true,
+    name: 'List Follow-Up, Email 2',
+    when: 'Email 2 (day 10 by default). Sent to people on lists with follow-up on (set on the Lists page). Stops when they upload, get quoted, or unsubscribe. A list can have its own wording (Customize Emails on the Lists page).',
+    blanks: ['[first name]', '[producer]', '[link]'],
+    subject: '[first name], an honest second opinion',
+    paragraphs: [
+      'Hi [first name],',
+      "Quick follow-up. Most people haven't looked at their car or home insurance since they bought it, and rates have changed a lot in the last couple of years. Bundling home and auto is where people most often find a difference.",
+      "Snap a photo of your declarations page and I'll give you an honest second opinion: [link]",
+      '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Get a Second Opinion', link: '[link]' }, unsub: true,
+  },
+  {
+    id: 'listStep3', group: 'List Emails', key: 'email.list.step3', kind: 'email', auto: true,
+    name: 'List Follow-Up, Email 3',
+    when: 'Email 3 (day 30 by default). Sent to people on lists with follow-up on (set on the Lists page). Stops when they upload, get quoted, or unsubscribe. A list can have its own wording (Customize Emails on the Lists page).',
+    blanks: ['[first name]', '[producer]', '[link]'],
+    subject: 'Before your next renewal, [first name]',
+    paragraphs: [
+      'Hi [first name],',
+      'Last note from me. The best time to compare is a few weeks before your policy renews, before the new rate starts.',
+      'Whenever that is for you, the link still works and takes about 2 minutes: [link]',
+      "Thanks, and I'm here if you ever have a question. [producer], Cam Wiley Agency",
     ],
     button: { label: 'Check My Rate', link: '[link]' }, unsub: true,
   },
