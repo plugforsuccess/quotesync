@@ -1,12 +1,12 @@
 // src/pages/DriversEdPage.jsx
 // Drivers Ed (/courses): the Georgia 6-hour defensive driving course (and the Joshua's Law
-// teen course, hidden for now: SHOW_JOSHUAS_LAW), plus the referral partner program (aimed at customers taking the course for
-// their discount, with an apply form), in the consumer site's look — royal-blue hero with the shared nav, white
+// teen course, hidden for now: SHOW_JOSHUAS_LAW), plus a short teaser for the affiliate
+// program (its own page, /affiliates), in the consumer site's look — royal-blue hero with the shared nav, white
 // cards, deep-blue headings, the fluorescent green as the accent. No black.
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { rateCheckStart } from '../lib/rateCheckStart';
-import { Link } from 'react-router-dom';
-import { Check, ArrowRight, Loader2, Share2, PenLine, BadgeDollarSign } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Check, ArrowRight } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 
@@ -71,162 +71,28 @@ const FAQ_BOTH = [
   ['What if I need help during the course?', 'Both course providers offer customer support via phone and email during extended business hours.'],
 ];
 
-const PARTNER_URL = import.meta.env.VITE_SUPABASE_URL
-  ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rate-check-partner`
-  : '/functions/v1/rate-check-partner';
-
-const PARTNER_STEPS = [
-  ['1', PenLine, 'Apply below', 'It takes a minute. Cam’s team texts you to set you up.'],
-  ['2', Share2, 'Share your link', 'Send your personal Rate Check link to people you know.'],
-  ['3', BadgeDollarSign, 'Get paid monthly', 'For each household that sends their policy through it.'],
-];
-const AUDIENCES = ['Friends & family', 'Coworkers', 'My clients (realtor, dealer, lender…)', 'Social media followers', 'Other'];
-const phoneDigits = (s) => String(s || '').replace(/\D/g, '').replace(/^1(?=\d{10})/, '').slice(0, 10);
-const formatPhone = (s) => {
-  const d = phoneDigits(s);
-  if (d.length < 4) return d;
-  if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-};
-// A row of tap-to-pick answers (radio buttons styled as buttons).
-function Choice({ legend, name, value, options, onChange }) {
+// The affiliate program has its own page (/affiliates); a short teaser points there.
+function AffiliateTeaser() {
   return (
-    <fieldset className="mt-4">
-      <legend className="text-sm font-semibold text-slate-700">{legend}</legend>
-      <div className={`mt-1.5 grid gap-2 ${options.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-        {options.map(([v, l]) => (
-          <label key={v} className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-semibold ${value === v ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-700'}`}>
-            <input type="radio" name={name} value={v} checked={value === v} onChange={() => onChange(v)} className="sr-only" /> {l}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
-const input = 'mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-[#0F2D6B] placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
-
-// The referral partner program: why (you're already taking the course for the discount —
-// your friends are probably overpaying too), how, and a short application.
-// A producer's recruit link (/courses?by=CODE#partners): remembered for the visit, sent
-// with the application so the partner is credited to that producer.
-function recruitCode() {
-  try {
-    const by = new URLSearchParams(window.location.search).get('by');
-    if (by && /^[A-Za-z0-9]{6,12}$/.test(by)) sessionStorage.setItem('partner_recruit_code', by.toUpperCase());
-    return sessionStorage.getItem('partner_recruit_code');
-  } catch { return null; }
-}
-
-function PartnerProgram() {
-  const [recruit] = useState(recruitCode);
-  const [f, setF] = useState({ first: '', last: '', phone: '', email: '', allstate: '', agent: '', audience: '' });
-  const [state, setState] = useState({ status: 'idle', error: '' });
-  const set = (k) => (e) => setF(v => ({ ...v, [k]: k === 'phone' ? formatPhone(e.target.value) : e.target.value }));
-  const ok = f.first.trim() && /^[2-9]\d{2}[2-9]\d{6}$/.test(phoneDigits(f.phone));
-  const apply = async (e) => {
-    e.preventDefault();
-    if (!ok || state.status === 'sending') return;
-    setState({ status: 'sending', error: '' });
-    try {
-      const res = await fetch(PARTNER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
-        body: JSON.stringify({ mode: 'apply', first_name: f.first.trim(), last_name: f.last.trim(), phone: phoneDigits(f.phone), email: f.email.trim(), is_customer: f.allstate === 'no' ? 'no' : f.allstate === 'yes' ? (f.agent || 'allstate_unsure') : null, audience: f.audience || null, source: recruit ? 'recruit_link' : 'drivers_ed', recruit_code: recruit || null }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Something went wrong. Try again.');
-      setState({ status: 'done', error: '' });
-    } catch (err) {
-      setState({ status: 'idle', error: err.message });
-    }
-  };
-
-  return (
-    <section id="partners" className="scroll-mt-4 bg-white py-14 lg:py-20" aria-labelledby="de-partners">
-      <div className={`${wrap} grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-14`}>
+    <section id="partners" className="scroll-mt-4 bg-white py-12 lg:py-16" aria-labelledby="de-partners">
+      <div className={`${wrap} flex flex-col items-start gap-5 rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:flex-row sm:items-center sm:justify-between lg:p-8`}>
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="de.partner.eyebrow">Affiliate Program</T></p>
-          <h2 id="de-partners" className={`mt-2 ${sectionTitle}`}><T k="de.partner.heading">Taking the course for your discount? Get paid to share the savings.</T></h2>
-          <p className="mt-4 text-lg leading-relaxed text-slate-600">
-            <T k="de.partner.body">Already with Allstate and saving with the course? The people you know are probably overpaying too. As a Cam Wiley Agency affiliate you share your own Rate Check link, and you’re paid for every household that sends their declarations page through it—whether or not they buy.</T>
-          </p>
-          <ol className="mt-8 space-y-4">
-            {PARTNER_STEPS.map(([n, Icon, title, line]) => (
-              <li key={n} className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: DEEP, color: GOLD }}>
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="font-extrabold text-[#0F2D6B]"><T k={`de.partner.step${n}.title`}>{title}</T></p>
-                  <p className="text-[15px] text-slate-600"><T k={`de.partner.step${n}.line`}>{line}</T></p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-8 text-xs leading-relaxed text-slate-500">
-            <T k="de.partner.fine">Allstate customers and non-customers are welcome. Affiliates don’t discuss coverage or prices—Cam’s licensed team handles every quote. Payment follows the affiliate agreement you sign, and a W-9 is needed before your first payment.</T>
-          </p>
+          <h2 id="de-partners" className="mt-1.5 text-xl font-extrabold text-[#0F2D6B] lg:text-2xl"><T k="de.affiliate.teaser">Saving with the course? Get paid to share a free rate check.</T></h2>
         </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-7">
-          {state.status === 'done' ? (
-            <div className="py-6 text-center" role="status">
-              <span className="qc-badge" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>
-              <p className="mt-4 text-xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.86c345">Thanks,</T> {f.first.trim()}!</p>
-              <p className="mt-2 text-slate-600"><T k="de.partner.thanks">Cam’s team will text you within one business day with your affiliate agreement and your personal link.</T></p>
-            </div>
-          ) : (
-            <form onSubmit={apply} noValidate>
-              <p className="text-lg font-extrabold text-[#0F2D6B]"><T k="de.partner.formtitle">Apply to be an affiliate</T></p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.20db0b">First Name</T>
-                  <input className={input} autoComplete="given-name" value={f.first} onChange={set('first')} maxLength={60} required />
-                </label>
-                <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.8d3f5e">Last Name</T>
-                  <input className={input} autoComplete="family-name" value={f.last} onChange={set('last')} maxLength={60} />
-                </label>
-              </div>
-              <label className="mt-3 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.d14571">Mobile Number</T>
-                <input className={input} type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" value={f.phone} onChange={set('phone')} required />
-              </label>
-              <label className="mt-3 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.ce8ae9">Email</T> <span className="font-normal text-slate-400"><T k="pages.driversedpage.f53d1c">(optional)</T></span>
-                <input className={input} type="email" inputMode="email" autoComplete="email" value={f.email} onChange={set('email')} maxLength={160} />
-              </label>
-              <Choice legend="Are you an Allstate customer?" name="allstate" value={f.allstate}
-                options={[['yes', 'Yes'], ['no', 'No']]} onChange={v => setF(x => ({ ...x, allstate: v, agent: v === 'yes' ? x.agent : '' }))} />
-              {f.allstate === 'yes' && (
-                <Choice legend="Is Cam Wiley your agent?" name="agent" value={f.agent}
-                  options={[['agency', 'Yes'], ['allstate_other', 'No'], ['allstate_unsure', 'Not sure']]} onChange={v => setF(x => ({ ...x, agent: v }))} />
-              )}
-              <label className="mt-4 block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.4d20d1">Who Would You Share It With?</T> <span className="font-normal text-slate-400"><T k="pages.driversedpage.f53d1c">(optional)</T></span>
-                <select className={input} value={f.audience} onChange={set('audience')}>
-                  <option value="">Choose one</option>
-                  {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-              </label>
-              {state.error && <p className="mt-3 text-sm font-medium text-red-700" role="alert">{state.error}</p>}
-              <button type="submit" disabled={!ok || state.status === 'sending'}
-                className="qb qb-blue qb-lg mt-5 w-full">
-                {state.status === 'sending' && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
-                <T k="de.partner.button">Apply to Be an Affiliate</T>
-              </button>
-              <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree we may call or text you about the affiliate program.</p>
-            </form>
-          )}
-        </div>
+        <Link to="/affiliates" className="qb qb-blue qb-md shrink-0 px-6"><T k="de.affiliate.learn">Learn More</T> <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
       </div>
     </section>
   );
 }
 
 export default function GeorgiaDriverEducationPage() {
-  // A recruit link lands on #partners: take them to the application.
+  // Old recruit links (/courses?by=CODE#partners) go to the affiliate page, still credited.
+  const navigate = useNavigate();
   useEffect(() => {
-    if (window.location.hash !== '#partners') return undefined;
-    const t = setTimeout(() => document.getElementById('partners')?.scrollIntoView({ block: 'start' }), 100);
-    return () => clearTimeout(t);
-  }, []);
+    const by = new URLSearchParams(window.location.search).get('by');
+    if (by || window.location.hash === '#partners') navigate(`/affiliates${by ? `?by=${encodeURIComponent(by)}` : ''}`, { replace: true });
+  }, [navigate]);
   return (
     <div className="min-h-screen bg-white">
       <title>Georgia Driver Education &amp; Insurance Discounts | Cam Wiley Agency</title>
@@ -254,9 +120,9 @@ export default function GeorgiaDriverEducationPage() {
                 <T k="pages.driversedpage.e432d4">Already Enrolled? Continue Your Course</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               {/* Same side padding as the pill above, so its text lines up with the pill's text. */}
-              <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: GOLD }}>
+              <Link to="/affiliates" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: GOLD }}>
                 <T k="de.partner.herolink">Become an Affiliate</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -292,7 +158,7 @@ export default function GeorgiaDriverEducationPage() {
         </div>
       </section>
 
-      <PartnerProgram />
+      <AffiliateTeaser />
 
       {/* Details */}
       <section className="bg-white py-14 lg:py-20">

@@ -15,6 +15,7 @@
 //                                                     the fields, keeps the PDF in the private
 //                                                     partner-w9 bucket; the row keeps TIN type
 //                                                     and last 4 only. The TIN is never logged.
+//   { mode: 'program' }                           → (public) what affiliates are paid, for /affiliates
 //   { mode: 'apply', first_name, last_name, phone, email, is_customer, audience, source }
 //                                                     is_customer: agency | allstate_other | allstate_unsure | no
 //                                                   → (no token) someone asks to become a partner from
@@ -213,6 +214,24 @@ Deno.serve(async (req) => {
   let body: any
   try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400, cors) }
 
+  // ── What affiliates are paid (public, no token): the /affiliates page shows it ──
+  if (body?.mode === 'program') {
+    const { data: agency } = await supabase.from('agencies').select('id').eq('is_default', true).limit(1).maybeSingle()
+    if (!agency) return json({ error: 'Something went wrong. Try again.' }, 500, cors)
+    const [{ data: rateRows }, { data: rulesRow }] = await Promise.all([
+      supabase.from('rate_check_promoter_rates').select('tier, amount').eq('agency_id', agency.id),
+      supabase.from('rate_check_partner_rules').select('*').eq('agency_id', agency.id).maybeSingle(),
+    ])
+    const amount: Record<string, number> = { ...Object.fromEntries(TIERS.map(([k, , fee]) => [k, fee])), extra_line: EXTRA_LINE_FEE }
+    for (const r of rateRows || []) if (r.tier in amount) amount[r.tier] = Number(r.amount)
+    const rules = rulesFrom(rulesRow)
+    return json({
+      tiers: TIERS.map(([k, label]) => ({ key: k, label, amount: amount[k] })),
+      extra_line: { amount: amount.extra_line, cap: EXTRA_LINE_CAP },
+      pay_day: PAY_DAY, min_payout: rules.minPayout, quote_days: rules.quoteDays,
+    }, 200, cors)
+  }
+
   // ── Apply to be a partner (public, no token) ──
   if (body?.mode === 'apply') {
     // "Are you an Allstate customer?" then, if yes, "Is Cam Wiley Agency your agent?"
@@ -256,7 +275,7 @@ Deno.serve(async (req) => {
     const { data: principals } = await supabase.from('agency_memberships').select('user_id')
       .eq('agency_id', agency.id).eq('status', 'active').eq('agency_role', 'principal')
     const name = [firstName, lastName].filter(Boolean).join(' ')
-    const via = recruiter ? `via ${recruiterProfile?.full_name || 'a producer'}’s recruit link` : 'from Drivers Ed'
+    const via = recruiter ? `via ${recruiterProfile?.full_name || 'a producer'}’s recruit link` : body.source === 'affiliates_page' ? 'from the Affiliates page' : 'from Drivers Ed'
     // The principal reviews it; the producer who recruited them hears about it too.
     const notify = [...new Set([...(principals || []).map((m: any) => m.user_id), ...(recruiter ? [recruiter.user_id] : [])])]
     if (notify.length) {

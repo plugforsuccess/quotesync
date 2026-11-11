@@ -132,7 +132,7 @@ test('no W-9 on file: the payout is held', async ({ page }) => {
   const sms = await card.getByRole('link', { name: 'Text Javon the portal link' }).getAttribute('href');
   expect(sms).toMatch(/^sms:\+14045550123\?&body=/);
   const body = decodeURIComponent(sms.split('body=')[1]);
-  expect(body).toContain(`/partner/${'a'.repeat(48)}`);
+  expect(body).toContain(`/affiliate/${'a'.repeat(48)}`);
   expect(body).toContain('Sign my W-9');
   expect(body).toContain('Copy link');
 });
@@ -226,7 +226,7 @@ test('partner floor: recruit link, activated partners count for their recruiter,
   await expect(floor).toContainText('1of 2');
   await expect(floor).toContainText('1 more to activate this month.');
   await expect(floor.getByRole('button', { name: 'Copy Link' })).toBeVisible();
-  await expect(floor.getByRole('link', { name: 'Text It' })).toHaveAttribute('href', /courses%3Fby%3DCAMREC01%23partners/);
+  await expect(floor.getByRole('link', { name: 'Text It' })).toHaveAttribute('href', /affiliates%3Fby%3DCAMREC01/);
   await expect(floor.getByRole('listitem').filter({ hasText: 'Cam Wiley' })).toContainText('1 / 2');
   await expect(floor.getByRole('listitem').filter({ hasText: 'Amy Producer' })).toContainText('0 / 2');
 
