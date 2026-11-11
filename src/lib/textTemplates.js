@@ -20,7 +20,7 @@ import { copyValue } from './copyValues.js';
 
 export const STOP_LINE = 'Reply STOP to opt out.';
 
-export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails', 'List Emails', 'Team Emails'];
+export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Affiliates', 'Drivers Ed Emails', 'List Emails', 'Team Emails'];
 
 export const TEXT_TEMPLATES = [
   // ── Getting the link out ───────────────────────────────────────────────────
@@ -168,27 +168,27 @@ export const TEXT_TEMPLATES = [
     ],
   },
   {
-    id: 'share', group: 'Partners', key: 'script.share', kind: 'say', pitch: true,
+    id: 'share', group: 'Affiliates', key: 'script.share', kind: 'say', pitch: true,
     name: 'Ask Them to Share',
     when: 'Anyone well connected: a chapter president, a coach, a pastor. Then send the pitch.',
     blanks: [],
     paragraphs: ["Even if I can't beat yours, would you be open to sharing this with people you know? You'd get a referral fee for every household that sends their policy through your link, and they don't have to buy anything."],
   },
   {
-    id: 'pitch', group: 'Partners', key: 'sms.partner.pitch', pitch: true,
-    name: 'The Partner Pitch',
+    id: 'pitch', group: 'Affiliates', key: 'sms.partner.pitch', pitch: true,
+    name: 'The Affiliate Pitch',
     when: 'Send Pitch: this text plus the four pictures of how it works.',
     blanks: [],
     paragraphs: ['Want to make some extra pocket money? You share your link. When people you know use it to check their insurance rate, you get a referral fee. They don’t have to buy anything. Here’s how it works 👇'],
   },
   {
-    id: 'partnerWelcome', group: 'Partners', key: 'sms.partner.welcome', auto: false,
-    name: 'Welcome a New Partner',
-    when: 'When you tap “Text” next to a new partner’s portal link.',
+    id: 'partnerWelcome', group: 'Affiliates', key: 'sms.partner.welcome', auto: false,
+    name: 'Welcome a New Affiliate',
+    when: 'When you tap “Text” next to a new affiliate’s portal link.',
     blanks: ['[first name]', '[portal link]'],
     paragraphs: [
-      "Hi [first name], it's Cam with Cam Wiley Agency. Welcome aboard as a referral partner!",
-      'Your private partner page: [portal link]',
+      "Hi [first name], it's Cam with Cam Wiley Agency. Welcome aboard as an affiliate!",
+      'Your private affiliate page: [portal link]',
       "1. Tap the link. There's no username or password: the link is your login, so don't share it.",
       '2. Tap "Sign my W-9" and add your Social Security number (about 30 seconds) so we can pay you.',
       '3. Tap "Copy link" to share your referral link with friends, family and people in your network. Let them know you get a referral fee.',
@@ -196,14 +196,14 @@ export const TEXT_TEMPLATES = [
     ],
   },
   {
-    id: 'partnerReview', group: 'Partners', key: 'sms.review.partner', auto: false,
-    name: 'Google Review From a Partner Who’s a Customer',
-    when: 'When you tap “Ask for a Google review” on a partner. Optional for them; nothing is offered.',
+    id: 'partnerReview', group: 'Affiliates', key: 'sms.review.partner', auto: false,
+    name: 'Google Review From an Affiliate Who’s a Customer',
+    when: 'When you tap “Ask for a Google review” on an affiliate. Optional for them; nothing is offered.',
     blanks: ['[first name]', '[review link]'],
     paragraphs: [
-      "Hi [first name], it's Cam with Cam Wiley Agency. Thank you for being a customer and a referral partner!",
+      "Hi [first name], it's Cam with Cam Wiley Agency. Thank you for being a customer and an affiliate!",
       "If you'd like to, an honest Google review about your experience as a customer would mean a lot: [review link]",
-      "Please mention that you're also one of our referral partners. Totally optional, and it has nothing to do with your referral fees.",
+      "Please mention that you're also one of our affiliates. Totally optional, and it has nothing to do with your referral fees.",
     ],
   },
   // ── Drivers Ed emails (dd-reminders; dd-issue-certificate for the certificate) ──

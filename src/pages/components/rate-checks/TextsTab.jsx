@@ -100,7 +100,7 @@ function Template({ t }) {
         <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
           {t.blanks.length > 0 && <><T k="pages.components.ratechecks.textstab.bc8104">Fills in:</T> {t.blanks.join(', ')}</>}
           {t.button && <>{t.blanks.length > 0 && ' · '}<T k="pages.components.ratechecks.textstab.button-note">The gold button opens</T> {t.button.link}</>}
-          {t.kind !== 'say' && t.kind !== 'email' && <>{t.blanks.length > 0 && ' · '}{(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/partner/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}</>}
+          {t.kind !== 'say' && t.kind !== 'email' && <>{t.blanks.length > 0 && ' · '}{(() => { const n = segments(buildText(t.id, { ...sample, reviewLink: reviewUrl(), portalLink: 'https://insuredbycam.com/affiliate/abcdefghijkl' })); return n === 1 ? '1 text' : `${n} texts long`; })()}</>}
         </p>
         <span className="flex flex-wrap items-center justify-end gap-2">
           {t.kind === 'email' && <SendTest id={t.id} />}
@@ -150,7 +150,7 @@ export default function TextsTab({ agencyId }) {
         </Dismissible>
       )}
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-        <T k="pages.components.ratechecks.textstab.intro">Everything you and your producers say and text, and every text customers and partners get. Turn on the pencil to edit any line. What you save is what goes out, whether it’s sent automatically or tapped to send.</T>
+        <T k="pages.components.ratechecks.textstab.intro">Everything you and your producers say and text, and every text customers and affiliates get. Turn on the pencil to edit any line. What you save is what goes out, whether it’s sent automatically or tapped to send.</T>
       </p>
 
       {TEXT_GROUPS.map(g => (

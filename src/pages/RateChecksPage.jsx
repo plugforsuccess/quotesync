@@ -256,7 +256,7 @@ const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h
 const WORK_TABS = [
   { v: 'inbox', label: 'Inbox', Icon: Camera },
   { v: 'invites', label: 'Links Sent', short: 'Links', Icon: Send },
-  { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
+  { v: 'promoters', label: 'Affiliates', Icon: BadgeDollarSign },
 ];
 const MORE_GROUPS = [
   // Scripts and Texts moved to their own page (/agency/texts); the old tabs are hidden.
@@ -348,7 +348,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
           <T k="pages.ratecheckspage.36e9b1">Referred by</T>{' '}
           <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
-            title={`Open ${partnerName(h.lead.promoter_name)}'s partner card`}
+            title={`Open ${partnerName(h.lead.promoter_name)}'s affiliate card`}
             className="font-medium underline underline-offset-2" style={{ color: 'var(--qs-dim)' }}>
             {partnerName(h.lead.promoter_name)}
           </button>

@@ -113,7 +113,7 @@ async function samplePagePng(browser, file, n) {
   await page.screenshot({ path: path.join(OUT, '2-they-send-their-policy.jpg'), ...SHOT });
 
   // 3 and 4. The partner's own page: the link, then the referrals and earnings.
-  await page.goto(`${BASE}/partner/${TOKEN}`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/affiliate/${TOKEN}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1200);
   await page.evaluate(() => {
     // The sample shows the real domain and a plain greeting, whatever this run's host is.
@@ -131,5 +131,5 @@ async function samplePagePng(browser, file, n) {
 
   await browser.close();
   fs.rmSync(tmp, { recursive: true, force: true });
-  console.log('partner-pitch: 4 screenshots written to', OUT);
+  console.log('affiliate-pitch: 4 screenshots written to', OUT);
 })().catch((e) => { console.error(e); process.exit(1); });

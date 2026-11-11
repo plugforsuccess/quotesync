@@ -232,19 +232,19 @@ test('Texts & Scripts: every script and text in one place, grouped, with the rig
   await mock(page, { partners: [], rules: null, payouts: [] });
   await page.goto('/agency/texts');
   await expect(page.getByRole('heading', { name: 'Texts & Scripts' })).toBeVisible();
-  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails']) await expect(page.getByRole('region', { name: g })).toBeVisible();
+  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Affiliates', 'Drivers Ed Emails']) await expect(page.getByRole('region', { name: g })).toBeVisible();
   // Reminder emails: subject line and the unsubscribe line, no STOP line.
   const retake = page.getByRole('article', { name: 'Retake Before Your Discount Lapses' });
   await expect(retake.getByText('Keep your Allstate defensive driving discount')).toBeVisible();
   await expect(retake.getByText(/Unsubscribe/)).toBeVisible();
   await expect(retake.getByText('Reply STOP to opt out.')).toHaveCount(0);
-  for (const n of ['Say It in the Room', 'Send a Link', 'Quick Send: Ask First', 'Quick Send: The Text', 'Nudge', 'Contact: It Saves Them Money', 'Reconnect After a Quote That Came in High', 'The Partner Pitch', 'Welcome a New Partner']) {
+  for (const n of ['Say It in the Room', 'Send a Link', 'Quick Send: Ask First', 'Quick Send: The Text', 'Nudge', 'Contact: It Saves Them Money', 'Reconnect After a Quote That Came in High', 'The Affiliate Pitch', 'Welcome a New Affiliate']) {
     await expect(page.getByRole('article', { name: n })).toBeVisible();
   }
   // Recorded wording says so; broadcast texts open Messages; the pitch sends the pictures.
   await expect(page.getByRole('article', { name: 'Quick Send: The Text' }).getByText(/Each send records the exact wording/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Text: Text Right After' })).toHaveAttribute('href', /^sms:\?&body=/);
-  await expect(page.getByRole('article', { name: 'The Partner Pitch' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'The Affiliate Pitch' }).getByRole('button', { name: 'Send affiliate pitch' })).toBeVisible();
   // The sample fills in the blanks.
   await expect(page.getByRole('article', { name: 'Send a Link' }).getByText(/with Allstate\[where we met\]/)).toBeVisible();
 });

@@ -33,4 +33,4 @@ export const activatedCount = (list, userId, month) =>
 
 /** A producer's "Become a Partner" link. */
 export const recruitUrl = (code, origin = typeof window !== 'undefined' ? window.location.origin : 'https://insuredbycam.com') =>
-  `${origin}/courses?by=${encodeURIComponent(code)}#partners`;
+  `${origin}/affiliates?by=${encodeURIComponent(code)}`;
