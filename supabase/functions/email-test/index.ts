@@ -1,13 +1,14 @@
 // supabase/functions/email-test/index.ts
 // "Send Me a Test" on the Texts & Scripts page: emails the signed-in principal one email,
 // with the saved wording, the shared layout and sample blanks (Dana, State Farm, …).
-// POST { id: 'ddRetake' | 'ddStall' | 'ddCert' | 'ddStaff' | 'rcUpload' } → { sent_to }.
+// POST { id: 'ddRetake' | 'ddStall' | 'ddCert' | 'ddStaff' | 'rcUpload' | 'listStep1'-'listStep3', list_id? } → { sent_to }.
+// With list_id (a list's email): that list's own wording if it's customized.
 // It sends to the "Send Tests To" address the principal set (site_copy email.test.to), else
 // their own sign-in email.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { EMAIL_TEMPLATES, loadEmailCopy, renderEmail, sendEmail } from '../_shared/email.ts'
-import { SAMPLE_VARS } from '../_shared/emailTemplates.ts'
+import { SAMPLE_VARS, listStepTemplate } from '../_shared/emailTemplates.ts'
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req)
@@ -24,24 +25,35 @@ Deno.serve(async (req) => {
     .eq('user_id', user.id).eq('agency_role', 'principal').eq('status', 'active').limit(1).maybeSingle()
   if (!principal) return json({ error: 'Only the principal can send test emails.' }, 403)
 
-  const { id } = await req.json().catch(() => ({}))
-  const template = EMAIL_TEMPLATES[String(id)]
-  if (!template) return json({ error: 'Unknown email.' }, 400)
+  const { id, list_id: listId } = await req.json().catch(() => ({}))
+  if (!EMAIL_TEMPLATES[String(id)]) return json({ error: 'Unknown email.' }, 400)
 
   const site = (Deno.env.get('SITE_URL') || 'https://insuredbycam.com').replace(/\/+$/, '')
   const saved = await loadEmailCopy(supabase)
   // "Send Tests To" on the Texts & Scripts page (principal-only), else the principal's sign-in email.
   const setTo = (saved['email.test.to'] || '').trim().toLowerCase()
   const to = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(setTo) ? setTo : user.email
+  let template = EMAIL_TEMPLATES[String(id)]
+  let words = saved
+  const step = /^listStep([1-3])$/.exec(String(id))
+  if (step && listId) {
+    const { data: list } = await supabase.from('contact_lists').select('id, custom_emails')
+      .eq('id', String(listId)).eq('agency_id', principal.agency_id).maybeSingle()
+    if (!list) return json({ error: 'Unknown list.' }, 400)
+    const own = listStepTemplate(Number(step[1]), list.id, list.custom_emails, saved)
+    template = own.template
+    words = own.saved
+  }
   const msg = renderEmail({
     template,
-    saved,
+    saved: words,
     vars: {
       ...SAMPLE_VARS,
       'course link': `${site}/courses/defensive-driving`,
       'certificate link': `${site}/courses/defensive-driving/portal`,
       'queue link': `${site}/defensive-driving/queue`,
       'lead link': `${site}/agency/leads/rate-checks`,
+      link: `${site}/?start=1`,
     },
     // A test shows the unsubscribe line without a working link (it would opt the principal out).
     unsubscribeUrl: template.unsub ? `${site}/` : undefined,

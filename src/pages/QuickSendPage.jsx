@@ -10,6 +10,7 @@ import QRCode from 'qrcode';
 import { Check, Copy, Loader2, MessageSquare, QrCode, Send, X } from 'lucide-react';
 import { TEXT_FROM_OWN_PHONE } from '../lib/textingMode';
 import { buildText, templateText } from '../lib/textTemplates';
+import AddToList from '../components/lists/AddToList';
 import {
   quickSend, savedKey, keepKey, forgetKeys, deviceLabel,
   sendProgress, sendSteps, STEPS, shortAgo, isFinal, formatPhoneInput, phoneDigits, validMobile,
@@ -132,8 +133,12 @@ function SendForm({ onSignedOut }) {
   const requestId = useRef(crypto.randomUUID());
   const nameInput = useRef(null);
 
+  const [lists, setLists] = useState([]);
   const loadRecent = () => quickSend('recent', { device_key: savedKey() }).then(r => setRecent(r.invites || [])).catch(() => {});
-  useEffect(() => { loadRecent(); nameInput.current?.focus(); }, []);
+  useEffect(() => {
+    loadRecent(); nameInput.current?.focus();
+    quickSend('lists', { device_key: savedKey() }).then(r => setLists(r.lists || [])).catch(() => {});
+  }, []);
 
   // Follow the text until it's delivered or failed (about two minutes at most).
   const inviteId = result?.invite?.id;
@@ -206,6 +211,15 @@ function SendForm({ onSignedOut }) {
           </button>
           <p className="mt-3 text-center text-xs text-slate-500"><T k="pages.quicksendpage.b6f082">Only send if they said yes. Sending records that they asked for this text.</T></p>
         </form>
+      )}
+
+      {/* They said no to the link: keep them for the follow-up email instead. */}
+      {!result && (
+        <AddToList tone="light" lists={lists} defaults={{ first_name: name.trim(), phone: phoneDigits(phone) }}
+          onAdd={async (v) => {
+            try { return await quickSend('add_to_list', { device_key: savedKey(), ...v }); }
+            catch (err) { if (err.status === 401) onSignedOut(); throw err; }
+          }} />
       )}
 
       {recent.length > 0 && (

@@ -134,6 +134,7 @@ export const agencyNav = {
       { to: '/?edit=1', label: 'Edit Website', icon: '✏️' },
       { to: '/qs', label: 'Quick Send', icon: '📲' },
       { to: '/agency/texts', label: 'Texts & Scripts', icon: '💬' },
+      { to: '/agency/lists', label: 'Lists', icon: '📋' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
     ],

@@ -153,6 +153,24 @@ test('a winback lead record is the workspace: review, save the quote by product,
   ]);
 });
 
+test('Not ready: add the lead to a list, with their details filled in', async ({ page }) => {
+  const writes = await openLead(page);
+  await page.route(SB + '/rest/v1/contact_lists*', (route) => route.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify([{ id: 'L1', name: 'Didn’t Upload', is_default: true, follow_up_enabled: true, archived_at: null }]) }));
+  await page.reload();
+  const dialog = page.getByRole('dialog', { name: 'Sales workspace' });
+  await dialog.getByRole('button', { name: 'Won’t Upload? Add to a List' }).click();
+  const form = dialog.getByRole('form', { name: 'Add to a list' });
+  await expect(form.getByLabel('First Name')).toHaveValue('Lee');
+  await expect(form.getByLabel('Email')).toHaveValue('lee@example.com');
+  await expect(form.getByLabel('List')).toHaveCount(0); // one list: no picker
+  await form.getByRole('button', { name: 'Add to Didn’t Upload' }).click();
+  await expect(dialog.getByText('Added Lee to Didn’t Upload.')).toBeVisible();
+  expect(writes.find(w => w.table === 'contact_list_members').body).toMatchObject({
+    list_id: 'L1', agency_id: AG, first_name: 'Lee', last_name: 'Morgan', email: 'lee@example.com', phone: '4045550142', lead_id: 'W1', source: 'app', added_by: UID,
+  });
+});
+
 test('a winback never quoted can still be closed Lost', async ({ page }) => {
   const writes = await openLead(page);
   const dialog = page.getByRole('dialog', { name: 'Sales workspace' });

@@ -20,7 +20,7 @@ import { copyValue } from './copyValues.js';
 
 export const STOP_LINE = 'Reply STOP to opt out.';
 
-export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails', 'Team Emails'];
+export const TEXT_GROUPS = ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails', 'List Emails', 'Team Emails'];
 
 export const TEXT_TEMPLATES = [
   // ── Getting the link out ───────────────────────────────────────────────────
@@ -250,6 +250,49 @@ export const TEXT_TEMPLATES = [
     ],
     button: { label: 'Download Your Certificate', link: '[certificate link]' },
   },
+  // ── List emails (supabase/functions/list-followups) ────────────────────────
+  {
+    id: 'listStep1', group: 'List Emails', key: 'email.list.step1', kind: 'email', auto: true,
+    name: 'List Follow-Up, Email 1',
+    when: 'Email 1 (day 3 by default). Sent to people on lists with follow-up on (set on the Lists page). Stops when they upload, get quoted, or unsubscribe. A list can have its own wording (Customize Emails on the Lists page).',
+    blanks: ['[first name]', '[producer]', '[link]'],
+    subject: '[first name], your 2-minute rate check',
+    paragraphs: [
+      'Hi [first name],',
+      "It was good talking with you. Whenever you're ready, you can check your rate in about 2 minutes: snap a photo of your car or home insurance declarations page, and I'll tell you honestly if I can beat it: [link]",
+      'No pressure, and nobody will blow up your phone.',
+      '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Check My Rate', link: '[link]' }, unsub: true,
+  },
+  {
+    id: 'listStep2', group: 'List Emails', key: 'email.list.step2', kind: 'email', auto: true,
+    name: 'List Follow-Up, Email 2',
+    when: 'Email 2 (day 10 by default). Sent to people on lists with follow-up on (set on the Lists page). Stops when they upload, get quoted, or unsubscribe. A list can have its own wording (Customize Emails on the Lists page).',
+    blanks: ['[first name]', '[producer]', '[link]'],
+    subject: '[first name], an honest second opinion',
+    paragraphs: [
+      'Hi [first name],',
+      "Quick follow-up. Most people haven't looked at their car or home insurance since they bought it, and rates have changed a lot in the last couple of years. Bundling home and auto is where people most often find a difference.",
+      "Snap a photo of your declarations page and I'll give you an honest second opinion: [link]",
+      '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Get a Second Opinion', link: '[link]' }, unsub: true,
+  },
+  {
+    id: 'listStep3', group: 'List Emails', key: 'email.list.step3', kind: 'email', auto: true,
+    name: 'List Follow-Up, Email 3',
+    when: 'Email 3 (day 30 by default). Sent to people on lists with follow-up on (set on the Lists page). Stops when they upload, get quoted, or unsubscribe. A list can have its own wording (Customize Emails on the Lists page).',
+    blanks: ['[first name]', '[producer]', '[link]'],
+    subject: 'Before your next renewal, [first name]',
+    paragraphs: [
+      'Hi [first name],',
+      'Last note from me. The best time to compare is a few weeks before your policy renews, before the new rate starts.',
+      'Whenever that is for you, the link still works and takes about 2 minutes: [link]',
+      "Thanks, and I'm here if you ever have a question. [producer], Cam Wiley Agency",
+    ],
+    button: { label: 'Check My Rate', link: '[link]' }, unsub: true,
+  },
   // ── Team emails (to you and your producers) ────────────────────────────────
   {
     id: 'rcUpload', group: 'Team Emails', key: 'email.rc.upload', kind: 'email', auto: true,
@@ -262,6 +305,19 @@ export const TEXT_TEMPLATES = [
       'The page told them we typically text within 30 minutes during business hours.',
     ],
     button: { label: 'Open the Lead', link: '[lead link]' },
+  },
+  {
+    id: 'rcScanDown', group: 'Team Emails', key: 'email.rc.scandown', kind: 'email', auto: true,
+    name: 'The Scanner Is Down',
+    when: 'Emailed to principals (and shown in the app) the first time a dec page can’t be scanned because of the scanner’s account or service, at most once a day.',
+    blanks: ['[reason]', '[fix]', '[lead link]'],
+    subject: 'The dec-page scanner is down',
+    paragraphs: [
+      "Uploads are still coming in, but the scanner can't read them right now. [reason]",
+      'To fix it: [fix]',
+      "Customers still finish, and their photos are saved. Until it's fixed, open each one in Rate Checks and read it by hand, or tap Scan Again once it's working: [lead link]",
+    ],
+    button: { label: 'Open Rate Checks', link: '[lead link]' },
   },
   {
     id: 'ddStaff', group: 'Team Emails', key: 'email.dd.staff', kind: 'email', auto: true,
@@ -335,7 +391,7 @@ export function templateWarnings(id) {
   const saved = t.paragraphs.map((p, i) => copyValue(`${t.key}.${i + 1}`, p)).join(' ');
   const w = [];
   if (id === 'ready' && !/\breply\s+y\b/i.test(saved)) w.push('“Reply Y” is missing: their Y is what tells you to call.');
-  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]', '[passed date]', '[deadline]', '[modules done]', '[modules total]', '[student name]', '[certificate number]', '[premium]'];
+  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]', '[passed date]', '[deadline]', '[modules done]', '[modules total]', '[student name]', '[certificate number]', '[premium]', '[reason]', '[fix]'];
   const addedAtEnd = ['[review link]', '[link]', '[course link]', '[certificate link]', '[queue link]', '[lead link]'];
   for (const b of t.blanks) if (b !== t.button?.link && !optional.includes(b) && !saved.toLowerCase().includes(b.toLowerCase())) w.push(`${b} is missing${addedAtEnd.includes(b) ? ': it’s added at the end' : ''}.`);
   return w;

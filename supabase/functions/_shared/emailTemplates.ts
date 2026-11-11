@@ -69,6 +69,68 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     ],
     button: { label: 'Open the Lead', link: 'lead link' },
   },
+  rcScanDown: {
+    key: 'email.rc.scandown',
+    subject: 'The dec-page scanner is down',
+    paragraphs: [
+      "Uploads are still coming in, but the scanner can't read them right now. [reason]",
+      'To fix it: [fix]',
+      "Customers still finish, and their photos are saved. Until it's fixed, open each one in Rate Checks and read it by hand, or tap Scan Again once it's working: [lead link]",
+    ],
+    button: { label: 'Open Rate Checks', link: 'lead link' },
+  },
+  listStep1: {
+    key: 'email.list.step1',
+    subject: '[first name], your 2-minute rate check',
+    paragraphs: [
+      'Hi [first name],',
+      "It was good talking with you. Whenever you're ready, you can check your rate in about 2 minutes: snap a photo of your car or home insurance declarations page, and I'll tell you honestly if I can beat it: [link]",
+      'No pressure, and nobody will blow up your phone.',
+      '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Check My Rate', link: 'link' },
+    unsub: true,
+  },
+  listStep2: {
+    key: 'email.list.step2',
+    subject: '[first name], an honest second opinion',
+    paragraphs: [
+      'Hi [first name],',
+      "Quick follow-up. Most people haven't looked at their car or home insurance since they bought it, and rates have changed a lot in the last couple of years. Bundling home and auto is where people most often find a difference.",
+      "Snap a photo of your declarations page and I'll give you an honest second opinion: [link]",
+      '[producer], Cam Wiley Agency',
+    ],
+    button: { label: 'Get a Second Opinion', link: 'link' },
+    unsub: true,
+  },
+  listStep3: {
+    key: 'email.list.step3',
+    subject: 'Before your next renewal, [first name]',
+    paragraphs: [
+      'Hi [first name],',
+      'Last note from me. The best time to compare is a few weeks before your policy renews, before the new rate starts.',
+      'Whenever that is for you, the link still works and takes about 2 minutes: [link]',
+      "Thanks, and I'm here if you ever have a question. [producer], Cam Wiley Agency",
+    ],
+    button: { label: 'Check My Rate', link: 'link' },
+    unsub: true,
+  },
+}
+
+/**
+ * A list's follow-up email n (1-3): the list's own wording when it's customized (site_copy
+ * email.list.<listId>.step<n>.*), falling back line by line to the shared wording
+ * (email.list.step<n>.*), then the defaults. Returns { template, saved } for renderEmail.
+ */
+export function listStepTemplate(n: number, listId: string | null, custom: boolean, saved: Record<string, string>) {
+  const base = EMAIL_TEMPLATES[`listStep${n}`]
+  if (!custom || !listId) return { template: base, saved }
+  const key = `email.list.${listId}.step${n}`
+  const merged: Record<string, string> = { ...saved }
+  for (const part of ['subject', 'button', ...base.paragraphs.map((_, i) => String(i + 1))]) {
+    if (!(saved[`${key}.${part}`] ?? '').trim() && saved[`${base.key}.${part}`]) merged[`${key}.${part}`] = saved[`${base.key}.${part}`]
+  }
+  return { template: { ...base, key }, saved: merged }
 }
 
 /** Sample blanks for "Send Me a Test". */
@@ -83,4 +145,7 @@ export const SAMPLE_VARS: Record<string, string> = {
   carrier: 'State Farm',
   premium: '$2,140 a year',
   'where we met': ' (from the Rotary lunch)',
+  producer: 'Cam',
+  reason: 'The Anthropic account behind the scanner hit its spending limit.',
+  fix: 'Raise the limit at console.anthropic.com → Settings → Limits.',
 }

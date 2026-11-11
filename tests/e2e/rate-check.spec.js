@@ -564,3 +564,39 @@ test('a second named insured (husband and wife on one policy) is not asked how t
   await expect.poll(() => posted).not.toBeNull();
   expect(posted).toMatchObject({ first_name: 'Lee Ann', last_name: 'Pearson', policyholder_name: 'Marcus Pearson', contact_relationship: 'self' });
 });
+
+// The scanner's answer decides the finish screen: our scanner down → received, no retake;
+// a photo nobody could read → ask for a retake first, with a way to send it anyway.
+async function sendWithScan(page, testInfo, answer) {
+  const photo = testInfo.outputPath('scan-dec.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    if (route.request().postDataJSON()?.mode === 'classify') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"policy_type":null}' });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'received', rate_check_id: 's1', carrier: null, policy_type: null, annual_premium: null, ...answer }) });
+  });
+  await page.goto('/ratecheck');
+  await page.getByTestId('rc-files').setInputFiles(photo);
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await fillContact(page);
+  await page.getByRole('button', { name: 'Check My Rate' }).click();
+}
+
+test('scanner down on our side: they’re told it was received and Cam will read it, no retake', async ({ page }, testInfo) => {
+  await sendWithScan(page, testInfo, { scan_down: true });
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Cam will read it himself')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Retake' })).toHaveCount(0);
+  await expect(page.getByText('Couldn’t Read It')).toHaveCount(0);
+});
+
+test('a photo nobody could read: ask for a retake first, no celebration; Send It Anyway finishes', async ({ page }, testInfo) => {
+  await sendWithScan(page, testInfo, {});
+  await expect(page.getByRole('heading', { name: 'One Photo Needs a Retake' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toHaveCount(0);
+  await expect(page.getByText('Policy received')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Retake' })).toBeVisible();
+  await expect(page.getByText(/whole page in the frame/)).toBeVisible();
+  await page.getByRole('button', { name: 'Send It Anyway, Cam Will Look' }).click();
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible();
+  await expect(page.getByText('Couldn’t Read It')).toBeVisible();
+});

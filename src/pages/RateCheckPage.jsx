@@ -177,6 +177,7 @@ export default function RateCheckPage() {
   const [given, setGiven] = useState(null); // { consentGivenAt, referralConsentGivenAt } once sent this session
   const [resumed, setResumed] = useState(false);
   const [notice, setNotice] = useState('');
+  const [sendAsIs, setSendAsIs] = useState(false); // they chose to send unreadable photos anyway
   const [ready, setReady] = useState(false);
 
   // The list is mirrored in a ref and every change goes through updateItems, so the
@@ -319,7 +320,8 @@ export default function RateCheckPage() {
           inviteCode: inviteCode || null,
         }));
         const unreadable = !data?.carrier && !data?.policy_type && data?.annual_premium == null;
-        patch(id, { status: unreadable ? 'unreadable' : 'read', result: data });
+        // scan_down: our scanner failed, not their photo. Received; Cam reads it himself, no retake.
+        patch(id, { status: data?.scan_down ? 'received' : unreadable ? 'unreadable' : 'read', result: data });
         it.pages.forEach(pg => removeDraftPhoto(pg.id));
       } catch (err) {
         patch(id, { status: 'failed', error: err.message || null });
@@ -646,6 +648,41 @@ export default function RateCheckPage() {
     const priced = read.filter(i => i.result?.annual_premium != null);
     const total = priced.reduce((s, i) => s + i.result.annual_premium, 0);
     const opens = nextOpening();
+    const retakes = sent.filter(i => i.status === 'unreadable');
+    if (!reading && retakes.length && !sendAsIs) {
+      return (
+        <Shell step={4} center noFooter>
+          {fileInputs}
+          {banner}
+          <div role="status" aria-live="polite" className="text-center">
+            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]">
+              {retakes.length === 1 ? <T k="rc.retake.title">One Photo Needs a Retake</T> : <>{retakes.length} <T k="rc.retake.title-many">Photos Need a Retake</T></>}
+            </h1>
+            <p className="mx-auto mt-2 max-w-xs text-slate-600"><T k="rc.retake.line">We couldn’t make out the page. A clear photo gets you your quote faster.</T></p>
+          </div>
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <ul className="divide-y divide-slate-100">
+              {retakes.map(it => (
+                <li key={it.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                  <Thumb item={it} small />
+                  <p className="min-w-0 flex-1 truncate font-semibold text-slate-900"><T k="rc.flow.policy">Policy</T> {sent.indexOf(it) + 1}</p>
+                  <button type="button" onClick={() => retakePage(it.id, it.pages?.[0]?.id)} className="qb qb-blue qb-md shrink-0 px-5"><T k="rc.flow.retake">Retake</T></button>
+                </li>
+              ))}
+            </ul>
+            <ul className="mt-4 space-y-1.5 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
+              <li><T k="rc.retake.tip1">• The whole page in the frame, all four corners</T></li>
+              <li><T k="rc.retake.tip2">• Flat on a table, in good light, no glare</T></li>
+              <li><T k="rc.retake.tip3">• Or upload the PDF from your insurance app or email</T></li>
+            </ul>
+          </div>
+          <button type="button" onClick={() => setSendAsIs(true)} className="qb qb-outline qb-md mt-4 w-full"><T k="rc.retake.anyway">Send It Anyway, Cam Will Look</T></button>
+          <p className="mt-5 text-center text-sm text-slate-500">
+            <T k="rc.flow.not">Not</T>{' '}{fields.firstName ? <span data-copy="fixed">{fields.firstName}</span> : <T k="rc.flow.you">you</T>}? <button type="button" onClick={startOver} className="font-semibold underline"><T k="rc.flow.start-over">Start Over</T></button>
+          </p>
+        </Shell>
+      );
+    }
     const policySlide = {
       key: 'policies',
       name: sent.length === 1 ? 'Your policy' : `Your ${sent.length} policies`,
@@ -1137,7 +1174,7 @@ function currentSession(items, given) {
   return {
     consentGivenAt: given?.consentGivenAt,
     referralConsentGivenAt: given?.referralConsentGivenAt,
-    results: items.filter(i => i.status === 'read' || i.status === 'unreadable')
+    results: items.filter(i => i.status === 'read' || i.status === 'unreadable' || i.status === 'received')
       .map(i => ({ id: i.id, status: i.status, result: i.result })),
   };
 }
@@ -1477,6 +1514,9 @@ function ResultRow({ item, index, onRetake, onRetry }) {
     detail = <span className="text-slate-600">{lineEl && price ? <>{lineEl} · {price}</> : (lineEl || price || <T k="rc.result.received">Received</T>)}</span>;
   } else if (active) {
     detail = <span className="inline-flex items-center gap-1.5 text-blue-700"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />{item.status === 'queued' ? <T k="rc.result.waiting">Waiting…</T> : <T k="rc.result.reading">Reading…</T>}</span>;
+  } else if (item.status === 'received') {
+    title = <T k="rc.result.received-title">Received</T>;
+    detail = <span className="text-slate-600"><T k="rc.result.cam-reads">Cam will read it himself</T></span>;
   } else if (item.status === 'unreadable') {
     title = <T k="rc.result.unreadable">Couldn’t Read It</T>;
     detail = <span className="text-slate-600"><T k="rc.flow.cam-will-check-it">Cam will check it</T></span>;
@@ -1493,7 +1533,7 @@ function ResultRow({ item, index, onRetake, onRetry }) {
         <p className="truncate font-semibold text-slate-900"><T>{title}</T></p>
         <p className="truncate text-sm"><T>{detail}</T></p>
       </div>
-      {item.status === 'read' && (
+      {(item.status === 'read' || item.status === 'received') && (
         <span className="qc-badge qc-badge-sm shrink-0" aria-label="Received">
           <Check className="h-4 w-4" aria-hidden="true" strokeWidth={3} />
         </span>
