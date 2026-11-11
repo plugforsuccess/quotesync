@@ -232,7 +232,7 @@ test('Texts & Scripts: every script and text in one place, grouped, with the rig
   await mock(page, { partners: [], rules: null, payouts: [] });
   await page.goto('/agency/texts');
   await expect(page.getByRole('heading', { name: 'Texts & Scripts' })).toBeVisible();
-  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Partners', 'Drivers Ed Emails']) await expect(page.getByRole('region', { name: g })).toBeVisible();
+  for (const g of ['Getting the Link Out', 'After a Quote', 'After They Buy', 'Affiliates', 'Drivers Ed Emails']) await expect(page.getByRole('region', { name: g })).toBeVisible();
   // Reminder emails: subject line and the unsubscribe line, no STOP line.
   const retake = page.getByRole('article', { name: 'Retake Before Your Discount Lapses' });
   await expect(retake.getByText('Keep your Allstate defensive driving discount')).toBeVisible();
@@ -244,7 +244,7 @@ test('Texts & Scripts: every script and text in one place, grouped, with the rig
   // Recorded wording says so; broadcast texts open Messages; the pitch sends the pictures.
   await expect(page.getByRole('article', { name: 'Quick Send: The Text' }).getByText(/Each send records the exact wording/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Text: Text Right After' })).toHaveAttribute('href', /^sms:\?&body=/);
-  await expect(page.getByRole('article', { name: 'The Partner Pitch' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'The Affiliate Pitch' }).getByRole('button', { name: 'Send affiliate pitch' })).toBeVisible();
   // The sample fills in the blanks.
   await expect(page.getByRole('article', { name: 'Send a Link' }).getByText(/with Allstate\[where we met\]/)).toBeVisible();
 });

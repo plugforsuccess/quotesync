@@ -75,7 +75,7 @@ const money = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`
 function agreementText(agencyName: string, partnerName: string, schedule: Record<string, number>, cap: number | null) {
   const lines = TIERS.map(([k, label]) => `   - ${label}: ${money(schedule[k])}`).join('\n')
   return [
-    `Rate Check Partner Agreement (${AGREEMENT_VERSION})`,
+    `Rate Check Affiliate Agreement (${AGREEMENT_VERSION})`,
     `Between ${agencyName} ("the Agency") and ${partnerName} ("you").`,
     '',
     '1. What you do. You share your personal Rate Check link. People who choose to use it send the Agency a photo of their current insurance declarations page.',
@@ -261,8 +261,8 @@ Deno.serve(async (req) => {
     const notify = [...new Set([...(principals || []).map((m: any) => m.user_id), ...(recruiter ? [recruiter.user_id] : [])])]
     if (notify.length) {
       await supabase.from('notifications').insert(notify.map((uid: string) => ({ user_id: uid,
-        type: 'PARTNER_APPLICATION', title: `${name} wants to be a referral partner`,
-        message: `${CUSTOMER[body.is_customer] || 'Didn’t say if they’re with Allstate'} · ${via}. Add them in Rate Checks → Partners.`,
+        type: 'PARTNER_APPLICATION', title: `${name} wants to be an affiliate`,
+        message: `${CUSTOMER[body.is_customer] || 'Didn’t say if they’re with Allstate'} · ${via}. Add them in Rate Checks → Affiliates.`,
         metadata: { phone },
       })))
     }
@@ -296,7 +296,7 @@ Deno.serve(async (req) => {
     const signedName = String(body.signed_name || '').replace(/\s+/g, ' ').trim()
     if (body.accept !== true) return json({ error: 'Tick the box to agree.' }, 400, cors)
     if (signedName.length < 3 || !signedName.includes(' ')) return json({ error: 'Type your full legal name, first and last.' }, 400, cors)
-    if (!p.active) return json({ error: 'This partner link is paused. Contact the agency.' }, 409, cors)
+    if (!p.active) return json({ error: 'This affiliate link is paused. Contact the agency.' }, 409, cors)
     const now = new Date().toISOString()
     const { error: insErr } = await supabase.from('rate_check_promoter_agreements').insert({
       agency_id: p.agency_id, promoter_id: p.id, version: AGREEMENT_VERSION, agreement_text: text,
@@ -451,7 +451,7 @@ async function fillW9(w: W9, ctx: { agency: string; mm: string; dd: string; yyyy
   page.drawText(w.signed_name, { x: 150, y: sigY, size: 13, font: sig, color: rgb(0.05, 0.1, 0.4) })
   if (hasDateFields) { text('f1_16[0]', ctx.mm); text('f1_17[0]', ctx.dd); text('f1_18[0]', ctx.yyyy) }
   else page.drawText(`${ctx.mm}/${ctx.dd}/${ctx.yyyy}`, { x: 468, y: sigY, size: 11, font: small, color: rgb(0.05, 0.1, 0.4) })
-  page.drawText(`Electronically signed by ${w.signed_name} on ${ctx.mm}/${ctx.dd}/${ctx.yyyy} (${ctx.when.toISOString()}) from IP ${ctx.ip} via the ${ctx.agency} partner portal.`,
+  page.drawText(`Electronically signed by ${w.signed_name} on ${ctx.mm}/${ctx.dd}/${ctx.yyyy} (${ctx.when.toISOString()}) from IP ${ctx.ip} via the ${ctx.agency} affiliate portal.`,
     { x: 112, y: sigY - 11, size: 5, font: small, color: rgb(0.3, 0.3, 0.3) })
   form.flatten()
   return await doc.save()

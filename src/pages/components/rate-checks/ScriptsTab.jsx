@@ -56,7 +56,7 @@ Rates have moved since then, and I've got a new tool on my website that reads yo
     ],
   },
   {
-    title: 'Partners',
+    title: 'Affiliates',
     scripts: [
       {
         key: 'share',

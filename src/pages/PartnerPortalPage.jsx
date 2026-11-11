@@ -55,7 +55,7 @@ export default function PartnerPortalPage() {
     loadPartnerPortal(token).then(setData).catch(err => setError(err.message));
   }, [token]);
   useEffect(() => {
-    document.title = 'Partner portal | Cam Wiley Agency';
+    document.title = 'Affiliate portal | Cam Wiley Agency';
     load();
   }, [load]);
 
@@ -66,7 +66,7 @@ export default function PartnerPortalPage() {
         <div className="mx-auto max-w-md px-4 pt-5 pb-20">
           <header className="flex items-center justify-between">
             <BrandLogo />
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Partner portal</T></span>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Affiliate portal</T></span>
           </header>
           {data && (
             <>
@@ -103,7 +103,7 @@ function ReviewCard() {
         <p className="font-bold text-[#0F2D6B]"><T k="pages.partnerportalpage.219dc3">Also a customer?</T></p>
       </div>
       <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-        <T k="pages.partnerportalpage.e7f45f">An honest Google review about your experience helps other families find Cam. Please mention you’re a referral partner. It’s optional and has nothing to do with your referral fees.</T>
+        <T k="pages.partnerportalpage.e7f45f">An honest Google review about your experience helps other families find Cam. Please mention you’re an affiliate. It’s optional and has nothing to do with your referral fees.</T>
       </p>
       <a href={reviewUrl()} target="_blank" rel="noreferrer" className="qb qb-outline qb-md mt-3 w-full">
         <T k="pages.partnerportalpage.f82b9a">Write a Google Review</T> <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -127,10 +127,10 @@ function SignAgreement({ token, data, onSigned }) {
 
   return (
     <>
-      {!data.active && <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200"><T k="pages.partnerportalpage.e8ca8f">This partner link is paused. Contact</T> {sentence(data.agency_name)}</p>}
+      {!data.active && <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200"><T k="pages.partnerportalpage.e8ca8f">This affiliate link is paused. Contact</T> {sentence(data.agency_name)}</p>}
 
       <div className="max-h-[46vh] overflow-y-auto whitespace-pre-wrap rounded-2xl bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200"
-        tabIndex={0} aria-label="Partner agreement">{data.agreement.text}</div>
+        tabIndex={0} aria-label="Affiliate agreement">{data.agreement.text}</div>
 
       <label htmlFor="pp-name" className="mt-5 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.93ffd0">Your Full Legal Name</T></label>
       <input id="pp-name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder="First and last name"

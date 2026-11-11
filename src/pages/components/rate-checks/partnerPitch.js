@@ -7,7 +7,7 @@
 export const PITCH_IMAGES = [
   ['1-what-your-friends-see.jpg', 'What your friends see'],
   ['2-they-send-their-policy.jpg', 'They send their policy'],
-  ['3-your-partner-page.jpg', 'Your partner page'],
+  ['3-your-partner-page.jpg', 'Your affiliate page'],
   ['4-track-your-earnings.jpg', 'Track your earnings'],
 ];
 

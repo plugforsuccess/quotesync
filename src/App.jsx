@@ -193,6 +193,8 @@ function App() {
           <Route path="/" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
           <Route path="/ratecheck" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
           <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
+          {/* An affiliate's private page. /partner/ is the old address: links already sent keep working. */}
+          <Route path="/affiliate/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PartnerPortalPage /></Suspense></ErrorBoundary>} />
           <Route path="/partner/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PartnerPortalPage /></Suspense></ErrorBoundary>} />
           <Route path="/ratecheck-privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPrivacyPage /></Suspense></ErrorBoundary>} />
           {/* Consumer pages in the Rate Check look (royal blue, no app chrome). Drivers Ed draws

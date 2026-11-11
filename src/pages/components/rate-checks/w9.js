@@ -4,7 +4,7 @@
 // from. Pure functions so the checks can be tested; the function re-checks them.
 
 export const TAX_CLASSES = [
-  { value: 'individual', label: 'Individual / sole proprietor', hint: 'Most partners. Use your own name and SSN.' },
+  { value: 'individual', label: 'Individual / sole proprietor', hint: 'Most affiliates. Use your own name and SSN.' },
   { value: 'llc', label: 'LLC', hint: 'Taxed as a C corporation, S corporation or partnership.' },
   { value: 's_corp', label: 'S corporation' },
   { value: 'c_corp', label: 'C corporation' },

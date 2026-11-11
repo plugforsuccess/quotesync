@@ -146,10 +146,10 @@ function PartnerProgram() {
     <section id="partners" className="scroll-mt-4 bg-white py-14 lg:py-20" aria-labelledby="de-partners">
       <div className={`${wrap} grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-14`}>
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="de.partner.eyebrow">Referral partner program</T></p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="de.partner.eyebrow">Affiliate Program</T></p>
           <h2 id="de-partners" className={`mt-2 ${sectionTitle}`}><T k="de.partner.heading">Taking the course for your discount? Get paid to share the savings.</T></h2>
           <p className="mt-4 text-lg leading-relaxed text-slate-600">
-            <T k="de.partner.body">Already with Allstate and saving with the course? The people you know are probably overpaying too. As a Cam Wiley Agency referral partner you share your own Rate Check link, and you’re paid for every household that sends their declarations page through it—whether or not they buy.</T>
+            <T k="de.partner.body">Already with Allstate and saving with the course? The people you know are probably overpaying too. As a Cam Wiley Agency affiliate you share your own Rate Check link, and you’re paid for every household that sends their declarations page through it—whether or not they buy.</T>
           </p>
           <ol className="mt-8 space-y-4">
             {PARTNER_STEPS.map(([n, Icon, title, line]) => (
@@ -165,7 +165,7 @@ function PartnerProgram() {
             ))}
           </ol>
           <p className="mt-8 text-xs leading-relaxed text-slate-500">
-            <T k="de.partner.fine">Allstate customers and non-customers are welcome. Partners don’t discuss coverage or prices—Cam’s licensed team handles every quote. Payment follows the partner agreement you sign, and a W-9 is needed before your first payment.</T>
+            <T k="de.partner.fine">Allstate customers and non-customers are welcome. Affiliates don’t discuss coverage or prices—Cam’s licensed team handles every quote. Payment follows the affiliate agreement you sign, and a W-9 is needed before your first payment.</T>
           </p>
         </div>
 
@@ -174,11 +174,11 @@ function PartnerProgram() {
             <div className="py-6 text-center" role="status">
               <span className="qc-badge" aria-hidden="true"><Check className="h-8 w-8" strokeWidth={3} /></span>
               <p className="mt-4 text-xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.86c345">Thanks,</T> {f.first.trim()}!</p>
-              <p className="mt-2 text-slate-600"><T k="de.partner.thanks">Cam’s team will text you within one business day with your partner agreement and your personal link.</T></p>
+              <p className="mt-2 text-slate-600"><T k="de.partner.thanks">Cam’s team will text you within one business day with your affiliate agreement and your personal link.</T></p>
             </div>
           ) : (
             <form onSubmit={apply} noValidate>
-              <p className="text-lg font-extrabold text-[#0F2D6B]"><T k="de.partner.formtitle">Apply to be a partner</T></p>
+              <p className="text-lg font-extrabold text-[#0F2D6B]"><T k="de.partner.formtitle">Apply to be an affiliate</T></p>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <label className="block text-sm font-semibold text-slate-700"><T k="pages.driversedpage.20db0b">First Name</T>
                   <input className={input} autoComplete="given-name" value={f.first} onChange={set('first')} maxLength={60} required />
@@ -209,9 +209,9 @@ function PartnerProgram() {
               <button type="submit" disabled={!ok || state.status === 'sending'}
                 className="qb qb-blue qb-lg mt-5 w-full">
                 {state.status === 'sending' && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
-                <T k="de.partner.button">Apply to Be a Partner</T>
+                <T k="de.partner.button">Apply to Be an Affiliate</T>
               </button>
-              <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree we may call or text you about the partner program.</p>
+              <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree we may call or text you about the affiliate program.</p>
             </form>
           )}
         </div>
@@ -255,7 +255,7 @@ export default function GeorgiaDriverEducationPage() {
               </Link>
               {/* Same side padding as the pill above, so its text lines up with the pill's text. */}
               <a href="#partners" className="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-sm font-semibold hover:bg-white/10" style={{ color: GOLD }}>
-                <T k="de.partner.herolink">Become a Referral Partner</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <T k="de.partner.herolink">Become an Affiliate</T> <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
           </div>

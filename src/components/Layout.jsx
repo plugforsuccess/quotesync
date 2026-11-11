@@ -609,7 +609,7 @@ function Layout({ forcePlane = null }) {
 // The public pages with editable copy; the pencil asks which one to open in editing mode.
 const EDIT_PAGES = [
   ['/?edit=1', 'Rate Check page', 'The homepage people upload to'],
-  ['/courses?edit=1', 'Drivers Ed', 'Courses and the partner program'],
+  ['/courses?edit=1', 'Drivers Ed', 'Courses and the affiliate program'],
 ];
 
 function EditWebsiteButton() {

@@ -78,9 +78,9 @@ async function mock(page, state) {
 
 async function openPartners(page) {
   await page.goto('/agency/leads/rate-checks');
-  await page.getByRole('tab', { name: 'Partners' }).click();
+  await page.getByRole('tab', { name: 'Affiliates' }).click();
   // Partners show as a list; tap one for their details.
-  await page.getByRole('region', { name: 'Partners' }).getByRole('button', { name: /Javon Yarbrough/ }).click();
+  await page.getByRole('region', { name: 'Affiliates' }).getByRole('button', { name: /Javon Yarbrough/ }).click();
   await expect(page.getByRole('heading', { name: 'Javon Yarbrough' })).toBeVisible();
 }
 
@@ -141,21 +141,21 @@ test('adding a partner: checks the fields and saves the mailing address for thei
   const state = { partners: [partner()], rules: null, payouts: [] };
   const writes = await mock(page, state);
   await openPartners(page);
-  await page.getByRole('button', { name: 'Add partner' }).first().click();
+  await page.getByRole('button', { name: 'Add affiliate' }).first().click();
   const add = page.locator('form').filter({ has: page.getByLabel('First name *') });
   await add.getByLabel('First name *').fill('Stephen');
-  await expect(add.getByRole('button', { name: 'Add partner' })).toBeDisabled(); // last name still missing
+  await expect(add.getByRole('button', { name: 'Add affiliate' })).toBeDisabled(); // last name still missing
   await add.getByLabel('Last name *').fill(' Pearson ');
   await add.getByLabel('Email').fill('stephen@yahoo@com');
   await expect(add.getByText("That email doesn't look right", { exact: false })).toBeVisible();
-  await expect(add.getByRole('button', { name: 'Add partner' })).toBeDisabled();
+  await expect(add.getByRole('button', { name: 'Add affiliate' })).toBeDisabled();
   await add.getByLabel('Email').fill('stephen@yahoo.com');
   await add.getByLabel('Mobile').fill('4045550199');
   await add.getByLabel('Street address').fill('22 Pine St');
   await expect(add.getByText(/Finish the address/)).toBeVisible();
   await add.getByLabel('City').fill('Covington');
   await add.getByLabel('ZIP').fill('30014');
-  await add.getByRole('button', { name: 'Add partner' }).click();
+  await add.getByRole('button', { name: 'Add affiliate' }).click();
   await expect.poll(() => writes.filter(w => w.table.startsWith('rate_check_promoters') && w.method === 'POST').length).toBe(1);
   const saved = writes.find(w => w.table.startsWith('rate_check_promoters') && w.method === 'POST').body;
   expect(saved).toMatchObject({ agency_id: AG, name: 'Stephen Pearson', phone: '4045550199', email: 'stephen@yahoo.com', mailing_address: '22 Pine St', mailing_city_state_zip: 'Covington, GA 30014' });
@@ -168,7 +168,7 @@ test('Send pitch shares the message and the four screenshots', async ({ page }) 
   });
   await mock(page, { partners: [partner()], rules: null, payouts: [] });
   await openPartners(page);
-  await page.getByRole('button', { name: 'Send partner pitch' }).click();
+  await page.getByRole('button', { name: 'Send affiliate pitch' }).click();
   await expect.poll(() => page.evaluate(() => window.__shared?.files?.length || 0)).toBe(4);
   const shared = await page.evaluate(() => window.__shared);
   expect(shared.text).toContain('extra pocket money');
@@ -190,7 +190,7 @@ test('Scripts: what to say and text, one tap to copy or text (Texts & Scripts pa
   await expect(text.getByRole('button', { name: 'Copied' })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Check My Rate');
   await expect(page.getByRole('article', { name: 'Reconnect After a Quote That Came in High' })).toBeVisible();
-  await expect(page.getByRole('article', { name: 'Ask Them to Share' }).getByRole('button', { name: 'Send partner pitch' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Ask Them to Share' }).getByRole('button', { name: 'Send affiliate pitch' })).toBeVisible();
 });
 
 test('Emails on Texts & Scripts: button label, unsubscribe only on reminders, Send Me a Test', async ({ page }) => {
@@ -221,8 +221,8 @@ test('partner floor: recruit link, activated partners count for their recruiter,
   const state = { partners: [partner({ agreement_signed_at: iso(1), recruited_by: UID }), partner({ id: 'p2', name: 'Kim Lee', phone: '4045550999', agreement_signed_at: iso(1), recruited_by: 'amy' })], rules: null, payouts: [] };
   const writes = await mock(page, state);
   await page.goto('/agency/leads/rate-checks');
-  await page.getByRole('tab', { name: 'Partners' }).click();
-  const floor = page.getByRole('region', { name: 'Partner floor' });
+  await page.getByRole('tab', { name: 'Affiliates' }).click();
+  const floor = page.getByRole('region', { name: 'Affiliate floor' });
   await expect(floor).toContainText('1of 2');
   await expect(floor).toContainText('1 more to activate this month.');
   await expect(floor.getByRole('button', { name: 'Copy Link' })).toBeVisible();
@@ -231,7 +231,7 @@ test('partner floor: recruit link, activated partners count for their recruiter,
   await expect(floor.getByRole('listitem').filter({ hasText: 'Amy Producer' })).toContainText('0 / 2');
 
   // The partner's card says who recruited them; adding a partner credits whoever adds them.
-  await page.getByRole('region', { name: 'Partners' }).getByRole('button', { name: /Javon Yarbrough/ }).click();
+  await page.getByRole('region', { name: 'Affiliates' }).getByRole('button', { name: /Javon Yarbrough/ }).click();
   await expect(page.getByLabel('Recruited by, for Javon Yarbrough')).toHaveValue(UID);
   await page.getByLabel('Recruited by, for Javon Yarbrough').selectOption('amy');
   await expect.poll(() => writes.find(w => w.table.startsWith('rate_check_promoters') && w.method === 'PATCH')?.body).toMatchObject({ recruited_by: 'amy' });

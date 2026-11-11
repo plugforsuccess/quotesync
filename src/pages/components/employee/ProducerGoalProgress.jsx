@@ -35,7 +35,7 @@ function PartnerFloor({ orgId, userId }) {
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 4 }}>
-        <span><T k="scorecard.partners">Partners Activated</T></span>
+        <span><T k="scorecard.partners">Affiliates Activated</T></span>
         <span style={{ fontFamily: "'DM Mono', monospace", color: met ? 'var(--qs-success)' : 'var(--qs-text)' }}>{count} / {floor}</span>
       </div>
       <Bar pct={count / floor} color={met ? 'var(--qs-success)' : 'var(--qs-info)'} />

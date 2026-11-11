@@ -93,10 +93,10 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const year = Number(month.slice(0, 4));
   const paidThisYear = useMemo(() => paidInYear(payouts, year), [payouts, year]);
   const exportYear = () => {
-    downloadCSV(`partner-1099-${year}.csv`, promoters.filter(p => paidThisYear[p.id]).map(p => {
+    downloadCSV(`affiliate-1099-${year}.csv`, promoters.filter(p => paidThisYear[p.id]).map(p => {
       const t = paidThisYear[p.id];
       return {
-        partner: p.name, phone: p.phone ? formatPhone(p.phone) : '', email: p.email || '',
+        affiliate: p.name, phone: p.phone ? formatPhone(p.phone) : '', email: p.email || '',
         year, paid: t.amount.toFixed(2), payments: t.payments,
         months_covered: t.months.map(monthLabel).join('; '), last_paid: formatDate(t.lastPaid),
         w9_on_file: p.w9_received_at ? 'yes' : 'no', tin: p.w9_tin_last4 ? `${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} ending ${p.w9_tin_last4}` : '',
@@ -105,7 +105,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
     }));
   };
 
-  if (isLoading) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.1448f6">Loading partners…</T></p>;
+  if (isLoading) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.1448f6">Loading affiliates…</T></p>;
   if (error) return <p className="text-sm text-red-500">{error.message}</p>;
 
   return (
@@ -117,21 +117,21 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       <Dismissible id="partners.program-rules">
         <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
-          <span><T k="pages.components.ratechecks.partnerstab.15dc1f">Partners are paid per qualified household they send, never per sale, and they don't discuss coverage or price. Confirm the program with Allstate compliance and your attorney before the first payment, and get a W-9 on file.</T></span>
+          <span><T k="pages.components.ratechecks.partnerstab.15dc1f">Affiliates are paid per qualified household they send, never per sale, and they don't discuss coverage or price. Confirm the program with Allstate compliance and your attorney before the first payment, and get a W-9 on file.</T></span>
         </p>
       </Dismissible>
 
       {promoters.length === 0 ? (
         /* No partners yet: one card, one button. */
         <div className="dark-card" style={{ padding: 20 }}>
-          <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.partnerstab.811aa9">No Partners Yet</T></h3>
+          <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.ratechecks.partnerstab.811aa9">No Affiliates Yet</T></h3>
           <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             <T k="pages.components.ratechecks.partnerstab.bbdbfa">Add someone who'll share your Rate Check link.</T> {PARTNER_AGREEMENT_REQUIRED ? <T k="pages.components.ratechecks.partnerstab.7c6168">{'They get a private portal to sign the agreement, then their own link that pays per household.'}</T> : <T k="pages.components.ratechecks.partnerstab.27e431">{'They get their own link that pays per household, and a private portal to see what they’ve earned.'}</T>}
           </p>
           {canEdit && !adding && (
             <div className="mt-4 flex flex-wrap gap-2">
               <button type="button" onClick={() => setAdding(true)} className="inline-flex min-h-[44px] w-[9.5rem] items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
-                <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add Partner</T>
+                <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add Affiliate</T>
               </button>
               <SendPitch className="min-h-[44px] w-[9.5rem] justify-center rounded-lg px-4" />
             </div>
@@ -156,13 +156,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 <SendPitch className="h-9 w-[8.5rem] justify-center rounded-full px-3.5" />
                 <button type="button" onClick={() => setAdding(a => !a)} aria-expanded={adding}
                   className="inline-flex h-9 w-[8.5rem] items-center justify-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
-                  <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add Partner</T>
+                  <Plus className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.fcd1b4">Add Affiliate</T>
                 </button>
               </span>
             )}
           </div>
           <dl className="mt-4 grid grid-cols-3 divide-x overflow-hidden rounded-xl" style={{ background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)' }}>
-            {[['Partners', promoters.filter(p => p.active).length], ['Households', monthHouseholds], ['Owed', dollars(monthOwed)]].map(([k, v]) => (
+            {[['Affiliates', promoters.filter(p => p.active).length], ['Households', monthHouseholds], ['Owed', dollars(monthOwed)]].map(([k, v]) => (
               <div key={k} className="px-3 py-3 text-center" style={{ borderColor: 'var(--qs-border)' }}>
                 <dt className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}><T>{k}</T></dt>
                 <dd className="mt-0.5 text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{v}</dd>
@@ -170,7 +170,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
             ))}
           </dl>
           {Object.keys(paidThisYear).length > 0 && (
-            <button type="button" onClick={exportYear} title={`What each partner was paid in ${year}, by payment date`}
+            <button type="button" onClick={exportYear} title={`What each affiliate was paid in ${year}, by payment date`}
               className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:underline">
               <Download className="h-4 w-4" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.0095a9">Export</T> {year} <T k="pages.components.ratechecks.partnerstab.c18bab">payments For 1099s</T>
             </button>
@@ -181,7 +181,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
       {/* Every partner as a row; tap one for their links, numbers and settings. */}
       {promoters.length > 0 && !promoters.some(p => p.id === selected) && (
-        <section className="dark-card overflow-hidden" style={{ padding: 0 }} aria-label="Partners">
+        <section className="dark-card overflow-hidden" style={{ padding: 0 }} aria-label="Affiliates">
           <ul>
             {promoters.map((p, i) => {
               const { summary: s, plan } = byPartner[p.id] || {};
@@ -226,7 +226,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         return (
           <section key={p.id} id={`partner-${p.id}`} className="dark-card scroll-mt-24" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
             <button type="button" onClick={() => setSelected(null)} className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {promoters.length > 1 ? <><T k="pages.components.ratechecks.partnerstab.1cdf51">{"All Partners ("}</T>{promoters.length}{")"}</> : <T k="pages.components.ratechecks.partnerstab.faff1a">{'All Partners'}</T>}
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {promoters.length > 1 ? <><T k="pages.components.ratechecks.partnerstab.1cdf51">{"All Affiliates ("}</T>{promoters.length}{")"}</> : <T k="pages.components.ratechecks.partnerstab.faff1a">{'All Affiliates'}</T>}
             </button>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <PartnerPhoto promoter={p} canEdit={canEdit} />
@@ -365,7 +365,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   );
 }
 
-const portalUrl = (token) => `${window.location.origin}/partner/${token}`;
+const portalUrl = (token) => `${window.location.origin}/affiliate/${token}`;
 // Opens the Messages app with the partner's portal link written in.
 const portalSms = (p) => `sms:+1${p.phone}?&body=${encodeURIComponent(buildText('partnerWelcome', { name: p.name, portalLink: portalUrl(p.portal_token) }))}`;
 
@@ -519,12 +519,12 @@ function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) 
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const met = mine >= floor;
   const link = me.code ? recruitUrl(me.code) : null;
-  const pitch = link ? `Want to earn money sharing a free insurance rate check with people you know? Apply to be a Cam Wiley Agency partner: ${link}` : '';
+  const pitch = link ? `Want to earn money sharing a free insurance rate check with people you know? Apply to be a Cam Wiley Agency affiliate: ${link}` : '';
   return (
-    <section className="dark-card" style={{ padding: 0 }} aria-label="Partner floor">
+    <section className="dark-card" style={{ padding: 0 }} aria-label="Affiliate floor">
       <div className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="partners.floor.title">Your Partner Floor</T></h3>
+          <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T k="partners.floor.title">Your Affiliate Floor</T></h3>
           <span className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-subtle)' }}>{monthName(month)}</span>
         </div>
         <div className="mt-3 flex items-center gap-4">
@@ -540,7 +540,7 @@ function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) 
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--qs-text)' }}>
-          <T k="partners.floor.line">A partner counts once they sign the agreement and send a qualified household.</T>
+          <T k="partners.floor.line">An affiliate counts once they sign the agreement and send a qualified household.</T>
         </p>
         {link && (
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -557,7 +557,7 @@ function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) 
       {canEdit && team.length > 1 && (
         <div style={{ borderTop: '1px solid var(--qs-border)' }}>
           <p className="px-4 pt-3 text-[11px] font-bold uppercase tracking-[0.12em] sm:px-5" style={{ color: 'var(--qs-subtle)' }}><T k="partners.floor.team">Team This Month</T></p>
-          <ul className="px-4 pb-2 sm:px-5" aria-label="Team partner floor">
+          <ul className="px-4 pb-2 sm:px-5" aria-label="Team affiliate floor">
             {team.map((r, i) => (
               <li key={r.userId} className="flex items-center gap-3 py-2.5" style={i ? { borderTop: '1px solid var(--qs-border)' } : undefined}>
                 <span className="min-w-0 flex-1 truncate text-sm font-medium" style={{ color: 'var(--qs-text)' }}>{r.name}</span>
@@ -606,9 +606,9 @@ function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
     });
   };
   return (
-    <section className="dark-card" style={{ padding: 16 }} aria-label="Partner applications">
+    <section className="dark-card" style={{ padding: 16 }} aria-label="Affiliate applications">
       <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>
-        {apps.length === 1 ? <T k="pages.components.ratechecks.partnerstab.b1357a">{'1 Person Wants to Be a Partner'}</T> : <>{apps.length}{" "}<T k="pages.components.ratechecks.partnerstab.398113">{"People Want to Be Partners"}</T></>}
+        {apps.length === 1 ? <T k="pages.components.ratechecks.partnerstab.b1357a">{'1 Person Wants to Be an Affiliate'}</T> : <>{apps.length}{" "}<T k="pages.components.ratechecks.partnerstab.398113">{"People Want to Be Affiliates"}</T></>}
       </h3>
       <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.28fa07">From the Drivers Ed page. Add them, then send them their portal link.</T></p>
       <ul className="mt-3 space-y-2">
@@ -629,7 +629,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
                   className="min-h-[36px] rounded-lg px-3 text-sm font-semibold" style={inputStyle}><T k="pages.components.ratechecks.partnerstab.c8a59e">Dismiss</T></button>
                 <button type="button" onClick={() => add(a)} disabled={busy === a.id}
                   className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white disabled:opacity-60">
-                  <Plus className="h-4 w-4" aria-hidden="true" /> {busy === a.id ? <T k="pages.components.ratechecks.partnerstab.ffb2e6">{'Adding…'}</T> : <T k="pages.components.ratechecks.partnerstab.840a9d">{'Add As Partner'}</T>}
+                  <Plus className="h-4 w-4" aria-hidden="true" /> {busy === a.id ? <T k="pages.components.ratechecks.partnerstab.ffb2e6">{'Adding…'}</T> : <T k="pages.components.ratechecks.partnerstab.840a9d">{'Add As Affiliate'}</T>}
                 </button>
               </div>
             )}
@@ -699,7 +699,7 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       {anyAddress && !fullAddress && <p className="text-xs md:col-span-3" style={{ color: 'var(--qs-warning)' }}><T k="pages.components.ratechecks.partnerstab.4ff75f">Finish the address (street, city, state and 5-digit ZIP), or clear it.</T></p>}
 
       <button type="submit" disabled={!ok || save.isPending} className="h-11 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white disabled:opacity-50 md:col-start-3">
-        {save.isPending ? <T k="pages.components.ratechecks.partnerstab.ffb2e6">{'Adding…'}</T> : <T k="pages.components.ratechecks.partnerstab.1fb935">{'Add Partner'}</T>}
+        {save.isPending ? <T k="pages.components.ratechecks.partnerstab.ffb2e6">{'Adding…'}</T> : <T k="pages.components.ratechecks.partnerstab.1fb935">{'Add Affiliate'}</T>}
       </button>
       {save.error && <p className="text-sm text-red-500 md:col-span-3">{save.error.message}</p>}
     </form>
@@ -748,7 +748,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
             : <span className="text-sm font-bold" style={{ color: v.requireCallConfirm ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>{v.requireCallConfirm ? <T k="pages.components.ratechecks.partnerstab.e0049a">{'On'}</T> : <T k="pages.components.ratechecks.partnerstab.e3de5a">{'Off'}</T>}</span>}
         </RuleRow>
         {!v.requireCallConfirm && (
-          <RuleRow title="Otherwise pays once quoted, or after" hint="So a slow week at the desk doesn't cost the partner.">
+          <RuleRow title="Otherwise pays once quoted, or after" hint="So a slow week at the desk doesn't cost the affiliate.">
             {num('quoteDays', 'Days before an unquoted household pays', '', ' days')}
           </RuleRow>
         )}
@@ -762,7 +762,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
       {SHOW_TEXTING_ALERT && v.requireCallConfirm && (
         <Dismissible id="partners.needs-texting">
           <p className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
-            <T k="pages.components.ratechecks.partnerstab.30f8f7">Needs texting set up: until the agency has a Twilio number, the quote-ready text can't go out, so no one can reply Y and partners aren't paid.</T>
+            <T k="pages.components.ratechecks.partnerstab.30f8f7">Needs texting set up: until the agency has a Twilio number, the quote-ready text can't go out, so no one can reply Y and affiliates aren't paid.</T>
           </p>
         </Dismissible>
       )}

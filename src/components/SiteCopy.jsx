@@ -27,7 +27,7 @@ const KEY = ['site_copy'];
 // same way; what comes from the data isn't.
 const INTERNAL = /^\/(agency|my|admin|news\/(dashboard|editor|archived|standards|preview))(\/|$)/;
 const NEWS = /^\/news(\/[^/]+)?$/;
-const PORTAL = /^\/partner\/[^/]+$/;
+const PORTAL = /^\/(partner|affiliate)\/[^/]+$/;
 const QUICK_SEND = /^\/qs$/;
 const EDITABLE = [QUICK_SEND, /^\/$/, /^\/ratecheck$/, /^\/r\/[^/]+$/, PORTAL, /^\/ratecheck-privacy$/, /^\/courses$/, /^\/defensive-driving$/, /^\/courses\/defensive-driving$/, NEWS, INTERNAL];
 // Pages without the consumer nav (and its pencil) get a corner button.
