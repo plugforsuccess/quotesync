@@ -52,6 +52,7 @@ import ContactStep from './components/sales/ContactStep';
 import CloseStep from './components/sales/CloseStep';
 import LeadHistory from './components/sales/LeadHistory';
 import { TEXT_FROM_OWN_PHONE } from '../lib/textingMode';
+import { scannerProblem } from '../lib/scanErrors';
 import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
@@ -778,11 +779,11 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
         {/* A household with more than one policy: one tab per policy. */}
         {multi && step === 'review' && (
           <div className="mx-auto flex max-w-3xl gap-2 overflow-x-auto px-5 pt-4" role="tablist" aria-label="Policies in this household">
-            {live.map(p => (
+            {live.map((p, i) => (
               <button key={p.id} type="button" role="tab" aria-selected={p.id === rc.id} onClick={() => onSelect(p)}
                 className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ${p.id === rc.id ? 'bg-primary-600 text-white' : ''}`}
                 style={p.id === rc.id ? undefined : { background: 'var(--qs-elevated)', color: 'var(--qs-bright)', border: '1px solid var(--qs-border)' }}>
-                {carrierLabel(p) || <T k="pages.ratecheckspage.policy">Policy</T>} <T>{policyTypeLabel(p.policy_type)}</T>
+                {carrierLabel(p) || <><T k="pages.ratecheckspage.policy">Policy</T> {i + 1}</>} <T>{policyTypeLabel(p.policy_type)}</T>
               </button>
             ))}
           </div>
@@ -832,7 +833,9 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
         {step === 'review' && <div className="mx-auto max-w-3xl space-y-6 p-5">
           {rc.extract_error && (
             <Notice tone="danger">
-              <T k="pages.ratecheckspage.08f079">We couldn't read this photo. Look at it below and fill in the policy details by hand.</T>
+              {scannerProblem(rc.extract_error)
+                ? <><T k="pages.ratecheckspage.scan-down">The scanner is down right now, so this photo wasn’t read.</T> <span data-copy="fixed">{scannerProblem(rc.extract_error).reason} {scannerProblem(rc.extract_error).fix}</span> <T k="pages.ratecheckspage.scan-down-2">Read the photo below by hand, or tap Scan Again once it’s fixed.</T></>
+                : <T k="pages.ratecheckspage.08f079">We couldn't read this photo. Look at it below and fill in the policy details by hand.</T>}
               {canRescan && (
                 <button onClick={() => rescan.mutate({ rateCheckId: rc.id })} disabled={rescan.isPending}
                   className="ml-2 inline-flex items-center gap-1 font-semibold text-primary-600 hover:underline disabled:opacity-50">

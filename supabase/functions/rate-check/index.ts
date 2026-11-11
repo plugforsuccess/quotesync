@@ -24,6 +24,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { EMAIL_TEMPLATES, loadEmailCopy, renderEmail, sendEmail } from '../_shared/email.ts'
+import { scannerProblem } from '../_shared/scanErrors.ts'
 
 // CORS — inline to match create-lead (avoids _shared bundling issues)
 const allowedOrigins = [
@@ -701,8 +702,33 @@ async function extractAndStore(supabase: any, anthropicKey: string | undefined, 
       .from('rate_checks')
       .update({ status: 'extract_failed', extract_error: extractError.slice(0, 1000) })
       .eq('id', rateCheckId)
+    const problem = scannerProblem(extractError)
+    if (problem) await alertScannerDown(supabase, agencyId, problem).catch(e => console.error('[RATE_CHECK] scanner-down alert failed:', (e as Error).message))
   }
   return { flat, extractError }
+}
+
+// The scanner itself failed (its account or service, not the photo): tell the principals,
+// in the app and by email, at most once a day per agency.
+async function alertScannerDown(supabase: any, agencyId: string, problem: { reason: string; fix: string }) {
+  const { data: fresh } = await supabase.rpc('rate_limit_hit', { p_key: `scan_down_alert:${agencyId}`, p_limit: 1, p_window_seconds: 86400 })
+  if (fresh !== true) return
+  const { data: principals } = await supabase.from('agency_memberships').select('user_id')
+    .eq('agency_id', agencyId).eq('agency_role', 'principal').eq('status', 'active')
+  const ids = (principals || []).map((p: any) => p.user_id)
+  if (!ids.length) return
+  await supabase.from('notifications').insert(ids.map((user_id: string) => ({
+    user_id, type: 'SCANNER_DOWN', title: 'The dec-page scanner is down',
+    message: `${problem.reason} ${problem.fix} Uploads are saved; read them by hand until it's fixed.`,
+    metadata: { reason: problem.reason },
+  })))
+  const { data: profiles } = await supabase.from('profiles').select('email').in('id', ids)
+  const to = (profiles || []).map((p: any) => p.email).filter(Boolean)
+  if (!to.length) return
+  const appUrl = (Deno.env.get('QUOTESYNC_APP_URL') || 'https://insuredbycam.com').replace(/\/+$/, '')
+  const msg = renderEmail({ template: EMAIL_TEMPLATES.rcScanDown, saved: await loadEmailCopy(supabase), vars: { reason: problem.reason, fix: problem.fix, 'lead link': `${appUrl}/agency/leads/rate-checks` } })
+  const r = await sendEmail({ to, ...msg })
+  if (!r.ok) console.error('[RATE_CHECK] scanner-down email failed:', r.error)
 }
 
 // Same policy sent twice? An open (not declined, not itself a duplicate) rate check
@@ -931,7 +957,7 @@ Deno.serve(async (req) => {
       agency_id: rc.agency_id, lead_id: rc.lead_id, actor_user_id: staff.userId,
       metadata: { rate_check_id: rc.id, rescan: true, carrier: flat?.carrier ?? null, ...(extractError ? { error: extractError.slice(0, 300) } : {}) },
     })
-    return jsonResponse({ status: flat ? 'extracted' : 'extract_failed', error: extractError, carrier: flat?.carrier ?? null, policy_type: flat?.policy_type ?? null, annual_premium: flat?.annual_premium ?? null }, 200, corsHeaders)
+    return jsonResponse({ status: flat ? 'extracted' : 'extract_failed', error: extractError, scan_down: !!scannerProblem(extractError), carrier: flat?.carrier ?? null, policy_type: flat?.policy_type ?? null, annual_premium: flat?.annual_premium ?? null }, 200, corsHeaders)
   }
 
   // ── Tagged invite link (consumer upload from /r/CODE) ──
@@ -1302,6 +1328,8 @@ Deno.serve(async (req) => {
 
     return jsonResponse({
       status: 'received',
+      // The scanner failed on our side (not the photo): the page tells them Cam will read it, no retake.
+      scan_down: !!scannerProblem(extractError),
       rate_check_id: rateCheckId,
       carrier,
       policy_type: policyType,

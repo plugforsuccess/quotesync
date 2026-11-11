@@ -307,6 +307,19 @@ export const TEXT_TEMPLATES = [
     button: { label: 'Open the Lead', link: '[lead link]' },
   },
   {
+    id: 'rcScanDown', group: 'Team Emails', key: 'email.rc.scandown', kind: 'email', auto: true,
+    name: 'The Scanner Is Down',
+    when: 'Emailed to principals (and shown in the app) the first time a dec page can’t be scanned because of the scanner’s account or service, at most once a day.',
+    blanks: ['[reason]', '[fix]', '[lead link]'],
+    subject: 'The dec-page scanner is down',
+    paragraphs: [
+      "Uploads are still coming in, but the scanner can't read them right now. [reason]",
+      'To fix it: [fix]',
+      "Customers still finish, and their photos are saved. Until it's fixed, open each one in Rate Checks and read it by hand, or tap Scan Again once it's working: [lead link]",
+    ],
+    button: { label: 'Open Rate Checks', link: '[lead link]' },
+  },
+  {
     id: 'ddStaff', group: 'Team Emails', key: 'email.dd.staff', kind: 'email', auto: true,
     name: 'New Drivers Ed Certificate',
     when: 'Emailed to the staff list (DD_STAFF_NOTIFY_EMAILS in Supabase) when a student passes.',
@@ -378,7 +391,7 @@ export function templateWarnings(id) {
   const saved = t.paragraphs.map((p, i) => copyValue(`${t.key}.${i + 1}`, p)).join(' ');
   const w = [];
   if (id === 'ready' && !/\breply\s+y\b/i.test(saved)) w.push('“Reply Y” is missing: their Y is what tells you to call.');
-  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]', '[passed date]', '[deadline]', '[modules done]', '[modules total]', '[student name]', '[certificate number]', '[premium]'];
+  const optional = ['[first name]', '[carrier]', '[producer]', '[where we met]', '[Allstate price]', '[savings]', '[passed date]', '[deadline]', '[modules done]', '[modules total]', '[student name]', '[certificate number]', '[premium]', '[reason]', '[fix]'];
   const addedAtEnd = ['[review link]', '[link]', '[course link]', '[certificate link]', '[queue link]', '[lead link]'];
   for (const b of t.blanks) if (b !== t.button?.link && !optional.includes(b) && !saved.toLowerCase().includes(b.toLowerCase())) w.push(`${b} is missing${addedAtEnd.includes(b) ? ': it’s added at the end' : ''}.`);
   return w;

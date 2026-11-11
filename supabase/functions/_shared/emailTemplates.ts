@@ -69,6 +69,16 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     ],
     button: { label: 'Open the Lead', link: 'lead link' },
   },
+  rcScanDown: {
+    key: 'email.rc.scandown',
+    subject: 'The dec-page scanner is down',
+    paragraphs: [
+      "Uploads are still coming in, but the scanner can't read them right now. [reason]",
+      'To fix it: [fix]',
+      "Customers still finish, and their photos are saved. Until it's fixed, open each one in Rate Checks and read it by hand, or tap Scan Again once it's working: [lead link]",
+    ],
+    button: { label: 'Open Rate Checks', link: 'lead link' },
+  },
   listStep1: {
     key: 'email.list.step1',
     subject: '[first name], your 2-minute rate check',
@@ -136,4 +146,6 @@ export const SAMPLE_VARS: Record<string, string> = {
   premium: '$2,140 a year',
   'where we met': ' (from the Rotary lunch)',
   producer: 'Cam',
+  reason: 'The Anthropic account behind the scanner hit its spending limit.',
+  fix: 'Raise the limit at console.anthropic.com → Settings → Limits.',
 }
