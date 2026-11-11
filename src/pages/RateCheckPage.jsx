@@ -651,7 +651,7 @@ export default function RateCheckPage() {
     const retakes = sent.filter(i => i.status === 'unreadable');
     if (!reading && retakes.length && !sendAsIs) {
       return (
-        <Shell step={4} center noFooter>
+        <Shell step={4} noFooter>
           {fileInputs}
           {banner}
           <div role="status" aria-live="polite" className="text-center">
