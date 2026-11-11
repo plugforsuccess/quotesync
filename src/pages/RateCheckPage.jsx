@@ -177,7 +177,6 @@ export default function RateCheckPage() {
   const [given, setGiven] = useState(null); // { consentGivenAt, referralConsentGivenAt } once sent this session
   const [resumed, setResumed] = useState(false);
   const [notice, setNotice] = useState('');
-  const [sendAsIs, setSendAsIs] = useState(false); // they chose to send unreadable photos anyway
   const [ready, setReady] = useState(false);
 
   // The list is mirrored in a ref and every change goes through updateItems, so the
@@ -649,7 +648,8 @@ export default function RateCheckPage() {
     const total = priced.reduce((s, i) => s + i.result.annual_premium, 0);
     const opens = nextOpening();
     const retakes = sent.filter(i => i.status === 'unreadable');
-    if (!reading && retakes.length && !sendAsIs) {
+    // A photo the scanner couldn't read must be retaken; there's no way past it without one.
+    if (!reading && retakes.length) {
       return (
         <Shell step={4} noFooter>
           {fileInputs}
@@ -676,7 +676,6 @@ export default function RateCheckPage() {
               <li><T k="rc.retake.tip3">• Or upload the PDF from your insurance app or email</T></li>
             </ul>
           </div>
-          <button type="button" onClick={() => setSendAsIs(true)} className="qb qb-outline qb-md mt-4 w-full"><T k="rc.retake.anyway">Send It Anyway, Cam Will Look</T></button>
           <p className="mt-5 text-center text-sm text-slate-500">
             <T k="rc.flow.not">Not</T>{' '}{fields.firstName ? <span data-copy="fixed">{fields.firstName}</span> : <T k="rc.flow.you">you</T>}? <button type="button" onClick={startOver} className="font-semibold underline"><T k="rc.flow.start-over">Start Over</T></button>
           </p>

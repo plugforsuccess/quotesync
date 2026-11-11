@@ -589,14 +589,12 @@ test('scanner down on our side: they’re told it was received and Cam will read
   await expect(page.getByText('Couldn’t Read It')).toHaveCount(0);
 });
 
-test('a photo nobody could read: ask for a retake first, no celebration; Send It Anyway finishes', async ({ page }, testInfo) => {
+test('a photo nobody could read: a retake is required, no celebration and no way past it', async ({ page }, testInfo) => {
   await sendWithScan(page, testInfo, {});
   await expect(page.getByRole('heading', { name: 'One Photo Needs a Retake' })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toHaveCount(0);
   await expect(page.getByText('Policy received')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Retake' })).toBeVisible();
   await expect(page.getByText(/whole page in the frame/)).toBeVisible();
-  await page.getByRole('button', { name: 'Send It Anyway, Cam Will Look' }).click();
-  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible();
-  await expect(page.getByText('Couldn’t Read It')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Send It Anyway/ })).toHaveCount(0);
 });
