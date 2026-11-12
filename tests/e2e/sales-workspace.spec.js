@@ -179,3 +179,23 @@ test('close: mark lost closes the household quote with the reason', async ({ pag
   await expect(page.getByText('Marked Lost. The lead is closed.')).toBeVisible();
   expect(writes.find(w => w.table === 'sales_quotes').body).toMatchObject({ status: 'lost', lost_reason: 'price' });
 });
+
+test('the drawer says who referred them and how they know each other, in one line', async ({ page }) => {
+  await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  const r = { ...base, id: 'x1', first_name: 'Cameron', status: 'extract_failed', created_at: new Date(Date.now() - 3600000).toISOString(),
+    carrier: null, policy_type: null, promoter_id: PID, promoter_name: 'Javon Yarbrough', producer_name: 'Cameron Wiley',
+    referrer_relationship: 'friend', contact_relationship: 'self' };
+  await page.route(SB + '/rest/v1/rate_checks*', async (route) => {
+    const req = route.request(); const u = new URL(req.url());
+    if (u.searchParams.get('promoter_id')) return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    const one = (req.headers().accept || '').includes('vnd.pgrst.object');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(one ? r : [r]) });
+  });
+  await page.goto('/agency/leads/rate-checks');
+  await page.locator('li').filter({ hasText: 'Cameron' }).first().click();
+  const drawer = page.getByRole('dialog', { name: 'Sales workspace' });
+  await expect(drawer.getByText('Referred by Javon Yarbrough (Friend)')).toBeVisible();
+  await expect(drawer.getByText('Via Cameron', { exact: true })).toBeVisible();
+  await expect(drawer.getByText(/Knows Javon/)).toHaveCount(0);
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, clip: { x: 0, y: 0, width: 390, height: 260 } });
+});
