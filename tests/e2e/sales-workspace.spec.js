@@ -201,6 +201,6 @@ test('the drawer top says who referred them; the quote sheet says how they know 
   await expect(from.getByText('How they know Javon')).toBeVisible();
   await expect(from.getByText('Friend', { exact: true })).toBeVisible();
   await expect(from.getByText('Producer')).toBeVisible();
-  await expect(from.getByText('Cameron', { exact: true })).toBeVisible();
+  await expect(from.getByText('Cameron Wiley', { exact: true })).toBeVisible();
   if (process.env.SHOT2) { await from.scrollIntoViewIfNeeded(); await from.screenshot({ path: process.env.SHOT2 }); }
 });

@@ -220,7 +220,7 @@ function useOrigin(rc) {
     rc.promoter_name && ['Referred by', partnerName(rc.promoter_name)],
     rc.promoter_name && [`How they know ${first}`, referrerLabel(data?.referrer_relationship, data?.referrer_relationship_other)],
     rc.event_name && ['Event', rc.event_name],
-    rc.producer_name && ['Producer', rc.producer_name.split(' ')[0]],
+    rc.producer_name && ['Producer', rc.producer_name],
   ].filter(Boolean);
 }
 
