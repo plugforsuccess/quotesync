@@ -180,7 +180,7 @@ test('close: mark lost closes the household quote with the reason', async ({ pag
   expect(writes.find(w => w.table === 'sales_quotes').body).toMatchObject({ status: 'lost', lost_reason: 'price' });
 });
 
-test('the drawer says who referred them and how they know each other, in one line', async ({ page }) => {
+test('the drawer top says who referred them; the quote sheet says how they know them and the producer', async ({ page }) => {
   await mock(page, { partners: [partner()], rules: null, payouts: [] });
   const r = { ...base, id: 'x1', first_name: 'Cameron', status: 'extract_failed', created_at: new Date(Date.now() - 3600000).toISOString(),
     carrier: null, policy_type: null, promoter_id: PID, promoter_name: 'Javon Yarbrough', producer_name: 'Cameron Wiley',
@@ -194,8 +194,13 @@ test('the drawer says who referred them and how they know each other, in one lin
   await page.goto('/agency/leads/rate-checks');
   await page.locator('li').filter({ hasText: 'Cameron' }).first().click();
   const drawer = page.getByRole('dialog', { name: 'Sales workspace' });
-  await expect(drawer.getByText('Referred by Javon Yarbrough (Friend)')).toBeVisible();
-  await expect(drawer.getByText('Via Cameron', { exact: true })).toBeVisible();
-  await expect(drawer.getByText(/Knows Javon/)).toHaveCount(0);
+  await expect(drawer.getByText('Referred by Javon Yarbrough', { exact: true })).toBeVisible();
+  await expect(drawer.getByText(/Via Cameron|\(Friend\)|Knows Javon/)).toHaveCount(0);
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, clip: { x: 0, y: 0, width: 390, height: 260 } });
+  const from = drawer.locator('section').filter({ has: page.getByRole('heading', { name: 'Where they came from' }) }).last();
+  await expect(from.getByText('How they know Javon')).toBeVisible();
+  await expect(from.getByText('Friend', { exact: true })).toBeVisible();
+  await expect(from.getByText('Producer')).toBeVisible();
+  await expect(from.getByText('Cameron', { exact: true })).toBeVisible();
+  if (process.env.SHOT2) { await from.scrollIntoViewIfNeeded(); await from.screenshot({ path: process.env.SHOT2 }); }
 });

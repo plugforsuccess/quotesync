@@ -178,28 +178,30 @@ function personName(first, policies) {
   return last && last.toLowerCase() !== firstName.toLowerCase() ? `${firstName} ${last}` : firstName;
 }
 
-// Under the name in the drawer: who referred them (and how they know each other), the event,
-// the producer, and whose policy it is. One plain line each, the same size as the line above.
-// The relationship columns are read on their own so the drawer never depends on them.
-function WhoIsWho({ rc }) {
-  const { data } = useQuery({
-    queryKey: ['rate_check_who', rc.id],
-    enabled: !!rc.id,
+// Whose policy it is and how the sender knows the affiliate. Read on its own so the
+// drawer never depends on these newer columns.
+function useWho(rcId) {
+  return useQuery({
+    queryKey: ['rate_check_who', rcId],
+    enabled: !!rcId,
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data: row, error } = await supabase.from('rate_checks')
         .select('policyholder_name, contact_relationship, contact_relationship_other, referrer_relationship, referrer_relationship_other')
-        .eq('id', rc.id).maybeSingle();
+        .eq('id', rcId).maybeSingle();
       return error ? null : row;
     },
-  });
-  const knows = rc.promoter_name ? referrerLabel(data?.referrer_relationship, data?.referrer_relationship_other) : null;
+  }).data;
+}
+
+// Under the name in the drawer: who referred them, and whose policy it is when it isn't theirs.
+// How they know the affiliate, the event and the producer are on the quote sheet.
+function WhoIsWho({ rc }) {
+  const data = useWho(rc.id);
   const holder = data?.contact_relationship && data.contact_relationship !== 'self'
     ? relationshipLine(data.contact_relationship, data.contact_relationship_other, data.policyholder_name) : null;
   const lines = [
-    rc.promoter_name && <><T k="pages.ratecheckspage.36e9b1">Referred by</T> <span className="whitespace-nowrap"><span className="font-medium" style={{ color: 'var(--qs-dim)' }}>{partnerName(rc.promoter_name)}</span>{knows ? ` (${knows})` : ''}</span></>,
-    rc.event_name,
-    rc.producer_name && <><T k="pages.ratecheckspage.via">Via</T> {rc.producer_name.split(' ')[0]}</>,
+    rc.promoter_name && <><T k="pages.ratecheckspage.36e9b1">Referred by</T> <span className="font-medium" style={{ color: 'var(--qs-dim)' }}>{partnerName(rc.promoter_name)}</span></>,
     holder && <>{holder}{data.contact_relationship === 'other' ? <T k="pages.ratecheckspage.7e70a2">{' · confirm they can make changes'}</T> : ''}</>,
   ].filter(Boolean);
   if (!lines.length) return null;
@@ -208,6 +210,18 @@ function WhoIsWho({ rc }) {
       {lines.map((l, i) => <p key={i}>{l}</p>)}
     </div>
   );
+}
+
+// The quote sheet's "Where They Came From" rows.
+function useOrigin(rc) {
+  const data = useWho(rc.promoter_name ? rc.id : null);
+  const first = rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null;
+  return [
+    rc.promoter_name && ['Referred by', partnerName(rc.promoter_name)],
+    rc.promoter_name && [`How they know ${first}`, referrerLabel(data?.referrer_relationship, data?.referrer_relationship_other)],
+    rc.event_name && ['Event', rc.event_name],
+    rc.producer_name && ['Producer', rc.producer_name.split(' ')[0]],
+  ].filter(Boolean);
 }
 
 function OriginTag({ rc, className = '' }) {
@@ -1070,6 +1084,7 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
 // The quote sheet (PolicySheet) with Scan again / Fix details; "Fix details" swaps in the form.
 function PolicyDetails({ rc, warning, onRescan, rescanning }) {
   const [editing, setEditing] = useState(false);
+  const origin = useOrigin(rc);
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
@@ -1087,7 +1102,7 @@ function PolicyDetails({ rc, warning, onRescan, rescanning }) {
           </div>
         )}
       </div>
-      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : <PolicySheet rc={rc} warning={warning} />}
+      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : <PolicySheet rc={rc} warning={warning} origin={origin} />}
     </section>
   );
 }
