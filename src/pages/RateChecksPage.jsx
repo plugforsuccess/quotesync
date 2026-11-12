@@ -8,7 +8,7 @@ import { customerReviewText, smsHref } from '../lib/reviews';
 import { buildText } from '../lib/textTemplates';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { relationshipLine, referrerLine } from '../lib/relationship';
+import { relationshipLine, referrerLabel } from '../lib/relationship';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -97,7 +97,7 @@ function Age({ rc, now }) {
   const mins = minutesSince(rc.created_at, now);
   const open = OPEN_STATUSES.includes(rc.status);
   if (open && mins >= OVERDUE_MINUTES) {
-    return <span className="font-semibold text-red-500" title="The page says we typically text within 30 minutes"><T k="pages.ratecheckspage.5706de">Waiting</T> {ageText(mins)}</span>;
+    return <span className="whitespace-nowrap font-semibold text-red-500" title="The page says we typically text within 30 minutes"><T k="pages.ratecheckspage.5706de">Waiting</T> {ageText(mins)}</span>;
   }
   return <span style={{ color: 'var(--qs-text)' }}>{mins < 1 ? <T k="pages.ratecheckspage.a69f48">{'Just now'}</T> : <>{ageText(mins)}{" "}<T k="pages.ratecheckspage.f03c0a">{"ago"}</T></>}</span>;
 }
@@ -178,10 +178,10 @@ function personName(first, policies) {
   return last && last.toLowerCase() !== firstName.toLowerCase() ? `${firstName} ${last}` : firstName;
 }
 
-// Whose policy it is and how the person who sent it relates to them (and to the partner).
-// Read on its own so the rest of the drawer never depends on these newer columns.
-function WhoIsWho({ rcId, partnerFirst }) {
-  const { data } = useQuery({
+// Whose policy it is and how the sender knows the affiliate. Read on its own so the
+// drawer never depends on these newer columns.
+function useWho(rcId) {
+  return useQuery({
     queryKey: ['rate_check_who', rcId],
     enabled: !!rcId,
     staleTime: 5 * 60_000,
@@ -191,20 +191,37 @@ function WhoIsWho({ rcId, partnerFirst }) {
         .eq('id', rcId).maybeSingle();
       return error ? null : row;
     },
-  });
-  if (!data) return null;
+  }).data;
+}
+
+// Under the name in the drawer: who referred them, and whose policy it is when it isn't theirs.
+// How they know the affiliate, the event and the producer are on the quote sheet.
+function WhoIsWho({ rc }) {
+  const data = useWho(rc.id);
+  const holder = data?.contact_relationship && data.contact_relationship !== 'self'
+    ? relationshipLine(data.contact_relationship, data.contact_relationship_other, data.policyholder_name) : null;
   const lines = [
-    data.contact_relationship && data.contact_relationship !== 'self'
-      ? relationshipLine(data.contact_relationship, data.contact_relationship_other, data.policyholder_name)
-      : null,
-    referrerLine(data.referrer_relationship, data.referrer_relationship_other, partnerFirst),
+    rc.promoter_name && <><T k="pages.ratecheckspage.36e9b1">Referred by</T> <span className="font-medium" style={{ color: 'var(--qs-dim)' }}>{partnerName(rc.promoter_name)}</span></>,
+    holder && <>{holder}{data.contact_relationship === 'other' ? <T k="pages.ratecheckspage.7e70a2">{' · confirm they can make changes'}</T> : ''}</>,
   ].filter(Boolean);
   if (!lines.length) return null;
   return (
-    <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-      {lines.map((l, i) => <span key={i} className="block">{l}{data.contact_relationship === 'other' && i === 0 ? <T k="pages.ratecheckspage.7e70a2">{' · confirm they can make changes'}</T> : ''}</span>)}
-    </p>
+    <div className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
+      {lines.map((l, i) => <p key={i}>{l}</p>)}
+    </div>
   );
+}
+
+// The quote sheet's "Where They Came From" rows.
+function useOrigin(rc) {
+  const data = useWho(rc.promoter_name ? rc.id : null);
+  const first = rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null;
+  return [
+    rc.promoter_name && ['Referred by', partnerName(rc.promoter_name)],
+    rc.promoter_name && [`How they know ${first}`, referrerLabel(data?.referrer_relationship, data?.referrer_relationship_other)],
+    rc.event_name && ['Event', rc.event_name],
+    rc.producer_name && ['Producer', rc.producer_name],
+  ].filter(Boolean);
 }
 
 function OriginTag({ rc, className = '' }) {
@@ -708,8 +725,6 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
                 {carrierLabel(rc) || rc.policy_type ? <Age rc={rc} now={now} /> : <><T k="pages.ratecheckspage.a656b7">{'Policy not read yet'}</T> · <Age rc={rc} now={now} /></>}
               </p>
-              <OriginTag rc={rc} className="mt-0.5" />
-              <WhoIsWho rcId={rc.id} partnerFirst={rc.promoter_name ? partnerName(rc.promoter_name).split(' ')[0] : null} />
               {rc.resubmitted_at && (
                 <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
                   <T k="pages.ratecheckspage.01fa31">Sent again</T> {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
@@ -722,6 +737,7 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
               <button onClick={onClose} aria-label="Close" className="rounded p-1.5" style={inputStyle}><X className="w-4 h-4" /></button>
             </div>
           </div>
+          <WhoIsWho rc={rc} />
           {rc.phone && (
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
               <a href={`tel:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 font-semibold text-white">
@@ -1068,6 +1084,7 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
 // The quote sheet (PolicySheet) with Scan again / Fix details; "Fix details" swaps in the form.
 function PolicyDetails({ rc, warning, onRescan, rescanning }) {
   const [editing, setEditing] = useState(false);
+  const origin = useOrigin(rc);
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
@@ -1085,7 +1102,7 @@ function PolicyDetails({ rc, warning, onRescan, rescanning }) {
           </div>
         )}
       </div>
-      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : <PolicySheet rc={rc} warning={warning} />}
+      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : <PolicySheet rc={rc} warning={warning} origin={origin} />}
     </section>
   );
 }

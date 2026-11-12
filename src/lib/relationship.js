@@ -44,8 +44,12 @@ export function relationshipLine(rel, other, holderName) {
   const label = rel === 'other' ? (other || 'Other') : (POLICYHOLDER_RELATIONSHIPS.find(([k]) => k === rel)?.[1] || rel);
   return `${label} of policyholder${holderName ? ` ${holderName}` : ''}`;
 }
-export function referrerLine(rel, other, partnerFirst) {
+/** How they know the affiliate, on its own: "Friend", "Coworker". */
+export function referrerLabel(rel, other) {
   if (!rel) return null;
-  const label = rel === 'other' ? (other || 'Other') : (REFERRER_RELATIONSHIPS.find(([k]) => k === rel)?.[1] || rel);
-  return `Knows ${partnerFirst || 'the partner'}: ${label}`;
+  return rel === 'other' ? (other || 'Other') : (REFERRER_RELATIONSHIPS.find(([k]) => k === rel)?.[1] || rel);
+}
+export function referrerLine(rel, other, partnerFirst) {
+  const label = referrerLabel(rel, other);
+  return label ? `Knows ${partnerFirst || 'the partner'}: ${label}` : null;
 }

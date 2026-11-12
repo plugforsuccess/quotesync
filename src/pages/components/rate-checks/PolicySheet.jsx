@@ -272,7 +272,7 @@ function VehicleCard({ rc, v, index, level, n }) {
   );
 }
 
-export default function PolicySheet({ rc, warning }) {
+export default function PolicySheet({ rc, warning, origin = [] }) {
   const x = rc.extracted || {};
   const isAuto = AUTO.includes(rc.policy_type);
   const isProperty = PROPERTY.includes(rc.policy_type);
@@ -364,6 +364,12 @@ export default function PolicySheet({ rc, warning }) {
       )}
 
       <SummarySection rc={rc} warning={warning} />
+
+      {origin.length > 0 && (
+        <Section title="Where they came from">
+          <dl>{origin.map(([label, value]) => <Field key={label} label={label} value={value} wide emptyText={<T k="ratechecks.sheet.origin-none">Not given</T>} />)}</dl>
+        </Section>
+      )}
 
       {x.notes && (
         <details className="text-sm" style={{ color: 'var(--qs-subtle)' }}>

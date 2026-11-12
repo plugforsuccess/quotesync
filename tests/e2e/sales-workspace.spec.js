@@ -179,3 +179,28 @@ test('close: mark lost closes the household quote with the reason', async ({ pag
   await expect(page.getByText('Marked Lost. The lead is closed.')).toBeVisible();
   expect(writes.find(w => w.table === 'sales_quotes').body).toMatchObject({ status: 'lost', lost_reason: 'price' });
 });
+
+test('the drawer top says who referred them; the quote sheet says how they know them and the producer', async ({ page }) => {
+  await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  const r = { ...base, id: 'x1', first_name: 'Cameron', status: 'extract_failed', created_at: new Date(Date.now() - 3600000).toISOString(),
+    carrier: null, policy_type: null, promoter_id: PID, promoter_name: 'Javon Yarbrough', producer_name: 'Cameron Wiley',
+    referrer_relationship: 'friend', contact_relationship: 'self' };
+  await page.route(SB + '/rest/v1/rate_checks*', async (route) => {
+    const req = route.request(); const u = new URL(req.url());
+    if (u.searchParams.get('promoter_id')) return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    const one = (req.headers().accept || '').includes('vnd.pgrst.object');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(one ? r : [r]) });
+  });
+  await page.goto('/agency/leads/rate-checks');
+  await page.locator('li').filter({ hasText: 'Cameron' }).first().click();
+  const drawer = page.getByRole('dialog', { name: 'Sales workspace' });
+  await expect(drawer.getByText('Referred by Javon Yarbrough', { exact: true })).toBeVisible();
+  await expect(drawer.getByText(/Via Cameron|\(Friend\)|Knows Javon/)).toHaveCount(0);
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, clip: { x: 0, y: 0, width: 390, height: 260 } });
+  const from = drawer.locator('section').filter({ has: page.getByRole('heading', { name: 'Where they came from' }) }).last();
+  await expect(from.getByText('How they know Javon')).toBeVisible();
+  await expect(from.getByText('Friend', { exact: true })).toBeVisible();
+  await expect(from.getByText('Producer')).toBeVisible();
+  await expect(from.getByText('Cameron Wiley', { exact: true })).toBeVisible();
+  if (process.env.SHOT2) { await from.scrollIntoViewIfNeeded(); await from.screenshot({ path: process.env.SHOT2 }); }
+});
