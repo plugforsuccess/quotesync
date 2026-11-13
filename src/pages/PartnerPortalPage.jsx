@@ -269,20 +269,22 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <label htmlFor="w9-addr" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.669a90">Street Address</T></label>
       <input id="w9-addr" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="123 Peachtree St NE, Apt 4" className={INPUT} />
       {show('address')}
-      <label htmlFor="w9-city" className="mt-4 block text-sm font-semibold text-slate-800"><T k="w9.city">City</T></label>
-      <input id="w9-city" autoComplete="address-level2" value={form.city} onChange={set('city')} placeholder="Atlanta" className={INPUT} />
-      {show('city')}
-      <div className="mt-4 grid grid-cols-[6rem_1fr] gap-3">
+      {/* City, State and ZIP on one row: city takes the room, state and ZIP stay narrow. */}
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_4rem_6rem] gap-2">
+        <div className="min-w-0">
+          <label htmlFor="w9-city" className="block text-sm font-semibold text-slate-800"><T k="w9.city">City</T></label>
+          <input id="w9-city" autoComplete="address-level2" value={form.city} onChange={set('city')} placeholder="Atlanta" className={`${INPUT} px-3`} />
+        </div>
         <div>
           <label htmlFor="w9-state" className="block text-sm font-semibold text-slate-800"><T k="w9.state">State</T></label>
-          <input id="w9-state" autoComplete="address-level1" autoCapitalize="characters" maxLength={2} value={form.state} onChange={set('state')} placeholder="GA" className={INPUT} />
+          <input id="w9-state" autoComplete="address-level1" autoCapitalize="characters" maxLength={2} value={form.state} onChange={set('state')} placeholder="GA" className={`${INPUT} px-2 text-center`} />
         </div>
         <div>
           <label htmlFor="w9-zip" className="block text-sm font-semibold text-slate-800"><T k="w9.zip">ZIP</T></label>
-          <input id="w9-zip" autoComplete="postal-code" inputMode="numeric" value={form.zip} onChange={set('zip')} placeholder="30303" className={INPUT} />
+          <input id="w9-zip" autoComplete="postal-code" inputMode="numeric" value={form.zip} onChange={set('zip')} placeholder="30303" className={`${INPUT} px-3`} />
         </div>
       </div>
-      {show('state')}{show('zip')}
+      {show('city')}{show('state')}{show('zip')}
 
       <p className="mt-4 text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.7af993">Taxpayer identification number</T></p>
       <div className="mt-1.5 flex gap-2">
