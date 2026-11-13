@@ -11,6 +11,7 @@
 /* COPY REVIEW: submit this page to Allstate marketing compliance before paid traffic */
 
 import { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { setHomeScreenName } from '../lib/homeScreenName';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { persistUtmParams, getUtmParams } from '../lib/leadsApi';
 import { POLICYHOLDER_RELATIONSHIPS, REFERRER_RELATIONSHIPS, OTHER_MAX, normalizeOther, isPolicyholder } from '../lib/relationship';
@@ -263,6 +264,12 @@ export default function RateCheckPage() {
     setStep(s => (s === 'results' ? s : itemsRef.current.some(i => i.status === 'draft') ? 'policies' : 'pick'));
     window.scrollTo(0, 0);
   }, [ready, location.search, location.pathname]);
+
+  // An affiliate saving their own link to the Home Screen (from the portal, ?app=1): the icon is "Affiliate Link".
+  useEffect(() => {
+    if (!inviteCode || new URLSearchParams(window.location.search).get('app') !== '1') return undefined;
+    return setHomeScreenName('Affiliate Link');
+  }, [inviteCode]);
 
   // A producer's tagged link: pre-fill what they typed at the booth (draft wins).
   useEffect(() => {

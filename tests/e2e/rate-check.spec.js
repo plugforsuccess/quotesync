@@ -398,6 +398,15 @@ test('guided flow: a PDF auto policy with a question can be answered and sent on
   await expect(page.getByRole('button', { name: /^Continue$/ })).toBeEnabled();
 });
 
+test('an affiliate saving their link from the portal (?app=1) gets an "Affiliate Link" icon', async ({ page }) => {
+  await page.route('**/functions/v1/rate-check', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: 'null' }));
+  await page.goto('/r/JVN7K2QX?app=1');
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Affiliate Link');
+  await expect(page).toHaveTitle('Affiliate Link');
+  await page.goto('/r/JVN7K2QX');
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Cam Wiley Agency');
+});
+
 // A customer opening a referral partner's link: the strip says who shared it, and the
 // upload carries the link's code so the partner is credited.
 async function partnerLinkUpload(page, testInfo, lookup) {

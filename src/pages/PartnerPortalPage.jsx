@@ -10,6 +10,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, Check, Copy, ExternalLink, Loader2, Lock, Share2, Star, X } from 'lucide-react';
 import PhotoCropModal from '../components/affiliates/PhotoCropModal';
+import HomeScreenSteps from '../components/affiliates/HomeScreenSteps';
+import { setHomeScreenName } from '../lib/homeScreenName';
 import { reviewUrl } from '../lib/reviews';
 import BrandLogo from '../components/BrandLogo';
 import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, submitPartnerW9 } from '../lib/rateCheckApi';
@@ -57,10 +59,9 @@ export default function PartnerPortalPage() {
     setError('');
     loadPartnerPortal(token).then(setData).catch(err => setError(err.message));
   }, [token]);
-  useEffect(() => {
-    document.title = 'Affiliate portal | Cam Wiley Agency';
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
+  // Saved to a Home Screen from here, the icon is "Affiliate Portal".
+  useEffect(() => setHomeScreenName('Affiliate Portal'), []);
 
   const gate = data && data.agreement.required && !data.agreement.signed;
   return (
@@ -69,7 +70,7 @@ export default function PartnerPortalPage() {
         <div className="mx-auto max-w-md px-4 pt-5 pb-20">
           <header className="flex items-center justify-between">
             <BrandLogo />
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Affiliate portal</T></span>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Affiliate Portal</T></span>
           </header>
           {data && (
             <>
@@ -466,6 +467,8 @@ function Earnings({ token, data, onChange }) {
         </>}
         <p className="mt-3 text-xs leading-relaxed text-blue-100"><T k="pages.partnerportalpage.0d57c3">When you post or message your link, say you get a referral fee. Don't talk about coverage or prices. Just share the link.</T></p>
       </section>
+
+      <HomeScreenSteps linkUrl={`${url}?app=1`} linkReady={ready} />
 
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', dollars2(paidAll), 'all time']].map(([k, v, sub]) => (

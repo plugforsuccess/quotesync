@@ -40,5 +40,5 @@ test('counts in the month of the later step', () => {
 });
 
 test('recruit link', () => {
-  assert.equal(recruitUrl('AB12CD34', 'https://insuredbycam.com'), 'https://insuredbycam.com/courses?by=AB12CD34#partners');
+  assert.equal(recruitUrl('AB12CD34', 'https://insuredbycam.com'), 'https://insuredbycam.com/affiliates?by=AB12CD34');
 });

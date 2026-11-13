@@ -227,3 +227,26 @@ test('month headings are the month; a paused link says so', async ({ page }) => 
   await expect(page.getByText('$45')).toHaveCount(0);
   await expect(page.getByText(/on the way/)).toHaveCount(0);
 });
+
+test('Save to Your Home Screen: Affiliate Portal and Affiliate Link, iPhone and Android steps', async ({ page }) => {
+  await mockPartner(page, { data: portal({ photo_url: PHOTO, w9: W9 }) });
+  await page.goto(`/partner/${TOKEN}`);
+  // Saved from here, the icon is named Affiliate Portal.
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Affiliate Portal');
+  const card = page.getByRole('region', { name: 'Save to Your Home Screen' });
+  await expect(card.getByText('Affiliate Portal', { exact: true }).first()).toBeVisible();
+  await expect(card.getByText('Tap Share', { exact: false }).first()).toBeVisible();
+  await expect(card.getByText(/Check the name says Affiliate Link/)).toBeVisible();
+  await expect(card.getByRole('link', { name: 'Open My Link' })).toHaveAttribute('href', new RegExp(`/r/${CODE}\\?app=1$`));
+  await card.getByRole('tab', { name: 'Android' }).click();
+  await expect(card.getByText(/Open it in Chrome/).first()).toBeVisible();
+  await expect(card.getByText(/Tap Add to Home screen/).first()).toBeVisible();
+});
+
+test('before the link unlocks, the Affiliate Link steps wait', async ({ page }) => {
+  await mockPartner(page, { data: portal() });
+  await page.goto(`/partner/${TOKEN}`);
+  const card = page.getByRole('region', { name: 'Save to Your Home Screen' });
+  await expect(card.getByText('Once your link unlocks, the steps for it show here.')).toBeVisible();
+  await expect(card.getByRole('link', { name: 'Open My Link' })).toHaveCount(0);
+});
