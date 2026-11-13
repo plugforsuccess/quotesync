@@ -19,6 +19,7 @@ import {
 import { downloadCSV } from '../../../lib/csvExport';
 import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
 import { CopyTextButton } from './Copyable';
+import MarkAsTest from '../../../components/testRecords/MarkAsTest';
 import { inviteUrl } from './invite';
 import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
 import SendPitch from './SendPitch';
@@ -320,12 +321,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                         {p.w9_received_at ? <T k="pages.components.ratechecks.partnerstab.719ea3">{'Clear'}</T> : <T k="pages.components.ratechecks.partnerstab.448550">{'Got paper W-9'}</T>}
                       </SettingButton>} />
                 <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
-                <SettingRow label="Share link"
+                <SettingRow label="Affiliate Link"
                   value={p.active ? 'On. New scans from the link count toward pay.' : 'Paused. The link doesn\u2019t take new scans.'}
                   tone={p.active ? 'ok' : 'warn'}
                   action={<SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}>{p.active ? <T k="pages.components.ratechecks.partnerstab.781961">{'Pause'}</T> : <T k="pages.components.ratechecks.partnerstab.26563e">{'Turn on'}</T>}</SettingButton>} />
               </dl>
             )}
+            <div className="mt-3 flex justify-center"><MarkAsTest kind="affiliate" id={p.id} onDone={() => setSelected(null)} className="w-full justify-center" /></div>
 
             {expanded && monthRows.length > 0 && (
               <ul className="mt-3 overflow-hidden rounded-lg" style={{ border: '1px solid var(--qs-border)' }}>

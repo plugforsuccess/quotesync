@@ -296,7 +296,7 @@ Deno.serve(async (req) => {
     if (!(await underLimit(supabase, `qs_aff:${who.userId}`, 50, 86400))) return json({ error: 'That’s the daily limit for sign-ups.' }, 429, cors)
     const cols = 'id, name, phone, email, code, portal_token, active, created_at'
     const { data: existing } = await supabase.from('rate_check_promoters').select(cols)
-      .eq('agency_id', who.agencyId).eq('phone', phone).limit(1)
+      .eq('agency_id', who.agencyId).eq('phone', phone).eq('is_test', false).limit(1)
     if (existing?.[0]) return json({ affiliate: existing[0], already: true }, 200, cors)
     const { data, error } = await supabase.from('rate_check_promoters').insert({
       agency_id: who.agencyId, name: [first, last].filter(Boolean).join(' '), phone, email: email || null,
