@@ -249,9 +249,9 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </Dismissible>
             )}
 
-            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)}
+            <LinkRow label="Affiliate Portal (Only for Them)" url={portalUrl(p.portal_token)}
               sms={p.phone ? portalSms(p) : null} smsLabel={`Text ${p.name.split(' ')[0]}`} />
-            <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)}
+            <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Affiliate Link' : 'Affiliate Link · Off Until Signed'} url={inviteUrl(p.code)}
               muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at}
               sms={p.phone ? smsHref(p.phone, `Your link to share: ${inviteUrl(p.code)}`) : null} smsLabel={`Text ${p.name.split(' ')[0]}`} />
 
