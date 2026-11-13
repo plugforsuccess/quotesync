@@ -17,6 +17,9 @@ test('careers: both roles, the producer pay range, no dead Apply buttons', async
   const benefits = page.getByRole('region', { name: 'Benefits' });
   await expect(benefits.getByText('401(k) with a 4% Match')).toBeVisible();
   await expect(benefits.getByText('Paid Every Two Weeks')).toBeVisible();
+  await expect(benefits.getByText('Paid Time Off')).toBeVisible();
+  await expect(benefits.getByText('Continuing Education')).toBeVisible();
+  await expect(page.getByText(/rent subsidy|housing/i)).toHaveCount(0); // offered privately, not on the site
   await expect(page.getByRole('link', { name: /Apply on Indeed/ })).toHaveCount(0);
   await expect(page.getByText('The job post is coming soon. Check back shortly.').first()).toBeVisible();
 });

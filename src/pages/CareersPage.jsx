@@ -3,7 +3,7 @@
 // (when set) what it pays; Apply sends people to the job post (Indeed). A role without a
 // post yet says so instead of showing a dead button. All wording is editable with the
 // pencil. Reached from the footer (not the top menu). Same look as the consumer site. No black.
-import { ArrowRight, BadgeDollarSign, CalendarCheck, Check, Headphones, LineChart, PiggyBank } from 'lucide-react';
+import { ArrowRight, BadgeDollarSign, CalendarCheck, Check, GraduationCap, Headphones, LineChart, Palmtree, PiggyBank } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 
@@ -33,6 +33,8 @@ const ROLES = [
 const BENEFITS = [
   [PiggyBank, '401(k) with a 4% Match', 'We match what you put in, up to 4% of your pay.'],
   [CalendarCheck, 'Paid Every Two Weeks', 'A steady biweekly paycheck.'],
+  [Palmtree, 'Paid Time Off', 'Time away that’s paid, to rest and recharge.'],
+  [GraduationCap, 'Continuing Education', 'Support for the courses that keep your license current and grow your skills.'],
 ];
 
 const WHY = [
