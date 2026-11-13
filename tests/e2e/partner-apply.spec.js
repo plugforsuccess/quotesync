@@ -97,7 +97,7 @@ test('Drivers Ed keeps a short teaser that opens the affiliate page', async ({ p
   await page.getByRole('link', { name: /Learn More/ }).click();
   await expect(page).toHaveURL(/\/affiliates$/);
   await page.goto('/courses');
-  await page.getByRole('link', { name: /Become an Affiliate|Become a paid affiliate/i }).click();
+  await page.getByRole('link', { name: /Become an Affiliate|Become a paid affiliate/i }).first().click(); // the hero link (the footer has one too)
   await expect(page).toHaveURL(/\/affiliates$/);
 });
 
