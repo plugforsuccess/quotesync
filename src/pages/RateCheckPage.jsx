@@ -101,7 +101,9 @@ function concernsOf(item) {
   const out = [];
   if (t.expires && t.expires < todayISO() && !item.expiredOk) out.push('expired');
   const isAuto = (item.kind || READ_AS[t.read] || t.read) === 'auto';
-  if (isAuto && t.cars === 0 && (item.pages?.length || 0) < 2 && !item.carsOk) out.push('no_cars');
+  // A downloaded PDF counts every page inside it.
+  const pageTotal = (item.pages || []).reduce((n, pg) => n + (pg.pdfPages || 1), 0);
+  if (isAuto && t.cars === 0 && pageTotal < 2 && !item.carsOk) out.push('no_cars');
   return out;
 }
 function mismatchOf(item) {
@@ -1051,6 +1053,9 @@ export default function RateCheckPage() {
           <ul className="mt-5 space-y-3">
             {drafts.map((it, n) => (
               <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id}
+                mismatch={mismatchOf(it)} onKeep={() => patchItem(it.id, { typeOk: true })}
+                onConcernOk={(k) => patchItem(it.id, k === 'expired' ? { expiredOk: true } : { carsOk: true })}
+                onMovedOk={() => patchItem(it.id, { movedSeen: true })}
                 onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
                 onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
                 onRemove={() => removeItem(it.id)}
@@ -1276,12 +1281,62 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, 
 
   const pageCount = counting ? <T k="rc.flow.counting-pages">Counting pages…</T> : <>{total} {total === 1 ? <T k="rc.flow.page-lower">page</T> : <T k="rc.flow.pages-lower">pages</T>}</>;
 
+  // Questions on this policy, one at a time: the front card is answered first and the
+  // rest wait behind it. A downloaded PDF gets them too.
+  const deck = (
+    <PromptDeck label={`Questions about policy ${n}`} cards={[
+      item.movedFrom && item.kind !== item.movedFrom && !item.movedSeen && { key: 'moved', tone: 'info', el: (
+        <Prompt tone="info" icon={Check} title={<><T k="rc.check.moved">Moved to</T> <KindWord kind={item.kind} /></>}
+          actions={<button type="button" onClick={onMovedOk} className={`${promptPrimary} col-span-2`}><T k="rc.check.got-it">Got It</T></button>}>
+          <T k="rc.check.moved-why2">This file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} <KindWord kind={item.kind} lower /> <T k="rc.check.moved-policy">policy.</T>
+        </Prompt>
+      ) },
+      mismatch === 'not_a_policy' && { key: 'not_a_policy', tone: 'ask', el: (
+        <Prompt icon={FileText} title={<T k="rc.check.not-policy-title">This doesn’t look like a policy</T>}
+          actions={<>
+            <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.remove">Remove It</T></button>
+            <button type="button" onClick={onKeep} className={promptSecondary}><T k="rc.check.keep">It’s a Policy</T></button>
+          </>}>
+          <T k="rc.check.not-policy-why">We need the declarations page: the one that lists your coverages and price.</T>
+        </Prompt>
+      ) },
+      concerns.includes('expired') && { key: 'expired', tone: 'ask', el: (
+        <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> <span data-copy="fixed">{new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span></>}
+          actions={<>
+            <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.replace">Remove It</T></button>
+            <button type="button" onClick={() => onConcernOk('expired')} className={promptSecondary}><T k="rc.check.current">It’s Current</T></button>
+          </>}>
+          <T k="rc.check.expired-why">We quote against your current policy. If you have a newer one, add that instead.</T>
+        </Prompt>
+      ) },
+      concerns.includes('no_cars') && { key: 'no_cars', tone: 'ask', el: (
+        <Prompt icon={Car} title={<T k="rc.check.no-cars-title">We don’t see any cars yet</T>}
+          actions={<>
+            <button type="button" onClick={onAddPage} className={promptPrimary}><Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.check.add-page">Add Page</T></button>
+            <button type="button" onClick={() => onConcernOk('no_cars')} className={promptSecondary}><T k="rc.check.all-there">It’s All There</T></button>
+          </>}>
+          <T k="rc.check.no-cars-why">Add the page that lists your vehicles so we can match your coverage.</T>
+        </Prompt>
+      ) },
+      asking && { key: 'more', tone: 'info', el: (
+        <Prompt tone="info" icon={Layers} role="group" title={<T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T>}
+          actions={<>
+            <button type="button" onClick={onAddPage} className={promptPrimary}><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.add-page">Add Page</T> {pages.length + 1}</button>
+            <button type="button" onClick={onDoneAdding} className={promptSecondary}><T k="rc.flow.thats-all">That's All</T></button>
+          </>}>
+          <T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T>
+        </Prompt>
+      ) },
+    ]} />
+  );
+
   // One downloaded PDF: a single file row, not the photo tiles.
   if (allPdf && pages.length === 1) {
     const pg = pages[0];
     const name = String(pg.file?.name || '').replace(/\.pdf$/i, '') || <T k="rc.flow.policy-pdf">Policy PDF</T>;
     return (
-      <li data-policy={item.id} className={`flex items-center gap-3 rounded-2xl bg-slate-50 p-3 ring-1 transition-shadow ${flash ? 'ring-4 ring-amber-300' : 'ring-slate-200'}`}>
+      <li data-policy={item.id} className={`rounded-2xl bg-slate-50 p-3 ring-1 transition-shadow ${flash ? 'ring-4 ring-amber-300' : 'ring-slate-200'}`}>
+        <div className="flex items-center gap-3">
         <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200">
           <FileText className="h-5 w-5" />
         </span>
@@ -1299,6 +1354,8 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, 
           className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
+        </div>
+        {deck}
       </li>
     );
   }
@@ -1373,52 +1430,7 @@ function DraftCard({ item, index, asking, flash, mismatch, onKeep, onConcernOk, 
         </button>
       )}
 
-      {/* Questions on this policy, one at a time: the front card is answered first and the
-          rest wait behind it. */}
-      <PromptDeck label={`Questions about policy ${n}`} cards={[
-        item.movedFrom && item.kind !== item.movedFrom && !item.movedSeen && { key: 'moved', tone: 'info', el: (
-          <Prompt tone="info" icon={Check} title={<><T k="rc.check.moved">Moved to</T> <KindWord kind={item.kind} /></>}
-            actions={<button type="button" onClick={onMovedOk} className={`${promptPrimary} col-span-2`}><T k="rc.check.got-it">Got It</T></button>}>
-            <T k="rc.check.moved-why2">This file is</T> {/^[aeiou]/i.test(KIND[item.kind]?.label || '') ? 'an' : 'a'} <KindWord kind={item.kind} lower /> <T k="rc.check.moved-policy">policy.</T>
-          </Prompt>
-        ) },
-        mismatch === 'not_a_policy' && { key: 'not_a_policy', tone: 'ask', el: (
-          <Prompt icon={FileText} title={<T k="rc.check.not-policy-title">This doesn’t look like a policy</T>}
-            actions={<>
-              <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.remove">Remove It</T></button>
-              <button type="button" onClick={onKeep} className={promptSecondary}><T k="rc.check.keep">It’s a Policy</T></button>
-            </>}>
-            <T k="rc.check.not-policy-why">We need the declarations page: the one that lists your coverages and price.</T>
-          </Prompt>
-        ) },
-        concerns.includes('expired') && { key: 'expired', tone: 'ask', el: (
-          <Prompt icon={CalendarX} title={<><T k="rc.check.expired">This policy ended</T> <span data-copy="fixed">{new Date(`${item.typeCheck.expires}T12:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span></>}
-            actions={<>
-              <button type="button" onClick={onRemove} className={promptPrimary}><T k="rc.check.replace">Remove It</T></button>
-              <button type="button" onClick={() => onConcernOk('expired')} className={promptSecondary}><T k="rc.check.current">It’s Current</T></button>
-            </>}>
-            <T k="rc.check.expired-why">We quote against your current policy. If you have a newer one, add that instead.</T>
-          </Prompt>
-        ) },
-        concerns.includes('no_cars') && { key: 'no_cars', tone: 'ask', el: (
-          <Prompt icon={Car} title={<T k="rc.check.no-cars-title">We don’t see any cars yet</T>}
-            actions={<>
-              <button type="button" onClick={onAddPage} className={promptPrimary}><Plus className="h-4 w-4" aria-hidden="true" /> <T k="rc.check.add-page">Add Page</T></button>
-              <button type="button" onClick={() => onConcernOk('no_cars')} className={promptSecondary}><T k="rc.check.all-there">It’s All There</T></button>
-            </>}>
-            <T k="rc.check.no-cars-why">Add the page that lists your vehicles so we can match your coverage.</T>
-          </Prompt>
-        ) },
-        asking && { key: 'more', tone: 'info', el: (
-          <Prompt tone="info" icon={Layers} role="group" title={<T k="rc.flow.does-this-policy-have-more">Does this policy have more pages?</T>}
-            actions={<>
-              <button type="button" onClick={onAddPage} className={promptPrimary}><Camera className="h-4 w-4" aria-hidden="true" /> <T k="rc.flow.add-page">Add Page</T> {pages.length + 1}</button>
-              <button type="button" onClick={onDoneAdding} className={promptSecondary}><T k="rc.flow.thats-all">That's All</T></button>
-            </>}>
-            <T k="rc.flow.drivers-cars-and-coverages-are">Drivers, cars and coverages are often on page 2 or 3.</T>
-          </Prompt>
-        ) },
-      ]} />
+      {deck}
     </li>
   );
 }
