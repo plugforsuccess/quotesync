@@ -16,7 +16,7 @@ import { reviewUrl } from '../lib/reviews';
 import BrandLogo from '../components/BrandLogo';
 import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, submitPartnerW9, acceptPartnerTerms } from '../lib/rateCheckApi';
 import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION } from '../lib/affiliates';
-import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
+import { TAX_CLASSES, LLC_CLASSES, formatTin, splitCsz, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
 
 const ACCENT = '#39FF88';
@@ -172,14 +172,19 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
   const setOpen = setOpenProp ?? setOpenOwn;
   const [form, setForm] = useState(() => ({
     name: data.name || '', business_name: '', tax_class: 'individual', llc_class: '', other_text: '',
-    address: w9.prefill?.address || '', city_state_zip: w9.prefill?.city_state_zip || '',
+    address: w9.prefill?.address || '', ...splitCsz(w9.prefill?.city_state_zip),
     tin_type: 'ssn', tin: '', signed_name: data.name || '', accept: false,
   }));
   const prefilled = !!(data.name && w9.prefill?.address && w9.prefill?.city_state_zip);
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+  const set = (k) => (e) => setForm(f => {
+    let v = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    if (k === 'state') v = v.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase();
+    if (k === 'zip') v = v.replace(/[^\d-]/g, '').slice(0, 10);
+    return { ...f, [k]: v };
+  });
   const problems = w9Problems(form);
   const show = (k) => (tried && problems[k] ? <p className="mt-1 text-xs text-red-600">{problems[k]}</p> : null);
 
@@ -264,9 +269,22 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <label htmlFor="w9-addr" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.669a90">Street Address</T></label>
       <input id="w9-addr" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="123 Peachtree St NE, Apt 4" className={INPUT} />
       {show('address')}
-      <label htmlFor="w9-csz" className="mt-4 block text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.c04899">City, State, ZIP</T></label>
-      <input id="w9-csz" value={form.city_state_zip} onChange={set('city_state_zip')} placeholder="Atlanta, GA 30303" className={INPUT} />
-      {show('city_state_zip')}
+      {/* City, State and ZIP on one row: city takes the room, state and ZIP stay narrow. */}
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_4rem_6rem] gap-2">
+        <div className="min-w-0">
+          <label htmlFor="w9-city" className="block text-sm font-semibold text-slate-800"><T k="w9.city">City</T></label>
+          <input id="w9-city" autoComplete="address-level2" value={form.city} onChange={set('city')} placeholder="Atlanta" className={`${INPUT} px-3`} />
+        </div>
+        <div>
+          <label htmlFor="w9-state" className="block text-sm font-semibold text-slate-800"><T k="w9.state">State</T></label>
+          <input id="w9-state" autoComplete="address-level1" autoCapitalize="characters" maxLength={2} value={form.state} onChange={set('state')} placeholder="GA" className={`${INPUT} px-2 text-center`} />
+        </div>
+        <div>
+          <label htmlFor="w9-zip" className="block text-sm font-semibold text-slate-800"><T k="w9.zip">ZIP</T></label>
+          <input id="w9-zip" autoComplete="postal-code" inputMode="numeric" value={form.zip} onChange={set('zip')} placeholder="30303" className={`${INPUT} px-3`} />
+        </div>
+      </div>
+      {show('city')}{show('state')}{show('zip')}
 
       <p className="mt-4 text-sm font-semibold text-slate-800"><T k="pages.partnerportalpage.7af993">Taxpayer identification number</T></p>
       <div className="mt-1.5 flex gap-2">
