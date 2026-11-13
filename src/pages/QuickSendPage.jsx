@@ -11,6 +11,7 @@ import { Check, Copy, Loader2, MessageSquare, QrCode, Send, X } from 'lucide-rea
 import { TEXT_FROM_OWN_PHONE } from '../lib/textingMode';
 import { buildText, templateText } from '../lib/textTemplates';
 import AddToList from '../components/lists/AddToList';
+import QuickAffiliate from '../components/affiliates/QuickAffiliate';
 import {
   quickSend, savedKey, keepKey, forgetKeys, deviceLabel,
   sendProgress, sendSteps, STEPS, shortAgo, isFinal, formatPhoneInput, phoneDigits, validMobile,
@@ -82,7 +83,7 @@ export default function QuickSendPage() {
         </header>
         {screen === 'loading' && <Loader2 className="mx-auto mt-16 h-6 w-6 animate-spin text-slate-400" aria-label="Loading" />}
         {screen === 'signin' && <SignIn onDone={signedIn} />}
-        {screen === 'ready' && <SendForm onSignedOut={signOut} />}
+        {screen === 'ready' && <Ready me={me} onSignedOut={signOut} />}
       </main>
     </div>
   );
@@ -120,6 +121,29 @@ function SignIn({ onDone }) {
         </span>
       </label>
     </form>
+  );
+}
+
+// A principal can also sign up affiliates on the spot; everyone else sees the rate check form only.
+function Ready({ me, onSignedOut }) {
+  const [tab, setTab] = useState('rate');
+  if (!me?.can_sign_up_affiliates) return <SendForm onSignedOut={onSignedOut} />;
+  const tabBtn = (key, text) => (
+    <button type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)}
+      className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${tab === key ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-500'}`}>{text}</button>
+  );
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-1 rounded-xl bg-slate-200/70 p-1" role="tablist" aria-label="What to send">
+        {tabBtn('rate', 'Rate Check')}{tabBtn('affiliate', 'Affiliate')}
+      </div>
+      {tab === 'rate' ? <SendForm onSignedOut={onSignedOut} /> : (
+        <QuickAffiliate signUp={async (v) => {
+          try { return await quickSend('affiliate_signup', { device_key: savedKey(), ...v }); }
+          catch (err) { if (err.status === 401) onSignedOut(); throw err; }
+        }} />
+      )}
+    </div>
   );
 }
 

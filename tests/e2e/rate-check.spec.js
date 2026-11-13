@@ -346,6 +346,81 @@ test('a downloaded PDF counts its own pages and goes up whole', async ({ page },
   expect(sent.getPageCount()).toBe(3);
 });
 
+// A downloaded PDF gets its questions too (they used to be hidden, leaving the button stuck
+// on "Answer the Question Above"); a multi-page PDF isn't asked about missing cars.
+async function pdfWithScan(page, testInfo, pages, scan) {
+  const { PDFDocument } = await import('pdf-lib');
+  const doc = await PDFDocument.create();
+  for (let i = 0; i < pages; i++) doc.addPage([612, 792]).drawText(`Auto dec, page ${i + 1}`, { x: 50, y: 700 });
+  const file = testInfo.outputPath(`dec-${pages}.pdf`);
+  fs.writeFileSync(file, await doc.save());
+  await page.route('**/functions/v1/rate-check', (route) => route.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify(route.request().postDataJSON()?.mode === 'classify' ? { policy_type: 'auto', confidence: 'high', ...scan } : { status: 'received', rate_check_id: 'p1' }) }));
+  await page.goto('/ratecheck');
+  await page.getByTestId('rc-files').setInputFiles(file);
+}
+
+test('a PDF policy shows its question, and answering it frees the button', async ({ page }, testInfo) => {
+  await pdfWithScan(page, testInfo, 1, { expiration_date: '2024-03-01', vehicle_count: 2 });
+  const deck = page.getByRole('region', { name: 'Questions about policy 1' });
+  await expect(deck.getByText(/This policy ended March 2024/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Answer the Question Above' })).toBeDisabled();
+  await page.getByRole('button', { name: 'It’s Current' }).click();
+  await expect(page.getByRole('button', { name: /Continue/ })).toBeEnabled();
+});
+
+test('a six-page PDF with no cars read is not asked to add the cars page', async ({ page }, testInfo) => {
+  await pdfWithScan(page, testInfo, 6, { expiration_date: '2027-06-01', vehicle_count: 0 });
+  await expect(page.getByText('6 pages', { exact: true })).toBeVisible();
+  await expect(page.getByText(/We don’t see any cars yet/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Continue/ })).toBeEnabled();
+});
+
+test('guided flow: a PDF auto policy with a question can be answered and sent on', async ({ page }, testInfo) => {
+  for (const l of NUDGES.get(page)) await page.removeLocatorHandler(l);
+  const { PDFDocument } = await import('pdf-lib');
+  const doc = await PDFDocument.create();
+  for (let i = 0; i < 6; i++) doc.addPage([612, 792]).drawText(`Auto dec, page ${i + 1}`, { x: 50, y: 700 });
+  const file = testInfo.outputPath('sf-auto.pdf');
+  fs.writeFileSync(file, await doc.save());
+  await page.route('**/functions/v1/rate-check', (route) => route.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify(route.request().postDataJSON()?.mode === 'classify' ? { policy_type: 'auto', confidence: 'high', expiration_date: '2024-03-01', vehicle_count: 0 } : { status: 'received', rate_check_id: 'g1' }) }));
+  await page.goto('/?start=1');
+  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: /Continue · 1 policy/i }).click();
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Upload', exact: true }).first().click()]);
+  await chooser.setFiles(file);
+  const deck = page.getByRole('region', { name: 'Questions about policy 1' });
+  await expect(deck.getByText(/This policy ended March 2024/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /Answer the Question Above/ })).toBeDisabled();
+  await page.getByRole('button', { name: 'It’s Current' }).click();
+  await expect(page.getByText(/We don’t see any cars yet/)).toHaveCount(0); // six pages: no cars question
+  await expect(page.getByRole('button', { name: /^Continue$/ })).toBeEnabled();
+});
+
+test('an affiliate saving their link from the portal (?app=1) gets an "Affiliate Link" icon', async ({ page }) => {
+  await page.route('**/functions/v1/rate-check', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: 'null' }));
+  await page.goto('/r/JVN7K2QX?app=1');
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Affiliate Link');
+  await expect(page).toHaveTitle('Affiliate Link');
+  // A customer opening the same link: no save card.
+  await expect(page.getByRole('dialog', { name: 'Save your Affiliate Link' })).toHaveCount(0);
+  await page.goto('/r/JVN7K2QX');
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Cam Wiley Agency');
+});
+
+test('on the affiliate’s own phone, their link page shows how to save it, until they close it', async ({ page }) => {
+  await page.route('**/functions/v1/rate-check', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: 'null' }));
+  await page.addInitScript(() => localStorage.setItem('qs_aff_code', 'JVN7K2QX'));
+  await page.goto('/r/JVN7K2QX?app=1');
+  const card = page.getByRole('dialog', { name: 'Save your Affiliate Link' });
+  await expect(card).toContainText('Tap Share, then Add to Home Screen. It’s already named “Affiliate Link.”');
+  await card.getByRole('button', { name: 'Done' }).click();
+  await expect(card).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Save your Affiliate Link' })).toHaveCount(0);
+});
+
 // A customer opening a referral partner's link: the strip says who shared it, and the
 // upload carries the link's code so the partner is credited.
 async function partnerLinkUpload(page, testInfo, lookup) {

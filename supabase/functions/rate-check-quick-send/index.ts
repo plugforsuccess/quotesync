@@ -19,6 +19,9 @@
 //   lists        { device_key }                              → { lists: [{ id, name, is_default }] }
 //   add_to_list  { device_key, list_id, first_name, last_name?, email, phone? } → { member, already }
 //                (someone who won't upload: onto a list the principal made, for follow-up email)
+//   affiliate_signup { device_key, first_name, last_name?, phone, email? } → { affiliate, already }
+//                principal only: signs someone up as an affiliate on the spot (credited to the
+//                principal as recruiter). The page texts them their Affiliate Portal link.
 // Twilio delivery callbacks (form-encoded, signed) update sms_status.
 //
 // The text is a one-time link the person asked for during the conversation. Pressing
@@ -257,7 +260,8 @@ Deno.serve(async (req) => {
   if (!who) return json({ error: 'Sign in with your Quick Send PIN.', code: 'no_device' }, 401, cors)
 
   if (mode === 'whoami') {
-    return json({ producer_first: firstOf(who.producerName), remembered: !who.pin }, 200, cors)
+    const m = await activeMember(supabase, who.userId, who.agencyId)
+    return json({ producer_first: firstOf(who.producerName), remembered: !who.pin, can_sign_up_affiliates: m?.agency_role === 'principal' }, 200, cors)
   }
 
   if (mode === 'sign_out') {
@@ -277,6 +281,29 @@ Deno.serve(async (req) => {
       .eq('agency_id', who.agencyId).eq('created_by', who.userId).eq('source', 'quick_send')
       .order('created_at', { ascending: false }).limit(10)
     return json({ invites: data || [] }, 200, cors)
+  }
+
+  // ── Sign up an affiliate on the spot (principal only) ──
+  if (mode === 'affiliate_signup') {
+    const m = await activeMember(supabase, who.userId, who.agencyId)
+    if (m?.agency_role !== 'principal') return json({ error: 'Only the principal can sign up affiliates.' }, 403, cors)
+    const first = cleanText(body.first_name, 60), last = cleanText(body.last_name, 60)
+    const phone = usPhone(body.phone)
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 160)
+    if (!first) return json({ error: 'Add their first name.' }, 400, cors)
+    if (!phone) return json({ error: 'Enter a 10-digit US mobile number.' }, 400, cors)
+    if (email && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email)) return json({ error: 'Enter a valid email, or leave it blank.' }, 400, cors)
+    if (!(await underLimit(supabase, `qs_aff:${who.userId}`, 50, 86400))) return json({ error: 'That’s the daily limit for sign-ups.' }, 429, cors)
+    const cols = 'id, name, phone, email, code, portal_token, active, created_at'
+    const { data: existing } = await supabase.from('rate_check_promoters').select(cols)
+      .eq('agency_id', who.agencyId).eq('phone', phone).limit(1)
+    if (existing?.[0]) return json({ affiliate: existing[0], already: true }, 200, cors)
+    const { data, error } = await supabase.from('rate_check_promoters').insert({
+      agency_id: who.agencyId, name: [first, last].filter(Boolean).join(' '), phone, email: email || null,
+      recruited_by: who.userId, created_by: who.userId,
+    }).select(cols).single()
+    if (error) { console.error('[QUICK_SEND] affiliate sign-up failed:', error.message); return json({ error: 'Couldn’t sign them up. Try again.' }, 500, cors) }
+    return json({ affiliate: data, already: false }, 200, cors)
   }
 
   // ── Lists: the principal makes them; producers add people who won't upload ──

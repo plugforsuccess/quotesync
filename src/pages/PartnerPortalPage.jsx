@@ -8,10 +8,13 @@
 import { T } from '../components/SiteCopy';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, Check, Copy, ExternalLink, Loader2, Share2, Star, X } from 'lucide-react';
+import { Camera, Check, Copy, ExternalLink, FileSignature, Loader2, Share2, Star, X } from 'lucide-react';
+import PhotoCropModal from '../components/affiliates/PhotoCropModal';
+import HomeScreenSteps from '../components/affiliates/HomeScreenSteps';
+import { setHomeScreenName } from '../lib/homeScreenName';
 import { reviewUrl } from '../lib/reviews';
 import BrandLogo from '../components/BrandLogo';
-import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, squarePhoto, submitPartnerW9 } from '../lib/rateCheckApi';
+import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, submitPartnerW9 } from '../lib/rateCheckApi';
 import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
 
@@ -19,6 +22,8 @@ const ACCENT = '#39FF88';
 // Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
 const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
+// The link unlocks once the affiliate has signed the W-9. The photo is optional, after.
+const isReady = (data) => !!data?.w9?.on_file;
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 // "Cam Wiley Agency, Inc." + "." without doubling the period.
@@ -54,10 +59,9 @@ export default function PartnerPortalPage() {
     setError('');
     loadPartnerPortal(token).then(setData).catch(err => setError(err.message));
   }, [token]);
-  useEffect(() => {
-    document.title = 'Affiliate portal | Cam Wiley Agency';
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
+  // Saved to a Home Screen from here, the icon is "Affiliate Portal".
+  useEffect(() => setHomeScreenName('Affiliate Portal'), []);
 
   const gate = data && data.agreement.required && !data.agreement.signed;
   return (
@@ -66,7 +70,7 @@ export default function PartnerPortalPage() {
         <div className="mx-auto max-w-md px-4 pt-5 pb-20">
           <header className="flex items-center justify-between">
             <BrandLogo />
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Affiliate portal</T></span>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white"><T k="pages.partnerportalpage.c82950">Affiliate Portal</T></span>
           </header>
           {data && (
             <>
@@ -77,6 +81,7 @@ export default function PartnerPortalPage() {
                 {gate ? <><T k="pages.partnerportalpage.a689c7">Read the agreement with</T> {sentence(data.agency_name)} <T k="pages.partnerportalpage.8c18b8">Your link starts earning as soon as you sign.</T></>
                   : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: GOLD }} aria-hidden="true" /> <T k="pages.partnerportalpage.01210e">Agreement signed</T> {longDate(data.agreement.signed_at)}</>
                   : data.active === false ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> <T k="pages.partnerportalpage.a823cb">Your link is paused. Contact</T> {data.agency_name} <T k="pages.partnerportalpage.6e1fe7">to turn it back on.</T></>
+                  : !isReady(data) ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> <T k="aff.portal.header-locked">One quick step to unlock your link</T></>
                   : <><span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" /> <T k="pages.partnerportalpage.95cda3">Your link is live</T></>}
               </p>
             </>
@@ -87,7 +92,7 @@ export default function PartnerPortalPage() {
         {error ? <p className="rounded-2xl bg-white p-4 text-slate-700 shadow-sm ring-1 ring-slate-200">{error}</p>
           : !data ? <p className="flex items-center gap-2 rounded-2xl bg-white p-4 text-slate-500 shadow-sm ring-1 ring-slate-200"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> <T k="pages.partnerportalpage.5f02f0">Loading…</T></p>
           : gate ? <SignAgreement token={token} data={data} onSigned={load} />
-          : <><Earnings token={token} data={data} onChange={load} /><ReviewCard /></>}
+          : <><Earnings token={token} data={data} onChange={load} />{isReady(data) && <ReviewCard />}</>}
       </main>
     </div>
   );
@@ -325,97 +330,98 @@ function W9Modal({ title, onClose, children }) {
 }
 
 // Their photo next to "Javon Yarbrough shared this with you" on their link's landing page.
+const PHOTO_INPUT_ID = 'affiliate-photo-input';
 function PhotoSection({ token, name, photoUrl, onChange }) {
   const input = useRef(null);
-  const [preview, setPreview] = useState(null);
+  const [file, setFile] = useState(null); // picked, being cropped
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const pick = async (e) => {
-    const file = e.target.files?.[0];
+  const pick = (e) => {
+    const f = e.target.files?.[0];
     e.target.value = '';
-    if (!file) return;
+    if (!f) return;
     setError('');
-    try { setPreview(await squarePhoto(file)); } catch (err) { setError(err.message); }
+    if (!/^image\//.test(f.type)) { setError('Choose a photo.'); return; }
+    setAgree(false); setFile(f);
   };
   const run = async (fn) => {
     setBusy(true); setError('');
-    try { await fn(); setPreview(null); setAgree(false); onChange(); } catch (err) { setError(err.message); }
+    try { await fn(); setFile(null); setAgree(false); onChange(); } catch (err) { setError(err.message); }
     setBusy(false);
   };
-  const shown = preview || photoUrl;
 
   return (
     <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.be6684">Your photo</T></p>
       <div className="mt-3 flex items-center gap-4">
-        <button type="button" onClick={() => input.current?.click()} aria-label={shown ? 'Choose a different photo' : 'Choose a photo'}
+        <button type="button" onClick={() => input.current?.click()} aria-label={photoUrl ? 'Choose a different photo' : 'Choose a photo'}
           className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-400 ring-1 ring-slate-200">
-          {shown ? <img src={shown} alt="" className="h-full w-full object-cover" /> : <Camera className="h-7 w-7" aria-hidden="true" />}
+          {photoUrl ? <img src={photoUrl} alt="" className="h-full w-full object-cover" /> : <Camera className="h-7 w-7" aria-hidden="true" />}
         </button>
         <p className="text-sm leading-relaxed text-slate-600">
-          {photoUrl && !preview
+          {photoUrl
             ? 'People who open your link see your photo next to “' + name + ' shared this with you”'
             : <T k="pages.partnerportalpage.8de505">{'Add a photo so people who open your link know it came from you.'}</T>}
         </p>
       </div>
-      {preview ? (
-        <>
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={() => input.current?.click()} className="qb qb-outline qb-md flex-1">
+          {photoUrl ? <T k="pages.partnerportalpage.6080b4">{'Change Photo'}</T> : <T k="pages.partnerportalpage.64fe2a">{'Add a Photo'}</T>}
+        </button>
+        {photoUrl && (
+          <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="qb qb-outline qb-md flex-1 text-slate-600">
+            {busy ? <T k="pages.partnerportalpage.579d7e">{'Removing…'}</T> : <T k="pages.partnerportalpage.e96390">{'Remove'}</T>}
+          </button>
+        )}
+      </div>
+      {error && !file && <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>}
+      <input ref={input} id={PHOTO_INPUT_ID} type="file" accept="image/*" className="hidden" onChange={pick} />
+      {file && (
+        <PhotoCropModal file={file} busy={busy} error={error} canUse={agree}
+          onCancel={() => { setFile(null); setAgree(false); setError(''); }}
+          onUse={(image) => run(() => savePartnerPhoto(token, image))}>
           <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700">
             <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
             <span><T k="pages.partnerportalpage.e4652c">Show this photo with my name on my link's page. I can take it off any time.</T></span>
           </label>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="qb qb-outline qb-md flex-1"><T k="pages.partnerportalpage.ea4788">Cancel</T></button>
-            <button type="button" disabled={!agree || busy} onClick={() => run(() => savePartnerPhoto(token, preview))}
-              className="qb qb-blue qb-md flex-1">{busy ? <T k="pages.partnerportalpage.56a228">{'Saving…'}</T> : <T k="pages.partnerportalpage.3dd027">{'Use This Photo'}</T>}</button>
-          </div>
-        </>
-      ) : (
-        <div className="mt-3 flex gap-2">
-          <button type="button" onClick={() => input.current?.click()} className="qb qb-outline qb-md flex-1">
-            {photoUrl ? <T k="pages.partnerportalpage.6080b4">{'Change Photo'}</T> : <T k="pages.partnerportalpage.64fe2a">{'Add a Photo'}</T>}
-          </button>
-          {photoUrl && (
-            <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="qb qb-outline qb-md flex-1 text-slate-600">
-              {busy ? <T k="pages.partnerportalpage.579d7e">{'Removing…'}</T> : <T k="pages.partnerportalpage.e96390">{'Remove'}</T>}
-            </button>
-          )}
-        </div>
+        </PhotoCropModal>
       )}
-      {error && <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>}
-      <input ref={input} type="file" accept="image/*" className="hidden" onChange={pick} />
     </section>
   );
 }
 
-// First visits: two steps to get paid. Goes away once the W-9 is on file.
-function GetSetUp({ token, data, onChange, shared }) {
+// First visits: sign the W-9 to unlock the link. After that, a photo is suggested, never required.
+function GetSetUp({ token, data, onChange }) {
   const [w9Open, setW9Open] = useState(false);
-  const Step = ({ n, done, title, line, children }) => (
-    <li className="flex gap-3 py-3 first:pt-0">
-      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${done ? 'bg-emerald-600 text-white' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'}`}>
-        {done ? <Check className="h-4 w-4" aria-hidden="true" /> : n}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className={`font-semibold ${done ? 'text-slate-500 line-through decoration-slate-300' : 'text-[#0F2D6B]'}`}><T>{title}</T></p>
-        {line && !done && <p className="text-sm leading-relaxed text-slate-600">{line}</p>}
-        {children}
-      </div>
-    </li>
-  );
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="pages.partnerportalpage.e07ce5">Get set up · 2 steps</T></p>
-      <ol className="mt-3 divide-y divide-slate-100">
-        <Step n={1} done={shared} title="Share your link" line="Copy it below and send it to people you know. Say you get a referral fee." />
-        <Step n={2} done={false} title="Sign your W-9 · about 30 seconds"
-          line={data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign.' : 'Needed before your first payment.'}>
-          <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-md mt-2.5 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
-          {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
-        </Step>
-      </ol>
+    <section className="rounded-3xl bg-white px-5 py-8 text-center shadow-xl shadow-blue-900/10 ring-1 ring-slate-200">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="aff.portal.setup">Get Set Up · Step 1 of 2</T></p>
+      <span className="mx-auto mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100" aria-hidden="true">
+        <FileSignature className="h-8 w-8" />
+      </span>
+      <h2 className="mt-4 text-2xl font-extrabold text-[#0F2D6B]"><T k="aff.portal.w9-head">Sign Your W-9</T></h2>
+      <p className="mt-1 text-sm font-semibold text-slate-500"><T k="aff.portal.w9-time">About 30 seconds</T></p>
+      <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-slate-600">
+        {data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign, and your link unlocks right away.' : 'Sign it and your link unlocks right away. It’s also needed before your first payment.'}
+      </p>
+      <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-lg mt-6 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
+      {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
+    </section>
+  );
+}
+
+// After the W-9: a photo helps people trust the link, but it's their call.
+function PhotoNudge() {
+  return (
+    <section className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 ring-1 ring-slate-200" aria-hidden="true"><Camera className="h-5 w-5" /></span>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 font-semibold text-[#0F2D6B]"><T k="aff.portal.photo-title">Add Your Photo</T> <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500"><T k="aff.portal.optional">Optional</T></span></p>
+        <p className="mt-0.5 text-sm leading-snug text-slate-600"><T k="aff.portal.photo-why">People are more likely to open a link when they see who sent it.</T></p>
+      </div>
+      <button type="button" onClick={() => document.getElementById(PHOTO_INPUT_ID)?.click()} className="qb qb-outline qb-md shrink-0 px-4"><T k="aff.portal.photo-add">Add</T></button>
     </section>
   );
 }
@@ -423,14 +429,20 @@ function GetSetUp({ token, data, onChange, shared }) {
 function Earnings({ token, data, onChange }) {
   const url = inviteUrl(data.code);
   const [copied, setCopied] = useState(false);
-  // "Share your link" in Get set up is done once they've copied or shared it on this device.
-  const sharedKey = `qs_partner_shared_${token.slice(0, 12)}`;
-  const [shared, setShared] = useState(() => { try { return !!localStorage.getItem(sharedKey); } catch { return false; } });
-  const markShared = () => { setShared(true); try { localStorage.setItem(sharedKey, '1'); } catch { /* private mode */ } };
+  const ready = isReady(data);
+  // Step 2 (Save to Your Home Screen) shows right after the W-9 until they tap Done or Skip for Now.
+  const homeKey = `qs_aff_home_${token.slice(0, 12)}`;
+  const [homeDone, setHomeDone] = useState(() => { try { return !!localStorage.getItem(homeKey); } catch { return false; } });
+  const finishHome = () => { setHomeDone(true); try { localStorage.setItem(homeKey, '1'); } catch { /* private mode */ } };
+  const homeStep = ready && !homeDone;
+  // Remember their code on this phone, so their own link page can show how to save it.
+  useEffect(() => { try { if (data.code) localStorage.setItem('qs_aff_code', data.code); } catch { /* private mode */ } }, [data.code]);
+  // Before the W-9: nothing but step 1.
+  if (!ready) return <GetSetUp token={token} data={data} onChange={onChange} />;
   const copy = async () => {
-    try { await navigator.clipboard.writeText(url); setCopied(true); markShared(); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
   };
-  const share = () => navigator.share?.({ title: 'Rate Check', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).then(markShared).catch(() => {});
+  const share = () => navigator.share?.({ title: 'Rate Check', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).catch(() => {});
   const thisMonth = todayKey().slice(0, 7);
   const months = data.months?.length ? data.months : [{ month: thisMonth, households: 0, earned: 0, rows: [], paid: null }];
   const current = months.find(m => m.month === thisMonth) || { month: thisMonth, households: 0, earned: 0, rows: [], paid: null };
@@ -441,9 +453,9 @@ function Earnings({ token, data, onChange }) {
 
   return (
     <>
-      {!data.w9?.on_file && <GetSetUp token={token} data={data} onChange={onChange} shared={shared} />}
+      {homeStep && <HomeScreenSteps asStep linkUrl={`${url}?app=1`} onDone={finishHome} />}
 
-      <section className={`${data.w9?.on_file ? '' : 'mt-4 '}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
+      <section className={`${homeStep ? 'mt-4 ' : ''}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
         <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}><T k="pages.partnerportalpage.250f24">Your link</T></p>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
         <div className="mt-4 flex gap-2">
@@ -458,6 +470,10 @@ function Earnings({ token, data, onChange }) {
         </div>
         <p className="mt-3 text-xs leading-relaxed text-blue-100"><T k="pages.partnerportalpage.0d57c3">When you post or message your link, say you get a referral fee. Don't talk about coverage or prices. Just share the link.</T></p>
       </section>
+
+      {!data.photo_url && <PhotoNudge />}
+
+      {!homeStep && <HomeScreenSteps linkUrl={`${url}?app=1`} />}
 
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', dollars2(paidAll), 'all time']].map(([k, v, sub]) => (
