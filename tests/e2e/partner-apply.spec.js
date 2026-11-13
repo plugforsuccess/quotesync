@@ -50,11 +50,15 @@ test('the affiliate page: plain about pay and the rules, then apply', async ({ p
   await form.getByRole('group', { name: 'Are you an Allstate customer?' }).getByText('Yes', { exact: true }).click();
   await form.getByRole('group', { name: 'Is Cam Wiley your agent?' }).getByText('Not sure', { exact: true }).click();
   await form.getByLabel(/Who Would You Share It With/).selectOption('Coworkers');
+  // Still off until they agree to the terms and texts.
+  await expect(apply).toBeDisabled();
+  await expect(form.getByRole('link', { name: 'Affiliate Program Terms' })).toHaveAttribute('href', '/affiliates/terms');
+  await form.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms and to get texts/ }).check();
   await apply.click();
 
   await expect(page.getByText('Thanks, Dana!')).toBeVisible();
   expect(posts).toHaveLength(1);
-  expect(posts[0]).toMatchObject({ mode: 'apply', first_name: 'Dana', phone: '4045551212', is_customer: 'allstate_unsure', audience: 'Coworkers', source: 'affiliates_page' });
+  expect(posts[0]).toMatchObject({ mode: 'apply', first_name: 'Dana', phone: '4045551212', is_customer: 'allstate_unsure', audience: 'Coworkers', source: 'affiliates_page', accept_terms: true, terms_version: 'aff-terms-v1' });
 });
 
 test("a producer's recruit link credits the producer", async ({ page }) => {
@@ -63,6 +67,7 @@ test("a producer's recruit link credits the producer", async ({ page }) => {
   const form = page.getByRole('form', { name: 'Affiliate application' });
   await form.getByLabel('First name').fill('Dana');
   await form.getByLabel('Mobile number').fill('4045551212');
+  await form.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms/ }).check();
   await form.getByRole('button', { name: 'Apply to Be an Affiliate' }).click();
   await expect(page.getByText('Thanks, Dana!')).toBeVisible();
   expect(posts[0]).toMatchObject({ mode: 'apply', recruit_code: 'AB12CD34', source: 'recruit_link' });
@@ -75,6 +80,7 @@ test('old recruit links (/courses?by=CODE#partners) land on the affiliate page, 
   const form = page.getByRole('form', { name: 'Affiliate application' });
   await form.getByLabel('First name').fill('Dana');
   await form.getByLabel('Mobile number').fill('4045551212');
+  await form.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms/ }).check();
   await form.getByRole('button', { name: 'Apply to Be an Affiliate' }).click();
   await expect(page.getByText('Thanks, Dana!')).toBeVisible();
   expect(posts[0]).toMatchObject({ recruit_code: 'AB12CD34', source: 'recruit_link' });
@@ -89,4 +95,26 @@ test('Drivers Ed keeps a short teaser that opens the affiliate page', async ({ p
   await page.goto('/courses');
   await page.getByRole('link', { name: /Become an Affiliate|Become a paid affiliate/i }).click();
   await expect(page).toHaveURL(/\/affiliates$/);
+});
+
+test('the terms page says the rules plainly, with the live pay', async ({ page }) => {
+  await mock(page);
+  await page.goto('/affiliates/terms');
+  await expect(page.getByRole('heading', { level: 1, name: 'Affiliate Program Terms' })).toBeVisible();
+  await expect(page.getByText('Version aff-terms-v1')).toBeVisible();
+  await expect(page.getByLabel('Pay per household').getByText('$45')).toBeVisible();
+  await expect(page.getByText(/Reply STOP to opt out or HELP for help/)).toBeVisible();
+  await expect(page.getByText(/not an employee, agent or partner/)).toBeVisible();
+});
+
+test("an affiliate's invite link credits them on the application", async ({ page }) => {
+  const posts = await mock(page);
+  await page.goto('/affiliates?aff=DANA2QXD');
+  const form = page.getByRole('form', { name: 'Affiliate application' });
+  await form.getByLabel('First name').fill('Lee');
+  await form.getByLabel('Mobile number').fill('4045551313');
+  await form.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms/ }).check();
+  await form.getByRole('button', { name: 'Apply to Be an Affiliate' }).click();
+  await expect(page.getByText('Thanks, Lee!')).toBeVisible();
+  expect(posts[0]).toMatchObject({ affiliate_code: 'DANA2QXD', source: 'affiliate_invite', recruit_code: null });
 });

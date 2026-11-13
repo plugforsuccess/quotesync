@@ -590,6 +590,7 @@ export const useSavePromoter = () => {
         ...('mailing_address' in fields ? { mailing_address: fields.mailing_address?.replace(/\s+/g, ' ').trim() || null } : {}),
         ...('mailing_city_state_zip' in fields ? { mailing_city_state_zip: fields.mailing_city_state_zip?.replace(/\s+/g, ' ').trim() || null } : {}),
         ...('recruited_by' in fields ? { recruited_by: fields.recruited_by || null } : {}),
+        ...('invited_by_promoter_id' in fields ? { invited_by_promoter_id: fields.invited_by_promoter_id || null } : {}),
         ...('monthly_cap' in fields ? { monthly_cap: fields.monthly_cap ? Math.max(1, Math.min(1000, Math.round(Number(fields.monthly_cap)))) : null } : {}),
       };
       const q = id

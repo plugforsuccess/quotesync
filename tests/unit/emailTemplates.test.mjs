@@ -68,3 +68,14 @@ test('the producer alert reads naturally', () => {
   assert.match(m.text, /^Dana \(from Rotary\) just uploaded their State Farm policy, paying \$2,140 a year\./);
   assert.match(m.html, /Open the Lead<\/a>/);
 });
+
+// The affiliate terms box: the page and the function store the same words and version.
+test('affiliate terms: page and function agree', async () => {
+  const fs = await import('node:fs');
+  const lib = fs.readFileSync(new URL('../../src/lib/affiliates.js', import.meta.url), 'utf8');
+  const fn = fs.readFileSync(new URL('../../supabase/functions/rate-check-partner/index.ts', import.meta.url), 'utf8');
+  const pick = (src, name) => src.match(new RegExp(`${name} = '([^']+)'`))?.[1];
+  assert.equal(pick(lib, 'AFFILIATE_TERMS_VERSION'), pick(fn, 'TERMS_VERSION'));
+  assert.equal(pick(lib, 'AFFILIATE_TERMS_TEXT'), pick(fn, 'TERMS_TEXT'));
+  assert.ok(pick(fn, 'TERMS_TEXT'));
+});

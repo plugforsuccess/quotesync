@@ -5,6 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { optedOut, sendText } from '../_shared/sms.ts'
 
 // Inline phone formatter (no _shared import pattern for user-facing functions)
 function formatPhoneUS(phone: string): string | null {
@@ -12,39 +13,6 @@ function formatPhoneUS(phone: string): string | null {
   if (digits.length === 10) return `+1${digits}`
   if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
   return null
-}
-
-// Inline SMS sender
-async function sendSMS(
-  accountSid: string,
-  authToken: string,
-  from: string,
-  to: string,
-  body: string
-): Promise<{ success: boolean; sid?: string; error?: string; code?: number }> {
-  const auth = btoa(`${accountSid}:${authToken}`)
-  const params = new URLSearchParams()
-  params.append('To', to)
-  params.append('From', from)
-  params.append('Body', body)
-
-  const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    }
-  )
-
-  const data = await response.json()
-  if (!response.ok) {
-    return { success: false, error: data.message || 'Twilio SMS failed', code: data.code }
-  }
-  return { success: true, sid: data.sid }
 }
 
 Deno.serve(async (req) => {
@@ -102,26 +70,16 @@ Deno.serve(async (req) => {
         })
       }
 
-      const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
-      const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
-      const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
+      const smsResult = await sendText(formattedTo, messageBody.trim())
 
-      const smsResult = await sendSMS(
-        TWILIO_ACCOUNT_SID,
-        TWILIO_AUTH_TOKEN,
-        ENV_TWILIO_PHONE_NUMBER,
-        formattedTo,
-        messageBody.trim()
-      )
-
-      if (!smsResult.success) {
+      if (!smsResult.ok) {
         return new Response(JSON.stringify({ error: smsResult.error || 'SMS send failed' }), {
           status: 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
 
-      return new Response(JSON.stringify({ success: true, sid: smsResult.sid, test: true }), {
+      return new Response(JSON.stringify({ success: true, sid: smsResult.id, test: true }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -184,30 +142,17 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Per-agency Twilio number lookup
-    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
-    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
-    const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
-
-    let twilioFromNumber = ENV_TWILIO_PHONE_NUMBER
-    if (lead.agency_id) {
-      const { data: agencyPhones } = await supabase
-        .from('agencies')
-        .select('twilio_from_number')
-        .eq('id', lead.agency_id)
-        .single()
-      if (agencyPhones?.twilio_from_number) twilioFromNumber = agencyPhones.twilio_from_number
+    // Texted STOP? Never send.
+    if (await optedOut(supabase, formattedPhone)) {
+      return new Response(JSON.stringify({ error: 'They texted STOP, so we can’t text them.', code: 'opted_out' }), {
+        status: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const smsResult = await sendSMS(
-      TWILIO_ACCOUNT_SID,
-      TWILIO_AUTH_TOKEN,
-      twilioFromNumber,
-      formattedPhone,
-      messageBody.trim()
-    )
+    const smsResult = await sendText(formattedPhone, messageBody.trim())
 
-    if (!smsResult.success) {
+    if (!smsResult.ok) {
       return new Response(JSON.stringify({ error: smsResult.error || 'SMS send failed' }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -220,7 +165,7 @@ Deno.serve(async (req) => {
       direction: 'outbound',
       channel: 'sms',
       body: messageBody.trim(),
-      twilio_sid: smsResult.sid,
+      twilio_sid: smsResult.id,
       status: 'sent',
     })
 
@@ -230,19 +175,19 @@ Deno.serve(async (req) => {
       lead_id,
       agency_id: lead.agency_id,
       metadata: {
-        twilio_sid: smsResult.sid,
+        twilio_sid: smsResult.id,
         actor_user_id: user.id,
       },
     })
 
-    return new Response(JSON.stringify({ success: true, sid: smsResult.sid }), {
+    return new Response(JSON.stringify({ success: true, sid: smsResult.id }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
   } catch (error) {
     console.error('[SEND_MANUAL_SMS] Error:', error)
-    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
+    return new Response(JSON.stringify({ error: (error as Error).message || 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

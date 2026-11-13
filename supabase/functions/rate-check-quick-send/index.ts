@@ -2,7 +2,7 @@
 // POST /functions/v1/rate-check-quick-send   (verify_jwt = false — /qs works logged out)
 //
 // Quick Send: while talking to someone, a producer texts them a link to upload their
-// dec page, from the agency's Twilio number. Nobody logs in to QuoteSync: the /qs page
+// dec page, from the agency's Telnyx number. Nobody logs in to QuoteSync: the /qs page
 // signs in with the producer's Quick Send PIN (employees.punch_pin — the old time-clock
 // PIN) and gets a key. "Keep me signed in" (their own phone) keeps the key until the
 // phone is removed in the app; otherwise it lasts one shift (12 hours).
@@ -22,16 +22,17 @@
 //   affiliate_signup { device_key, first_name, last_name?, phone, email? } → { affiliate, already }
 //                principal only: signs someone up as an affiliate on the spot (credited to the
 //                principal as recruiter). The page texts them their Affiliate Portal link.
-// Twilio delivery callbacks (form-encoded, signed) update sms_status.
 //
 // The text is a one-time link the person asked for during the conversation. Pressing
 // "Send Requested DEC Link" is the producer's confirmation of that; it is logged
 // (attested_at, script_version) and never counts as consent to automated texts —
 // that is only the optional box on the scanner's last step (rate_checks.sms_consent).
 //
-// Secrets: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER (agencies.twilio_from_number wins).
+// Texts go through Telnyx (_shared/sms.ts; secrets listed there). Delivery updates arrive at
+// telnyx-sms-inbound, which updates rate_check_invites by sms_sid.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { optedOut, sendText } from '../_shared/sms.ts'
 
 const allowedOrigins = [
   'https://insuredbycam.com',
@@ -149,70 +150,6 @@ async function fromKey(supabase: any, key: unknown) {
 
 const INVITE_COLS = 'id, code, producer_name, first_name, phone, created_at, expires_at, opened_at, open_count, upload_count, last_rate_check_id, sms_status, sms_status_at, sms_error'
 
-// ── Twilio delivery callbacks ────────────────────────────────────────────────
-// Signature: base64(HMAC-SHA1(auth token, callback URL + each param name+value, sorted by name)).
-async function twilioSignatureOk(url: string, params: URLSearchParams, signature: string | null) {
-  const token = Deno.env.get('TWILIO_AUTH_TOKEN')
-  if (!token || !signature) return false
-  const data = url + [...params.keys()].sort().map(k => k + params.get(k)).join('')
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(token), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign'])
-  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data)))
-  const expected = btoa(String.fromCharCode(...sig))
-  if (expected.length !== signature.length) return false
-  let diff = 0
-  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ signature.charCodeAt(i)
-  return diff === 0
-}
-
-// Twilio's statuses, collapsed to what the page shows. A later status never moves backwards.
-const STATUS_RANK: Record<string, number> = { requested: 0, queued: 1, sent: 2, delivered: 3, failed: 3, blocked: 3 }
-function fromTwilio(s: string): string | null {
-  if (['accepted', 'queued', 'sending', 'scheduled'].includes(s)) return 'queued'
-  if (s === 'sent') return 'sent'
-  if (s === 'delivered') return 'delivered'
-  if (['failed', 'undelivered', 'canceled'].includes(s)) return 'failed'
-  return null
-}
-
-async function onTwilioCallback(req: Request, supabase: any, callbackUrl: string) {
-  const params = new URLSearchParams(await req.text())
-  if (!(await twilioSignatureOk(callbackUrl, params, req.headers.get('x-twilio-signature')))) {
-    return new Response('bad signature', { status: 403 })
-  }
-  const sid = params.get('MessageSid')
-  const status = fromTwilio(String(params.get('MessageStatus') || ''))
-  if (sid && status) {
-    const { data: inv } = await supabase.from('rate_check_invites').select('id, sms_status').eq('sms_sid', sid).maybeSingle()
-    // Retries and out-of-order callbacks never move a status backwards.
-    if (inv && (STATUS_RANK[status] ?? 0) > (STATUS_RANK[inv.sms_status] ?? -1)) {
-      const code = params.get('ErrorCode')
-      await supabase.from('rate_check_invites').update({
-        sms_status: status, sms_status_at: new Date().toISOString(),
-        ...(status === 'failed' ? { sms_error: code ? `Carrier error ${code}` : 'Not delivered' } : {}),
-      }).eq('id', inv.id)
-    }
-  }
-  return new Response('<Response/>', { status: 200, headers: { 'Content-Type': 'text/xml' } })
-}
-
-async function sendSms(to: string, from: string, body: string, statusCallback: string) {
-  const sid = Deno.env.get('TWILIO_ACCOUNT_SID'), token = Deno.env.get('TWILIO_AUTH_TOKEN')
-  if (!sid || !token || !from) return { ok: false, error: 'Texting isn’t set up for this agency.' }
-  let res: Response
-  try {
-    res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-      method: 'POST',
-      headers: { Authorization: `Basic ${btoa(`${sid}:${token}`)}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ To: `+1${to}`, From: from, Body: body, StatusCallback: statusCallback }).toString(),
-    })
-  } catch (e) {
-    return { ok: false, error: (e as Error).message }
-  }
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) return { ok: false, error: data.message || `Twilio ${res.status}` }
-  return { ok: true, sid: data.sid as string, status: fromTwilio(String(data.status || 'queued')) || 'queued' }
-}
-
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -220,11 +157,8 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const callbackUrl = `${supabaseUrl}/functions/v1/rate-check-quick-send?twilio=status`
-
-  if ((req.headers.get('content-type') || '').includes('application/x-www-form-urlencoded')) {
-    return onTwilioCallback(req, supabase, callbackUrl)
-  }
+  // Delivery updates come back to telnyx-sms-inbound, which updates the invite.
+  const statusWebhook = `${supabaseUrl}/functions/v1/telnyx-sms-inbound`
 
   const clientIp = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
   let body: any
@@ -355,9 +289,9 @@ Deno.serve(async (req) => {
   if (same) return json({ invite: same, link: linkFor(same.code), repeat: true }, 200, cors)
 
   // Texted STOP to the agency? Never send. Offer the link to show instead.
-  const { data: optedOut } = await supabase.from('leads').select('id')
+  const { data: optedOutLead } = await supabase.from('leads').select('id')
     .eq('agency_id', who.agencyId).eq('phone', phone).eq('sms_opted_out', true).limit(1)
-  const blocked = !!optedOut?.length
+  const blocked = !!optedOutLead?.length || await optedOut(supabase, phone)
 
   // Already sent this number a link today: don't text again — reuse that link.
   if (!blocked) {
@@ -395,13 +329,11 @@ Deno.serve(async (req) => {
   const link = linkFor(invite.code)
   if (blocked) return json({ invite, link }, 200, cors)
 
-  const { data: agency } = await supabase.from('agencies').select('twilio_from_number').eq('id', who.agencyId).maybeSingle()
-  const from = agency?.twilio_from_number || Deno.env.get('TWILIO_PHONE_NUMBER') || ''
-  const sms = await sendSms(phone, from, message(words.template, link), callbackUrl)
+  const sms = await sendText(phone, message(words.template, link), { webhookUrl: statusWebhook })
   const patch = sms.ok
-    ? { sms_sid: sms.sid, sms_status: sms.status, sms_status_at: new Date().toISOString() }
+    ? { sms_sid: sms.id, sms_status: sms.status, sms_status_at: new Date().toISOString() }
     : { sms_status: 'failed', sms_status_at: new Date().toISOString(), sms_error: String(sms.error).slice(0, 300) }
-  if (!sms.ok) console.error('[QUICK_SEND] twilio failed:', sms.error)
+  if (!sms.ok) console.error('[QUICK_SEND] text failed:', sms.error)
   const { data: updated } = await supabase.from('rate_check_invites').update(patch).eq('id', invite.id).select(INVITE_COLS).single()
   return json({ invite: updated || { ...invite, ...patch }, link }, 200, cors)
 })

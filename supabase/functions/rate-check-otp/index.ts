@@ -10,9 +10,10 @@
 // Codes are stored hashed in rate_check_otps; rate-check looks for a verified row
 // for the same phone + session before it stores an upload.
 //
-// Secrets: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER (same as send-manual-sms).
+// Texts go through Telnyx (_shared/sms.ts; secrets listed there).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sendText } from '../_shared/sms.ts'
 
 const allowedOrigins = [
   'https://insuredbycam.com',
@@ -75,20 +76,10 @@ async function sendEmail(to: string, code: string): Promise<{ ok: boolean; error
   return { ok: true }
 }
 
+// The code they asked for, by text (Telnyx, _shared/sms.ts).
 async function sendSMS(to: string, body: string): Promise<{ ok: boolean; error?: string }> {
-  const sid = Deno.env.get('TWILIO_ACCOUNT_SID'), token = Deno.env.get('TWILIO_AUTH_TOKEN'), from = Deno.env.get('TWILIO_PHONE_NUMBER')
-  if (!sid || !token || !from) return { ok: false, error: 'Twilio is not configured' }
-  const params = new URLSearchParams({ To: to, From: from, Body: body })
-  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-    method: 'POST',
-    headers: { Authorization: `Basic ${btoa(`${sid}:${token}`)}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  })
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    return { ok: false, error: data.message || `Twilio ${res.status}` }
-  }
-  return { ok: true }
+  const r = await sendText(to, body)
+  return r.ok ? { ok: true } : { ok: false, error: r.error }
 }
 
 Deno.serve(async (req) => {

@@ -6,12 +6,12 @@
 // changes this page. The application is at #apply. A producer's recruit link is
 // /affiliates?by=CODE. Same look as the consumer site: royal-blue hero, white cards,
 // deep-blue headings. No black.
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ArrowRight, BadgeDollarSign, Check, PenLine, Share2, X } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import AffiliateApplyForm from '../components/affiliates/AffiliateApplyForm';
-import { AFFILIATE_URL, recruitCode } from '../lib/affiliates';
+import { AFFILIATE_DO as DO, AFFILIATE_DONT as DONT, affiliateRef, money, ordinal, recruitCode, useAffiliateProgram } from '../lib/affiliates';
 
 const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
@@ -19,47 +19,13 @@ const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)'
 const wrap = 'mx-auto max-w-6xl px-4 lg:px-8';
 const sectionTitle = 'text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] lg:text-[36px]';
 const eyebrow = 'text-xs font-bold uppercase tracking-[0.16em] text-blue-700';
-const money = (n) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-const ordinal = (n) => {
-  const t = n % 100;
-  if (t >= 11 && t <= 13) return `${n}th`;
-  return `${n}${{ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'}`;
-};
-
 const STEPS = [
-  ['1', PenLine, 'Apply', 'It takes a minute. Cam’s team texts you your agreement and your personal link.'],
+  ['1', PenLine, 'Apply', 'It takes a minute. Cam’s team texts you your Affiliate Portal link.'],
   ['2', Share2, 'Share Your Link', 'Send it to people you know. They snap a photo of their insurance declarations page; Cam’s team does the rest.'],
   ['3', BadgeDollarSign, 'Get Paid Monthly', 'For every household that sends their policy through your link, whether or not they buy.'],
 ];
-const DO = [
-  'Share your personal link with people you know, or with your own followers.',
-  'Say you’re paid for referrals when you share it (“I get a referral fee”).',
-  'Send any insurance questions to Cam’s licensed team.',
-];
-const DONT = [
-  'Talk about coverage or prices, compare quotes, or promise anyone savings.',
-  'Give any part of your fee, or anything else, to the people you refer.',
-  'Act as an agent of Cam Wiley Agency or Allstate.',
-];
-
-// What affiliates are paid, from the agency's payout rules. null while loading; false if it couldn't load.
-function useProgram() {
-  const [p, setP] = useState(null);
-  useEffect(() => {
-    let gone = false;
-    fetch(AFFILIATE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
-      body: JSON.stringify({ mode: 'program' }),
-    }).then(r => (r.ok ? r.json() : Promise.reject())).then(d => { if (!gone) setP(d?.tiers?.length ? d : false); })
-      .catch(() => { if (!gone) setP(false); });
-    return () => { gone = true; };
-  }, []);
-  return p;
-}
-
 function Earnings() {
-  const p = useProgram();
+  const p = useAffiliateProgram();
   return (
     <section id="earn" className="scroll-mt-4 bg-slate-50 py-14 lg:py-20" aria-labelledby="aff-earn">
       <div className={`${wrap} grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-14`}>
@@ -73,14 +39,14 @@ function Earnings() {
             {p && <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span>Paid monthly, on the {ordinal(p.pay_day)}, for the month before. A month under {money(p.min_payout)} carries over to the next.</span></li>}
             <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.earn.once">Each household counts once, in the month its first page arrives.</T></span></li>
             <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.earn.allstate">Households already insured with Allstate don’t count.</T></span></li>
-            <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.earn.w9">You sign a short affiliate agreement, and a W-9 is needed before your first payment.</T></span></li>
+            <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.earn.w9">You agree to the program terms, and a W-9 is needed before your first payment is issued.</T></span></li>
           </ul>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7" aria-label="Pay per household">
           <p className="text-lg font-extrabold text-[#0F2D6B]"><T k="aff.earn.table">Per Household</T></p>
           {p === null && <p className="mt-4 text-slate-500"><T k="aff.earn.loading">Loading…</T></p>}
-          {p === false && <p className="mt-4 text-slate-600"><T k="aff.earn.fallback">The amounts are in the affiliate agreement Cam’s team texts you after you apply.</T></p>}
+          {p === false && <p className="mt-4 text-slate-600"><T k="aff.earn.fallback">The amounts are in your Affiliate Portal after you apply.</T></p>}
           {p && (
             <>
               <dl className="mt-3 divide-y divide-slate-100">
@@ -113,7 +79,7 @@ const FAQ = [
 ];
 
 export default function AffiliatesPage() {
-  useEffect(() => { recruitCode(); }, []); // remember a producer's ?by=CODE for the visit
+  useEffect(() => { recruitCode(); affiliateRef(); }, []); // remember ?by=CODE (a producer) or ?aff=CODE (an affiliate) for the visit
   return (
     <div className="min-h-screen bg-white">
       <title>Become an Affiliate | Cam Wiley Agency</title>

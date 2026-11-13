@@ -50,7 +50,7 @@ const DECK = {
 
 function StepDeck({ phone, linkUrl, onDone }) {
   const cards = [...DECK[phone], {
-    icon: Link2, title: 'Now Save Your Affiliate Link', text: 'Open your link and do the same steps. It’s already named “Affiliate Link.”', link: true,
+    icon: Link2, title: 'Now Save Your Affiliate Link', text: 'That’s the page your friends see. Open it, then do the same 3 steps. It’s already named “Affiliate Link.”', link: true,
   }];
   const [i, setI] = useState(0);
   const start = useRef(null);

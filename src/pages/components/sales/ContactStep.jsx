@@ -54,7 +54,7 @@ export function ContactPanel({ first, phone, leadId, cur, all, consented, onText
     if (error) {
       let message = error.message;
       try { message = (await error.context?.json())?.error || message; } catch { /* keep */ }
-      if (/twilio|not configured|from number/i.test(message)) message = 'Texting isn’t set up yet: the agency’s Twilio number is still pending. Call them for now.';
+      if (/twilio|not configured|from number|isn.t set up/i.test(message)) message = 'Texting isn’t set up yet: the agency’s texting number is still pending. Call them for now.';
       setState({ sending: false, sent: false, error: message });
       return;
     }

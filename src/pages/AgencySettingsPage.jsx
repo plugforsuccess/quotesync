@@ -905,8 +905,8 @@ function NotificationsTab({ agency, agencyId, isAgent, queryClient }) {
         ) : (
           <div className="space-y-4">
             <ReadOnly label="Your Cell Number" value={agency.agent_cell_number || 'Not set'} />
-            <ReadOnly label="Twilio SMS Number" value={agency.twilio_from_number || 'Using platform default'} />
-            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.720735">Contact platform support to configure a dedicated Twilio number.</T></p>
+            <ReadOnly label="Texting Number" value={agency.twilio_from_number || 'The agency’s Telnyx number'} />
+            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}><T k="pages.agencysettingspage.720735">Contact platform support to change the texting number.</T></p>
           </div>
         )}
       </div>
