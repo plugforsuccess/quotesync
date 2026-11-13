@@ -18,8 +18,9 @@ import { activations, activatedCount } from '../rate-checks/partnerRecruiting';
 
 const money = (n) => `$${Math.round(n || 0).toLocaleString()}`;
 
-// Schedule B partner floor: partners this producer recruited who signed the agreement
-// and sent a qualified household, this month, against the agency's floor.
+// Schedule B affiliate floor: affiliates this producer recruited whose W-9 is on file (or
+// who signed the agreement, if that's required) and who sent a qualified household, this
+// month, against the agency's floor.
 function PartnerFloor({ orgId, userId }) {
   const { data: promoters = [] } = usePromoters(orgId);
   const { data: scans = [] } = usePromoterScans(orgId);

@@ -111,8 +111,6 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
   return (
     <div className="space-y-4">
-      <RecruitPanel userId={userId} recruiters={recruiters} activated={activated} floor={floors?.partners_floor ?? 2} canEdit={canEdit} month={now} />
-
       <Applications agencyId={agencyId} userId={userId} canEdit={canEdit} savePromoter={savePromoter} nameOf={nameOf} />
 
       <Dismissible id="partners.program-rules">
@@ -360,6 +358,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
       <PaySchedule agencyId={agencyId} schedule={schedule} canEdit={canEdit} />
       <PayoutRules agencyId={agencyId} userId={userId} rules={rules} canEdit={canEdit} />
+      {/* The recruiting goal sits at the bottom, out of the way of working the affiliates. */}
+      <RecruitPanel userId={userId} recruiters={recruiters} activated={activated} floor={floors?.partners_floor ?? 2} canEdit={canEdit} month={now} />
     </div>
   );
 }
@@ -537,7 +537,7 @@ const CUSTOMER_BADGE = {
 // People who asked to join from the Drivers Ed page. "Add as partner" makes the partner
 // (same as Add partner) and closes the application; then send them their portal link.
 // The partner floor (Schedule B): each producer's own "Become a Partner" link and how many
-// partners they've activated this month. Activated = signed the agreement AND sent a
+// affiliates they've activated this month. Activated = W-9 on file (or the agreement, if required) AND sent a
 // qualified household. Managers also see everyone's count.
 function FloorSlots({ count, floor, size = 'md' }) {
   // One slot per partner owed; filled as they activate. Past the floor, a "+n".
@@ -584,7 +584,7 @@ function RecruitPanel({ userId, recruiters, activated, floor, canEdit, month }) 
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--qs-text)' }}>
-          <T k="partners.floor.line">An affiliate counts once they sign the agreement and send a qualified household.</T>
+          {PARTNER_AGREEMENT_REQUIRED ? <T k="partners.floor.line">An affiliate counts once they sign the agreement and send a qualified household.</T> : <T k="partners.floor.line-w9">An affiliate counts once their W-9 is signed and they send a qualified household.</T>}
         </p>
         {link && (
           <div className="mt-4 grid grid-cols-2 gap-2">
