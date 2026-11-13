@@ -31,7 +31,7 @@ const ROLES = [
 ];
 
 const BENEFITS = [
-  [Briefcase, 'W-2 Job with a Base Salary', 'A steady salary plus commission, not a 1099 commission-only gig.'],
+  [Briefcase, 'W-2 Job with a Base Salary', 'A base salary plus commission, not a 1099 commission-only gig.'],
   [PiggyBank, '401(k) with a 4% Match', 'We match what you put in, up to 4% of your pay.'],
   [CalendarCheck, 'Paid Every Two Weeks', 'A steady biweekly paycheck.'],
   [Palmtree, 'Paid Time Off', 'Time away that’s paid, to rest and recharge.'],
