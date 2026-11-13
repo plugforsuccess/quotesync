@@ -315,6 +315,9 @@ test('onboarded: pay per household, invite someone, and the Home Screen how-to a
   await page.goto(`/partner/${TOKEN}`);
   const pay = page.getByRole('heading', { name: /How You're Paid/i });
   await expect(pay).toBeVisible();
+  // Folded until tapped.
+  await expect(page.getByRole('term').filter({ hasText: 'Auto + Home or Condo' })).toBeHidden();
+  await pay.click();
   await expect(page.getByRole('term').filter({ hasText: 'Auto + Home or Condo' })).toBeVisible();
   const invite = page.getByRole('region', { name: 'Invite Someone to Be an Affiliate' });
   await expect(invite.getByText('2 people applied · 1 joined')).toBeVisible();
@@ -330,6 +333,7 @@ test('the fine print under the pay table follows the payout rules', async ({ pag
   await page.addInitScript(() => localStorage.setItem('qs_aff_home_' + 'a'.repeat(12), '1'));
   await mockPartner(page, { data: portal({ w9: W9, photo_url: PHOTO }), program: { tiers: [{ key: 'auto_only', label: 'Auto only', amount: 10 }], extra_line: { amount: 5, cap: 2 }, pay_day: 21, min_payout: 75, quote_days: 10 } });
   await page.goto(`/partner/${TOKEN}`);
+  await page.getByRole('heading', { name: /How You're Paid/i }).click();
   await expect(page.getByText(/or 10 days after their first page/)).toBeVisible();
   await expect(page.getByText(/on the 21st, after your W-9 is on file; months under \$75 carry over/)).toBeVisible();
 });

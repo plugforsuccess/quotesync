@@ -8,7 +8,7 @@
 import { T } from '../components/SiteCopy';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Camera, Check, Copy, ExternalLink, FileSignature, Loader2, Share2, Star, X } from 'lucide-react';
+import { Camera, Check, ChevronDown, Copy, ExternalLink, FileSignature, Loader2, Share2, Star, X } from 'lucide-react';
 import PhotoCropModal from '../components/affiliates/PhotoCropModal';
 import HomeScreenSteps from '../components/affiliates/HomeScreenSteps';
 import PayTable from '../components/affiliates/PayTable';
@@ -597,11 +597,15 @@ function Earnings({ token, data, onChange }) {
         </table>
       </section>
 
-      {SHOW_PAY_SCHEDULE && <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-        <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.867844">How You're Paid · Per Household</T></h2>
+      {/* Folded by default: tap the heading to see the pay per household and the rules. */}
+      {SHOW_PAY_SCHEDULE && <details className="group mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+          <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.867844">How You're Paid · Per Household</T></h2>
+          <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+        </summary>
         <PayTable amounts={data.schedule} className="mt-1" />
         <PayFinePrint />
-      </section>}
+      </details>}
 
       <InviteCard code={data.code} invites={data.invites} />
 
