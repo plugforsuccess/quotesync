@@ -22,8 +22,8 @@ const ACCENT = '#39FF88';
 // Gold, not green, for text: the platform has no green text (green stays for buttons and fills).
 const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
-// The link unlocks once the affiliate has added a photo and signed the W-9.
-const isReady = (data) => !!(data?.photo_url && data?.w9?.on_file);
+// The link unlocks once the affiliate has signed the W-9. The photo is optional, after.
+const isReady = (data) => !!data?.w9?.on_file;
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 // "Cam Wiley Agency, Inc." + "." without doubling the period.
@@ -81,7 +81,7 @@ export default function PartnerPortalPage() {
                 {gate ? <><T k="pages.partnerportalpage.a689c7">Read the agreement with</T> {sentence(data.agency_name)} <T k="pages.partnerportalpage.8c18b8">Your link starts earning as soon as you sign.</T></>
                   : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: GOLD }} aria-hidden="true" /> <T k="pages.partnerportalpage.01210e">Agreement signed</T> {longDate(data.agreement.signed_at)}</>
                   : data.active === false ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> <T k="pages.partnerportalpage.a823cb">Your link is paused. Contact</T> {data.agency_name} <T k="pages.partnerportalpage.6e1fe7">to turn it back on.</T></>
-                  : !isReady(data) ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> <T k="aff.portal.header-locked">Two quick steps to unlock your link</T></>
+                  : !isReady(data) ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> <T k="aff.portal.header-locked">One quick step to unlock your link</T></>
                   : <><span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" /> <T k="pages.partnerportalpage.95cda3">Your link is live</T></>}
               </p>
             </>
@@ -392,35 +392,32 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
   );
 }
 
-// First visits: add a photo and sign the W-9. The link unlocks once both are done.
+// First visits: sign the W-9 to unlock the link. After that, a photo is suggested, never required.
 function GetSetUp({ token, data, onChange }) {
   const [w9Open, setW9Open] = useState(false);
-  const Step = ({ n, done, title, line, children }) => (
-    <li className="flex gap-3 py-3 first:pt-0">
-      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${done ? 'bg-emerald-600 text-white' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'}`}>
-        {done ? <Check className="h-4 w-4" aria-hidden="true" /> : n}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className={`font-semibold ${done ? 'text-slate-500 line-through decoration-slate-300' : 'text-[#0F2D6B]'}`}><T>{title}</T></p>
-        {line && !done && <p className="text-sm leading-relaxed text-slate-600">{line}</p>}
-        {children}
-      </div>
-    </li>
-  );
   return (
     <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="pages.partnerportalpage.e07ce5">Get set up · 2 steps</T></p>
-      <p className="mt-1 text-sm text-slate-600"><T k="aff.portal.unlock">Your link unlocks when both are done.</T></p>
-      <ol className="mt-3 divide-y divide-slate-100">
-        <Step n={1} done={!!data.photo_url} title="Add your photo" line="People who open your link see it, so they know it came from you.">
-          <button type="button" onClick={() => document.getElementById(PHOTO_INPUT_ID)?.click()} className="qb qb-blue qb-md mt-2.5 w-full"><T k="pages.partnerportalpage.64fe2a">{'Add a Photo'}</T></button>
-        </Step>
-        <Step n={2} done={!!data.w9?.on_file} title="Sign your W-9 · about 30 seconds"
-          line={data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign.' : 'Needed before your first payment.'}>
-          <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-md mt-2.5 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
-          {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
-        </Step>
-      </ol>
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="aff.portal.setup">Get Set Up · 1 Step</T></p>
+      <p className="mt-2 font-semibold text-[#0F2D6B]"><T k="aff.portal.w9-title">Sign your W-9 · about 30 seconds</T></p>
+      <p className="text-sm leading-relaxed text-slate-600">
+        {data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign. Your link unlocks right after.' : 'Your link unlocks right after, and it’s needed before your first payment.'}
+      </p>
+      <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-md mt-3 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
+      {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
+    </section>
+  );
+}
+
+// After the W-9: a photo helps people trust the link, but it's their call.
+function PhotoNudge() {
+  return (
+    <section className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 ring-1 ring-slate-200" aria-hidden="true"><Camera className="h-5 w-5" /></span>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 font-semibold text-[#0F2D6B]"><T k="aff.portal.photo-title">Add Your Photo</T> <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500"><T k="aff.portal.optional">Optional</T></span></p>
+        <p className="mt-0.5 text-sm leading-snug text-slate-600"><T k="aff.portal.photo-why">People are more likely to open a link when they see who sent it.</T></p>
+      </div>
+      <button type="button" onClick={() => document.getElementById(PHOTO_INPUT_ID)?.click()} className="qb qb-outline qb-md shrink-0 px-4"><T k="aff.portal.photo-add">Add</T></button>
     </section>
   );
 }
@@ -450,7 +447,7 @@ function Earnings({ token, data, onChange }) {
         {!ready ? (
           <p className="mt-2 flex items-start gap-2 text-[15px] leading-snug text-white">
             <Lock className="mt-0.5 h-4 w-4 shrink-0" style={{ color: GOLD }} aria-hidden="true" />
-            <span><T k="aff.portal.locked">Unlocks once your photo is added and your W-9 is signed.</T></span>
+            <span><T k="aff.portal.locked">Unlocks once your W-9 is signed.</T></span>
           </p>
         ) : <>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
@@ -467,6 +464,8 @@ function Earnings({ token, data, onChange }) {
         </>}
         <p className="mt-3 text-xs leading-relaxed text-blue-100"><T k="pages.partnerportalpage.0d57c3">When you post or message your link, say you get a referral fee. Don't talk about coverage or prices. Just share the link.</T></p>
       </section>
+
+      {ready && !data.photo_url && <PhotoNudge />}
 
       <HomeScreenSteps linkUrl={`${url}?app=1`} linkReady={ready} />
 

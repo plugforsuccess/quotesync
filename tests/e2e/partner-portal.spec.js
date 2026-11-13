@@ -59,24 +59,35 @@ async function mockPartner(page, state) {
 const PHOTO = 'data:image/png;base64,' + png(8, 8).toString('base64');
 const W9 = { on_file: true, tin_type: 'ssn', last4: '1234', signed_at: '2026-10-01T12:00:00Z', revision: 'Rev. March 2024', prefill: {} };
 
-test('a new affiliate’s link stays locked until the photo and W-9 are done', async ({ page }) => {
+test('a new affiliate’s link stays locked until the W-9 is signed', async ({ page }) => {
   await mockPartner(page, { data: portal() });
   await page.goto(`/partner/${TOKEN}`);
-  await expect(page.getByText('Two quick steps to unlock your link')).toBeVisible();
-  await expect(page.getByText('Get set up · 2 steps')).toBeVisible();
-  await expect(page.getByText('Add your photo')).toBeVisible();
-  await expect(page.getByText('Unlocks once your photo is added and your W-9 is signed.')).toBeVisible();
+  await expect(page.getByText('One quick step to unlock your link')).toBeVisible();
+  await expect(page.getByText('Get Set Up · 1 Step')).toBeVisible();
+  await expect(page.getByText('Unlocks once your W-9 is signed.')).toBeVisible();
   await expect(page.getByText(`/r/${CODE}`)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Copy link' })).toHaveCount(0);
+  // The photo isn't a step: no nudge until the link is unlocked.
+  await expect(page.getByText('Add Your Photo')).toHaveCount(0);
   // The agreement is off for now: nothing to sign, the draft text isn't shown.
   await expect(page.getByLabel('Partner agreement')).toHaveCount(0);
 });
 
-test('a photo but no W-9: still locked, the photo step is ticked off', async ({ page }) => {
+test('a photo alone doesn’t unlock the link', async ({ page }) => {
   await mockPartner(page, { data: portal({ photo_url: PHOTO }) });
   await page.goto(`/partner/${TOKEN}`);
-  await expect(page.getByText('Add your photo')).toHaveClass(/line-through/);
   await expect(page.getByRole('button', { name: 'Copy link' })).toHaveCount(0);
+});
+
+test('W-9 signed, no photo: the link is live, and a photo is suggested as optional', async ({ page }) => {
+  await mockPartner(page, { data: portal({ w9: W9 }) });
+  await page.goto(`/partner/${TOKEN}`);
+  await expect(page.getByText('Your link is live')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
+  await expect(page.getByText('Get Set Up · 1 Step')).toHaveCount(0);
+  await expect(page.getByText('Optional', { exact: true })).toBeVisible();
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Add', exact: true }).click()]);
+  expect(chooser).toBeTruthy();
 });
 
 test('photo and W-9 done: the link is live and copies', async ({ page, context }) => {
@@ -84,7 +95,8 @@ test('photo and W-9 done: the link is live and copies', async ({ page, context }
   await mockPartner(page, { data: portal({ photo_url: PHOTO, w9: W9 }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Your link is live')).toBeVisible();
-  await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
+  await expect(page.getByText('Get Set Up · 1 Step')).toHaveCount(0);
+  await expect(page.getByText('Optional', { exact: true })).toHaveCount(0);
   await expect(page.getByText(`/r/${CODE}`)).toBeVisible();
   await page.getByRole('button', { name: 'Copy link' }).click();
   await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
@@ -125,8 +137,9 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
     token: TOKEN, name: 'Javon Yarbrough', tax_class: 'individual', tin_type: 'ssn', tin: '412551234',
     address: '12 Oak St', city_state_zip: 'Covington, GA 30014', signed_name: 'Javon Yarbrough', accept: true,
   });
-  // On file: the W-9 step is ticked off (the photo is still to do) and only the last 4 show.
-  await expect(page.getByText('Sign your W-9 · about 30 seconds')).toHaveClass(/line-through/);
+  // On file: the set-up card is gone, the link is live, and only the last 4 show.
+  await expect(page.getByText('Get Set Up · 1 Step')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
   await expect(page.getByText('W-9 on file')).toBeVisible();
   await expect(page.getByText(/Signed [A-Z][a-z]+ \d{1,2}, \d{4}/)).toBeVisible();
   await expect(page.getByText(/1234/)).toHaveCount(0);
@@ -139,7 +152,6 @@ test('adding a photo: crop it in a circle, give the OK, and a small JPEG is sent
   const state = { data: portal() };
   const calls = await mockPartner(page, state);
   await page.goto(`/partner/${TOKEN}`);
-  // The set-up step opens the same picker.
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Add a photo' }).first().click()]);
   await chooser.setFiles(file);
   const crop = page.getByRole('dialog', { name: 'Crop your photo' });
@@ -189,7 +201,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
     ],
   }) });
   await page.goto(`/partner/${TOKEN}`);
-  await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
+  await expect(page.getByText('Get Set Up · 1 Step')).toHaveCount(0);
   // No projections: unpaid months show a household count, paid months what was paid.
   await expect(page.getByText('Auto + Home or Condo')).toBeVisible();
   // Paid months end with an Earnings row: the amount, with cents.
