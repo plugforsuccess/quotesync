@@ -116,6 +116,11 @@ export function RateCheckFooter({ padForBar = false, wide = false }) {
           <Link to="/news" className="font-semibold text-slate-600 underline"><T k="footer.newsroom">Newsroom</T></Link>
         </nav>
       )}
+      {/* Not in the top menu: careers and the affiliate program live down here. */}
+      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="About us">
+        <Link to="/careers" className="font-semibold text-slate-600 underline"><T k="footer.careers">Careers</T></Link>
+        <Link to="/affiliates" className="font-semibold text-slate-600 underline"><T k="footer.affiliates">Become an Affiliate</T></Link>
+      </nav>
       <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legal">
         <Link to="/ratecheck-privacy" className="underline"><T k="footer.rc-privacy">Rate Check privacy notice</T></Link>
         <Link to="/privacy" className="underline"><T k="footer.privacy">Privacy policy</T></Link>
