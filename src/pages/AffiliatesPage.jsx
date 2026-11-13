@@ -20,7 +20,7 @@ const wrap = 'mx-auto max-w-6xl px-4 lg:px-8';
 const sectionTitle = 'text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] lg:text-[36px]';
 const eyebrow = 'text-xs font-bold uppercase tracking-[0.16em] text-blue-700';
 const STEPS = [
-  ['1', PenLine, 'Apply', 'It takes a minute. Cam’s team texts you your agreement and your personal link.'],
+  ['1', PenLine, 'Apply', 'It takes a minute. Cam’s team texts you your Affiliate Portal link.'],
   ['2', Share2, 'Share Your Link', 'Send it to people you know. They snap a photo of their insurance declarations page; Cam’s team does the rest.'],
   ['3', BadgeDollarSign, 'Get Paid Monthly', 'For every household that sends their policy through your link, whether or not they buy.'],
 ];
@@ -46,7 +46,7 @@ function Earnings() {
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7" aria-label="Pay per household">
           <p className="text-lg font-extrabold text-[#0F2D6B]"><T k="aff.earn.table">Per Household</T></p>
           {p === null && <p className="mt-4 text-slate-500"><T k="aff.earn.loading">Loading…</T></p>}
-          {p === false && <p className="mt-4 text-slate-600"><T k="aff.earn.fallback">The amounts are in the affiliate agreement Cam’s team texts you after you apply.</T></p>}
+          {p === false && <p className="mt-4 text-slate-600"><T k="aff.earn.fallback">The amounts are in your Affiliate Portal after you apply.</T></p>}
           {p && (
             <>
               <dl className="mt-3 divide-y divide-slate-100">
