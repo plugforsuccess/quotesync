@@ -455,6 +455,10 @@ function PayFinePrint() {
   );
 }
 
+// A phone's share sheet already has Copy (and Messages, contacts…): show Share there, and
+// Copy only where there's no share sheet (most computers).
+const canShare = () => typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
 // Know someone who'd be a good affiliate? Their invite link opens /affiliates with this
 // affiliate's code; the application records who invited them (credit only, no pay).
 function InviteCard({ code, invites }) {
@@ -471,12 +475,13 @@ function InviteCard({ code, invites }) {
       {sent > 0 && (
         <p className="mt-2 text-sm font-semibold text-[#0F2D6B]">{sent} {sent === 1 ? 'person' : 'people'} applied · {invites?.joined || 0} joined</p>
       )}
-      <div className="mt-3 flex gap-2">
-        <button type="button" onClick={copy} className="qb qb-outline qb-md flex-1">
-          {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.a588b1">Copied</T></> : <><Copy className="h-4 w-4" aria-hidden="true" /> <T k="aff.invite.copy">Copy Invite Link</T></>}
-        </button>
-        {typeof navigator !== 'undefined' && navigator.share && (
-          <button type="button" onClick={share} className="qb qb-outline qb-md flex-1"><Share2 className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.5a95a4">Share</T></button>
+      <div className="mt-3">
+        {canShare() ? (
+          <button type="button" onClick={share} className="qb qb-outline qb-md w-full"><Share2 className="h-4 w-4" aria-hidden="true" /> <T k="aff.invite.share">Share Invite Link</T></button>
+        ) : (
+          <button type="button" onClick={copy} className="qb qb-outline qb-md w-full">
+            {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.a588b1">Copied</T></> : <><Copy className="h-4 w-4" aria-hidden="true" /> <T k="aff.invite.copy">Copy Invite Link</T></>}
+          </button>
         )}
       </div>
     </section>
@@ -529,13 +534,14 @@ function Earnings({ token, data, onChange }) {
       <section className={`${homeStep ? 'mt-4 ' : ''}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
         <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}><T k="pages.partnerportalpage.250f24">Your link</T></p>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
-        <div className="mt-4 flex gap-2">
-          <button type="button" onClick={copy} className="qb qb-gold qb-md flex-1">
-            {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.a588b1">Copied</T></> : <><Copy className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.b75833">Copy Link</T></>}
-          </button>
-          {typeof navigator !== 'undefined' && navigator.share && (
-            <button type="button" onClick={share} className="qb qb-outline-dark qb-md flex-1">
-              <Share2 className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.5a95a4">Share</T>
+        <div className="mt-4">
+          {canShare() ? (
+            <button type="button" onClick={share} className="qb qb-gold qb-md w-full">
+              <Share2 className="h-4 w-4" aria-hidden="true" /> <T k="aff.link.share">Share Your Link</T>
+            </button>
+          ) : (
+            <button type="button" onClick={copy} className="qb qb-gold qb-md w-full">
+              {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.a588b1">Copied</T></> : <><Copy className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.b75833">Copy Link</T></>}
             </button>
           )}
         </div>
