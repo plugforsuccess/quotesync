@@ -22,6 +22,7 @@ import { queryClient } from './lib/queryClient';
 
 // Homepage = Rate Check (dec-page scan) — eager: it's the landing page, always needed on first load
 import RateCheckPage from './pages/RateCheckPage';
+import AffiliateLinkSave from './components/affiliates/AffiliateLinkSave';
 
 // Clear chunk-error reload flag synchronously at module load time.
 // Must happen BEFORE lazyWithRetry is defined — if the flag is set from a
@@ -193,7 +194,7 @@ function App() {
               (no site Layout) to stay light on mobile. /ratecheck and /r/:code are the same page. */}
           <Route path="/" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
           <Route path="/ratecheck" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
-          <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
+          <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /><AffiliateLinkSave /></ErrorBoundary>} />
           {/* An affiliate's private page. /partner/ is the old address: links already sent keep working. */}
           <Route path="/affiliate/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PartnerPortalPage /></Suspense></ErrorBoundary>} />
           <Route path="/partner/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PartnerPortalPage /></Suspense></ErrorBoundary>} />

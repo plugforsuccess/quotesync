@@ -435,6 +435,8 @@ function Earnings({ token, data, onChange }) {
   const [homeDone, setHomeDone] = useState(() => { try { return !!localStorage.getItem(homeKey); } catch { return false; } });
   const finishHome = () => { setHomeDone(true); try { localStorage.setItem(homeKey, '1'); } catch { /* private mode */ } };
   const homeStep = ready && !homeDone;
+  // Remember their code on this phone, so their own link page can show how to save it.
+  useEffect(() => { try { if (data.code) localStorage.setItem('qs_aff_code', data.code); } catch { /* private mode */ } }, [data.code]);
   // Before the W-9: nothing but step 1.
   if (!ready) return <GetSetUp token={token} data={data} onChange={onChange} />;
   const copy = async () => {

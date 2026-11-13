@@ -403,8 +403,22 @@ test('an affiliate saving their link from the portal (?app=1) gets an "Affiliate
   await page.goto('/r/JVN7K2QX?app=1');
   await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Affiliate Link');
   await expect(page).toHaveTitle('Affiliate Link');
+  // A customer opening the same link: no save card.
+  await expect(page.getByRole('dialog', { name: 'Save your Affiliate Link' })).toHaveCount(0);
   await page.goto('/r/JVN7K2QX');
   await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Cam Wiley Agency');
+});
+
+test('on the affiliate’s own phone, their link page shows how to save it, until they close it', async ({ page }) => {
+  await page.route('**/functions/v1/rate-check', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: 'null' }));
+  await page.addInitScript(() => localStorage.setItem('qs_aff_code', 'JVN7K2QX'));
+  await page.goto('/r/JVN7K2QX?app=1');
+  const card = page.getByRole('dialog', { name: 'Save your Affiliate Link' });
+  await expect(card).toContainText('Tap Share, then Add to Home Screen. It’s already named “Affiliate Link.”');
+  await card.getByRole('button', { name: 'Done' }).click();
+  await expect(card).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Save your Affiliate Link' })).toHaveCount(0);
 });
 
 // A customer opening a referral partner's link: the strip says who shared it, and the

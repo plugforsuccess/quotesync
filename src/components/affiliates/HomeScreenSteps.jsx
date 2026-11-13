@@ -3,7 +3,7 @@
 // page) and "Affiliate Link" (their share link), with plain iPhone and Android steps.
 // Shown once the W-9 is signed (the link exists then).
 import { useRef, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Compass, ExternalLink, Link2, MoreVertical, PenLine, PlusSquare, Share } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Link2, MoreVertical, PlusSquare, Share } from 'lucide-react';
 import { T } from '../SiteCopy';
 
 const isAndroid = () => typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
@@ -12,16 +12,14 @@ function Steps({ phone, name }) {
   const b = (t) => <b className="font-semibold text-[#0F2D6B]">{t}</b>;
   const steps = phone === 'iphone'
     ? [
-      <>Open it in {b('Safari')}.</>,
       <>Tap {b('Share')} <Share className="inline h-4 w-4 align-[-2px] text-blue-700" aria-label="(the square with an arrow)" /> at the bottom of the screen.</>,
       <>Scroll down and tap <span className="whitespace-nowrap">{b('Add to Home Screen')} <PlusSquare className="inline h-4 w-4 align-[-2px] text-blue-700" aria-hidden="true" />.</span></>,
-      <>Check the name says {b(name)}, then tap {b('Add')}.</>,
+      <>It’s already named {b(name)}. Tap {b('Add')}.</>,
     ]
     : [
-      <>Open it in {b('Chrome')}.</>,
       <>Tap the {b('menu')} <MoreVertical className="inline h-4 w-4 align-[-2px] text-blue-700" aria-label="(three dots)" /> at the top right.</>,
-      <>Tap {b('Add to Home screen')}, then {b('Add')} (or {b('Install')}).</>,
-      <>Check the name says {b(name)}, then tap {b('Add')}.</>,
+      <>Tap {b('Add to Home screen')} (or {b('Install')}).</>,
+      <>It’s already named {b(name)}. Tap {b('Add')}.</>,
     ];
   return (
     <ol className="mt-2 space-y-1.5 text-sm leading-relaxed text-slate-700">
@@ -39,22 +37,20 @@ function Steps({ phone, name }) {
 // screenshots once we have them; until then each card shows its icon.
 const DECK = {
   iphone: [
-    { icon: Compass, title: 'Open This Page in Safari', text: 'If it opened inside another app, tap the compass or “Open in Safari.”' },
     { icon: Share, title: 'Tap Share', text: 'The square with an arrow, in the bar at the bottom of the screen.' },
     { icon: PlusSquare, title: 'Tap Add to Home Screen', text: 'Scroll down the list to find it.' },
-    { icon: PenLine, title: 'Name It “Affiliate Portal”', text: 'Check the name, then tap Add at the top right.' },
+    { icon: Check, title: 'Tap Add', text: 'It’s already named “Affiliate Portal.” Tap Add at the top right.' },
   ],
   android: [
-    { icon: Compass, title: 'Open This Page in Chrome', text: 'If it opened inside another app, tap “Open in Chrome.”' },
     { icon: MoreVertical, title: 'Tap the Menu', text: 'The three dots at the top right.' },
-    { icon: PlusSquare, title: 'Tap Add to Home Screen', text: 'Then Add (or Install).' },
-    { icon: PenLine, title: 'Name It “Affiliate Portal”', text: 'Check the name, then tap Add.' },
+    { icon: PlusSquare, title: 'Tap Add to Home Screen', text: 'It may say Install instead.' },
+    { icon: Check, title: 'Tap Add', text: 'It’s already named “Affiliate Portal.” Tap Add.' },
   ],
 };
 
 function StepDeck({ phone, linkUrl, onDone }) {
   const cards = [...DECK[phone], {
-    icon: Link2, title: 'Now Save Your Affiliate Link', text: 'Open your link, then do the same steps and name it “Affiliate Link.”', link: true,
+    icon: Link2, title: 'Now Save Your Affiliate Link', text: 'Open your link and do the same steps. It’s already named “Affiliate Link.”', link: true,
   }];
   const [i, setI] = useState(0);
   const start = useRef(null);
