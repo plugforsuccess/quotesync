@@ -129,12 +129,20 @@ test('no W-9 on file: the payout is held', async ({ page }) => {
   await expect(card.getByText('W-9 needed', { exact: true })).toHaveCount(1); // the badge at the top
   await expect(card.getByRole('button', { name: /Mark .* paid/ })).toHaveCount(0);
   // The welcome text to the partner is ready to send, with the portal link and the three steps.
-  const sms = await card.getByRole('link', { name: 'Text Javon the portal link' }).getAttribute('href');
+  // Tapping the portal link opens a drawer: Copy, Text, Open.
+  await card.getByRole('button', { name: /^Portal \(private: send only to them\): Copy, Text or Open$/ }).click();
+  const drawer = page.getByRole('dialog', { name: 'Portal (private: send only to them)' });
+  await expect(drawer.getByRole('button', { name: 'Copy' })).toBeVisible();
+  await expect(drawer.getByRole('link', { name: 'Open' })).toHaveAttribute('href', new RegExp(`/affiliate/${'a'.repeat(48)}$`));
+  const sms = await drawer.getByRole('link', { name: 'Text Javon' }).getAttribute('href');
   expect(sms).toMatch(/^sms:\+14045550123\?&body=/);
   const body = decodeURIComponent(sms.split('body=')[1]);
   expect(body).toContain(`/affiliate/${'a'.repeat(48)}`);
   expect(body).toContain('Sign my W-9');
+  expect(body).toContain('Home Screen');
   expect(body).toContain('Copy link');
+  await drawer.getByRole('button', { name: 'Close' }).click();
+  await expect(drawer).toHaveCount(0);
 });
 
 test('adding a partner: checks the fields and saves the mailing address for their W-9', async ({ page }) => {

@@ -184,15 +184,16 @@ export const TEXT_TEMPLATES = [
   {
     id: 'partnerWelcome', group: 'Affiliates', key: 'sms.partner.welcome', auto: false,
     name: 'Welcome a New Affiliate',
-    when: 'When you tap “Text” next to a new affiliate’s portal link.',
+    when: 'When you tap a new affiliate’s portal link, then Text.',
     blanks: ['[first name]', '[portal link]'],
     paragraphs: [
       "Hi [first name], it's Cam with Cam Wiley Agency. Welcome aboard as an affiliate!",
       'Your private affiliate page: [portal link]',
       "1. Tap the link. There's no username or password: the link is your login, so don't share it.",
       '2. Tap "Sign my W-9" and add your Social Security number (about 30 seconds) so we can pay you.',
-      '3. Tap "Copy link" to share your referral link with friends, family and people in your network. Let them know you get a referral fee.',
-      "Save the page to check what you've earned anytime. Questions? Just reply here.",
+      '3. Save the page to your Home Screen (it shows you how), so you can check what you\'ve earned anytime.',
+      '4. Tap "Copy link" to share your referral link with friends, family and people in your network. Let them know you get a referral fee.',
+      'Questions? Just reply here.',
     ],
   },
   {

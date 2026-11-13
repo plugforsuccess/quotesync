@@ -7,7 +7,7 @@
 
 import { T } from '../../../components/SiteCopy';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, Download, MessageSquare, Plus, Star } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, MessageSquare, MoreHorizontal, Plus, Star } from 'lucide-react';
 import { partnerReviewText, smsHref } from '../../../lib/reviews';
 import { buildText } from '../../../lib/textTemplates';
 import Dismissible from '../../../components/Dismissible';
@@ -249,14 +249,11 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </Dismissible>
             )}
 
-            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy"
-              extra={p.phone && !p.w9_received_at && (
-                <a href={portalSms(p)} aria-label={`Text ${p.name.split(' ')[0]} the portal link`} title={`Text ${p.name.split(' ')[0]} the portal link`}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded bg-primary-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-700">
-                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" /> <T k="pages.components.ratechecks.partnerstab.9dffbf">Text</T> {p.name.split(' ')[0]}
-                </a>
-              )} />
-            <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at} />
+            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)}
+              sms={p.phone ? portalSms(p) : null} smsLabel={`Text ${p.name.split(' ')[0]}`} />
+            <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)}
+              muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at}
+              sms={p.phone ? smsHref(p.phone, `Your link to share: ${inviteUrl(p.code)}`) : null} smsLabel={`Text ${p.name.split(' ')[0]}`} />
 
             {p.phone && (
               <a href={smsHref(p.phone, partnerReviewText(p.name))} title="Opens Messages with your Google review link written in"
@@ -432,15 +429,59 @@ function Avatar({ p }) {
   );
 }
 
-function LinkRow({ label, url, copyLabel, muted = false, extra = null }) {
+// A link on an affiliate's card: one row; tapping it opens a drawer with Copy, Text and Open.
+function LinkRow({ label, url, muted = false, sms = null, smsLabel = 'Text' }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* old browser */ }
+  };
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+  const big = 'flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl text-sm font-semibold';
   return (
     <div className="mt-3">
       <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}><T>{label}</T></p>
-      <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', opacity: muted ? 0.55 : 1 }}>
+      <button type="button" onClick={() => setOpen(true)} aria-label={`${label}: Copy, Text or Open`}
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', opacity: muted ? 0.55 : 1 }}>
         <span className="min-w-0 flex-1 truncate font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</span>
-        <CopyTextButton text={url} className="shrink-0 rounded px-2 py-1 text-xs font-semibold" style={inputStyle}>{copyLabel}</CopyTextButton>
-        {extra}
-      </div>
+        <MoreHorizontal className="h-4 w-4 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4" onClick={() => setOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label={label} onClick={e => e.stopPropagation()}
+            className="w-full max-w-md rounded-t-3xl p-5 pb-7 shadow-2xl sm:rounded-3xl" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
+            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full sm:hidden" style={{ background: 'var(--qs-border)' }} aria-hidden="true" />
+            <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T>{label}</T></p>
+            <p className="mt-1 break-all font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</p>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <button type="button" onClick={copy} className={big} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+                {copied ? <Check className="h-5 w-5" aria-hidden="true" /> : <Copy className="h-5 w-5" aria-hidden="true" />}
+                {copied ? <T k="rc.partners.link.copied">Copied</T> : <T k="rc.partners.link.copy">Copy</T>}
+              </button>
+              {sms ? (
+                <a href={sms} onClick={() => setOpen(false)} className={big} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+                  <MessageSquare className="h-5 w-5" aria-hidden="true" /> {smsLabel}
+                </a>
+              ) : (
+                <span className={`${big} opacity-40`} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }} title="No mobile number on file">
+                  <MessageSquare className="h-5 w-5" aria-hidden="true" /> <T k="rc.partners.link.text">Text</T>
+                </span>
+              )}
+              <a href={url} target="_blank" rel="noreferrer" onClick={() => setOpen(false)} className={big} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+                <ExternalLink className="h-5 w-5" aria-hidden="true" /> <T k="rc.partners.link.open">Open</T>
+              </a>
+            </div>
+            <button type="button" onClick={() => setOpen(false)} className="mt-3 w-full rounded-xl py-3 text-sm font-semibold" style={{ color: 'var(--qs-subtle)' }}>
+              <T k="rc.partners.link.close">Close</T>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
