@@ -43,6 +43,12 @@ export const AFFILIATE_DONT = [
   'Act as an agent of Cam Wiley Agency or Allstate.',
 ];
 
+// Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".
+export const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella|landlord|only|extra|line)\b/g, w => w[0].toUpperCase() + w.slice(1));
+
+/** The program response ({ tiers: [{ key, amount }], extra_line: { amount } }) as { key: amount }. */
+export const amountsFrom = (p) => (p ? { ...Object.fromEntries(p.tiers.map(t => [t.key, t.amount])), extra_line: p.extra_line?.amount } : null);
+
 export const money = (n) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 export const ordinal = (n) => {
   const t = n % 100;

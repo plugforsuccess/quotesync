@@ -1,14 +1,16 @@
 // src/pages/AffiliateTermsPage.jsx
 // /affiliates/terms: the Affiliate Program Terms, in plain language. Affiliates agree to
 // these (and to texts about the program) on the application or on portal step 1. Built
-// from the same rules and live pay as /affiliates. Until the attorney-reviewed affiliate
+// from the same rules and live pay as /affiliates; the Do / Don't lines are the same editable
+// text, so an edit on either page shows on both. Until the attorney-reviewed affiliate
 // agreement is ready, this is what they agree to; when it is, it replaces this page.
 // Same look as the consumer site. No black.
 import { Link } from 'react-router-dom';
 import { Check, X } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
-import { AFFILIATE_DO, AFFILIATE_DONT, AFFILIATE_TERMS_VERSION, money, ordinal, useAffiliateProgram } from '../lib/affiliates';
+import { AFFILIATE_DO, AFFILIATE_DONT, AFFILIATE_TERMS_VERSION, amountsFrom, money, ordinal, useAffiliateProgram } from '../lib/affiliates';
+import PayTable from '../components/affiliates/PayTable';
 
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const h2 = 'text-xl font-extrabold text-[#0F2D6B]';
@@ -42,29 +44,20 @@ export default function AffiliateTermsPage() {
       <main className="mx-auto max-w-3xl px-4 py-10 lg:px-8 lg:py-14">
         <Section n={1} title="What You Do">
           <ul className="space-y-2">
-            {AFFILIATE_DO.map(t => <li key={t} className="flex gap-2.5"><Check className="mt-1 h-4 w-4 shrink-0 text-blue-700" strokeWidth={3} aria-hidden="true" /><span>{t}</span></li>)}
+            {AFFILIATE_DO.map(t => <li key={t} className="flex gap-2.5"><Check className="mt-1 h-4 w-4 shrink-0 text-blue-700" strokeWidth={3} aria-hidden="true" /><span><T>{t}</T></span></li>)}
           </ul>
         </Section>
 
         <Section n={2} title="What You Don’t Do">
           <ul className="space-y-2">
-            {AFFILIATE_DONT.map(t => <li key={t} className="flex gap-2.5"><X className="mt-1 h-4 w-4 shrink-0 text-red-600" strokeWidth={3} aria-hidden="true" /><span>{t}</span></li>)}
+            {AFFILIATE_DONT.map(t => <li key={t} className="flex gap-2.5"><X className="mt-1 h-4 w-4 shrink-0 text-red-600" strokeWidth={3} aria-hidden="true" /><span><T>{t}</T></span></li>)}
           </ul>
         </Section>
 
         <Section n={3} title="How You’re Paid">
           <p><T k="aff.terms.pay">You’re paid a flat fee for each household that sends their declarations page through your link, by what they send. It’s the same whether or not they buy, and it’s never a share of anyone’s premium or commission.</T></p>
           {p && (
-            <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-200 px-4" aria-label="Pay per household">
-              {p.tiers.map(t => (
-                <div key={t.key} className="flex items-baseline justify-between gap-4 py-2.5">
-                  <dt>{t.label}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(t.amount)}</dd>
-                </div>
-              ))}
-              <div className="flex items-baseline justify-between gap-4 py-2.5">
-                <dt>Each extra line, up to {p.extra_line.cap}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(p.extra_line.amount)}</dd>
-              </div>
-            </dl>
+            <PayTable amounts={amountsFrom(p)} extraCap={p.extra_line.cap} className="rounded-2xl border border-slate-200 px-4" />
           )}
           <ul className="list-disc space-y-1.5 pl-5">
             {p && <li>Paid monthly, on the {ordinal(p.pay_day)}, for the month before. A month under {money(p.min_payout)} carries over to the next.</li>}

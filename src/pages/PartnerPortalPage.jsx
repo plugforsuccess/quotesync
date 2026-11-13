@@ -11,11 +11,12 @@ import { Link, useParams } from 'react-router-dom';
 import { Camera, Check, Copy, ExternalLink, FileSignature, Loader2, Share2, Star, X } from 'lucide-react';
 import PhotoCropModal from '../components/affiliates/PhotoCropModal';
 import HomeScreenSteps from '../components/affiliates/HomeScreenSteps';
+import PayTable from '../components/affiliates/PayTable';
 import { setHomeScreenName } from '../lib/homeScreenName';
 import { reviewUrl } from '../lib/reviews';
 import BrandLogo from '../components/BrandLogo';
 import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, submitPartnerW9, acceptPartnerTerms } from '../lib/rateCheckApi';
-import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION } from '../lib/affiliates';
+import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION, ordinal, productCase, useAffiliateProgram, money as payMoney } from '../lib/affiliates';
 import { TAX_CLASSES, LLC_CLASSES, formatTin, splitCsz, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
 
@@ -31,7 +32,6 @@ const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'lo
 const sentence = (name) => `${String(name || 'the agency').replace(/\.+$/, '')}.`;
 // Money that was paid, always with cents: "$30.00".
 const dollars2 = (n) => `$${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
 const monthLabel = (key) => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
 // A different hello each visit.
 const GREETINGS = [
@@ -40,13 +40,7 @@ const GREETINGS = [
 ];
 // The pay per household (also public on /affiliates). Set to false to hide it again.
 const SHOW_PAY_SCHEDULE = true;
-const SCHEDULE_ROWS = [
-  ['auto_home', 'Auto + home or condo'], ['auto_renters', 'Auto + renters'], ['home_only', 'Home or condo only'],
-  ['auto_only', 'Auto only'], ['renters_only', 'Renters only'], ['landlord', 'Landlord'],
-];
 
-// Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".
-const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella|only|extra)\b/g, w => w[0].toUpperCase() + w.slice(1));
 // Dates in the agency's time zone (Georgia), the same as the payouts.
 const todayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
@@ -448,6 +442,19 @@ function GetSetUp({ token, data, onChange }) {
   );
 }
 
+// Under the pay table: the rules, with the numbers from the agency's payout rules (so a
+// change in Rate Checks → Affiliates shows here). The old fixed wording while they load.
+function PayFinePrint() {
+  const p = useAffiliateProgram();
+  const cls = 'mt-2 text-xs leading-relaxed text-slate-500';
+  if (!p) return <p className={cls}><T k="pages.partnerportalpage.b3e79d">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we've quoted it (or 7 days after their first page). Pages that can't be read, repeats, expired pages and Allstate policies don't count. Paid monthly after your W-9 is on file; months under $50 carry over.</T></p>;
+  return (
+    <p className={cls} data-copy="fixed">
+      Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we’ve quoted it (or {p.quote_days} {p.quote_days === 1 ? 'day' : 'days'} after their first page). Pages that can’t be read, repeats, expired pages and Allstate policies don’t count. Paid monthly, on the {ordinal(p.pay_day)}, after your W-9 is on file; months under {payMoney(p.min_payout)} carry over.
+    </p>
+  );
+}
+
 // Know someone who'd be a good affiliate? Their invite link opens /affiliates with this
 // affiliate's code; the application records who invited them (credit only, no pay).
 function InviteCard({ code, invites }) {
@@ -586,13 +593,8 @@ function Earnings({ token, data, onChange }) {
 
       {SHOW_PAY_SCHEDULE && <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.867844">How You're Paid · Per Household</T></h2>
-        <dl className="mt-2 divide-y divide-slate-100 text-sm">
-          {SCHEDULE_ROWS.map(([k, label]) => (
-            <div key={k} className="flex justify-between py-2"><dt className="text-slate-700"><T>{productCase(label)}</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(data.schedule[k])}</dd></div>
-          ))}
-          <div className="flex justify-between py-2"><dt className="text-slate-700"><T k="pages.partnerportalpage.c99e34">Each Extra Line, Up To 2</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(data.schedule.extra_line)}</dd></div>
-        </dl>
-        <p className="mt-2 text-xs leading-relaxed text-slate-500"><T k="pages.partnerportalpage.b3e79d">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we've quoted it (or 7 days after their first page). Pages that can't be read, repeats, expired pages and Allstate policies don't count. Paid monthly after your W-9 is on file; months under $50 carry over.</T></p>
+        <PayTable amounts={data.schedule} className="mt-1" />
+        <PayFinePrint />
       </section>}
 
       <InviteCard code={data.code} invites={data.invites} />

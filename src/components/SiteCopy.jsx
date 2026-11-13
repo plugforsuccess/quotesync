@@ -240,12 +240,14 @@ const textKey = (s) => {
 
 /** Editable text. `children` is the default (a plain string). Without `k`, the key is the
  * text itself, so the same wording edited once changes everywhere it appears. */
-export function T({ k: key, children }) {
+export function T({ k: key, format, children }) {
   const { values, editing, save, fail } = useContext(Ctx);
   // Only plain text can be edited; anything else (an element, nothing) shows as is.
   if (typeof children !== 'string' || !/[A-Za-z]/.test(children)) return <>{children}</>;
-  const fallback = typeof children === 'string' ? children : String(children ?? '');
-  const k = key || textKey(fallback);
+  const original = typeof children === 'string' ? children : String(children ?? '');
+  const k = key || textKey(original);
+  // `format` styles the default (e.g. capitals) without changing its key; saved edits show as typed.
+  const fallback = format ? format(original) : original;
   const text = values[k] ?? fallback;
   if (!editing) return <>{rich(text)}</>;
   return <EditableText k={k} text={text} fallback={fallback} edited={k in values} save={save} fail={fail} />;
