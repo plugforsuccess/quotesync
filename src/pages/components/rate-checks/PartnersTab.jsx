@@ -232,7 +232,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               <PartnerPhoto promoter={p} canEdit={canEdit} />
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.e99180">Paused</T></span>}</h3>
-                <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || <T k="pages.components.ratechecks.partnerstab.e4f057">{'No contact on file'}</T>}</p>
+                <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).map((v, i) => <span key={i} className="whitespace-nowrap">{i ? ' · ' : ''}{v}</span>)}{!p.phone && !p.email && <T k="pages.components.ratechecks.partnerstab.e4f057">{'No contact on file'}</T>}</p>
               </div>
               <span className="flex flex-wrap justify-end gap-1.5">
                 {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? <T k="pages.components.ratechecks.partnerstab.f4f566">{'Agreement signed'}</T> : <T k="pages.components.ratechecks.partnerstab.4c58cf">{'Agreement not signed'}</T>}</Pill>}
@@ -249,7 +249,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </Dismissible>
             )}
 
-            <LinkRow label="Affiliate Portal (Only for Them)" url={portalUrl(p.portal_token)}
+            <LinkRow label="Affiliate Portal" note="Private: it’s their login, so send it only to them." url={portalUrl(p.portal_token)}
               sms={p.phone ? portalSms(p) : null} smsLabel={`Text ${p.name.split(' ')[0]}`} />
             <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Affiliate Link' : 'Affiliate Link · Off Until Signed'} url={inviteUrl(p.code)}
               muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at}
@@ -430,7 +430,7 @@ function Avatar({ p }) {
 }
 
 // A link on an affiliate's card: one row; tapping it opens a drawer with Copy, Text and Open.
-function LinkRow({ label, url, muted = false, sms = null, smsLabel = 'Text' }) {
+function LinkRow({ label, note = null, url, muted = false, sms = null, smsLabel = 'Text' }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -457,7 +457,8 @@ function LinkRow({ label, url, muted = false, sms = null, smsLabel = 'Text' }) {
             className="w-full max-w-md rounded-t-3xl p-5 pb-7 shadow-2xl sm:rounded-3xl" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
             <div className="mx-auto mb-4 h-1.5 w-10 rounded-full sm:hidden" style={{ background: 'var(--qs-border)' }} aria-hidden="true" />
             <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}><T>{label}</T></p>
-            <p className="mt-1 break-all font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</p>
+            {note && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T>{note}</T></p>}
+            <p className="mt-2 break-all font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</p>
             <div className="mt-5 grid grid-cols-3 gap-2">
               <button type="button" onClick={copy} className={big} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
                 {copied ? <Check className="h-5 w-5" aria-hidden="true" /> : <Copy className="h-5 w-5" aria-hidden="true" />}
