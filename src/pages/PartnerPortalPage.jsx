@@ -8,7 +8,7 @@
 import { T } from '../components/SiteCopy';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, Check, Copy, ExternalLink, Loader2, Lock, Share2, Star, X } from 'lucide-react';
+import { Camera, Check, Copy, ExternalLink, FileSignature, Loader2, Share2, Star, X } from 'lucide-react';
 import PhotoCropModal from '../components/affiliates/PhotoCropModal';
 import HomeScreenSteps from '../components/affiliates/HomeScreenSteps';
 import { setHomeScreenName } from '../lib/homeScreenName';
@@ -92,7 +92,7 @@ export default function PartnerPortalPage() {
         {error ? <p className="rounded-2xl bg-white p-4 text-slate-700 shadow-sm ring-1 ring-slate-200">{error}</p>
           : !data ? <p className="flex items-center gap-2 rounded-2xl bg-white p-4 text-slate-500 shadow-sm ring-1 ring-slate-200"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> <T k="pages.partnerportalpage.5f02f0">Loading…</T></p>
           : gate ? <SignAgreement token={token} data={data} onSigned={load} />
-          : <><Earnings token={token} data={data} onChange={load} /><ReviewCard /></>}
+          : <><Earnings token={token} data={data} onChange={load} />{isReady(data) && <ReviewCard />}</>}
       </main>
     </div>
   );
@@ -396,13 +396,17 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
 function GetSetUp({ token, data, onChange }) {
   const [w9Open, setW9Open] = useState(false);
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="aff.portal.setup">Get Set Up · Step 1 of 2</T></p>
-      <p className="mt-2 font-semibold text-[#0F2D6B]"><T k="aff.portal.w9-title">Sign your W-9 · about 30 seconds</T></p>
-      <p className="text-sm leading-relaxed text-slate-600">
-        {data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign. Your link unlocks right after.' : 'Your link unlocks right after, and it’s needed before your first payment.'}
+    <section className="rounded-3xl bg-white px-5 py-8 text-center shadow-xl shadow-blue-900/10 ring-1 ring-slate-200">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="aff.portal.setup">Get Set Up · Step 1 of 2</T></p>
+      <span className="mx-auto mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100" aria-hidden="true">
+        <FileSignature className="h-8 w-8" />
+      </span>
+      <h2 className="mt-4 text-2xl font-extrabold text-[#0F2D6B]"><T k="aff.portal.w9-head">Sign Your W-9</T></h2>
+      <p className="mt-1 text-sm font-semibold text-slate-500"><T k="aff.portal.w9-time">About 30 seconds</T></p>
+      <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-slate-600">
+        {data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign, and your link unlocks right away.' : 'Sign it and your link unlocks right away. It’s also needed before your first payment.'}
       </p>
-      <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-md mt-3 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
+      <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-lg mt-6 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
       {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
     </section>
   );
@@ -431,6 +435,8 @@ function Earnings({ token, data, onChange }) {
   const [homeDone, setHomeDone] = useState(() => { try { return !!localStorage.getItem(homeKey); } catch { return false; } });
   const finishHome = () => { setHomeDone(true); try { localStorage.setItem(homeKey, '1'); } catch { /* private mode */ } };
   const homeStep = ready && !homeDone;
+  // Before the W-9: nothing but step 1.
+  if (!ready) return <GetSetUp token={token} data={data} onChange={onChange} />;
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
   };
@@ -445,17 +451,10 @@ function Earnings({ token, data, onChange }) {
 
   return (
     <>
-      {!ready && <GetSetUp token={token} data={data} onChange={onChange} />}
       {homeStep && <HomeScreenSteps asStep linkUrl={`${url}?app=1`} onDone={finishHome} />}
 
-      <section className={`${ready && !homeStep ? '' : 'mt-4 '}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
+      <section className={`${homeStep ? 'mt-4 ' : ''}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
         <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}><T k="pages.partnerportalpage.250f24">Your link</T></p>
-        {!ready ? (
-          <p className="mt-2 flex items-start gap-2 text-[15px] leading-snug text-white">
-            <Lock className="mt-0.5 h-4 w-4 shrink-0" style={{ color: GOLD }} aria-hidden="true" />
-            <span><T k="aff.portal.locked">Unlocks once your W-9 is signed.</T></span>
-          </p>
-        ) : <>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
         <div className="mt-4 flex gap-2">
           <button type="button" onClick={copy} className="qb qb-gold qb-md flex-1">
@@ -467,13 +466,12 @@ function Earnings({ token, data, onChange }) {
             </button>
           )}
         </div>
-        </>}
         <p className="mt-3 text-xs leading-relaxed text-blue-100"><T k="pages.partnerportalpage.0d57c3">When you post or message your link, say you get a referral fee. Don't talk about coverage or prices. Just share the link.</T></p>
       </section>
 
-      {ready && !data.photo_url && <PhotoNudge />}
+      {!data.photo_url && <PhotoNudge />}
 
-      {ready && !homeStep && <HomeScreenSteps linkUrl={`${url}?app=1`} />}
+      {!homeStep && <HomeScreenSteps linkUrl={`${url}?app=1`} />}
 
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', dollars2(paidAll), 'all time']].map(([k, v, sub]) => (

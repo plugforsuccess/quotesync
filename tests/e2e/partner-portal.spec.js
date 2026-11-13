@@ -64,7 +64,11 @@ test('a new affiliate’s link stays locked until the W-9 is signed', async ({ p
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('One quick step to unlock your link')).toBeVisible();
   await expect(page.getByText('Get Set Up · Step 1 of 2')).toBeVisible();
-  await expect(page.getByText('Unlocks once your W-9 is signed.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toBeVisible();
+  // Nothing else until it's signed: no link card, no Home Screen steps, no totals.
+  await expect(page.getByText('Your link', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Save to Your Home Screen')).toHaveCount(0);
+  await expect(page.getByText('Also a customer?')).toHaveCount(0);
   await expect(page.getByText(`/r/${CODE}`)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Copy link' })).toHaveCount(0);
   // The photo isn't a step: no nudge until the link is unlocked.
@@ -149,7 +153,7 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
 test('adding a photo: crop it in a circle, give the OK, and a small JPEG is sent', async ({ page }, testInfo) => {
   const file = testInfo.outputPath('me.png');
   (await import('node:fs')).writeFileSync(file, png(600, 800));
-  const state = { data: portal() };
+  const state = { data: portal({ w9: W9 }) };
   const calls = await mockPartner(page, state);
   await page.goto(`/partner/${TOKEN}`);
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Add a photo' }).first().click()]);
@@ -178,7 +182,7 @@ test('adding a photo: crop it in a circle, give the OK, and a small JPEG is sent
 test('cancelling the crop sends nothing', async ({ page }, testInfo) => {
   const file = testInfo.outputPath('me2.png');
   (await import('node:fs')).writeFileSync(file, png(300, 300));
-  const calls = await mockPartner(page, { data: portal() });
+  const calls = await mockPartner(page, { data: portal({ w9: W9 }) });
   await page.goto(`/partner/${TOKEN}`);
   await page.locator('input[type=file][accept="image/*"]').setInputFiles(file);
   const crop = page.getByRole('dialog', { name: 'Crop your photo' });
