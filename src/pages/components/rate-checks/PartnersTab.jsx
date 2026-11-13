@@ -20,6 +20,7 @@ import { downloadCSV } from '../../../lib/csvExport';
 import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
 import { CopyTextButton } from './Copyable';
 import MarkAsTest from '../../../components/testRecords/MarkAsTest';
+import { productCase } from '../../../lib/affiliates';
 import { inviteUrl } from './invite';
 import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
 import SendPitch from './SendPitch';
@@ -852,8 +853,8 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
             <dt className="text-sm" style={{ color: 'var(--qs-text)' }}>
               {/* One editable piece per row (the extra-line row used to be split in three, easy to garble). */}
               {t.key === EXTRA_LINE.key
-                ? <T k="pages.components.ratechecks.partnerstab.extra-lines-row">{`Additional lines, up to ${EXTRA_LINE_CAP}`}</T>
-                : <T>{t.label}</T>}
+                ? <T k="pay.extra-line">{`Each Extra Line (Umbrella, a Second Auto Policy), Up to ${EXTRA_LINE_CAP}`}</T>
+                : <T format={productCase}>{t.label}</T>}
             </dt>
             <dd>
               {draft ? (

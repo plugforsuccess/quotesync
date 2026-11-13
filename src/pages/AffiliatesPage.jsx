@@ -11,7 +11,8 @@ import { ArrowRight, BadgeDollarSign, Check, PenLine, Share2, X } from 'lucide-r
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import AffiliateApplyForm from '../components/affiliates/AffiliateApplyForm';
-import { AFFILIATE_DO as DO, AFFILIATE_DONT as DONT, affiliateRef, money, ordinal, recruitCode, tierLabel, useAffiliateProgram } from '../lib/affiliates';
+import { AFFILIATE_DO as DO, AFFILIATE_DONT as DONT, affiliateRef, amountsFrom, money, ordinal, recruitCode, useAffiliateProgram } from '../lib/affiliates';
+import PayTable from '../components/affiliates/PayTable';
 
 const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
@@ -49,18 +50,7 @@ function Earnings() {
           {p === false && <p className="mt-4 text-slate-600"><T k="aff.earn.fallback">The amounts are in your Affiliate Portal after you apply.</T></p>}
           {p && (
             <>
-              <dl className="mt-3 divide-y divide-slate-100">
-                {p.tiers.map(t => (
-                  <div key={t.key} className="flex items-baseline justify-between gap-4 py-3">
-                    <dt className="text-[15px] text-slate-700">{tierLabel(t.label)}</dt>
-                    <dd className="text-lg font-extrabold tabular-nums text-[#0F2D6B]">{money(t.amount)}</dd>
-                  </div>
-                ))}
-                <div className="flex items-baseline justify-between gap-4 py-3">
-                  <dt className="text-[15px] text-slate-700">Each Extra Line (Umbrella, a Second Auto Policy), Up to {p.extra_line.cap}</dt>
-                  <dd className="text-lg font-extrabold tabular-nums text-[#0F2D6B]">+{money(p.extra_line.amount)}</dd>
-                </div>
-              </dl>
+              <PayTable amounts={amountsFrom(p)} extraCap={p.extra_line.cap} label="Pay per household table" className="mt-3" />
             </>
           )}
         </div>

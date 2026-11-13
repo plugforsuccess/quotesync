@@ -9,7 +9,8 @@ import { Link } from 'react-router-dom';
 import { Check, X } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
-import { AFFILIATE_DO, AFFILIATE_DONT, AFFILIATE_TERMS_VERSION, money, ordinal, tierLabel, useAffiliateProgram } from '../lib/affiliates';
+import { AFFILIATE_DO, AFFILIATE_DONT, AFFILIATE_TERMS_VERSION, amountsFrom, money, ordinal, useAffiliateProgram } from '../lib/affiliates';
+import PayTable from '../components/affiliates/PayTable';
 
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const h2 = 'text-xl font-extrabold text-[#0F2D6B]';
@@ -56,16 +57,7 @@ export default function AffiliateTermsPage() {
         <Section n={3} title="How You’re Paid">
           <p><T k="aff.terms.pay">You’re paid a flat fee for each household that sends their declarations page through your link, by what they send. It’s the same whether or not they buy, and it’s never a share of anyone’s premium or commission.</T></p>
           {p && (
-            <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-200 px-4" aria-label="Pay per household">
-              {p.tiers.map(t => (
-                <div key={t.key} className="flex items-baseline justify-between gap-4 py-2.5">
-                  <dt>{tierLabel(t.label)}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(t.amount)}</dd>
-                </div>
-              ))}
-              <div className="flex items-baseline justify-between gap-4 py-2.5">
-                <dt>Each Extra Line, Up to {p.extra_line.cap}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(p.extra_line.amount)}</dd>
-              </div>
-            </dl>
+            <PayTable amounts={amountsFrom(p)} extraCap={p.extra_line.cap} className="rounded-2xl border border-slate-200 px-4" />
           )}
           <ul className="list-disc space-y-1.5 pl-5">
             {p && <li>Paid monthly, on the {ordinal(p.pay_day)}, for the month before. A month under {money(p.min_payout)} carries over to the next.</li>}

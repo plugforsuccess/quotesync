@@ -132,3 +132,19 @@ test('an edit to a Do / Don’t line on the affiliates page shows on the terms p
   await expect(page.getByText('Relay any insurance questions to Cam’s licensed team.')).toBeVisible();
   await expect(page.getByText('Send any insurance questions to Cam’s licensed team.')).toHaveCount(0);
 });
+
+test('the pay table uses the same names as the staff Pay Schedule: edited ones as saved, others capitalized', async ({ page }) => {
+  await page.route('**/rest/v1/**', r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.route('**/rest/v1/site_copy*', r => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify([{ key: 'txt.9b0014b4', value: 'Home or Condo only' }]) }));
+  await page.route('**/functions/v1/rate-check-partner', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+    tiers: [{ key: 'home_only', label: 'Home or condo only', amount: 15 }, { key: 'auto_only', label: 'Auto only', amount: 10 }],
+    extra_line: { amount: 5, cap: 2 }, pay_day: 21, min_payout: 50, quote_days: 7 }) }));
+  for (const path of ['/affiliates', '/affiliates/terms']) {
+    await page.goto(path);
+    const pay = page.getByRole('definition').first().locator('xpath=ancestor::dl');
+    await expect(pay.getByText('Home or Condo only', { exact: true })).toBeVisible(); // saved edit, as typed
+    await expect(pay.getByText('Auto Only', { exact: true })).toBeVisible(); // untouched: capitalized
+    await expect(pay.getByText('Each Extra Line (Umbrella, a Second Auto Policy), Up to 2', { exact: true })).toBeVisible();
+  }
+});

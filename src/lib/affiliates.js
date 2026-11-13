@@ -45,8 +45,9 @@ export const AFFILIATE_DONT = [
 
 // Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".
 export const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella|landlord|only|extra|line)\b/g, w => w[0].toUpperCase() + w.slice(1));
-// A pay tier's name for people: product names capitalized, no side notes in parentheses.
-export const tierLabel = (s) => productCase(String(s || '').replace(/\s*\([^)]*\)\s*$/, ''));
+
+/** The program response ({ tiers: [{ key, amount }], extra_line: { amount } }) as { key: amount }. */
+export const amountsFrom = (p) => (p ? { ...Object.fromEntries(p.tiers.map(t => [t.key, t.amount])), extra_line: p.extra_line?.amount } : null);
 
 export const money = (n) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 export const ordinal = (n) => {
