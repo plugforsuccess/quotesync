@@ -397,7 +397,7 @@ function GetSetUp({ token, data, onChange }) {
   const [w9Open, setW9Open] = useState(false);
   return (
     <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="aff.portal.setup">Get Set Up · 1 Step</T></p>
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="aff.portal.setup">Get Set Up · Step 1 of 2</T></p>
       <p className="mt-2 font-semibold text-[#0F2D6B]"><T k="aff.portal.w9-title">Sign your W-9 · about 30 seconds</T></p>
       <p className="text-sm leading-relaxed text-slate-600">
         {data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign. Your link unlocks right after.' : 'Your link unlocks right after, and it’s needed before your first payment.'}
@@ -426,6 +426,11 @@ function Earnings({ token, data, onChange }) {
   const url = inviteUrl(data.code);
   const [copied, setCopied] = useState(false);
   const ready = isReady(data);
+  // Step 2 (Save to Your Home Screen) shows right after the W-9 until they tap Done or Skip for Now.
+  const homeKey = `qs_aff_home_${token.slice(0, 12)}`;
+  const [homeDone, setHomeDone] = useState(() => { try { return !!localStorage.getItem(homeKey); } catch { return false; } });
+  const finishHome = () => { setHomeDone(true); try { localStorage.setItem(homeKey, '1'); } catch { /* private mode */ } };
+  const homeStep = ready && !homeDone;
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
   };
@@ -441,8 +446,9 @@ function Earnings({ token, data, onChange }) {
   return (
     <>
       {!ready && <GetSetUp token={token} data={data} onChange={onChange} />}
+      {homeStep && <HomeScreenSteps asStep linkUrl={`${url}?app=1`} onDone={finishHome} />}
 
-      <section className={`${ready ? '' : 'mt-4 '}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
+      <section className={`${ready && !homeStep ? '' : 'mt-4 '}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
         <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: GOLD }}><T k="pages.partnerportalpage.250f24">Your link</T></p>
         {!ready ? (
           <p className="mt-2 flex items-start gap-2 text-[15px] leading-snug text-white">
@@ -467,7 +473,7 @@ function Earnings({ token, data, onChange }) {
 
       {ready && !data.photo_url && <PhotoNudge />}
 
-      <HomeScreenSteps linkUrl={`${url}?app=1`} linkReady={ready} />
+      {ready && !homeStep && <HomeScreenSteps linkUrl={`${url}?app=1`} />}
 
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', dollars2(paidAll), 'all time']].map(([k, v, sub]) => (
