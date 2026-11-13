@@ -18,7 +18,7 @@ const ROLES = [
     key: 'producer', Icon: LineChart, title: 'Licensed Sales Producer',
     pay: '$48,000–$90,000 a year · base plus commission, based on production',
     blurb: 'Help people find out if they’re paying too much. You’ll work our Rate Check inbox, call people who asked for a quote, and help them switch to Allstate.',
-    needs: ['A current Georgia Property & Casualty license', 'Comfortable on the phone and talking with people', 'Organized, with steady follow-up'],
+    needs: ['A current Georgia Property & Casualty license', 'Comfortable on the phone and talking with people', 'Organized, with consistent follow-up'],
     apply: '',
   },
   {
@@ -31,7 +31,7 @@ const ROLES = [
 ];
 
 const BENEFITS = [
-  [Briefcase, 'W-2 Job with a Base Salary', 'A steady salary plus commission, not a 1099 commission-only gig.'],
+  [Briefcase, 'W-2 Job with a Base Salary', 'A base salary plus commission, not a 1099 commission-only gig.'],
   [PiggyBank, '401(k) with a 4% Match', 'We match what you put in, up to 4% of your pay.'],
   [CalendarCheck, 'Paid Every Two Weeks', 'A steady biweekly paycheck.'],
   [Palmtree, 'Paid Time Off', 'Time away that’s paid, to rest and recharge.'],
