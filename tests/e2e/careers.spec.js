@@ -15,6 +15,7 @@ test('careers: both roles, the producer pay range, no dead Apply buttons', async
   // A current license is required for both.
   await expect(page.getByText('A current Georgia Property & Casualty license')).toHaveCount(2);
   const benefits = page.getByRole('region', { name: 'Benefits' });
+  await expect(benefits.getByText('W-2 Job with a Base Salary')).toBeVisible();
   await expect(benefits.getByText('401(k) with a 4% Match')).toBeVisible();
   await expect(benefits.getByText('Paid Every Two Weeks')).toBeVisible();
   await expect(benefits.getByText('Paid Time Off')).toBeVisible();
