@@ -3,7 +3,7 @@
 // (when set) what it pays; Apply sends people to the job post (Indeed). A role without a
 // post yet says so instead of showing a dead button. All wording is editable with the
 // pencil. Reached from the footer (not the top menu). Same look as the consumer site. No black.
-import { ArrowRight, BadgeDollarSign, Check, Headphones, LineChart } from 'lucide-react';
+import { ArrowRight, BadgeDollarSign, CalendarCheck, Check, Headphones, LineChart, PiggyBank } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 
@@ -18,16 +18,21 @@ const ROLES = [
     key: 'producer', Icon: LineChart, title: 'Licensed Sales Producer',
     pay: '$48,000–$90,000 a year · base plus commission, based on production',
     blurb: 'Help people find out if they’re paying too much. You’ll work our Rate Check inbox, call people who asked for a quote, and help them switch to Allstate.',
-    needs: ['A Georgia Property & Casualty license', 'Comfortable on the phone and talking with people', 'Organized, with steady follow-up'],
+    needs: ['A current Georgia Property & Casualty license', 'Comfortable on the phone and talking with people', 'Organized, with steady follow-up'],
     apply: '',
   },
   {
     key: 'csr', Icon: Headphones, title: 'Customer Service Representative',
     pay: '',
     blurb: 'Take care of our customers after they buy: renewals, billing questions and policy changes, so they stay with us for years.',
-    needs: ['A Georgia Property & Casualty license, or ready to get one', 'Friendly, patient and detail-oriented', 'Good with computers and follow-up'],
+    needs: ['A current Georgia Property & Casualty license', 'Friendly, patient and detail-oriented', 'Good with computers and follow-up'],
     apply: '',
   },
+];
+
+const BENEFITS = [
+  [PiggyBank, '401(k) with a 4% Match', 'We match what you put in, up to 4% of your pay.'],
+  [CalendarCheck, 'Paid Every Two Weeks', 'A steady biweekly paycheck.'],
 ];
 
 const WHY = [
@@ -87,6 +92,23 @@ export default function CareersPage() {
           <div className="mt-8 grid gap-5 lg:grid-cols-2">
             {ROLES.map(r => <Role key={r.key} r={r} />)}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-white pt-14 lg:pt-20" aria-labelledby="careers-benefits">
+        <div className={wrap}>
+          <h2 id="careers-benefits" className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] lg:text-[36px]"><T k="careers.benefits">Benefits</T></h2>
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            {BENEFITS.map(([Icon, title, line], i) => (
+              <li key={title} className="flex gap-4 rounded-2xl border border-slate-200 p-5">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100" aria-hidden="true"><Icon className="h-5 w-5" /></span>
+                <div>
+                  <p className="text-lg font-extrabold text-[#0F2D6B]"><T k={`careers.benefit${i + 1}`}>{title}</T></p>
+                  <p className="mt-0.5 text-[15px] leading-relaxed text-slate-600"><T k={`careers.benefit${i + 1}.line`}>{line}</T></p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

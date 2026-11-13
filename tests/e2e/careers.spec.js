@@ -12,6 +12,11 @@ test('careers: both roles, the producer pay range, no dead Apply buttons', async
   const producer = page.getByRole('article', { name: 'Licensed Sales Producer' });
   await expect(producer.getByText('$48,000–$90,000 a year · base plus commission, based on production')).toBeVisible();
   await expect(page.getByRole('article', { name: 'Customer Service Representative' })).toBeVisible();
+  // A current license is required for both.
+  await expect(page.getByText('A current Georgia Property & Casualty license')).toHaveCount(2);
+  const benefits = page.getByRole('region', { name: 'Benefits' });
+  await expect(benefits.getByText('401(k) with a 4% Match')).toBeVisible();
+  await expect(benefits.getByText('Paid Every Two Weeks')).toBeVisible();
   await expect(page.getByRole('link', { name: /Apply on Indeed/ })).toHaveCount(0);
   await expect(page.getByText('The job post is coming soon. Check back shortly.').first()).toBeVisible();
 });
