@@ -6,7 +6,8 @@
 import { useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { T } from '../SiteCopy';
-import { AFFILIATE_URL, recruitCode } from '../../lib/affiliates';
+import { Link } from 'react-router-dom';
+import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION, AFFILIATE_URL, recruitCode } from '../../lib/affiliates';
 
 const AUDIENCES = ['Friends & family', 'Coworkers', 'My clients (realtor, dealer, lender…)', 'Social media followers', 'Other'];
 const phoneDigits = (s) => String(s || '').replace(/\D/g, '').replace(/^1(?=\d{10})/, '').slice(0, 10);
@@ -38,8 +39,9 @@ export default function AffiliateApplyForm() {
   const [recruit] = useState(recruitCode);
   const [f, setF] = useState({ first: '', last: '', phone: '', email: '', allstate: '', agent: '', audience: '' });
   const [state, setState] = useState({ status: 'idle', error: '' });
+  const [agree, setAgree] = useState(false);
   const set = (k) => (e) => setF(v => ({ ...v, [k]: k === 'phone' ? formatPhone(e.target.value) : e.target.value }));
-  const ok = f.first.trim() && /^[2-9]\d{2}[2-9]\d{6}$/.test(phoneDigits(f.phone));
+  const ok = f.first.trim() && /^[2-9]\d{2}[2-9]\d{6}$/.test(phoneDigits(f.phone)) && agree;
   const apply = async (e) => {
     e.preventDefault();
     if (!ok || state.status === 'sending') return;
@@ -52,6 +54,7 @@ export default function AffiliateApplyForm() {
           mode: 'apply', first_name: f.first.trim(), last_name: f.last.trim(), phone: phoneDigits(f.phone), email: f.email.trim(),
           is_customer: f.allstate === 'no' ? 'no' : f.allstate === 'yes' ? (f.agent || 'allstate_unsure') : null,
           audience: f.audience || null, source: recruit ? 'recruit_link' : 'affiliates_page', recruit_code: recruit || null,
+          accept_terms: agree, terms_version: AFFILIATE_TERMS_VERSION,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -100,12 +103,16 @@ export default function AffiliateApplyForm() {
           {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
       </label>
+      {/* Required: what they agree to is stored with the application (text, version, time). */}
+      <label className="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700">
+        <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
+        <span data-copy="fixed">I agree to the <Link to={AFFILIATE_TERMS_PATH} target="_blank" className="font-semibold text-blue-700 underline underline-offset-2">Affiliate Program Terms</Link> and to get texts from Cam Wiley Agency, Inc. about my application and the program. Msg &amp; data rates may apply. Reply STOP to opt out.</span>
+      </label>
       {state.error && <p className="mt-3 text-sm font-medium text-red-700" role="alert">{state.error}</p>}
       <button type="submit" disabled={!ok || state.status === 'sending'} className="qb qb-blue qb-lg mt-5 w-full">
         {state.status === 'sending' && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
         <T k="de.partner.button">Apply to Be an Affiliate</T>
       </button>
-      <p data-copy="fixed" className="mt-3 text-center text-xs text-slate-500">By applying, you agree we may call or text you about the affiliate program.</p>
     </form>
   );
 }

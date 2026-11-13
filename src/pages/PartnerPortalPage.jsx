@@ -7,14 +7,15 @@
 
 import { T } from '../components/SiteCopy';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Camera, Check, Copy, ExternalLink, FileSignature, Loader2, Share2, Star, X } from 'lucide-react';
 import PhotoCropModal from '../components/affiliates/PhotoCropModal';
 import HomeScreenSteps from '../components/affiliates/HomeScreenSteps';
 import { setHomeScreenName } from '../lib/homeScreenName';
 import { reviewUrl } from '../lib/reviews';
 import BrandLogo from '../components/BrandLogo';
-import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, submitPartnerW9 } from '../lib/rateCheckApi';
+import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, submitPartnerW9, acceptPartnerTerms } from '../lib/rateCheckApi';
+import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION } from '../lib/affiliates';
 import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
 
@@ -395,6 +396,17 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
 // First visits: sign the W-9 to unlock the link. After that, a photo is suggested, never required.
 function GetSetUp({ token, data, onChange }) {
   const [w9Open, setW9Open] = useState(false);
+  const agreed = !!data.terms?.accepted;
+  const [agree, setAgree] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const start = async () => {
+    if (agreed) { setW9Open(true); return; }
+    if (!agree || busy) return;
+    setBusy(true); setError('');
+    try { await acceptPartnerTerms(token, AFFILIATE_TERMS_VERSION); onChange(); setW9Open(true); } catch (err) { setError(err.message); }
+    setBusy(false);
+  };
   return (
     <section className="rounded-3xl bg-white px-5 py-8 text-center shadow-xl shadow-blue-900/10 ring-1 ring-slate-200">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="aff.portal.setup">Get Set Up · Step 1 of 2</T></p>
@@ -406,7 +418,14 @@ function GetSetUp({ token, data, onChange }) {
       <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-slate-600">
         {data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign, and your link unlocks right away.' : 'Sign it and your link unlocks right away. It’s also needed before your first payment.'}
       </p>
-      <button type="button" onClick={() => setW9Open(true)} className="qb qb-blue qb-lg mt-6 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
+      {!agreed && (
+        <label className="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-left text-sm leading-relaxed text-slate-700">
+          <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
+          <span data-copy="fixed">I agree to the <Link to={AFFILIATE_TERMS_PATH} target="_blank" className="font-semibold text-blue-700 underline underline-offset-2">Affiliate Program Terms</Link> and to get texts from Cam Wiley Agency, Inc. about my application and the program. Msg &amp; data rates may apply. Reply STOP to opt out.</span>
+        </label>
+      )}
+      {error && <p className="mt-3 text-sm text-red-600" role="alert">{error}</p>}
+      <button type="button" onClick={start} disabled={!agreed && (!agree || busy)} className="qb qb-blue qb-lg mt-5 w-full"><T k="pages.partnerportalpage.55e75f">Sign My W-9</T></button>
       {w9Open && <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} />}
     </section>
   );

@@ -202,6 +202,12 @@ function earnings(agencyScans: any[], promoterId: string, schedule: Record<strin
   }).sort((a, b) => b.month.localeCompare(a.month))
 }
 
+// What an affiliate agrees to (the box on the application and on portal step 1). The
+// words are kept here, not taken from the page, and stored with each agreement. Same
+// version and words as src/lib/affiliates.js (a unit test checks they match).
+const TERMS_VERSION = 'aff-terms-v1'
+const TERMS_TEXT = 'I agree to the Affiliate Program Terms and to get texts from Cam Wiley Agency, Inc. about my application and the program. Msg & data rates may apply. Reply STOP to opt out.'
+
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -247,6 +253,7 @@ Deno.serve(async (req) => {
     const email = text(body.email, 160)?.toLowerCase() || null
     if (!firstName) return json({ error: 'Add your first name.' }, 400, cors)
     if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(phone)) return json({ error: 'Enter a 10-digit US mobile number.' }, 400, cors)
+    if (body.accept_terms !== true || body.terms_version !== TERMS_VERSION) return json({ error: 'Check the box to agree to the Affiliate Program Terms.' }, 400, cors)
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'That email doesn’t look right.' }, 400, cors)
     const { data: agency } = await supabase.from('agencies').select('id').eq('is_default', true).limit(1).maybeSingle()
     if (!agency) return json({ error: 'Something went wrong. Try again.' }, 500, cors)
@@ -270,6 +277,7 @@ Deno.serve(async (req) => {
       audience: text(body.audience, 60), source: text(body.source, 40) || 'drivers_ed',
       ip_address: clientIp !== 'unknown' ? clientIp : null,
       recruited_by: recruiter?.user_id || null,
+      terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION, terms_text: TERMS_TEXT,
     })
     if (insErr) { console.error('[RATE_CHECK_PARTNER] apply insert failed:', insErr.message); return json({ error: 'Something went wrong. Try again.' }, 500, cors) }
     const { data: principals } = await supabase.from('agency_memberships').select('user_id')
@@ -292,9 +300,22 @@ Deno.serve(async (req) => {
   if (token.length !== 48) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
   const { data: p } = await supabase.from('rate_check_promoters')
-    .select('id, agency_id, name, code, active, monthly_cap, agreement_version, agreement_signed_at, photo_url, photo_consent_at, w9_received_at, w9_tin_type, w9_tin_last4, mailing_address, mailing_city_state_zip')
+    .select('id, agency_id, name, phone, code, active, monthly_cap, agreement_version, agreement_signed_at, photo_url, photo_consent_at, w9_received_at, w9_tin_type, w9_tin_last4, mailing_address, mailing_city_state_zip, terms_accepted_at, terms_version')
     .eq('portal_token', token).maybeSingle()
   if (!p) return json({ error: 'This link isn’t valid.' }, 404, cors)
+
+  // Agreed to the terms? On the application counts: carry it over the first time.
+  let termsOk = !!p.terms_accepted_at
+  if (!termsOk && p.phone) {
+    const { data: app } = await supabase.from('rate_check_partner_applications')
+      .select('terms_accepted_at, terms_version, terms_text, ip_address')
+      .eq('agency_id', p.agency_id).eq('phone', p.phone).not('terms_accepted_at', 'is', null)
+      .order('terms_accepted_at', { ascending: false }).limit(1).maybeSingle()
+    if (app) {
+      await supabase.from('rate_check_promoters').update({ terms_accepted_at: app.terms_accepted_at, terms_version: app.terms_version, terms_text: app.terms_text, terms_ip: app.ip_address }).eq('id', p.id)
+      termsOk = true
+    }
+  }
 
   const [{ data: agency }, { data: rateRows }, { data: rulesRow }] = await Promise.all([
     supabase.from('agencies').select('name, brand_name').eq('id', p.agency_id).single(),
@@ -350,8 +371,17 @@ Deno.serve(async (req) => {
     return json({ photo_url: photoUrl }, 200, cors)
   }
 
+  if (body.mode === 'accept_terms') {
+    if (body.accept !== true || body.terms_version !== TERMS_VERSION) return json({ error: 'Check the box to agree to the Affiliate Program Terms.' }, 400, cors)
+    const at = new Date().toISOString()
+    await supabase.from('rate_check_promoters').update({ terms_accepted_at: at, terms_version: TERMS_VERSION, terms_text: TERMS_TEXT, terms_ip: clientIp !== 'unknown' ? clientIp : null }).eq('id', p.id)
+    return json({ terms: { accepted: true, version: TERMS_VERSION, accepted_at: at } }, 200, cors)
+  }
+
   if (body.mode === 'w9') {
     if (!cleared) return json({ error: 'Sign the agreement first.' }, 409, cors)
+    // Signing up for real means agreeing to the terms (and texts) first; a W-9 already on file is grandfathered.
+    if (!termsOk && !p.w9_received_at) return json({ error: 'Agree to the Affiliate Program Terms first.' }, 409, cors)
     const w9 = checkW9(body)
     if ('error' in w9) return json({ error: w9.error }, 400, cors)
     const when = new Date()
@@ -382,6 +412,7 @@ Deno.serve(async (req) => {
       first_name: String(p.name).split(/\s+/)[0], name: p.name, agency_name: agencyName, active: p.active,
       // The draft text is only sent once the agreement is live.
       agreement: { required: AGREEMENT_REQUIRED, version: AGREEMENT_VERSION, text: AGREEMENT_REQUIRED ? text : null, signed, signed_at: signed ? p.agreement_signed_at : null },
+      terms: { accepted: termsOk, version: TERMS_VERSION },
       schedule, monthly_cap: p.monthly_cap,
       // What a household waits on before it counts: a reply to the quote-ready text, or a quote.
       pay_rule: rules.requireCallConfirm ? 'reply' : 'quote',

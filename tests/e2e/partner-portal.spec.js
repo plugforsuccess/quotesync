@@ -51,6 +51,7 @@ async function mockPartner(page, state) {
     }
     if (body.mode === 'photo') { state.data = { ...state.data, photo_url: 'data:image/png;base64,' + png(8, 8).toString('base64') }; return json({ photo_url: state.data.photo_url }); }
     if (body.mode === 'photo_remove') { state.data = { ...state.data, photo_url: null }; return json({ photo_url: null }); }
+    if (body.mode === 'accept_terms') { state.data = { ...state.data, terms: { accepted: true, version: body.terms_version } }; return json({ terms: { accepted: true } }); }
     return json({ error: 'Unknown mode' }, 400);
   });
   return calls;
@@ -111,7 +112,12 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
   const state = { data: portal() };
   const calls = await mockPartner(page, state);
   await page.goto(`/partner/${TOKEN}`);
-  await page.getByRole('button', { name: 'Sign my W-9' }).click();
+  // Signed up in Quick Send: they agree to the terms and texts first.
+  const sign = page.getByRole('button', { name: 'Sign my W-9' });
+  await expect(sign).toBeDisabled();
+  await page.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms and to get texts/ }).check();
+  await sign.click();
+  expect(calls.find(c => c.mode === 'accept_terms')).toMatchObject({ accept: true, terms_version: 'aff-terms-v1' });
   const dialog = page.getByRole('dialog', { name: 'Sign your W-9' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel('Name on your tax return')).toHaveValue('Javon Yarbrough');
@@ -290,4 +296,11 @@ test('before the W-9 there are no Home Screen steps yet', async ({ page }) => {
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Get Set Up · Step 1 of 2')).toBeVisible();
   await expect(page.getByText('Save to Your Home Screen')).toHaveCount(0);
+});
+
+test('agreed on the application: step 1 has no box, just Sign My W-9', async ({ page }) => {
+  await mockPartner(page, { data: portal({ terms: { accepted: true, version: 'aff-terms-v1' } }) });
+  await page.goto(`/partner/${TOKEN}`);
+  await expect(page.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sign my W-9' })).toBeEnabled();
 });

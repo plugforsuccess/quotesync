@@ -281,6 +281,8 @@ export const signPartnerAgreement = (token, signedName) => partnerCall({ mode: '
 /** The partner's photo for their link's landing page (a JPEG data URL from squarePhoto). */
 export const savePartnerPhoto = (token, image) => partnerCall({ mode: 'photo', token, image, consent: true });
 export const removePartnerPhoto = (token) => partnerCall({ mode: 'photo_remove', token });
+/** The affiliate agrees to the program terms and to texts (portal step 1, before the W-9). */
+export const acceptPartnerTerms = (token, version) => partnerCall({ mode: 'accept_terms', token, accept: true, terms_version: version });
 /** The partner's W-9 (payload from w9Payload); the function fills the IRS form and keeps it privately. */
 export const submitPartnerW9 = (payload) => partnerCall(payload);
 
