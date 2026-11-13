@@ -2,8 +2,8 @@
 // "Save to Your Home Screen" in the affiliate portal: two icons, "Affiliate Portal" (this
 // page) and "Affiliate Link" (their share link), with plain iPhone and Android steps.
 // Shown once the W-9 is signed (the link exists then).
-import { useState } from 'react';
-import { ChevronDown, ExternalLink, MoreVertical, PlusSquare, Share } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, Compass, ExternalLink, Link2, MoreVertical, PenLine, PlusSquare, Share } from 'lucide-react';
 import { T } from '../SiteCopy';
 
 const isAndroid = () => typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
@@ -32,6 +32,73 @@ function Steps({ phone, name }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+// Step 2 as a deck: one card per step, swipe or tap Next. `img` slots take real phone
+// screenshots once we have them; until then each card shows its icon.
+const DECK = {
+  iphone: [
+    { icon: Compass, title: 'Open This Page in Safari', text: 'If it opened inside another app, tap the compass or “Open in Safari.”' },
+    { icon: Share, title: 'Tap Share', text: 'The square with an arrow, in the bar at the bottom of the screen.' },
+    { icon: PlusSquare, title: 'Tap Add to Home Screen', text: 'Scroll down the list to find it.' },
+    { icon: PenLine, title: 'Name It “Affiliate Portal”', text: 'Check the name, then tap Add at the top right.' },
+  ],
+  android: [
+    { icon: Compass, title: 'Open This Page in Chrome', text: 'If it opened inside another app, tap “Open in Chrome.”' },
+    { icon: MoreVertical, title: 'Tap the Menu', text: 'The three dots at the top right.' },
+    { icon: PlusSquare, title: 'Tap Add to Home Screen', text: 'Then Add (or Install).' },
+    { icon: PenLine, title: 'Name It “Affiliate Portal”', text: 'Check the name, then tap Add.' },
+  ],
+};
+
+function StepDeck({ phone, linkUrl, onDone }) {
+  const cards = [...DECK[phone], {
+    icon: Link2, title: 'Now Save Your Affiliate Link', text: 'Open your link, then do the same steps and name it “Affiliate Link.”', link: true,
+  }];
+  const [i, setI] = useState(0);
+  const start = useRef(null);
+  const go = (n) => setI(Math.max(0, Math.min(cards.length - 1, n)));
+  const c = cards[i];
+  const Icon = c.icon;
+  const behind = Math.min(2, cards.length - 1 - i);
+  const last = i === cards.length - 1;
+  return (
+    <>
+      <div className="relative mt-5" style={{ marginBottom: behind * 10 }}
+        onPointerDown={e => { start.current = e.clientX; }}
+        onPointerUp={e => { if (start.current == null) return; const dx = e.clientX - start.current; start.current = null; if (Math.abs(dx) > 50) go(i + (dx < 0 ? 1 : -1)); }}>
+        {Array.from({ length: behind }).map((_, k) => (
+          <div key={k} aria-hidden="true" className="absolute inset-0 rounded-2xl bg-blue-50 ring-1 ring-blue-100"
+            style={{ transform: `translateY(${(k + 1) * 10}px) scale(${1 - (k + 1) * 0.05})`, opacity: 1 - k * 0.35, zIndex: 2 - k }} />
+        ))}
+        <div key={`${phone}-${i}`} role="group" aria-label={`Step ${i + 1} of ${cards.length}`}
+          className="rc-deck-in relative z-10 touch-pan-y select-none rounded-2xl bg-white px-5 pb-6 pt-7 text-center shadow-[0_8px_24px_-12px_rgba(15,45,107,0.35)] ring-1 ring-slate-200">
+          <span className="absolute right-3 top-3 rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold tabular-nums text-white">{i + 1} <T k="aff.deck.of">of</T> {cards.length}</span>
+          {c.img
+            ? <img src={c.img} alt="" className="mx-auto max-h-64 rounded-xl ring-1 ring-slate-200" />
+            : <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100" aria-hidden="true"><Icon className="h-8 w-8" /></span>}
+          <p className="mt-4 text-xl font-extrabold text-[#0F2D6B]"><T>{c.title}</T></p>
+          <p className="mx-auto mt-1.5 max-w-xs text-[15px] leading-relaxed text-slate-600"><T>{c.text}</T></p>
+          {c.link && (
+            <a href={linkUrl} target="_blank" rel="noreferrer" className="qb qb-outline qb-md mt-4 w-full">
+              <T k="aff.home.open-link">Open My Link</T> <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            </a>
+          )}
+        </div>
+      </div>
+      <div className="mt-4 flex justify-center gap-1.5" aria-hidden="true">
+        {cards.map((_, k) => <span key={k} className={`h-1.5 rounded-full transition-all ${k === i ? 'w-5 bg-blue-600' : 'w-1.5 bg-slate-300'}`} />)}
+      </div>
+      <div className="mt-4 grid grid-cols-[auto_1fr] gap-2">
+        <button type="button" onClick={() => go(i - 1)} disabled={i === 0} aria-label="Back" className="qb qb-outline qb-lg px-4 disabled:opacity-40">
+          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
+        {last
+          ? <button type="button" onClick={onDone} className="qb qb-blue qb-lg w-full"><T k="aff.home.done">Done</T></button>
+          : <button type="button" onClick={() => go(i + 1)} className="qb qb-blue qb-lg w-full"><T k="aff.deck.next">Next</T> <ChevronRight className="h-5 w-5" aria-hidden="true" /></button>}
+      </div>
+    </>
   );
 }
 
@@ -77,13 +144,15 @@ export default function HomeScreenSteps({ linkUrl, asStep = false, onDone }) {
     );
   }
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200" aria-labelledby="aff-home">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700"><T k="aff.home.step">Get Set Up · Step 2 of 2</T></p>
-      <h2 id="aff-home" className="mt-2 font-semibold text-[#0F2D6B]"><T k="aff.home.title">Save to Your Home Screen</T></h2>
-      <p className="text-sm text-slate-600"><T k="aff.home.why">Two icons, so you can check your referrals and share your link in one tap.</T></p>
-      {body}
-      <button type="button" onClick={onDone} className="qb qb-blue qb-md mt-5 w-full"><T k="aff.home.done">Done</T></button>
-      <button type="button" onClick={onDone} className="mt-2 w-full py-2 text-sm font-semibold text-slate-500 hover:text-slate-700"><T k="aff.home.skip">Skip for Now</T></button>
+    <section className="rounded-3xl bg-white px-5 py-7 text-center shadow-xl shadow-blue-900/10 ring-1 ring-slate-200" aria-labelledby="aff-home">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="aff.home.step">Get Set Up · Step 2 of 2</T></p>
+      <h2 id="aff-home" className="mt-3 text-2xl font-extrabold text-[#0F2D6B]"><T k="aff.home.title">Save to Your Home Screen</T></h2>
+      <p className="mx-auto mt-1.5 max-w-xs text-[15px] leading-relaxed text-slate-600"><T k="aff.home.why">Two icons, so you can check your referrals and share your link in one tap.</T></p>
+      <div className="mx-auto mt-4 flex max-w-[16rem] gap-1 rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Your phone">
+        {tab('iphone', 'iPhone')}{tab('android', 'Android')}
+      </div>
+      <div><StepDeck key={phone} phone={phone} linkUrl={linkUrl} onDone={onDone} /></div>
+      <button type="button" onClick={onDone} className="mt-3 w-full py-2 text-sm font-semibold text-slate-500 hover:text-slate-700"><T k="aff.home.skip">Skip for Now</T></button>
     </section>
   );
 }

@@ -251,11 +251,25 @@ test('after the W-9, step 2 is Save to Your Home Screen: both icons, iPhone and 
   await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Affiliate Portal');
   await expect(page.getByText('Get Set Up · Step 2 of 2')).toBeVisible();
   const card = page.getByRole('region', { name: 'Save to Your Home Screen' });
-  await expect(card.getByText(/Check the name says Affiliate Portal/)).toBeVisible();
-  await expect(card.getByText(/Check the name says Affiliate Link/)).toBeVisible();
-  await expect(card.getByRole('link', { name: 'Open My Link' })).toHaveAttribute('href', new RegExp(`/r/${CODE}\\?app=1$`));
+  // A deck: one step at a time, Next and Back.
+  await expect(card.getByRole('group', { name: 'Step 1 of 5' })).toContainText('Open This Page in Safari');
+  await expect(card.getByRole('button', { name: 'Back' })).toBeDisabled();
+  for (const title of ['Tap Share', 'Tap Add to Home Screen', 'Name It “Affiliate Portal”']) {
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText(title, { exact: true })).toBeVisible();
+  }
+  await card.getByRole('button', { name: 'Next' }).click();
+  const last = card.getByRole('group', { name: 'Step 5 of 5' });
+  await expect(last).toContainText('Now Save Your Affiliate Link');
+  await expect(last.getByRole('link', { name: 'Open My Link' })).toHaveAttribute('href', new RegExp(`/r/${CODE}\\?app=1$`));
+  await expect(card.getByRole('button', { name: 'Done' })).toBeVisible();
+  await card.getByRole('button', { name: 'Back' }).click();
+  await expect(card.getByRole('group', { name: 'Step 4 of 5' })).toBeVisible();
+  // Android starts over with its own steps.
   await card.getByRole('tab', { name: 'Android' }).click();
-  await expect(card.getByText(/Open it in Chrome/).first()).toBeVisible();
+  await expect(card.getByRole('group', { name: 'Step 1 of 5' })).toContainText('Open This Page in Chrome');
+  await card.getByRole('button', { name: 'Next' }).click();
+  await expect(card.getByText('Tap the Menu', { exact: true })).toBeVisible();
   // The link is live either way.
   await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
   await card.getByRole('button', { name: 'Skip for Now' }).click();
