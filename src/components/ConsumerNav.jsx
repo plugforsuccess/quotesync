@@ -103,14 +103,19 @@ export function ConsumerShell() {
   );
 }
 
-/** The light footer on every consumer page: other pages, legal links, the Allstate disclosure. */
+const SHOW_FOOTER_PAGES = false;
+
+/** The light footer on every consumer page: legal links and the Allstate disclosure. */
 export function RateCheckFooter({ padForBar = false, wide = false }) {
   return (
     <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'} ${wide ? 'sm:max-w-6xl lg:px-8' : ''}`}>
-      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
-        <Link to="/courses" className="font-semibold text-slate-600 underline"><T k="footer.drivers-ed">Drivers Ed</T></Link>
-        <Link to="/news" className="font-semibold text-slate-600 underline"><T k="footer.newsroom">Newsroom</T></Link>
-      </nav>
+      {/* Drivers Ed and Newsroom links are hidden from the footer (still in the menu). Set SHOW_FOOTER_PAGES to bring them back. */}
+      {SHOW_FOOTER_PAGES && (
+        <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
+          <Link to="/courses" className="font-semibold text-slate-600 underline"><T k="footer.drivers-ed">Drivers Ed</T></Link>
+          <Link to="/news" className="font-semibold text-slate-600 underline"><T k="footer.newsroom">Newsroom</T></Link>
+        </nav>
+      )}
       <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legal">
         <Link to="/ratecheck-privacy" className="underline"><T k="footer.rc-privacy">Rate Check privacy notice</T></Link>
         <Link to="/privacy" className="underline"><T k="footer.privacy">Privacy policy</T></Link>
