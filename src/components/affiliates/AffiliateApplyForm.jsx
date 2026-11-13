@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { T } from '../SiteCopy';
 import { Link } from 'react-router-dom';
-import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION, AFFILIATE_URL, recruitCode } from '../../lib/affiliates';
+import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION, AFFILIATE_URL, affiliateRef, recruitCode } from '../../lib/affiliates';
 
 const AUDIENCES = ['Friends & family', 'Coworkers', 'My clients (realtor, dealer, lender…)', 'Social media followers', 'Other'];
 const phoneDigits = (s) => String(s || '').replace(/\D/g, '').replace(/^1(?=\d{10})/, '').slice(0, 10);
@@ -37,6 +37,7 @@ function Choice({ legend, name, value, options, onChange }) {
 
 export default function AffiliateApplyForm() {
   const [recruit] = useState(recruitCode);
+  const [invitedBy] = useState(affiliateRef);
   const [f, setF] = useState({ first: '', last: '', phone: '', email: '', allstate: '', agent: '', audience: '' });
   const [state, setState] = useState({ status: 'idle', error: '' });
   const [agree, setAgree] = useState(false);
@@ -53,7 +54,8 @@ export default function AffiliateApplyForm() {
         body: JSON.stringify({
           mode: 'apply', first_name: f.first.trim(), last_name: f.last.trim(), phone: phoneDigits(f.phone), email: f.email.trim(),
           is_customer: f.allstate === 'no' ? 'no' : f.allstate === 'yes' ? (f.agent || 'allstate_unsure') : null,
-          audience: f.audience || null, source: recruit ? 'recruit_link' : 'affiliates_page', recruit_code: recruit || null,
+          audience: f.audience || null, source: recruit ? 'recruit_link' : invitedBy ? 'affiliate_invite' : 'affiliates_page', recruit_code: recruit || null,
+          affiliate_code: invitedBy || null,
           accept_terms: agree, terms_version: AFFILIATE_TERMS_VERSION,
         }),
       });

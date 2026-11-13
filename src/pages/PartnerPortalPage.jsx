@@ -38,9 +38,8 @@ const GREETINGS = [
   (n) => `Hi, ${n}`, (n) => `Hey, ${n}`, (n) => `Hello, ${n}`,
   (n) => `Hey there, ${n}`, (n) => `Good to see you, ${n}`, (n) => `What’s good, ${n}`,
 ];
-// The fee schedule is hidden from partners for now (they still see what each
-// household earned them). Set to true to show it again.
-const SHOW_PAY_SCHEDULE = false;
+// The pay per household (also public on /affiliates). Set to false to hide it again.
+const SHOW_PAY_SCHEDULE = true;
 const SCHEDULE_ROWS = [
   ['auto_home', 'Auto + home or condo'], ['auto_renters', 'Auto + renters'], ['home_only', 'Home or condo only'],
   ['auto_only', 'Auto only'], ['renters_only', 'Renters only'], ['landlord', 'Landlord'],
@@ -431,6 +430,34 @@ function GetSetUp({ token, data, onChange }) {
   );
 }
 
+// Know someone who'd be a good affiliate? Their invite link opens /affiliates with this
+// affiliate's code; the application records who invited them (credit only, no pay).
+function InviteCard({ code, invites }) {
+  const url = `${window.location.origin}/affiliates?aff=${encodeURIComponent(code || '')}`;
+  const [copied, setCopied] = useState(false);
+  const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ } };
+  const share = () => navigator.share?.({ title: 'Become an affiliate', text: 'I share free insurance rate checks with Cam Wiley Agency and get paid for it. Apply here:', url }).catch(() => {});
+  if (!code) return null;
+  const sent = invites?.applied || 0;
+  return (
+    <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200" aria-labelledby="aff-invite">
+      <h2 id="aff-invite" className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="aff.invite.eyebrow">Invite Someone to Be an Affiliate</T></h2>
+      <p className="mt-2 text-sm leading-relaxed text-slate-600"><T k="aff.invite.line">Know someone who’d be good at this? Send them your invite link. They apply in a minute, and we’ll know you sent them.</T></p>
+      {sent > 0 && (
+        <p className="mt-2 text-sm font-semibold text-[#0F2D6B]">{sent} {sent === 1 ? 'person' : 'people'} applied · {invites?.joined || 0} joined</p>
+      )}
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={copy} className="qb qb-outline qb-md flex-1">
+          {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.a588b1">Copied</T></> : <><Copy className="h-4 w-4" aria-hidden="true" /> <T k="aff.invite.copy">Copy Invite Link</T></>}
+        </button>
+        {typeof navigator !== 'undefined' && navigator.share && (
+          <button type="button" onClick={share} className="qb qb-outline qb-md flex-1"><Share2 className="h-4 w-4" aria-hidden="true" /> <T k="pages.partnerportalpage.5a95a4">Share</T></button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // After the W-9: a photo helps people trust the link, but it's their call.
 function PhotoNudge() {
   return (
@@ -492,8 +519,6 @@ function Earnings({ token, data, onChange }) {
 
       {!data.photo_url && <PhotoNudge />}
 
-      {!homeStep && <HomeScreenSteps linkUrl={`${url}?app=1`} />}
-
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', dollars2(paidAll), 'all time']].map(([k, v, sub]) => (
           <div key={k} className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
@@ -541,20 +566,26 @@ function Earnings({ token, data, onChange }) {
         </table>
       </section>
 
-      {data.w9?.on_file && <W9Section token={token} data={data} onChange={onChange} />}
-
-      <PhotoSection token={token} name={data.name || data.first_name} photoUrl={data.photo_url} onChange={onChange} />
-
       {SHOW_PAY_SCHEDULE && <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500"><T k="pages.partnerportalpage.867844">How You're Paid · Per Household</T></h2>
         <dl className="mt-2 divide-y divide-slate-100 text-sm">
           {SCHEDULE_ROWS.map(([k, label]) => (
-            <div key={k} className="flex justify-between py-2"><dt className="text-slate-700"><T>{label}</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(data.schedule[k])}</dd></div>
+            <div key={k} className="flex justify-between py-2"><dt className="text-slate-700"><T>{productCase(label)}</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(data.schedule[k])}</dd></div>
           ))}
           <div className="flex justify-between py-2"><dt className="text-slate-700"><T k="pages.partnerportalpage.c99e34">Each Extra Line, Up To 2</T></dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(data.schedule.extra_line)}</dd></div>
         </dl>
         <p className="mt-2 text-xs leading-relaxed text-slate-500"><T k="pages.partnerportalpage.b3e79d">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we've quoted it (or 7 days after their first page). Pages that can't be read, repeats, expired pages and Allstate policies don't count. Paid monthly after your W-9 is on file; months under $50 carry over.</T></p>
       </section>}
+
+      <InviteCard code={data.code} invites={data.invites} />
+
+      {data.w9?.on_file && <W9Section token={token} data={data} onChange={onChange} />}
+
+      <PhotoSection token={token} name={data.name || data.first_name} photoUrl={data.photo_url} onChange={onChange} />
+
+      {/* Saving to the Home Screen was step 2; it stays here, folded up, for later. */}
+      {!homeStep && <HomeScreenSteps linkUrl={`${url}?app=1`} />}
+
     </>
   );
 }

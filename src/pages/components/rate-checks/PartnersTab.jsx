@@ -111,7 +111,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
   return (
     <div className="space-y-4">
-      <Applications agencyId={agencyId} userId={userId} canEdit={canEdit} savePromoter={savePromoter} nameOf={nameOf} />
+      <Applications agencyId={agencyId} userId={userId} canEdit={canEdit} savePromoter={savePromoter} nameOf={nameOf}
+        affiliateName={(id) => promoters.find(x => x.id === id)?.name} />
 
       <Dismissible id="partners.program-rules">
         <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
@@ -238,6 +239,11 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? <><T k="pages.components.ratechecks.partnerstab.6aff6f">{"W-9 on file"}</T>{p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ''}</> : <T k="pages.components.ratechecks.partnerstab.00fff8">{'W-9 needed'}</T>}</Pill>
               </span>
             </div>
+            {p.invited_by_promoter_id && (
+              <p className="mt-2 text-sm" style={{ color: 'var(--qs-subtle)' }}>
+                <T k="partners.invitedby">Invited by</T> <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{promoters.find(x => x.id === p.invited_by_promoter_id)?.name || 'an affiliate'}</span>
+              </p>
+            )}
             <RecruitedBy promoter={p} recruiters={recruiters} canEdit={canEdit}
               onChange={(uid) => savePromoter.mutate({ id: p.id, agencyId, recruited_by: uid })} />
             {PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at && (
@@ -635,7 +641,7 @@ function RecruitedBy({ promoter: p, recruiters, canEdit, onChange }) {
   );
 }
 
-function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
+function Applications({ agencyId, userId, canEdit, savePromoter, nameOf, affiliateName }) {
   const { data: apps = [] } = usePartnerApplications(agencyId);
   const close = useCloseApplication();
   const [busy, setBusy] = useState(null);
@@ -644,7 +650,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
     setBusy(a.id);
     const name = [a.first_name, a.last_name].filter(Boolean).join(' ');
     // Credited to the producer whose recruit link they applied through (none if they found the page themselves).
-    savePromoter.mutate({ agencyId, userId, name, phone: a.phone, email: a.email || '', recruited_by: a.recruited_by || null }, {
+    savePromoter.mutate({ agencyId, userId, name, phone: a.phone, email: a.email || '', recruited_by: a.recruited_by || null, invited_by_promoter_id: a.invited_by_promoter_id || null }, {
       onSuccess: (row) => close.mutate({ id: a.id, status: 'added', promoterId: row?.id, agencyId }, { onSettled: () => setBusy(null) }),
       onError: () => setBusy(null),
     });
@@ -654,7 +660,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
       <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>
         {apps.length === 1 ? <T k="pages.components.ratechecks.partnerstab.b1357a">{'1 Person Wants to Be an Affiliate'}</T> : <>{apps.length}{" "}<T k="pages.components.ratechecks.partnerstab.398113">{"People Want to Be Affiliates"}</T></>}
       </h3>
-      <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="pages.components.ratechecks.partnerstab.28fa07">From the Drivers Ed page. Add them, then send them their portal link.</T></p>
+      <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}><T k="partners.apps.from">From the Affiliates page. Add them, then send them their portal link.</T></p>
       <ul className="mt-3 space-y-2">
         {apps.map(a => (
           <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2.5" style={{ background: 'var(--qs-elevated)' }}>
@@ -664,7 +670,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter, nameOf }) {
                 {CUSTOMER_BADGE[a.is_customer] && <span className="ml-2 rounded px-1.5 py-0.5 text-[11px] font-bold" style={a.is_customer === 'agency' ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)' } : { color: 'var(--qs-text)', background: 'var(--qs-card)' }}>{CUSTOMER_BADGE[a.is_customer]}</span>}
               </p>
               <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                {[formatPhone(a.phone), a.email, a.audience, `applied ${formatDate(a.created_at)}`, a.recruited_by && `via ${nameOf(a.recruited_by) || 'a recruit link'}`].filter(Boolean).join(' · ')}
+                {[formatPhone(a.phone), a.email, a.audience, `applied ${formatDate(a.created_at)}`, a.recruited_by && `via ${nameOf(a.recruited_by) || 'a recruit link'}`, a.invited_by_promoter_id && `invited by ${affiliateName(a.invited_by_promoter_id) || 'an affiliate'}`].filter(Boolean).join(' · ')}
               </p>
             </div>
             {canEdit && (

@@ -213,14 +213,14 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Get Set Up · Step 1 of 2')).toHaveCount(0);
   // No projections: unpaid months show a household count, paid months what was paid.
-  await expect(page.getByText('Auto + Home or Condo')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Auto + Home or Condo' })).toBeVisible();
   // Paid months end with an Earnings row: the amount, with cents.
   const earnings = page.getByRole('row', { name: 'Earnings $15.00' });
   await expect(earnings).toBeVisible();
   await expect(page.getByText('$15.00', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Stephen M.')).toBeVisible();
-  await expect(page.getByText('$45')).toHaveCount(0);
-  await expect(page.getByText('$55')).toHaveCount(0);
+  await expect(page.getByRole('table', { name: 'Your referrals by month' }).getByText('$45')).toHaveCount(0);
+  await expect(page.getByRole('table', { name: 'Your referrals by month' }).getByText('$55')).toHaveCount(0);
 });
 
 test('a wrong or old link says so', async ({ page }) => {
@@ -246,7 +246,7 @@ test('month headings are the month; a paused link says so', async ({ page }) => 
   await expect(table.getByRole('columnheader', { name: 'Products' })).toBeVisible();
   await expect(table.getByRole('columnheader', { name: /^[A-Z][a-z]+ \d{4}$/ })).toBeVisible();
   await expect(table.getByRole('row', { name: 'Stephen Auto + Home or Condo' })).toBeVisible();
-  await expect(page.getByText('$45')).toHaveCount(0);
+  await expect(page.getByRole('table', { name: 'Your referrals by month' }).getByText('$45')).toHaveCount(0);
   await expect(page.getByText(/on the way/)).toHaveCount(0);
 });
 
@@ -303,4 +303,22 @@ test('agreed on the application: step 1 has no box, just Sign My W-9', async ({ 
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Sign my W-9' })).toBeEnabled();
+});
+
+test('onboarded: pay per household, invite someone, and the Home Screen how-to at the bottom', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.addInitScript(() => localStorage.setItem('qs_aff_home_' + 'a'.repeat(12), '1')); // step 2 done
+  await mockPartner(page, { data: portal({ w9: W9, photo_url: PHOTO, invites: { applied: 2, joined: 1 } }) });
+  await page.goto(`/partner/${TOKEN}`);
+  const pay = page.getByRole('heading', { name: /How You're Paid/i });
+  await expect(pay).toBeVisible();
+  await expect(page.getByRole('term').filter({ hasText: 'Auto + Home or Condo' })).toBeVisible();
+  const invite = page.getByRole('region', { name: 'Invite Someone to Be an Affiliate' });
+  await expect(invite.getByText('2 people applied · 1 joined')).toBeVisible();
+  await invite.getByRole('button', { name: 'Copy Invite Link' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/affiliates\\?aff=${CODE}$`));
+  // The Home Screen how-to is the last thing on the page.
+  const summary = page.locator('summary', { hasText: 'Save to Your Home Screen' });
+  const [hs, inv] = await Promise.all([summary.boundingBox(), invite.boundingBox()]);
+  expect(hs.y).toBeGreaterThan(inv.y);
 });

@@ -271,19 +271,28 @@ Deno.serve(async (req) => {
     const { data: recruiterProfile } = recruiter
       ? await supabase.from('profiles').select('full_name').eq('id', recruiter.user_id).maybeSingle()
       : { data: null }
+    // Invited by an affiliate (/affiliates?aff=CODE): credit only, no pay.
+    const affCode = String(body.affiliate_code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)
+    const { data: inviter } = affCode
+      ? await supabase.from('rate_check_promoters').select('id, name')
+          .eq('agency_id', agency.id).eq('code', affCode).eq('active', true).eq('is_test', false).maybeSingle()
+      : { data: null }
     const { error: insErr } = await supabase.from('rate_check_partner_applications').insert({
       agency_id: agency.id, first_name: firstName, last_name: lastName, phone, email,
       is_customer: CUSTOMER[body.is_customer] ? body.is_customer : null,
       audience: text(body.audience, 60), source: text(body.source, 40) || 'drivers_ed',
       ip_address: clientIp !== 'unknown' ? clientIp : null,
       recruited_by: recruiter?.user_id || null,
+      invited_by_promoter_id: inviter?.id || null,
       terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION, terms_text: TERMS_TEXT,
     })
     if (insErr) { console.error('[RATE_CHECK_PARTNER] apply insert failed:', insErr.message); return json({ error: 'Something went wrong. Try again.' }, 500, cors) }
     const { data: principals } = await supabase.from('agency_memberships').select('user_id')
       .eq('agency_id', agency.id).eq('status', 'active').eq('agency_role', 'principal')
     const name = [firstName, lastName].filter(Boolean).join(' ')
-    const via = recruiter ? `via ${recruiterProfile?.full_name || 'a producer'}’s recruit link` : body.source === 'affiliates_page' ? 'from the Affiliates page' : 'from Drivers Ed'
+    const via = recruiter ? `via ${recruiterProfile?.full_name || 'a producer'}’s recruit link`
+      : inviter ? `invited by affiliate ${inviter.name}`
+      : body.source === 'affiliates_page' ? 'from the Affiliates page' : 'from Drivers Ed'
     // The principal reviews it; the producer who recruited them hears about it too.
     const notify = [...new Set([...(principals || []).map((m: any) => m.user_id), ...(recruiter ? [recruiter.user_id] : [])])]
     if (notify.length) {
@@ -422,17 +431,20 @@ Deno.serve(async (req) => {
         prefill: { address: p.mailing_address || '', city_state_zip: p.mailing_city_state_zip || '' } },
     }
     if (!cleared) return json(base, 200, cors)
-    const [{ data: scans }, { data: payouts }] = await Promise.all([
+    const [{ data: scans }, { data: payouts }, { count: invited }, { count: joined }] = await Promise.all([
       // Every partner-tagged scan in the agency (not test uploads): a household is credited
       // to the partner whose link sent its first page, as on the staff Partners tab.
       supabase.from('rate_checks').select('id, promoter_id, phone, first_name, insured_name:extracted->>insured_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at, call_confirmed_at')
         .eq('agency_id', p.agency_id).eq('is_test', false).not('promoter_id', 'is', null).order('created_at', { ascending: true }).limit(5000),
       supabase.from('rate_check_promoter_payouts').select('period, amount, paid_at').eq('promoter_id', p.id),
+      // People they invited to be affiliates: applied, and added.
+      supabase.from('rate_check_partner_applications').select('id', { count: 'exact', head: true }).eq('invited_by_promoter_id', p.id),
+      supabase.from('rate_check_promoters').select('id', { count: 'exact', head: true }).eq('invited_by_promoter_id', p.id).eq('is_test', false),
     ])
     const paid = Object.fromEntries((payouts || []).map((x: any) => [String(x.period).slice(0, 7), { amount: Number(x.amount), paid_at: x.paid_at }]))
     // Only first names and what each household sent: no phone numbers, no quotes or outcomes.
     const months = earnings(scans || [], p.id, schedule, p.monthly_cap, rules).map(m => ({ ...m, paid: paid[m.month] || null }))
-    return json({ ...base, code: p.code, months }, 200, cors)
+    return json({ ...base, code: p.code, months, invites: { applied: invited || 0, joined: joined || 0 } }, 200, cors)
   }
 
   return json({ error: 'Unknown mode' }, 400, cors)

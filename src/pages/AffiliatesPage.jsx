@@ -11,7 +11,7 @@ import { ArrowRight, BadgeDollarSign, Check, PenLine, Share2, X } from 'lucide-r
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import AffiliateApplyForm from '../components/affiliates/AffiliateApplyForm';
-import { AFFILIATE_DO as DO, AFFILIATE_DONT as DONT, money, ordinal, recruitCode, useAffiliateProgram } from '../lib/affiliates';
+import { AFFILIATE_DO as DO, AFFILIATE_DONT as DONT, affiliateRef, money, ordinal, recruitCode, useAffiliateProgram } from '../lib/affiliates';
 
 const GOLD = '#F5D061';
 const DEEP = '#0F2D6B';
@@ -79,7 +79,7 @@ const FAQ = [
 ];
 
 export default function AffiliatesPage() {
-  useEffect(() => { recruitCode(); }, []); // remember a producer's ?by=CODE for the visit
+  useEffect(() => { recruitCode(); affiliateRef(); }, []); // remember ?by=CODE (a producer) or ?aff=CODE (an affiliate) for the visit
   return (
     <div className="min-h-screen bg-white">
       <title>Become an Affiliate | Cam Wiley Agency</title>

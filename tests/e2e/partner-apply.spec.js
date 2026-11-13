@@ -106,3 +106,15 @@ test('the terms page says the rules plainly, with the live pay', async ({ page }
   await expect(page.getByText(/Reply STOP to opt out or HELP for help/)).toBeVisible();
   await expect(page.getByText(/not an employee, agent or partner/)).toBeVisible();
 });
+
+test("an affiliate's invite link credits them on the application", async ({ page }) => {
+  const posts = await mock(page);
+  await page.goto('/affiliates?aff=DANA2QXD');
+  const form = page.getByRole('form', { name: 'Affiliate application' });
+  await form.getByLabel('First name').fill('Lee');
+  await form.getByLabel('Mobile number').fill('4045551313');
+  await form.getByRole('checkbox', { name: /I agree to the Affiliate Program Terms/ }).check();
+  await form.getByRole('button', { name: 'Apply to Be an Affiliate' }).click();
+  await expect(page.getByText('Thanks, Lee!')).toBeVisible();
+  expect(posts[0]).toMatchObject({ affiliate_code: 'DANA2QXD', source: 'affiliate_invite', recruit_code: null });
+});
