@@ -245,3 +245,33 @@ test('partner floor: recruit link, activated partners count for their recruiter,
   await page.getByLabel('Recruited by, for Javon Yarbrough').selectOption('amy');
   await expect.poll(() => writes.find(w => w.table.startsWith('rate_check_promoters') && w.method === 'PATCH')?.body).toMatchObject({ recruited_by: 'amy' });
 });
+
+test('principal: Mark as Test asks first, then hides the affiliate (undo in Test Records)', async ({ page }) => {
+  const writes = await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  await openPartners(page);
+  const card = page.locator('#partner-' + PID);
+  await card.getByRole('button', { name: 'Mark as Test' }).click();
+  const ask = page.getByRole('group', { name: 'Mark as test?' });
+  await expect(ask).toContainText('Their portal still opens, for testing.');
+  await ask.getByRole('button', { name: 'Cancel' }).click();
+  expect(writes.some(w => w.table === 'rpc/set_test_flag')).toBe(false);
+  await card.getByRole('button', { name: 'Mark as Test' }).click();
+  await page.getByRole('group', { name: 'Mark as test?' }).getByRole('button', { name: 'Mark as Test' }).click();
+  await expect.poll(() => writes.find(w => w.table === 'rpc/set_test_flag')?.body).toEqual({ p_kind: 'affiliate', p_id: PID, p_on: true });
+});
+
+test('Test Records lists what’s hidden, and Unmark brings it back', async ({ page }) => {
+  const writes = await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  await page.route('**/rest/v1/rpc/test_records', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+    rate_checks: [{ id: 'rc1', first_name: 'Cam', phone: '4045550199', carrier: 'GEICO', policy_type: 'auto', created_at: new Date().toISOString() }],
+    leads: [], affiliates: [{ id: 'af1', name: 'Test Affiliate', phone: '4045550198', created_at: new Date().toISOString() }],
+  }) }));
+  await page.goto('/agency/leads/rate-checks');
+  await page.getByRole('button', { name: 'More', exact: true }).click();
+  await page.getByRole('dialog', { name: 'More Rate Checks pages' }).getByText('Test Records').click();
+  const affiliates = page.getByRole('region', { name: 'Affiliates' });
+  await expect(affiliates.getByText('Test Affiliate')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Leads' }).getByText('None.')).toBeVisible();
+  await affiliates.getByRole('button', { name: 'Unmark' }).click();
+  await expect.poll(() => writes.find(w => w.table === 'rpc/set_test_flag')?.body).toEqual({ p_kind: 'affiliate', p_id: 'af1', p_on: false });
+});

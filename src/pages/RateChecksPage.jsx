@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, History, Link2, Mail, Map as MapIcon,
-  MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
+  FlaskConical, MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
@@ -46,6 +46,8 @@ import Carousel from './components/rate-checks/Carousel';
 import { GoalHeader, HouseholdCard, LiveDelta } from './components/rate-checks/QuoteCards';
 import { looksTooLow, savings } from './components/rate-checks/quoteMath';
 import RulesTab from './components/rate-checks/RulesTab';
+import TestRecordsTab from './components/rate-checks/TestRecordsTab';
+import MarkAsTest from '../components/testRecords/MarkAsTest';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import LogQuote from './components/sales/LogQuote';
 import ContactStep from './components/sales/ContactStep';
@@ -287,6 +289,7 @@ const MORE_GROUPS = [
   { title: 'Setup', tabs: [
     { v: 'rules', label: 'Rules', hint: 'Where each scan goes', Icon: SlidersHorizontal },
     { v: 'partners', label: 'Referral Agencies', short: 'Referrals', hint: 'Who writes what Allstate can’t', Icon: Handshake },
+    { v: 'test', principal: true, label: 'Test Records', short: 'Tests', hint: 'Hidden test uploads, leads and affiliates', Icon: FlaskConical },
   ] },
 ];
 
@@ -543,6 +546,7 @@ export default function RateChecksPage() {
               onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); }} />
           : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />
           : tab === 'rules' ? <RulesTab agencyId={agencyId} canEdit={canEditRules} />
+          : tab === 'test' ? <TestRecordsTab agencyId={agencyId} />
           : tab === 'invites' ? <InvitesTab agencyId={agencyId} producerName={producerName}
               onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); else { setFilter('all'); setTab('inbox'); setPendingOpenId(id); } }} />
           : (
@@ -871,6 +875,7 @@ export function RateCheckDrawer({ rc, household, now, onClose, onSelect }) {
             className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary-600 text-base font-bold text-white">
             <T k="sales.review.next">Quoted It in Allstate? Save the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </button>
+          <div className="flex justify-center pt-2"><MarkAsTest kind="rate_check" id={rc.id} onDone={onClose} className="w-full justify-center" /></div>
         </div>}
       </div>
     </div>

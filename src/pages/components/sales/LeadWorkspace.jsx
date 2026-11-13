@@ -15,6 +15,7 @@ import { ContactPanel } from './ContactStep';
 import CloseStep from './CloseStep';
 import LeadHistory from './LeadHistory';
 import AddToList from '../../../components/lists/AddToList';
+import MarkAsTest from '../../../components/testRecords/MarkAsTest';
 import { useAddToList, useContactLists } from '../../../hooks/useContactLists';
 
 const STEPS = [
@@ -214,6 +215,7 @@ export default function LeadWorkspace({ lead, agencyId, onClose }) {
                 <T k="sales.review.next">Quoted It in Allstate? Save the Quote</T> <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </button>
               <LeadAddToList lead={lead} />
+              <div className="flex justify-center pt-2"><MarkAsTest kind="lead" id={lead.id} onDone={onClose} className="w-full justify-center" /></div>
             </>
           )}
 
