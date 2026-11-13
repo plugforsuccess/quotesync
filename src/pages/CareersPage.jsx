@@ -18,7 +18,7 @@ const ROLES = [
     key: 'producer', Icon: LineChart, title: 'Licensed Sales Producer',
     pay: '$48,000–$90,000 a year · base plus commission, based on production',
     blurb: 'Help people find out if they’re paying too much. You’ll work our Rate Check inbox, call people who asked for a quote, and help them switch to Allstate.',
-    needs: ['A current Georgia Property & Casualty license', 'Comfortable on the phone and talking with people', 'Organized, with steady follow-up'],
+    needs: ['A current Georgia Property & Casualty license', 'Comfortable on the phone and talking with people', 'Organized, with consistent follow-up'],
     apply: '',
   },
   {
