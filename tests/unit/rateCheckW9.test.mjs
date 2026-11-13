@@ -54,3 +54,18 @@ test('payload carries digits only and the mode', () => {
   assert.equal(p.other_text, null);
   assert.equal(p.business_name, null);
 });
+
+test('city, state and ZIP: separate boxes, sent as one line', async () => {
+  const { splitCsz, joinCsz, w9Problems: problems, w9Payload: payload } = await import('../../src/pages/components/rate-checks/w9.js');
+  assert.deepEqual(splitCsz('Covington, GA 30014'), { city: 'Covington', state: 'GA', zip: '30014' });
+  assert.deepEqual(splitCsz('Peachtree City GA 30269'), { city: 'Peachtree City', state: 'GA', zip: '30269' });
+  assert.deepEqual(splitCsz(''), { city: '', state: 'GA', zip: '' });
+  assert.equal(joinCsz({ city: ' Atlanta ', state: 'ga', zip: '30310' }), 'Atlanta, GA 30310');
+  const parts = { ...good, city_state_zip: undefined, city: 'Atlanta', state: 'GA', zip: '30310' };
+  delete parts.city_state_zip;
+  assert.deepEqual(problems(parts), {});
+  assert.equal(payload('t', parts).city_state_zip, 'Atlanta, GA 30310');
+  assert.ok(problems({ ...parts, city: '' }).city);
+  assert.ok(problems({ ...parts, state: 'Georgia' }).state);
+  assert.ok(problems({ ...parts, zip: '303' }).zip);
+});

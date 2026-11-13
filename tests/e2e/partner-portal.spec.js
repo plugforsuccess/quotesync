@@ -122,7 +122,9 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel('Name on your tax return')).toHaveValue('Javon Yarbrough');
   await expect(dialog.getByLabel('Street address')).toHaveValue('12 Oak St');
-  await expect(dialog.getByLabel('City, state, ZIP')).toHaveValue('Covington, GA 30014');
+  await expect(dialog.getByLabel('City', { exact: true })).toHaveValue('Covington');
+  await expect(dialog.getByLabel('State', { exact: true })).toHaveValue('GA');
+  await expect(dialog.getByLabel('ZIP', { exact: true })).toHaveValue('30014');
 
   // Nothing typed yet: it explains what's missing and sends nothing.
   await dialog.getByRole('button', { name: 'Sign W-9' }).click();

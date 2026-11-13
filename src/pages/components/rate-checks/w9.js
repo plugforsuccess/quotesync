@@ -48,6 +48,16 @@ export function tinProblem(value, type) {
   return null;
 }
 
+// City, State and ZIP are separate boxes on the form; the W-9 (and the function) take
+// them as one line: "Atlanta, GA 30303".
+/** "Covington, GA 30014" → { city: 'Covington', state: 'GA', zip: '30014' } (best effort). */
+export function splitCsz(line) {
+  const m = String(line || '').trim().match(/^(.*?)[,\s]+([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  return m ? { city: m[1].trim(), state: m[2].toUpperCase(), zip: m[3] } : { city: String(line || '').trim(), state: 'GA', zip: '' };
+}
+export const joinCsz = (f) => `${String(f.city || '').replace(/\s+/g, ' ').trim()}, ${String(f.state || '').trim().toUpperCase()} ${String(f.zip || '').trim()}`;
+const hasParts = (f) => 'city' in f || 'state' in f || 'zip' in f;
+
 /** Checks the whole form; returns { field: message } (empty when it's good to send). */
 export function w9Problems(f) {
   const p = {};
@@ -57,7 +67,11 @@ export function w9Problems(f) {
   if (f.tax_class === 'llc' && !LLC_CLASSES.some(([v]) => v === f.llc_class)) p.llc_class = 'Choose how the LLC is taxed.';
   if (f.tax_class === 'other' && !String(f.other_text || '').trim()) p.other_text = 'Say what kind of entity.';
   if (String(f.address || '').trim().length < 5) p.address = 'Enter your street address.';
-  if (!/^.{2,},?\s*[A-Za-z]{2}\s+\d{5}(-\d{4})?$/.test(String(f.city_state_zip || '').trim())) p.city_state_zip = 'City, state and ZIP, like “Atlanta, GA 30303”.';
+  if (hasParts(f)) {
+    if (String(f.city || '').trim().length < 2) p.city = 'Enter your city.';
+    if (!/^[A-Za-z]{2}$/.test(String(f.state || '').trim())) p.state = 'Use 2 letters, like GA.';
+    if (!/^\d{5}(-\d{4})?$/.test(String(f.zip || '').trim())) p.zip = 'Enter a 5-digit ZIP.';
+  } else if (!/^.{2,},?\s*[A-Za-z]{2}\s+\d{5}(-\d{4})?$/.test(String(f.city_state_zip || '').trim())) p.city_state_zip = 'City, state and ZIP, like “Atlanta, GA 30303”.';
   const tin = tinProblem(f.tin, f.tin_type);
   if (tin) p.tin = tin;
   if (f.tax_class === 'individual' && f.tin_type === 'ein' && !String(f.business_name || '').trim()) {
@@ -80,7 +94,7 @@ export function w9Payload(token, f) {
     llc_class: f.tax_class === 'llc' ? f.llc_class : null,
     other_text: f.tax_class === 'other' ? String(f.other_text).trim() : null,
     address: String(f.address).trim(),
-    city_state_zip: String(f.city_state_zip).trim(),
+    city_state_zip: hasParts(f) ? joinCsz(f) : String(f.city_state_zip).trim(),
     tin_type: f.tin_type,
     tin: digits(f.tin),
     signed_name: String(f.signed_name).replace(/\s+/g, ' ').trim(),
