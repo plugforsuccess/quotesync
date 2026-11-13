@@ -967,3 +967,7 @@ h1, h2, h3 { font-family: var(--font-display); }
   --qs-warning: #A16207;
   --qs-warning-border: #CA8A04;
 }
+
+/* No zooming on phones: no double-tap zoom, and iOS doesn't resize text on rotate.
+   (The viewport tag stops Safari zooming into small text boxes when they're tapped.) */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
