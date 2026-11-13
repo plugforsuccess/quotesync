@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { Check, X } from 'lucide-react';
 import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
-import { AFFILIATE_DO, AFFILIATE_DONT, AFFILIATE_TERMS_VERSION, money, ordinal, useAffiliateProgram } from '../lib/affiliates';
+import { AFFILIATE_DO, AFFILIATE_DONT, AFFILIATE_TERMS_VERSION, money, ordinal, tierLabel, useAffiliateProgram } from '../lib/affiliates';
 
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const h2 = 'text-xl font-extrabold text-[#0F2D6B]';
@@ -58,11 +58,11 @@ export default function AffiliateTermsPage() {
             <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-200 px-4" aria-label="Pay per household">
               {p.tiers.map(t => (
                 <div key={t.key} className="flex items-baseline justify-between gap-4 py-2.5">
-                  <dt>{t.label}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(t.amount)}</dd>
+                  <dt>{tierLabel(t.label)}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(t.amount)}</dd>
                 </div>
               ))}
               <div className="flex items-baseline justify-between gap-4 py-2.5">
-                <dt>Each extra line, up to {p.extra_line.cap}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(p.extra_line.amount)}</dd>
+                <dt>Each Extra Line, Up to {p.extra_line.cap}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(p.extra_line.amount)}</dd>
               </div>
             </dl>
           )}

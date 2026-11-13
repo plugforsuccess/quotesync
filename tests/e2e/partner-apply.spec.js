@@ -7,6 +7,7 @@ const PROGRAM = {
   tiers: [
     { key: 'auto_home', label: 'Auto + home or condo', amount: 45 },
     { key: 'auto_only', label: 'Auto only', amount: 10 },
+    { key: 'landlord', label: 'Landlord (paid on its own, on top of the rest)', amount: 10 },
   ],
   extra_line: { amount: 5, cap: 2 }, pay_day: 21, min_payout: 50, quote_days: 7,
 };
@@ -29,7 +30,10 @@ test('the affiliate page: plain about pay and the rules, then apply', async ({ p
   await expect(page.getByRole('heading', { level: 1, name: 'Get Paid to Share a Free Rate Check' })).toBeVisible();
   // What it pays, from the agency's rules.
   const pay = page.getByLabel('Pay per household');
-  await expect(pay.getByText('Auto + home or condo')).toBeVisible();
+  await expect(pay.getByText('Auto + Home or Condo', { exact: true })).toBeVisible();
+  await expect(pay.getByText('Auto Only', { exact: true })).toBeVisible();
+  await expect(pay.getByText('Landlord', { exact: true })).toBeVisible();
+  await expect(pay.getByText(/paid on its own/)).toHaveCount(0);
   await expect(pay.getByText('$45')).toBeVisible();
   await expect(pay.getByText('+$5')).toBeVisible();
   await expect(page.getByText(/Paid monthly, on the 21st, for the month before. A month under \$50 carries over/)).toBeVisible();

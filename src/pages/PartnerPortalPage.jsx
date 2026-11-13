@@ -15,7 +15,7 @@ import { setHomeScreenName } from '../lib/homeScreenName';
 import { reviewUrl } from '../lib/reviews';
 import BrandLogo from '../components/BrandLogo';
 import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, submitPartnerW9, acceptPartnerTerms } from '../lib/rateCheckApi';
-import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION } from '../lib/affiliates';
+import { AFFILIATE_TERMS_PATH, AFFILIATE_TERMS_VERSION, productCase } from '../lib/affiliates';
 import { TAX_CLASSES, LLC_CLASSES, formatTin, splitCsz, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
 
@@ -45,8 +45,6 @@ const SCHEDULE_ROWS = [
   ['auto_only', 'Auto only'], ['renters_only', 'Renters only'], ['landlord', 'Landlord'],
 ];
 
-// Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".
-const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella|only|extra)\b/g, w => w[0].toUpperCase() + w.slice(1));
 // Dates in the agency's time zone (Georgia), the same as the payouts.
 const todayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
