@@ -122,3 +122,13 @@ test("an affiliate's invite link credits them on the application", async ({ page
   await expect(page.getByText('Thanks, Lee!')).toBeVisible();
   expect(posts[0]).toMatchObject({ affiliate_code: 'DANA2QXD', source: 'affiliate_invite', recruit_code: null });
 });
+
+test('an edit to a Do / Don’t line on the affiliates page shows on the terms page too', async ({ page }) => {
+  await mock(page);
+  // A saved edit (site copy) to "Send any insurance questions to Cam’s licensed team."
+  await page.route('**/rest/v1/site_copy*', r => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify([{ key: 'txt.2504a20e', value: 'Relay any insurance questions to Cam’s licensed team.' }]) }));
+  await page.goto('/affiliates/terms');
+  await expect(page.getByText('Relay any insurance questions to Cam’s licensed team.')).toBeVisible();
+  await expect(page.getByText('Send any insurance questions to Cam’s licensed team.')).toHaveCount(0);
+});

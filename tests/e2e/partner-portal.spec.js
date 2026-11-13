@@ -43,6 +43,7 @@ async function mockPartner(page, state) {
     const body = route.request().postDataJSON();
     calls.push(body);
     const json = (b, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(b) });
+    if (body.mode === 'program') return json(state.program || { error: 'unavailable' }, state.program ? 200 : 500);
     if (body.token !== TOKEN) return json({ error: 'This link isn’t valid.' }, 404);
     if (body.mode === 'portal') return json(state.data);
     if (body.mode === 'w9') {
@@ -323,4 +324,12 @@ test('onboarded: pay per household, invite someone, and the Home Screen how-to a
   const summary = page.locator('summary', { hasText: 'Save to Your Home Screen' });
   const [hs, inv] = await Promise.all([summary.boundingBox(), invite.boundingBox()]);
   expect(hs.y).toBeGreaterThan(inv.y);
+});
+
+test('the fine print under the pay table follows the payout rules', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('qs_aff_home_' + 'a'.repeat(12), '1'));
+  await mockPartner(page, { data: portal({ w9: W9, photo_url: PHOTO }), program: { tiers: [{ key: 'auto_only', label: 'Auto only', amount: 10 }], extra_line: { amount: 5, cap: 2 }, pay_day: 21, min_payout: 75, quote_days: 10 } });
+  await page.goto(`/partner/${TOKEN}`);
+  await expect(page.getByText(/or 10 days after their first page/)).toBeVisible();
+  await expect(page.getByText(/on the 21st, after your W-9 is on file; months under \$75 carry over/)).toBeVisible();
 });

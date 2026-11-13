@@ -1,7 +1,8 @@
 // src/pages/AffiliateTermsPage.jsx
 // /affiliates/terms: the Affiliate Program Terms, in plain language. Affiliates agree to
 // these (and to texts about the program) on the application or on portal step 1. Built
-// from the same rules and live pay as /affiliates. Until the attorney-reviewed affiliate
+// from the same rules and live pay as /affiliates; the Do / Don't lines are the same editable
+// text, so an edit on either page shows on both. Until the attorney-reviewed affiliate
 // agreement is ready, this is what they agree to; when it is, it replaces this page.
 // Same look as the consumer site. No black.
 import { Link } from 'react-router-dom';
@@ -42,13 +43,13 @@ export default function AffiliateTermsPage() {
       <main className="mx-auto max-w-3xl px-4 py-10 lg:px-8 lg:py-14">
         <Section n={1} title="What You Do">
           <ul className="space-y-2">
-            {AFFILIATE_DO.map(t => <li key={t} className="flex gap-2.5"><Check className="mt-1 h-4 w-4 shrink-0 text-blue-700" strokeWidth={3} aria-hidden="true" /><span>{t}</span></li>)}
+            {AFFILIATE_DO.map(t => <li key={t} className="flex gap-2.5"><Check className="mt-1 h-4 w-4 shrink-0 text-blue-700" strokeWidth={3} aria-hidden="true" /><span><T>{t}</T></span></li>)}
           </ul>
         </Section>
 
         <Section n={2} title="What You Don’t Do">
           <ul className="space-y-2">
-            {AFFILIATE_DONT.map(t => <li key={t} className="flex gap-2.5"><X className="mt-1 h-4 w-4 shrink-0 text-red-600" strokeWidth={3} aria-hidden="true" /><span>{t}</span></li>)}
+            {AFFILIATE_DONT.map(t => <li key={t} className="flex gap-2.5"><X className="mt-1 h-4 w-4 shrink-0 text-red-600" strokeWidth={3} aria-hidden="true" /><span><T>{t}</T></span></li>)}
           </ul>
         </Section>
 
