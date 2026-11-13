@@ -806,7 +806,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
       {SHOW_TEXTING_ALERT && v.requireCallConfirm && (
         <Dismissible id="partners.needs-texting">
           <p className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
-            <T k="pages.components.ratechecks.partnerstab.30f8f7">Needs texting set up: until the agency has a Twilio number, the quote-ready text can't go out, so no one can reply Y and affiliates aren't paid.</T>
+            <T k="pages.components.ratechecks.partnerstab.30f8f7">Needs texting set up: until the agency's texting number is live, the quote-ready text can't go out, so no one can reply Y and affiliates aren't paid.</T>
           </p>
         </Dismissible>
       )}

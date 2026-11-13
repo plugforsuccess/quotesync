@@ -95,7 +95,7 @@ test('with the reply-Y rule on, only households that replied Y are owed', async 
   await expect(card.getByText('Replied Y')).toBeVisible();
   await expect(card.getByText('Not texted yet')).toBeVisible();
   // The texting-setup note is hidden.
-  await expect(page.getByText(/until the agency has a Twilio number/)).toHaveCount(0);
+  await expect(page.getByText(/until the agency's texting number is live/)).toHaveCount(0);
 });
 
 test('turning the reply-Y rule off saves it, and quoted households become payable', async ({ page }) => {
