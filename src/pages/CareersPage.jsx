@@ -23,7 +23,7 @@ const ROLES = [
   },
   {
     key: 'csr', Icon: Headphones, title: 'Customer Service Representative',
-    pay: '',
+    pay: '$36,000–$54,000 a year',
     blurb: 'Take care of our customers after they buy: renewals, billing questions and policy changes, so they stay with us for years.',
     needs: ['A current Georgia Property & Casualty license', 'Friendly, patient and detail-oriented', 'Good with computers and follow-up'],
     apply: '',

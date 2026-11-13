@@ -11,7 +11,7 @@ test('careers: both roles, the producer pay range, no dead Apply buttons', async
   await expect(page.getByRole('heading', { level: 1, name: 'Build a Career Helping Georgia Families' })).toBeVisible();
   const producer = page.getByRole('article', { name: 'Licensed Sales Producer' });
   await expect(producer.getByText('$48,000–$90,000 a year · base plus commission, based on production')).toBeVisible();
-  await expect(page.getByRole('article', { name: 'Customer Service Representative' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Customer Service Representative' }).getByText('$36,000–$54,000 a year')).toBeVisible();
   // A current license is required for both.
   await expect(page.getByText('A current Georgia Property & Casualty license')).toHaveCount(2);
   const benefits = page.getByRole('region', { name: 'Benefits' });
