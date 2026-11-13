@@ -333,3 +333,20 @@ test('the fine print under the pay table follows the payout rules', async ({ pag
   await expect(page.getByText(/or 10 days after their first page/)).toBeVisible();
   await expect(page.getByText(/on the 21st, after your W-9 is on file; months under \$75 carry over/)).toBeVisible();
 });
+
+test('with a share sheet (phones), one Share button each; no separate Copy', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('qs_aff_home_' + 'a'.repeat(12), '1');
+    window.__shared = [];
+    navigator.share = (d) => { window.__shared.push(d); return Promise.resolve(); };
+  });
+  await mockPartner(page, { data: portal({ w9: W9, photo_url: PHOTO }) });
+  await page.goto(`/partner/${TOKEN}`);
+  await expect(page.getByRole('button', { name: 'Copy link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy Invite Link' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Share Your Link' }).click();
+  await page.getByRole('button', { name: 'Share Invite Link' }).click();
+  const shared = await page.evaluate(() => window.__shared);
+  expect(shared[0].url).toMatch(new RegExp(`/r/${CODE}$`));
+  expect(shared[1].url).toMatch(new RegExp(`/affiliates\\?aff=${CODE}$`));
+});
