@@ -16,7 +16,7 @@ export const monthOf = (iso) => monthKey(iso); // 'YYYY-MM', agency time
  * A household from the partner's own phone number never counts.
  */
 export function activations(promoters, scans, now = Date.now(), rules, { agreementRequired = PARTNER_AGREEMENT_REQUIRED } = {}) {
-  const all = households(scans, {}, now, rules);
+  const all = households(scans, {}, now, rules).filter(h => !h.addOn); // a later add-on isn't a new household
   const out = [];
   for (const p of promoters || []) {
     const signedUp = agreementRequired ? p.agreement_signed_at : p.w9_received_at;

@@ -228,3 +228,45 @@ test('months follow Georgia time, not the computer\'s', () => {
   const hh = households([scan({ phone: '4045550020', policy_type: 'auto', created_at: '2026-11-01T03:30:00Z' })], schedule, NOW);
   assert.equal(hh[0].month, '2026-10');
 });
+
+// A household that adds a policy after its pay day: the difference is paid as an add-on.
+test('a policy sent after the household was paid adds the difference in its own month', () => {
+  const LATER = new Date('2026-11-20T12:00:00Z').getTime();
+  const quotedRules = { requireCallConfirm: false, quoteDays: 7, expiredDays: 30, minPayout: 50 };
+  const home = scan({ phone: '6787726107', first_name: 'Dana', policy_type: 'home', created_at: '2026-06-05T15:00:00Z', status: 'quoted' });
+  const auto = scan({ phone: '6787726107', policy_type: 'auto', created_at: '2026-11-03T15:00:00Z', status: 'quoted' });
+  const hh = households([home, auto], schedule, LATER, quotedRules);
+  assert.equal(hh.length, 2);
+  const [first, addOn] = hh;
+  assert.deepEqual([first.month, first.tier, first.fee, !!first.addOn], ['2026-06', 'home_only', 15, false]);
+  assert.deepEqual([addOn.month, addOn.tier, addOn.was, addOn.fee, addOn.addOn, addOn.pays], ['2026-11', 'auto_home', 'home_only', 30, true, true]);
+  // One household, $45 in all; the add-on doesn't take a cap slot.
+  const sum = partnerSummary(hh, '2026-11');
+  assert.equal(sum.households, 1);
+  assert.equal(sum.fees, 45);
+  assert.equal(sum.month.households, 0);
+  assert.equal(sum.month.owed, 30);
+  assert.equal(applyCap(hh, 1).filter(h => h.overCap).length, 0);
+  // June already paid: November still owes the $30.
+  const plan = payoutPlan(hh, [{ period: '2026-06-01' }], '2026-11', 0, new Date('2026-12-22T12:00:00Z').getTime());
+  assert.deepEqual(plan.months, [{ month: '2026-11', households: 0, amount: 30 }]);
+});
+
+test('a policy sent before the household\'s pay day just counts in its first month', () => {
+  const quotedRules = { requireCallConfirm: false, quoteDays: 7, expiredDays: 30, minPayout: 50 };
+  const hh = households([
+    scan({ phone: '6787726107', policy_type: 'home', created_at: '2026-06-05T15:00:00Z', status: 'quoted' }),
+    scan({ phone: '6787726107', policy_type: 'auto', created_at: '2026-07-10T15:00:00Z', status: 'quoted' }), // before July 21
+  ], schedule, new Date('2026-08-01T12:00:00Z').getTime(), quotedRules);
+  assert.equal(hh.length, 1);
+  assert.deepEqual([hh[0].month, hh[0].tier, hh[0].fee], ['2026-06', 'auto_home', 45]);
+});
+
+test('a later policy that doesn\'t raise the tier adds nothing', () => {
+  const quotedRules = { requireCallConfirm: false, quoteDays: 7, expiredDays: 30, minPayout: 50 };
+  const hh = households([
+    scan({ phone: '6787726107', policy_type: 'home', created_at: '2026-06-05T15:00:00Z', status: 'quoted' }),
+    scan({ phone: '6787726107', policy_type: 'condo', created_at: '2026-11-03T15:00:00Z', status: 'quoted', duplicate_of: 'x' }),
+  ], schedule, new Date('2026-11-20T12:00:00Z').getTime(), quotedRules);
+  assert.equal(hh.length, 1);
+});

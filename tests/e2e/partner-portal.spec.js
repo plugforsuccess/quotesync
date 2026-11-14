@@ -354,3 +354,18 @@ test('with a share sheet (phones), one Share button each; no separate Copy', asy
   expect(shared[0].url).toMatch(new RegExp(`/r/${CODE}$`));
   expect(shared[1].url).toMatch(new RegExp(`/affiliates\\?aff=${CODE}$`));
 });
+
+test('a policy added later shows in its own month, for the difference', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('qs_aff_home_' + 'a'.repeat(12), '1'));
+  const now = new Date();
+  const ym = (d) => d.toLocaleDateString('en-CA').slice(0, 7);
+  const past = new Date(now.getFullYear(), now.getMonth() - 5, 5);
+  await mockPartner(page, { data: portal({ w9: W9, photo_url: PHOTO, months: [
+    { month: ym(now), households: 0, pending: 0, earned: 30, paid: null, rows: [{ first_name: 'Dana', last_initial: 'R', label: 'Auto + home or condo (added; was Home or condo only)', fee: 30, over_cap: false, add_on: true }] },
+    { month: ym(past), households: 1, pending: 0, earned: 15, paid: { amount: 15, paid_at: past.toISOString() }, rows: [{ first_name: 'Dana', last_initial: 'R', label: 'Home or condo only', fee: 15, over_cap: false }] },
+  ] }) });
+  await page.goto(`/partner/${TOKEN}`);
+  const table = page.getByRole('table', { name: 'Your referrals by month' });
+  await expect(table.getByRole('cell', { name: 'Auto + Home or Condo (Added; Was Home or Condo Only)' })).toBeVisible();
+  await expect(table.getByRole('cell', { name: 'Home or Condo Only', exact: true })).toBeVisible();
+});
