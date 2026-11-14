@@ -312,6 +312,7 @@ export const useAgentUploadDecPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.leads.all() });
+      queryClient.invalidateQueries({ queryKey: ['scan_goals'] });
     },
   });
 };

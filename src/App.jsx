@@ -61,6 +61,7 @@ const DriversEdPage = lazyWithRetry(() => import('./pages/DriversEdPage'));
 const AffiliatesPage = lazyWithRetry(() => import('./pages/AffiliatesPage'));
 const AffiliateTermsPage = lazyWithRetry(() => import('./pages/AffiliateTermsPage'));
 const CareersPage = lazyWithRetry(() => import('./pages/CareersPage'));
+const ScanReportPage = lazyWithRetry(() => import('./pages/ScanReportPage'));
 const DefensiveDrivingPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPage'));
 const DefensiveDrivingSuccessPage = lazyWithRetry(() => import('./pages/DefensiveDrivingSuccessPage'));
 const DefensiveDrivingPortalPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPortalPage'));
@@ -204,6 +205,8 @@ function App() {
           {/* Consumer pages in the Rate Check look (royal blue, no app chrome). Drivers Ed draws
               its own hero and footer; the Newsroom gets the shared blue bar and footer. */}
             <Route path="/careers" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CareersPage /></Suspense></ErrorBoundary>} />
+            {/* Shared Scans & Quotes report (read-only, no sign-in; the token is the key). */}
+            <Route path="/report/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ScanReportPage /></Suspense></ErrorBoundary>} />
             <Route path="/affiliates/terms" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><AffiliateTermsPage /></Suspense></ErrorBoundary>} />
             <Route path="/affiliates" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><AffiliatesPage /></Suspense></ErrorBoundary>} />
             <Route path="/courses" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
