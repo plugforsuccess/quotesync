@@ -78,7 +78,7 @@ function GoalSettings({ agencyId, g }) {
           <input inputMode="decimal" value={scans} onChange={e => setScans(e.target.value.replace(/[^0-9.]/g, ''))} className={field} style={inputStyle} />
         </label>
         <label className="block text-sm" style={{ color: 'var(--qs-dim)' }}>
-          <T k="goals.set.people">People Quoted a Day (Each)</T>
+          <T k="goals.set.people">Quotes A Day (Each)</T>
           <input inputMode="numeric" value={people} onChange={e => setPeople(e.target.value.replace(/\D/g, ''))} className={field} style={inputStyle} />
         </label>
       </div>

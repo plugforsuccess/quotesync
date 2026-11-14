@@ -106,7 +106,7 @@ test('the Scans & Quotes tab: pace, sources, team and a shared report link', asy
   const team = page.getByRole('region', { name: 'People Quoted' });
   await expect(team.getByText('Logan Reed')).toBeVisible();
   await expect(team.getByText('Cam Wiley')).toBeVisible();
-  await page.getByLabel('People Quoted a Day (Each)').fill('10');
+  await page.getByLabel('Quotes A Day (Each)').fill('10');
   await page.getByRole('button', { name: 'Save Goals' }).click();
   await expect.poll(() => writes.find(w => w.table.startsWith('producer_floor_settings'))?.body).toMatchObject({ agency_id: AG, scans_goal_daily: 8.5, quotes_floor: 10 });
   await page.getByLabel('Who the link is for').fill('Allstate');
