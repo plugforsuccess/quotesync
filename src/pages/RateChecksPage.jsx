@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, History, Link2, Mail, Map as MapIcon,
-  FlaskConical, MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
+  FlaskConical, Gauge, MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Star, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
@@ -47,6 +47,8 @@ import { GoalHeader, HouseholdCard, LiveDelta } from './components/rate-checks/Q
 import { looksTooLow, savings } from './components/rate-checks/quoteMath';
 import RulesTab from './components/rate-checks/RulesTab';
 import TestRecordsTab from './components/rate-checks/TestRecordsTab';
+import GoalsTab from './components/rate-checks/GoalsTab';
+import TodayStrip from './components/rate-checks/TodayStrip';
 import MarkAsTest from '../components/testRecords/MarkAsTest';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import LogQuote from './components/sales/LogQuote';
@@ -283,6 +285,7 @@ const MORE_GROUPS = [
     { v: 'texts-page', to: '/agency/texts', principal: true, label: 'Texts & Scripts', hint: 'Everything you say and text, in one place', Icon: MessageSquare },
   ] },
   { title: 'Insights', tabs: [
+    { v: 'goals', label: 'Scans & Quotes', short: 'Goals', hint: 'Scans a day, people quoted, Scan Rate', Icon: Gauge },
     { v: 'map', label: 'Where We Win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
     { v: 'agents', label: 'Competing Agents', short: 'Agents', hint: 'Whose customers send us their policy', Icon: Users },
   ] },
@@ -547,10 +550,12 @@ export default function RateChecksPage() {
           : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />
           : tab === 'rules' ? <RulesTab agencyId={agencyId} canEdit={canEditRules} />
           : tab === 'test' ? <TestRecordsTab agencyId={agencyId} />
+          : tab === 'goals' ? <GoalsTab agencyId={agencyId} />
           : tab === 'invites' ? <InvitesTab agencyId={agencyId} producerName={producerName}
               onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); else { setFilter('all'); setTab('inbox'); setPendingOpenId(id); } }} />
           : (
           <>
+            <TodayStrip agencyId={agencyId} onScan={() => setUploadOpen(true)} onOpenGoals={() => { setTab('goals'); window.scrollTo({ top: 0 }); }} />
             {overdue > 0 && (
               <button type="button" onClick={() => { setOverdueOnly(o => !o); setFilter('open'); setSearch(''); }}
                 title="The Rate Check page tells customers we typically text within 30 minutes."

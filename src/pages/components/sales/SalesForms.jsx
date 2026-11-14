@@ -79,26 +79,38 @@ function Sheet({ title, sub, onClose, children, footer }) {
 const primaryBtn = 'inline-flex h-11 w-full items-center justify-center rounded-xl bg-primary-600 px-4 font-semibold text-white disabled:opacity-50';
 
 // ── Quote ───────────────────────────────────────────────────────────────────
+// No lead (a walk-in or call-in): asks for their name instead. Premiums are optional
+// then, so a quick "I quoted them" still counts toward the day.
 function QuoteForm({ lead, agencyId, onClose }) {
   const logQuote = useLogQuote();
   const [lines, setLines] = useState([]);
+  const [name, setName] = useState('');
   const toggle = (p) => setLines(ls => (ls.some(l => l.product === p) ? ls.filter(l => l.product !== p) : [...ls, { product: p, premium: '', term_months: defaultTerm(p) }]));
   const set = (p, patch) => setLines(ls => ls.map(l => (l.product === p ? { ...l, ...patch } : l)));
-  const ready = lines.length > 0 && lines.every(l => Number(String(l.premium).replace(/[^0-9.]/g, '')) > 0);
-  const save = () => logQuote.mutate({ agencyId, lead, lines }, { onSuccess: onClose });
+  const ready = lead
+    ? lines.length > 0 && lines.every(l => Number(String(l.premium).replace(/[^0-9.]/g, '')) > 0)
+    : lines.length > 0 && name.trim().length > 0;
+  const save = () => logQuote.mutate({ agencyId, lead, name, lines }, { onSuccess: onClose });
   return (
-    <Sheet title="Log a quote" sub={nameOf(lead)} onClose={onClose}
+    <Sheet title={lead ? 'Log a quote' : 'Log a Quote'} sub={lead ? nameOf(lead) : 'A walk-in or call-in, scan or not'} onClose={onClose}
       footer={<>
         {logQuote.error && <p className="mb-2 text-sm text-red-600" role="alert"><T k="pages.components.sales.salesforms.b736fa">Couldn’t save:</T> {logQuote.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!ready || logQuote.isPending} onClick={save}>
           {logQuote.isPending ? <T k="pages.components.sales.salesforms.56a228">{'Saving…'}</T> : lines.length ? <><T k="pages.components.sales.salesforms.9c0e76">{"Save Quote ·"}</T>{" "}{lines.length}{" "}{lines.length === 1 ? 'Policy' : 'Policies'}</> : <T k="pages.components.sales.salesforms.8ce97e">{'Pick What You Quoted'}</T>}
         </button>
       </>}>
+      {!lead && (
+        <label className="mb-4 block">
+          <span className="mb-1.5 block text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="sales.walkin.name">Who did you quote?</T></span>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Name" autoComplete="off" aria-label="Customer name"
+            className="h-11 w-full rounded-lg px-3 text-base" style={box} />
+        </label>
+      )}
       <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.ee3167">What did you quote?</T></p>
       <ProductChips selected={lines.map(l => l.product)} onToggle={toggle} />
       {lines.length > 0 && (
         <div className="mt-4 space-y-2.5">
-          <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.25da57">Quoted premium, as Allstate shows it</T></p>
+          <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}><T k="pages.components.sales.salesforms.25da57">Quoted premium, as Allstate shows it</T>{!lead && <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}> · <T k="sales.walkin.optional">optional</T></span>}</p>
           {lines.map(l => (
             <div key={l.product} className="flex items-center gap-2">
               <span className="w-24 shrink-0 text-sm font-semibold">{LABEL[l.product]}</span>
@@ -215,6 +227,11 @@ function LostForm({ lead, openQuotes, onClose }) {
 }
 
 /** Opens the right form for a lead. mode: 'quote' | 'bind' | 'lost'. */
+/** Log a quote for someone who isn't a lead (walk-in or call-in). */
+export function WalkInQuoteSheet({ agencyId, onClose }) {
+  return <QuoteForm lead={null} agencyId={agencyId} onClose={onClose} />;
+}
+
 export function SalesSheet({ mode, lead, agencyId, onClose }) {
   const { data, isLoading } = useLeadSales(lead?.id);
   if (!lead || (mode !== 'quote' && isLoading)) return null;

@@ -32,6 +32,7 @@ function useRefresh() {
     qc.invalidateQueries({ queryKey: ['agency_leads'] });
     qc.invalidateQueries({ queryKey: ['lead_detail'] });
     qc.invalidateQueries({ queryKey: ['producer_queue'] });
+    qc.invalidateQueries({ queryKey: ['scan_goals'] });
   };
 }
 
@@ -40,11 +41,14 @@ const premiumOf = (v) => {
   return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
 };
 
-/** Log a quote: lines = [{ product, premium, term_months }]. */
+/**
+ * Log a quote: lines = [{ product, premium, term_months }]. `lead` is optional: a walk-in
+ * or call-in quoted without a lead is logged with just a name, so it still counts.
+ */
 export function useLogQuote() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: async ({ agencyId, lead, lines, quoteId }) => {
+    mutationFn: async ({ agencyId, lead, name, lines, quoteId }) => {
       const clean = lines.map(l => ({ product: l.product, premium: premiumOf(l.premium), term_months: Number(l.term_months) || 12 }));
       // Changing the rates on a quote that's still open: same quote, new lines (no second quote).
       if (quoteId) {
@@ -54,14 +58,14 @@ export function useLogQuote() {
         return data;
       }
       const { data, error } = await supabase.from('sales_quotes').insert({
-        agency_id: agencyId, lead_id: lead.id,
-        customer_name: [lead.first_name, lead.last_name].filter(Boolean).join(' ') || null,
+        agency_id: agencyId, lead_id: lead?.id ?? null,
+        customer_name: (lead ? [lead.first_name, lead.last_name].filter(Boolean).join(' ') : (name || '').trim()) || null,
         products: clean.map(l => l.product), lines: clean,
       }).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: (_d, v) => refresh(v.lead.id),
+    onSuccess: (_d, v) => refresh(v.lead?.id),
   });
 }
 
