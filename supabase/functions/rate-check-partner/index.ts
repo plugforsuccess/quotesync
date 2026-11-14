@@ -164,39 +164,69 @@ const payDay = (key: string) => {
 // (on a quote or a Y reply) are counted, not listed, and don't take cap slots.
 function earnings(agencyScans: any[], promoterId: string, schedule: Record<string, number>, cap: number | null, rules: Rules) {
   const now = Date.now()
-  const hh = groupHouseholds(agencyScans).map(list => {
-    const sorted = [...list].sort((a, b) => a.created_at.localeCompare(b.created_at))
-    if (sorted[0].promoter_id !== promoterId) return null
-    const pages = sorted.filter(rc => QUALIFIES(rc, now, rules.expiredDays))
+  const dayOf = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+  // A tier's fee and name for a set of qualifying pages. Landlord is counted on its own,
+  // on top of the household's tier.
+  const priced = (pages: any[]) => {
     const { tier, base } = tierOf(pages)
     if (!tier) return null
-    // Landlord is counted on its own: its fee on top of the household's tier.
     const landlord = tier !== 'landlord' && pages.some((p: any) => p.policy_type === 'landlord')
     const extras = Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base - (landlord ? 1 : 0)))
+    return {
+      tier, fee: schedule[tier] + (landlord ? schedule.landlord : 0) + extras * schedule.extra_line,
+      label: LABEL[tier].replace(/ \(.*\)$/, '') + (landlord ? ' + Landlord' : '') + (extras ? ` + ${extras} extra` : ''),
+    }
+  }
+  const hh = groupHouseholds(agencyScans).flatMap(list => {
+    const sorted = [...list].sort((a, b) => a.created_at.localeCompare(b.created_at))
+    if (sorted[0].promoter_id !== promoterId) return []
+    const qs = sorted.filter(rc => QUALIFIES(rc, now, rules.expiredDays))
     // "Stephen M.": first name as typed, last initial from the dec page's named insured
     // (or a second word the customer typed), so the partner can tell their Stephens apart.
     const typed = (sorted.find(s => s.first_name)?.first_name || '').trim().split(/\s+/)
     const insured = (sorted.find(s => s.insured_name)?.insured_name || '').trim().split(/\s+/)
     const lastWord = insured.length > 1 ? insured[insured.length - 1] : typed.length > 1 ? typed[typed.length - 1] : ''
-    return {
-      first_name: typed[0] || 'Someone',
-      last_initial: /^[A-Za-z]/.test(lastWord) ? lastWord[0].toUpperCase() : null,
-      tier, label: LABEL[tier].replace(/ \(.*\)$/, '') + (landlord ? ' + Landlord' : '') + (extras ? ` + ${extras} extra` : ''),
-      fee: schedule[tier] + (landlord ? schedule.landlord : 0) + extras * schedule.extra_line,
-      firstAt: pages[0].created_at, month: monthKey(pages[0].created_at),
-      pending: rules.requireCallConfirm
-        ? !sorted.some((rc: any) => !!rc.call_confirmed_at)
-        : !sorted.some(QUOTED) && now - new Date(pages[0].created_at).getTime() < rules.quoteDays * DAY,
+    const who = { first_name: typed[0] || 'Someone', last_initial: /^[A-Za-z]/.test(lastWord) ? lastWord[0].toUpperCase() : null }
+    const confirmed = sorted.some((rc: any) => !!rc.call_confirmed_at)
+    // Pay steps, the same as partnerPay.js: everything sent before a step's pay day (the
+    // 21st of the next month) counts in that step; a policy sent after it is an add-on in
+    // its own month, paid for the difference it makes (home in June, auto in November).
+    const out: any[] = []
+    let paidSoFar = 0
+    let was: any = null
+    for (let i = 0; i < qs.length;) {
+      const month = monthKey(qs[i].created_at)
+      const batch: any[] = []
+      while (i < qs.length && dayOf(qs[i].created_at) < payDay(month)) batch.push(qs[i++])
+      const now_ = priced(qs.filter(rc => rc.created_at <= batch[batch.length - 1].created_at))
+      if (!now_) continue
+      if (out.length && now_.fee <= paidSoFar) continue
+      out.push({
+        ...who, tier: now_.tier, addOn: out.length > 0,
+        label: out.length ? `${now_.label} (added; was ${was.label})` : now_.label,
+        fee: now_.fee - paidSoFar, firstAt: batch[0].created_at, month,
+        pending: rules.requireCallConfirm
+          ? !confirmed
+          : !batch.some(QUOTED) && now - new Date(batch[0].created_at).getTime() < rules.quoteDays * DAY,
+      })
+      paidSoFar = now_.fee
+      was = now_
     }
-  }).filter(Boolean) as any[]
+    return out
+  })
   const months: Record<string, any[]> = {}
   for (const h of hh.sort((a, b) => a.firstAt.localeCompare(b.firstAt))) (months[h.month] ||= []).push(h)
   return Object.entries(months).map(([month, list]) => {
     const paying = list.filter(h => !h.pending)
-    // The cap counts payable households in arrival order, like the staff tab.
-    const rows = paying.map((h, i) => ({ first_name: h.first_name, last_initial: h.last_initial, label: h.label, fee: cap && i >= cap ? 0 : h.fee, over_cap: !!(cap && i >= cap), at: h.firstAt }))
+    // The cap counts payable households in arrival order, like the staff tab; an add-on
+    // isn't another household, so it doesn't take a slot.
+    let slot = 0
+    const rows = paying.map(h => {
+      const over = !h.addOn && !!cap && slot++ >= cap
+      return { first_name: h.first_name, last_initial: h.last_initial, label: h.label, fee: over ? 0 : h.fee, over_cap: over, at: h.firstAt, add_on: !!h.addOn }
+    })
     return {
-      month, households: rows.length, pending: list.length - paying.length,
+      month, households: rows.filter(r => !r.add_on).length, pending: list.filter(h => h.pending && !h.addOn).length,
       earned: rows.reduce((t, r) => t + r.fee, 0), rows: rows.reverse(), pay_day: payDay(month),
     }
   }).sort((a, b) => b.month.localeCompare(a.month))

@@ -61,7 +61,7 @@ export default function AffiliateTermsPage() {
           )}
           <ul className="list-disc space-y-1.5 pl-5">
             {p && <li>Paid monthly, on the {ordinal(p.pay_day)}, for the month before. A month under {money(p.min_payout)} carries over to the next.</li>}
-            <li><T k="aff.terms.once">Each household counts once, in the month its first page arrives.</T></li>
+            <li><T k="aff.household-once">Each household counts once, in the month its first page arrives. If it sends another policy later, you’re paid the difference.</T></li>
             <li><T k="aff.terms.excluded">Households already insured with Allstate, your own household, repeats, and pages that can’t be read or have expired don’t count.</T></li>
             <li><T k="aff.terms.w9">A signed W-9 is needed before your first payment.</T></li>
             <li><T k="aff.terms.changes">If the pay changes, you’ll see it in your Affiliate Portal before it applies.</T></li>

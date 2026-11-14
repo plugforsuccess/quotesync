@@ -450,7 +450,7 @@ function PayFinePrint() {
   if (!p) return <p className={cls}><T k="pages.partnerportalpage.b3e79d">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we've quoted it (or 7 days after their first page). Pages that can't be read, repeats, expired pages and Allstate policies don't count. Paid monthly after your W-9 is on file; months under $50 carry over.</T></p>;
   return (
     <p className={cls} data-copy="fixed">
-      Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we’ve quoted it (or {p.quote_days} {p.quote_days === 1 ? 'day' : 'days'} after their first page). Pages that can’t be read, repeats, expired pages and Allstate policies don’t count. Paid monthly, on the {ordinal(p.pay_day)}, after your W-9 is on file; months under {payMoney(p.min_payout)} carry over.
+      Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we’ve quoted it (or {p.quote_days} {p.quote_days === 1 ? 'day' : 'days'} after their first page). If it sends another policy after it’s paid, you’re paid the difference. Pages that can’t be read, repeats, expired pages and Allstate policies don’t count. Paid monthly, on the {ordinal(p.pay_day)}, after your W-9 is on file; months under {payMoney(p.min_payout)} carry over.
     </p>
   );
 }

@@ -38,7 +38,7 @@ function Earnings() {
           </p>
           <ul className="mt-6 space-y-2.5 text-[15px] text-slate-700">
             {p && <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span>Paid monthly, on the {ordinal(p.pay_day)}, for the month before. A month under {money(p.min_payout)} carries over to the next.</span></li>}
-            <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.earn.once">Each household counts once, in the month its first page arrives.</T></span></li>
+            <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.household-once">Each household counts once, in the month its first page arrives. If it sends another policy later, you’re paid the difference.</T></span></li>
             <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.earn.allstate">Households already insured with Allstate don’t count.</T></span></li>
             <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" strokeWidth={3} /><span><T k="aff.earn.w9">You agree to the program terms, and a W-9 is needed before your first payment is issued.</T></span></li>
           </ul>

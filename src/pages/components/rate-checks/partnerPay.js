@@ -150,26 +150,54 @@ export function groupHouseholds(scans) {
 }
 
 /**
- * Every household a partner sent. A household is paid once, in the month its
- * first qualifying page arrived, at the tier all its pages earn — and only once
- * it clears the agency's rules (`pays`; until then `pending`): with
- * requireCallConfirm, once the customer replied Y to the quote-ready text;
- * otherwise once quoted or `quoteDays` after its first page.
- * Households with nothing that qualifies are listed with no fee.
+ * Every household a partner sent, as pay entries. A household is paid in the month its
+ * first qualifying page arrived, at the tier its pages that month earn. A policy it
+ * sends in a later month that raises its tier (home in June, auto in November) is an
+ * add-on entry (`addOn`) in that later month for the difference ($45 − $15 = $30), so
+ * a month already paid never changes. Each entry pays only once it clears the agency's
+ * rules (`pays`; until then `pending`): with requireCallConfirm, once the customer
+ * replied Y to the quote-ready text; otherwise once quoted or `quoteDays` after the
+ * entry's first page. Add-ons aren't extra households: they don't count as one, take a
+ * cap slot or activate a partner. Households with nothing that qualifies are listed
+ * with no fee.
  */
 export function households(scans, schedule, now = Date.now(), rules = QUOTED_RULES) {
   const qualify = (s) => qualifies(s, now, rules.expiredDays);
-  return groupHouseholds(scans).map(list => {
+  const feeOf = ({ tier, landlord, extras }) => (tier ? (schedule[tier] ?? 0) + (landlord ? (schedule.landlord ?? 0) : 0) + extras * (schedule.extra_line ?? 0) : 0);
+  return groupHouseholds(scans).flatMap(list => {
     const sorted = [...list].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     const firstQualifying = sorted.find(qualify);
-    const { tier, landlord, extras, pages } = householdTier(sorted, now, rules.expiredDays);
-    const fee = tier ? (schedule[tier] ?? 0) + (landlord ? (schedule.landlord ?? 0) : 0) + extras * (schedule.extra_line ?? 0) : 0;
-    const firstAt = firstQualifying ? firstQualifying.created_at : null;
     const confirmed = sorted.some(callConfirmed);
+    const paysFor = (tier, inMonth, at) => !!tier && (rules.requireCallConfirm
+      ? confirmed
+      : (inMonth.some(quoted) || now - new Date(at).getTime() >= rules.quoteDays * DAY));
+    // Pay steps: everything sent before a step's pay day (the 21st of the next month)
+    // counts in that step; a policy sent after it starts a new step (an add-on) in its own
+    // month, paid for the difference it makes.
+    const qs = sorted.filter(qualify);
+    const dayOf = (s) => today(new Date(s.created_at).getTime());
+    const steps = [];
+    let paidSoFar = 0;
+    for (let i = 0; i < qs.length;) {
+      const m = monthKey(qs[i].created_at);
+      const batch = [];
+      while (i < qs.length && dayOf(qs[i]) < payDay(m)) batch.push(qs[i++]);
+      const last = batch[batch.length - 1].created_at;
+      const t = householdTier(sorted.filter(s => s.created_at <= last), now, rules.expiredDays);
+      const fee = feeOf(t);
+      if (!steps.length || fee > paidSoFar) {
+        steps.push({ month: m, t, fee: fee - paidSoFar, inMonth: batch, at: batch[0].created_at, was: steps.length ? steps[steps.length - 1].t.tier : null });
+        paidSoFar = fee;
+      }
+    }
+    const first = steps[0] || { t: householdTier(sorted, now, rules.expiredDays), fee: 0, month: null, inMonth: sorted, at: null };
+    const { tier, landlord, extras, pages } = first.t;
+    const fee = first.fee;
+    const firstAt = firstQualifying ? firstQualifying.created_at : null;
     const pays = !!tier && (rules.requireCallConfirm
       ? confirmed
       : (sorted.some(quoted) || now - new Date(firstAt).getTime() >= rules.quoteDays * DAY));
-    return {
+    const base = {
       key: sorted[0].phone || sorted[0].id,
       firstAt,
       promoterId: sorted[0].promoter_id,
@@ -187,6 +215,15 @@ export function households(scans, schedule, now = Date.now(), rules = QUOTED_RUL
       won: sorted.some(s => WON.has(s.status)),
       boundPremium: sorted.filter(s => s.status === 'bound').reduce((t, s) => t + (Number(s.bound_premium) || 0), 0),
     };
+    const addOns = steps.slice(1).map(st => {
+      const p = paysFor(st.t.tier, st.inMonth, st.at);
+      return {
+        ...base, key: `${base.key}:${st.month}`, addOn: true, was: st.was,
+        tier: st.t.tier, landlord: st.t.landlord, extras: st.t.extras, pages: st.t.pages,
+        fee: st.fee, firstAt: st.at, month: st.month, pays: p, pending: !p,
+      };
+    });
+    return [base, ...addOns];
   });
 }
 
@@ -200,7 +237,7 @@ export function applyCap(hh, cap) {
   const rank = new Map();
   const byMonth = {};
   // Only households that pay take a slot: ones still waiting (on a quote or a Y reply) don't use up the cap.
-  for (const h of hh.filter(x => x.tier && x.month && x.pays)) (byMonth[h.month] ||= []).push(h);
+  for (const h of hh.filter(x => x.tier && x.month && x.pays && !x.addOn)) (byMonth[h.month] ||= []).push(h);
   for (const list of Object.values(byMonth)) {
     list.sort((a, b) => new Date(a.firstAt) - new Date(b.firstAt)).forEach((h, i) => rank.set(h, i));
   }
@@ -212,14 +249,16 @@ export function applyCap(hh, cap) {
 
 /** Totals for one partner: this month and all time, close rate and cost per win. */
 export function partnerSummary(hh, month) {
-  const paid = hh.filter(h => h.tier);
-  const inMonth = paid.filter(h => h.month === month);
+  const entries = hh.filter(h => h.tier);
+  const paid = entries.filter(h => !h.addOn); // households (an add-on is money, not another household)
+  const inMonthAll = entries.filter(h => h.month === month);
+  const inMonth = inMonthAll.filter(h => !h.addOn);
   const won = paid.filter(h => h.won).length;
-  const fees = paid.filter(h => h.pays).reduce((t, h) => t + h.fee, 0);
+  const fees = entries.filter(h => h.pays).reduce((t, h) => t + h.fee, 0);
   return {
     month: {
       households: inMonth.length,
-      owed: inMonth.filter(h => h.pays).reduce((t, h) => t + h.fee, 0),
+      owed: inMonthAll.filter(h => h.pays).reduce((t, h) => t + h.fee, 0),
       pending: inMonth.filter(h => h.pending).length,
       overCap: inMonth.filter(h => h.overCap).length,
     },
@@ -249,7 +288,7 @@ export function payoutPlan(hh, payouts, month, minPayout = MIN_PAYOUT, now = Dat
   const owedBy = {};
   for (const h of hh) if (h.tier && h.pays && h.month && h.month <= month && !paidMonths.has(h.month)) {
     (owedBy[h.month] ||= { month: h.month, households: 0, amount: 0 });
-    owedBy[h.month].households += 1;
+    owedBy[h.month].households += h.addOn ? 0 : 1;
     owedBy[h.month].amount += h.fee;
   }
   const all = Object.values(owedBy).filter(m => m.amount > 0).sort((a, b) => a.month.localeCompare(b.month));
