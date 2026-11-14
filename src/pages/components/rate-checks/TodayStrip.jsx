@@ -2,7 +2,7 @@
 // Top of the Rate Checks inbox: today's two numbers and the two ways to add to them.
 //   Scans Today   households that sent their policy today, against the agency goal (8.5).
 //   You Quoted    people you quoted today (scan or not), against your goal (8).
-//   Log a Quote   a walk-in or call-in quoted without a lead, so it still counts.
+//   Save a Quote  a walk-in or call-in quoted without a lead, so it still counts.
 //   Scan for Customer  scan a customer's policy for them (the staff upload).
 // Tapping either number opens the Scans & Quotes tab.
 import { useState } from 'react';
@@ -56,7 +56,7 @@ export default function TodayStrip({ agencyId, onScan, onOpenGoals }) {
       </div>
       <div className="mt-2 flex gap-2 sm:mt-3">
         <button type="button" onClick={() => setLogOpen(true)} className={btn} style={{ ...card, color: 'var(--qs-text)' }}>
-          <PenLine className="h-4 w-4" aria-hidden="true" /><T k="goals.log-quote">Log a Quote</T>
+          <PenLine className="h-4 w-4" aria-hidden="true" /><T k="goals.log-quote">Save a Quote</T>
         </button>
         <button type="button" onClick={onScan} className={`${btn} bg-primary-600 text-white hover:bg-primary-700`}>
           <Camera className="h-4 w-4" aria-hidden="true" /><T k="goals.scan-for">Scan for Customer</T>

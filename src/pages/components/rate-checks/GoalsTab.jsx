@@ -226,7 +226,7 @@ export default function GoalsTab({ agencyId }) {
         <div className="px-4 pt-4">
           <h2 id="goals-team" className={h2} style={{ color: 'var(--qs-bright)' }}>{g.isManager ? <T k="goals.team">People Quoted</T> : <T k="goals.you">Your Quotes</T>}</h2>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-dim)' }}>
-            <T k="goals.team.sub">Goal: each producer quotes</T> {g.goalPeople} <T k="goals.team.sub2">people a day. Log walk-ins and call-ins too, so they count.</T>
+            <T k="goals.team.sub">Goal: each producer quotes</T> {g.goalPeople} <T k="goals.team.sub2">people a day. Save walk-ins and call-ins too, so they count.</T>
           </p>
           {g.isManager && (
             <p className="mt-2 text-sm" style={{ color: 'var(--qs-dim)' }}>

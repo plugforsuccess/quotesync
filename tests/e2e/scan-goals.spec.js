@@ -76,11 +76,11 @@ test('the inbox shows today’s scans and the producer’s quotes against the go
   await expect(strip.getByText('7 policies · 3 with a scan')).toBeVisible();
 });
 
-test('Log a Quote saves a walk-in without a lead', async ({ page }) => {
+test('Save a Quote saves a walk-in without a lead', async ({ page }) => {
   const writes = await mock(page);
   await page.goto('/agency/leads/rate-checks');
-  await page.getByRole('button', { name: 'Log a Quote' }).click();
-  const sheet = page.getByRole('dialog', { name: 'Log a Quote' });
+  await page.getByRole('button', { name: 'Save a Quote' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Save a Quote' });
   await sheet.getByLabel('Customer name').fill('Maria Lopez');
   await sheet.getByRole('button', { name: 'Auto' }).click();
   await sheet.getByRole('button', { name: 'Home' }).click();

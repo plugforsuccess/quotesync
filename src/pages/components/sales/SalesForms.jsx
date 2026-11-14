@@ -92,7 +92,7 @@ function QuoteForm({ lead, agencyId, onClose }) {
     : lines.length > 0 && name.trim().length > 0;
   const save = () => logQuote.mutate({ agencyId, lead, name, lines }, { onSuccess: onClose });
   return (
-    <Sheet title={lead ? 'Log a quote' : 'Log a Quote'} sub={lead ? nameOf(lead) : 'A walk-in or call-in, scan or not'} onClose={onClose}
+    <Sheet title={lead ? 'Log a quote' : 'Save a Quote'} sub={lead ? nameOf(lead) : 'A walk-in or call-in, scan or not'} onClose={onClose}
       footer={<>
         {logQuote.error && <p className="mb-2 text-sm text-red-600" role="alert"><T k="pages.components.sales.salesforms.b736fa">Couldn’t save:</T> {logQuote.error.message}</p>}
         <button type="button" className={primaryBtn} disabled={!ready || logQuote.isPending} onClick={save}>
