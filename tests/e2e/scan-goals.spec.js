@@ -90,10 +90,10 @@ test('Save a Quote saves a walk-in without a lead', async ({ page }) => {
   });
 });
 
-test('Scan for Customer opens the staff upload', async ({ page }) => {
+test('Scan Their Policy opens the staff upload', async ({ page }) => {
   await mock(page);
   await page.goto('/agency/leads/rate-checks');
-  await page.getByRole('button', { name: 'Scan for Customer' }).click();
+  await page.getByRole('button', { name: 'Scan Their Policy' }).click();
   await expect(page.getByRole('dialog', { name: 'Upload dec page' })).toBeVisible();
 });
 

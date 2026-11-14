@@ -3,7 +3,7 @@
 //   Scans Today   households that sent their policy today, against the agency goal (8.5).
 //   You Quoted    people you quoted today (scan or not), against your goal (8).
 //   Save a Quote  a walk-in or call-in quoted without a lead, so it still counts.
-//   Scan for Customer  scan a customer's policy for them (the staff upload).
+//   Scan Their Policy  scan a customer's policy for them (the staff upload).
 // Tapping either number opens the Scans & Quotes tab.
 import { useState } from 'react';
 import { Camera, ChevronRight, PenLine } from 'lucide-react';
@@ -59,7 +59,7 @@ export default function TodayStrip({ agencyId, onScan, onOpenGoals }) {
           <PenLine className="h-4 w-4" aria-hidden="true" /><T k="goals.log-quote">Save a Quote</T>
         </button>
         <button type="button" onClick={onScan} className={`${btn} bg-primary-600 text-white hover:bg-primary-700`}>
-          <Camera className="h-4 w-4" aria-hidden="true" /><T k="goals.scan-for">Scan for Customer</T>
+          <Camera className="h-4 w-4" aria-hidden="true" /><T k="goals.scan-for">Scan Their Policy</T>
         </button>
       </div>
       {logOpen && <WalkInQuoteSheet agencyId={agencyId} onClose={() => setLogOpen(false)} />}

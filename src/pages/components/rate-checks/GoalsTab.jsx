@@ -250,7 +250,7 @@ export default function GoalsTab({ agencyId }) {
           <li><T k="goals.how.1">A scan is one household, counted on the day its first policy arrives. Auto and home from the same family is one scan.</T></li>
           <li><T k="goals.how.2">People Quoted counts each household once a day, whether or not they scanned. Policies counts each policy on those quotes.</T></li>
           <li><T k="goals.how.3">Scan Rate is the share of people quoted who sent their policy first.</T></li>
-          <li><T k="goals.how.4">A producer’s scans are the ones from their links, Quick Sends and Scan for Customer. Affiliate scans count for the agency, not a producer.</T></li>
+          <li><T k="goals.how.4">A producer’s scans are the ones from their links, Quick Sends and Scan Their Policy. Affiliate scans count for the agency, not a producer.</T></li>
           <li><T k="goals.how.5">Days run midnight to midnight, Georgia time. Test records don’t count.</T></li>
         </ul>
       </details>
