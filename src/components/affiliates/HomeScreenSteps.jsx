@@ -141,8 +141,7 @@ export default function HomeScreenSteps({ linkUrl, asStep = false, onDone }) {
   }
   return (
     <section className="rounded-3xl bg-white px-5 py-7 text-center shadow-xl shadow-blue-900/10 ring-1 ring-slate-200" aria-labelledby="aff-home">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="aff.home.step">Get Set Up · Step 2 of 2</T></p>
-      <h2 id="aff-home" className="mt-3 text-2xl font-extrabold text-[#0F2D6B]"><T k="aff.home.title">Save to Your Home Screen</T></h2>
+      <h2 id="aff-home" className="text-2xl font-extrabold text-[#0F2D6B]"><T k="aff.home.title">Save to Your Home Screen</T></h2>
       <p className="mx-auto mt-1.5 max-w-xs text-[15px] leading-relaxed text-slate-600"><T k="aff.home.why">Two icons, so you can check your referrals and share your link in one tap.</T></p>
       <div className="mx-auto mt-4 flex max-w-[16rem] gap-1 rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Your phone">
         {tab('iphone', 'iPhone')}{tab('android', 'Android')}

@@ -65,7 +65,7 @@ const FAQ = [
   ['What does it cost me?', 'Nothing. There’s no fee to join and nothing to buy.'],
   ['Can I post my link on social media?', 'Yes, as long as you say you’re paid for referrals, like “I get a referral fee if you check your rate.”'],
   ['Am I working for Cam Wiley Agency?', 'No. You’re an independent affiliate: not an employee, an agent, or a partner in the business. Either side can end it at any time.'],
-  ['What about taxes?', 'Affiliate fees are income. You’ll send a W-9 before your first payment, and you’ll get a tax form at year end when one is required.'],
+  ['Why do I have to fill out a W-9?', 'Affiliate fees are income, so the IRS requires your name, address and tax ID before we can pay you. You fill out the W-9 once, in your Affiliate Portal, before your first payment, and you’ll get a 1099 at year end when one is required.'],
 ];
 
 export default function AffiliatesPage() {
