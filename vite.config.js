@@ -6,17 +6,18 @@ import { resolve } from 'node:path';
 
 // Link previews (iMessage, Facebook) read the HTML before any JavaScript runs, so every
 // route shows index.html's share card. Pages that need their own card get a copy of the
-// built index.html with its own title, description and image, served by a rewrite in
+// built index.html with its own title, description and image (matching the page's
+// hero copy; update both if the hero changes), served by a rewrite in
 // vercel.json (e.g. /affiliates → /affiliates.html). Same app, different preview.
 const SITE = 'https://insuredbycam.com';
 const SHARE_PAGES = [
   {
     file: 'affiliates.html', path: '/affiliates',
     title: 'Become an Affiliate | Cam Wiley Agency',
-    ogTitle: 'Get paid to share a link.',
-    description: 'Text your link to people you know. They send their insurance policy, we do the rest. No selling. You get paid for every household that sends one.',
+    ogTitle: 'Get Paid for Referring Insurance Quotes',
+    description: 'You probably know someone who’s paying too much for insurance. As an agency affiliate, you get your own Rate Check link, and you’re paid for every household that sends their declarations page through it, whether or not they buy.',
     image: '/og-affiliates.jpg',
-    imageAlt: 'Get paid to share a link: become a Cam Wiley Agency affiliate',
+    imageAlt: 'Get Paid for Referring Insurance Quotes: Cam Wiley Agency affiliate program',
   },
 ];
 
