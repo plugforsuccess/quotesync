@@ -465,7 +465,7 @@ function InviteCard({ code, invites }) {
   const url = `${window.location.origin}/affiliates?aff=${encodeURIComponent(code || '')}`;
   const [copied, setCopied] = useState(false);
   const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ } };
-  const share = () => navigator.share?.({ title: 'Become an affiliate', text: 'I share free insurance rate checks with Cam Wiley Agency and get paid for it. Apply here:', url }).catch(() => {});
+  const share = () => navigator.share?.({ title: 'Get Paid for Referrals', text: 'I share free insurance rate checks with Cam Wiley Agency and get paid for it. Apply here:', url }).catch(() => {});
   if (!code) return null;
   const sent = invites?.applied || 0;
   return (
@@ -518,7 +518,7 @@ function Earnings({ token, data, onChange }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
   };
-  const share = () => navigator.share?.({ title: 'Rate Check', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).catch(() => {});
+  const share = () => navigator.share?.({ title: 'Get a Cheaper Rate on Your Insurance', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).catch(() => {});
   const thisMonth = todayKey().slice(0, 7);
   const months = data.months?.length ? data.months : [{ month: thisMonth, households: 0, earned: 0, rows: [], paid: null }];
   const current = months.find(m => m.month === thisMonth) || { month: thisMonth, households: 0, earned: 0, rows: [], paid: null };
