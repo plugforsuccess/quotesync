@@ -19,6 +19,7 @@ import { Check, Pencil, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { setCopyValues } from '../lib/copyValues';
+import { isSiteEditor } from '../lib/siteEditor';
 
 const KEY = ['site_copy'];
 // Pages with editable copy; the copy loads, and the Edit copy button shows, only on these.
@@ -63,14 +64,14 @@ function friendly(e) {
 const maxLength = (fallback) => Math.min(1200, Math.max(60, String(fallback).length * 3));
 
 export function SiteCopyProvider({ children }) {
-  const { user, platformRole, agencyMemberships, loading, authzResolved } = useAuth();
+  const { user, loading, authzResolved } = useAuth();
   const { pathname, search } = useLocation();
   // "Edit website" in the agency menu opens a page with ?edit=1: editing starts on.
   const askedToEdit = new URLSearchParams(search).get('edit') === '1';
   const qc = useQueryClient();
-  const canEdit = !!user && (
-    ['platform_admin', 'platform_master_admin'].includes(platformRole) ||
-    (agencyMemberships || []).some(m => m.agency_role === 'principal' && (m.status ?? 'active') === 'active'));
+  // Only the principal's own login (camwiley@allstate.com): not other staff, admins,
+  // affiliates or visitors. The database enforces the same (can_edit_site_copy).
+  const canEdit = isSiteEditor(user);
   const onEditablePage = EDITABLE.some(re => re.test(pathname));
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (askedToEdit && canEdit) setEditing(true); }, [askedToEdit, canEdit]);
@@ -155,7 +156,8 @@ export function SiteCopyProvider({ children }) {
   // The page moves down by exactly the bar's height (it wraps on small phones).
   const bar = useRef(null);
   const [barHeight, setBarHeight] = useState(0);
-  const notice = askedToEdit && onEditablePage && !canEdit && !loading && (user ? authzResolved !== false : true);
+  // Visitors never see any sign of the editor; a signed-in staff member who opens ?edit=1 is told why nothing happens.
+  const notice = askedToEdit && onEditablePage && !canEdit && !loading && !!user && authzResolved !== false;
   useEffect(() => {
     const el = bar.current;
     if (!el) { setBarHeight(0); return; }
@@ -170,7 +172,7 @@ export function SiteCopyProvider({ children }) {
       {(on || notice) && barHeight > 0 && <style>{`body{padding-top:${barHeight}px}.qs-copy-editing .rc-marquee{animation-play-state:paused}.qs-copy-editing .truncate:has([contenteditable]),.qs-copy-editing .overflow-hidden:has(>[contenteditable]){overflow:visible}`}</style>}
       {notice && (
         <div ref={bar} className="fixed inset-x-0 top-0 z-[90] bg-[#0F2D6B] px-4 py-2.5 text-center text-sm text-white shadow-lg">
-          {user ? 'Only the agency principal can edit the website.' : <>To edit the website, <Link to="/admin-access-8by2X" className="font-semibold text-amber-300 underline">log in</Link> as the agency principal on this site, then choose <b>Edit website</b> in the menu.</>}
+          Only the agency principal’s login can edit the website.
         </div>
       )}
       {canEdit && onEditablePage && (on ? (

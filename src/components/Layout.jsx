@@ -24,6 +24,7 @@ import { useAutoSyncPersona } from '../hooks/usePersona';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
+import { isSiteEditor } from '../lib/siteEditor';
 
 function Layout({ forcePlane = null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -332,7 +333,7 @@ function Layout({ forcePlane = null }) {
               <PersonaSwitcher compact onDark />
 
               {/* Edit website — opens the public Rate Check page with the copy editor on. */}
-              {currentAgencyRole === 'principal' && <EditWebsiteButton />}
+              {isSiteEditor(user) && <EditWebsiteButton />}
 
               {/* Checklist bell — principals only (desktop) */}
               {currentAgencyRole === 'principal' && (
@@ -358,7 +359,7 @@ function Layout({ forcePlane = null }) {
             {/* Mobile checklist bell — principals only, visible on mobile */}
             {currentAgencyRole === 'principal' && (
               <div className="md:hidden flex items-center gap-1">
-                <EditWebsiteButton />
+                {isSiteEditor(user) && <EditWebsiteButton />}
                 <ChecklistBell
                   count={actionableCount}
                   onClick={() => setChecklistOpen(true)}

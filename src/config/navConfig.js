@@ -75,7 +75,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.newsroom,
-      { to: '/?edit=1', label: 'Edit Website', icon: '✏️' },
+      // Edit Website is the principal's alone (src/lib/siteEditor.js).
     ],
   },
   platform_admin: {
@@ -87,7 +87,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.newsroom,
-      { to: '/?edit=1', label: 'Edit Website', icon: '✏️' },
+      // Edit Website is the principal's alone (src/lib/siteEditor.js).
     ],
   },
   platform_support: {
@@ -135,6 +135,7 @@ export const agencyNav = {
       { to: '/qs', label: 'Quick Send', icon: '📲' },
       { to: '/agency/texts', label: 'Texts & Scripts', icon: '💬' },
       { to: '/agency/lists', label: 'Lists', icon: '📋' },
+      { to: '/agency/campaigns', label: 'Campaigns', icon: '📣' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
     ],

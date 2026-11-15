@@ -11,7 +11,7 @@ const UID = '11111111-2222-4333-8444-555555555555';
 const PID = '22222222-3333-4444-8555-666666666666';
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const jwt = `${b64({ alg: 'HS256' })}.${b64({ sub: UID, role: 'authenticated', exp: 4102444800 })}.sig`;
-const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'cam@example.com', app_metadata: {}, user_metadata: {} };
+const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'camwiley@allstate.com', app_metadata: {}, user_metadata: {} };
 const session = { access_token: jwt, refresh_token: 'r', token_type: 'bearer', expires_in: 9e8, expires_at: 4102444800, user };
 const membership = { id: 'm', agency_id: AG, agency_role: 'principal', status: 'active', agencies: { id: AG, name: 'Cam Wiley Agency', brand_name: 'insuredbycam' } };
 
