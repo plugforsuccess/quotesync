@@ -19,6 +19,31 @@ const SHARE_PAGES = [
     image: '/og-affiliates.jpg',
     imageAlt: 'Get Paid for Referrals: Cam Wiley Agency affiliate program',
   },
+  {
+    file: 'careers.html', path: '/careers',
+    title: 'Careers | Cam Wiley Agency',
+    ogTitle: 'Build a Career Helping Georgia Families',
+    description: 'We’re a local Allstate agency in Conyers. We help people check what they pay, quote them fast, and take care of them after they buy. We’re hiring people who like helping people and want to grow.',
+    image: '/og-careers.jpg',
+    imageAlt: 'Build a Career Helping Georgia Families: careers at Cam Wiley Agency',
+  },
+  {
+    // Also served at /defensive-driving (same page).
+    file: 'courses.html', path: '/courses',
+    title: 'Driver Education & Insurance Discounts | Cam Wiley Agency',
+    ogTitle: 'Driver Education & Insurance Discounts',
+    description: 'Complete the self-paced, 6-hour defensive driving course 100% online, and save hundreds per year on your auto insurance premiums.',
+    image: '/og-drivers-ed.jpg',
+    imageAlt: 'Driver Education & Insurance Discounts: Cam Wiley Agency',
+  },
+  {
+    file: 'defensive-driving.html', path: '/courses/defensive-driving',
+    title: 'Defensive Driving Course | Cam Wiley Agency',
+    ogTitle: 'Driver Education & Insurance Discounts',
+    description: 'Complete the self-paced, 6-hour defensive driving course 100% online, and save hundreds per year on your auto insurance premiums.',
+    image: '/og-drivers-ed.jpg',
+    imageAlt: 'Driver Education & Insurance Discounts: Cam Wiley Agency',
+  },
 ];
 
 function sharePages() {
