@@ -101,6 +101,9 @@ async function samplePagePng(browser, file, n) {
     const body = mode === 'program' ? PROGRAM : { ...portal(), first_name: FIRST, name: NAME };
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
+  // The same picks every run (the portal's greeting is random), so a daily run only
+  // changes the pictures when the site does.
+  await ctx.addInitScript(() => { Math.random = () => 0.2; });
   // A phone's share sheet, so the link card shows Share (as on an iPhone), not Copy.
   await ctx.addInitScript(() => {
     try { Object.defineProperty(navigator, 'share', { value: async () => {}, configurable: true });
