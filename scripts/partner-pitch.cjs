@@ -2,7 +2,8 @@
 // is now, so what a new partner receives always matches what the site shows.
 //   node scripts/partner-pitch.cjs [base url]   (default http://localhost:4173)
 //   SITE_COPY=site_copy.json node scripts/partner-pitch.cjs   (use the agency's saved wording)
-// Pages are driven with sample data: partner "Alex Johnson", made-up referrals, a sample
+// Pages are driven with sample data: partner "Alex Johnson" (PITCH_NAME="First Last" to change),
+// made-up referrals, a sample
 // State Farm PDF and three page photos. Nothing is sent anywhere.
 const { chromium } = require('playwright');
 const { PDFDocument, StandardFonts } = require('pdf-lib');
@@ -13,6 +14,18 @@ const path = require('node:path');
 const BASE = (process.argv[2] || 'http://localhost:4173').replace(/\/$/, '');
 const OUT = path.join(__dirname, '..', 'public', 'partner-pitch');
 const TOKEN = 'a'.repeat(48);
+const NAME = process.env.PITCH_NAME || 'Alex Johnson';
+const FIRST = NAME.split(/\s+/)[0];
+const INITIALS = NAME.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+// The agency's default pay (rate-check-partner TIERS), for the pay table.
+const PROGRAM = {
+  tiers: [
+    { key: 'auto_home', label: 'Auto + home or condo', amount: 45 }, { key: 'auto_renters', label: 'Auto + renters', amount: 15 },
+    { key: 'home_only', label: 'Home or condo only', amount: 15 }, { key: 'auto_only', label: 'Auto only', amount: 10 },
+    { key: 'renters_only', label: 'Renters only', amount: 2 }, { key: 'landlord', label: 'Landlord (paid on its own, on top of the rest)', amount: 10 },
+  ],
+  extra_line: { amount: 5, cap: 2 }, pay_day: 21, min_payout: 50, quote_days: 7,
+};
 const SHOT = { type: 'jpeg', quality: 88 };
 // A machine with its own Chromium can point at it: PLAYWRIGHT_CHROMIUM=/path/to/chrome
 const LAUNCH = process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {};
@@ -25,6 +38,7 @@ const portal = () => ({
   agreement: { required: false, version: 'partner-v2', text: null, signed: false, signed_at: null },
   schedule: { auto_home: 45, auto_renters: 15, home_only: 15, auto_only: 10, renters_only: 2, extra_line: 5 }, monthly_cap: null,
   photo_url: null, pay_rule: 'reply',
+  terms: { accepted: true, version: 'aff-terms-v1' }, invites: { applied: 0, joined: 0 },
   w9: { on_file: true, tin_type: 'ssn', last4: '1234', signed_at: `${back(2)}-02T15:00:00Z`, revision: 'Rev. March 2024', prefill: {} },
   months: [
     { month: back(0), households: 3, pending: 2, earned: 70, paid: null,
@@ -80,8 +94,20 @@ async function samplePagePng(browser, file, n) {
   if (ctx.clock) await ctx.clock.setFixedTime(nextWeekdayMorning());
   const page = await ctx.newPage();
   await page.route('**/functions/v1/rate-check', (r) => r.fulfill({ status: 200, contentType: 'application/json',
-    body: JSON.stringify({ promoter_name: 'Alex', promoter_full_name: 'Alex Johnson', promoter_initials: 'AJ', promoter_photo_url: null }) }));
-  await page.route('**/functions/v1/rate-check-partner', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(portal()) }));
+    body: JSON.stringify({ promoter_name: FIRST, promoter_full_name: NAME, promoter_initials: INITIALS, promoter_photo_url: null }) }));
+  // The portal, and the pay table's program (the agency's default pay).
+  await page.route('**/functions/v1/rate-check-partner', (r) => {
+    const mode = (() => { try { return JSON.parse(r.request().postData() || '{}').mode; } catch { return null; } })();
+    const body = mode === 'program' ? PROGRAM : { ...portal(), first_name: FIRST, name: NAME };
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  // A phone's share sheet, so the link card shows Share (as on an iPhone), not Copy.
+  await ctx.addInitScript(() => {
+    try { Object.defineProperty(navigator, 'share', { value: async () => {}, configurable: true });
+      Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true }); } catch { /* ignore */ }
+  });
+  // An onboarded affiliate: the Home Screen step is done, so the portal shows its everyday view.
+  await ctx.addInitScript((k) => { try { localStorage.setItem(k, '1'); } catch { /* ignore */ } }, `qs_aff_home_${TOKEN.slice(0, 12)}`);
   await page.route(/supabase\.co\/(rest|auth)\//, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   // The agency's saved wording edits, so the shots read like the live site:
   //   SITE_COPY=/path/site_copy.json  (an export of site_copy: [{ key, value }])
@@ -119,8 +145,6 @@ async function samplePagePng(browser, file, n) {
     // The sample shows the real domain and a plain greeting, whatever this run's host is.
     const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let n; while ((n = walk.nextNode())) n.nodeValue = n.nodeValue.replace(/^(https?:\/\/)?(localhost:\d+|127\.0\.0\.1:\d+)/, 'insuredbycam.com');
-    const h = [...document.querySelectorAll('h1')].find((e) => /, Alex$/.test(e.textContent));
-    if (h) h.textContent = 'Hi, Alex';
   });
   await page.screenshot({ path: path.join(OUT, '3-your-partner-page.jpg'), ...SHOT });
   const top = await page.getByText('Pending', { exact: true }).first()
