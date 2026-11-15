@@ -8,7 +8,7 @@ const AG = '00000000-0000-0000-0000-000000000001';
 const UID = '11111111-2222-4333-8444-555555555555';
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const jwt = `${b64({ alg: 'HS256' })}.${b64({ sub: UID, role: 'authenticated', exp: 4102444800 })}.sig`;
-const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'cam@example.com', app_metadata: {}, user_metadata: {} };
+const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'camwiley@allstate.com', app_metadata: {}, user_metadata: {} };
 const session = { access_token: jwt, refresh_token: 'r', token_type: 'bearer', expires_in: 9e8, expires_at: 4102444800, user };
 const membership = { id: 'm', agency_id: AG, agency_role: 'principal', status: 'active', agencies: { id: AG, name: 'Agency', brand_name: 'insuredbycam' } };
 
@@ -115,10 +115,12 @@ test('edited copy shows straight away on the next visit (no flash of the old tex
   await expect(page.getByRole('heading', { name: 'Cached headline.' })).toBeVisible({ timeout: 1500 });
 });
 
-test('logged out, ?edit=1 explains how to edit instead of doing nothing', async ({ page }) => {
+test('logged out, ?edit=1 shows no sign of the editor', async ({ page }) => {
   await mock(page, { loggedIn: false });
   await page.goto('/?edit=1');
-  await expect(page.getByText(/To edit the website,/)).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByText(/edit the website/i)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit this page' })).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: /Edit text/ })).toHaveCount(0);
 });
 

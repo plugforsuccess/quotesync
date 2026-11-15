@@ -75,7 +75,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.newsroom,
-      { to: '/?edit=1', label: 'Edit Website', icon: '✏️' },
+      // Edit Website is the principal's alone (src/lib/siteEditor.js).
     ],
   },
   platform_admin: {
@@ -87,7 +87,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.newsroom,
-      { to: '/?edit=1', label: 'Edit Website', icon: '✏️' },
+      // Edit Website is the principal's alone (src/lib/siteEditor.js).
     ],
   },
   platform_support: {
