@@ -135,6 +135,7 @@ export const agencyNav = {
       { to: '/qs', label: 'Quick Send', icon: '📲' },
       { to: '/agency/texts', label: 'Texts & Scripts', icon: '💬' },
       { to: '/agency/lists', label: 'Lists', icon: '📋' },
+      { to: '/agency/campaigns', label: 'Campaigns', icon: '📣' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
     ],

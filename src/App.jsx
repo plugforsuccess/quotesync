@@ -107,6 +107,7 @@ const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetai
 const LeadWorkspacePage = lazyWithRetry(() => import('./pages/LeadWorkspacePage'));
 const TextsScriptsPage = lazyWithRetry(() => import('./pages/TextsScriptsPage'));
 const ListsPage = lazyWithRetry(() => import('./pages/ListsPage'));
+const CampaignsPage = lazyWithRetry(() => import('./pages/CampaignsPage'));
 const RateChecksPage = lazyWithRetry(() => import('./pages/RateChecksPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
@@ -420,6 +421,19 @@ function App() {
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <TextsScriptsPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            {/* Campaigns: the principal's email and text drips and blasts. */}
+            <Route
+              path="agency/campaigns"
+              element={
+                <ProtectedRoute requiredAgencyRole="principal">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <CampaignsPage />
                     </Suspense>
                   </ErrorBoundary>
                 </ProtectedRoute>
