@@ -259,7 +259,8 @@ test('after the W-9, step 2 is Save to Your Home Screen: both icons, iPhone and 
   await page.goto(`/partner/${TOKEN}`);
   // Saved from here, the icon is named Affiliate Portal.
   await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Affiliate Portal');
-  await expect(page.getByText('Get Set Up · Step 2 of 2')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Save to Your Home Screen' })).toBeVisible();
+  await expect(page.getByText(/Step 2 of 2/)).toHaveCount(0);
   const card = page.getByRole('region', { name: 'Save to Your Home Screen' });
   // A deck: one step at a time, Next and Back. They came from a text, so they're already in Safari.
   await expect(card.getByRole('group', { name: 'Step 1 of 4' })).toContainText('Tap Share');
@@ -287,12 +288,12 @@ test('after the W-9, step 2 is Save to Your Home Screen: both icons, iPhone and 
   // The link is live either way.
   await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
   await card.getByRole('button', { name: 'Skip for Now' }).click();
-  await expect(page.getByText('Get Set Up · Step 2 of 2')).toHaveCount(0);
+  await expect(page.getByText(/Step 2 of 2/)).toHaveCount(0);
   // Still there for later, folded up further down; stays done after a reload.
   await expect(page.locator('summary', { hasText: 'Save to Your Home Screen' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
-  await expect(page.getByText('Get Set Up · Step 2 of 2')).toHaveCount(0);
+  await expect(page.getByText(/Step 2 of 2/)).toHaveCount(0);
 });
 
 test('before the W-9 there are no Home Screen steps yet', async ({ page }) => {
