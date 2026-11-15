@@ -65,7 +65,8 @@ test('a new affiliate’s link stays locked until the W-9 is signed', async ({ p
   await mockPartner(page, { data: portal() });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('One quick step to unlock your link')).toBeVisible();
-  await expect(page.getByText('Get Set Up · Step 1 of 2')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toBeVisible();
+  await expect(page.getByText(/Step 1 of 2/)).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toBeVisible();
   // Nothing else until it's signed: no link card, no Home Screen steps, no totals.
   await expect(page.getByText('Your link', { exact: true })).toHaveCount(0);
@@ -90,7 +91,7 @@ test('W-9 signed, no photo: the link is live, and a photo is suggested as option
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Your link is live')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
-  await expect(page.getByText('Get Set Up · Step 1 of 2')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toHaveCount(0);
   await expect(page.getByText('Optional', { exact: true })).toBeVisible();
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Add', exact: true }).click()]);
   expect(chooser).toBeTruthy();
@@ -101,7 +102,7 @@ test('photo and W-9 done: the link is live and copies', async ({ page, context }
   await mockPartner(page, { data: portal({ photo_url: PHOTO, w9: W9 }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Your link is live')).toBeVisible();
-  await expect(page.getByText('Get Set Up · Step 1 of 2')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toHaveCount(0);
   await expect(page.getByText('Optional', { exact: true })).toHaveCount(0);
   await expect(page.getByText(`/r/${CODE}`)).toBeVisible();
   await page.getByRole('button', { name: 'Copy link' }).click();
@@ -151,7 +152,7 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
     address: '12 Oak St', city_state_zip: 'Covington, GA 30014', signed_name: 'Javon Yarbrough', accept: true,
   });
   // On file: the set-up card is gone, the link is live, and only the last 4 show.
-  await expect(page.getByText('Get Set Up · Step 1 of 2')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
   await expect(page.getByText('W-9 on file')).toBeVisible();
   await expect(page.getByText(/Signed [A-Z][a-z]+ \d{1,2}, \d{4}/)).toBeVisible();
@@ -214,7 +215,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
     ],
   }) });
   await page.goto(`/partner/${TOKEN}`);
-  await expect(page.getByText('Get Set Up · Step 1 of 2')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toHaveCount(0);
   // No projections: unpaid months show a household count, paid months what was paid.
   await expect(page.getByRole('cell', { name: 'Auto + Home or Condo' })).toBeVisible();
   // Paid months end with an Earnings row: the amount, with cents.
@@ -297,7 +298,8 @@ test('after the W-9, step 2 is Save to Your Home Screen: both icons, iPhone and 
 test('before the W-9 there are no Home Screen steps yet', async ({ page }) => {
   await mockPartner(page, { data: portal() });
   await page.goto(`/partner/${TOKEN}`);
-  await expect(page.getByText('Get Set Up · Step 1 of 2')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign Your W-9' })).toBeVisible();
+  await expect(page.getByText(/Step 1 of 2/)).toHaveCount(0);
   await expect(page.getByText('Save to Your Home Screen')).toHaveCount(0);
 });
 

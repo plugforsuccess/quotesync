@@ -420,8 +420,7 @@ function GetSetUp({ token, data, onChange }) {
   };
   return (
     <section className="rounded-3xl bg-white px-5 py-8 text-center shadow-xl shadow-blue-900/10 ring-1 ring-slate-200">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="aff.portal.setup">Get Set Up · Step 1 of 2</T></p>
-      <span className="mx-auto mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100" aria-hidden="true">
+      <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100" aria-hidden="true">
         <FileSignature className="h-8 w-8" />
       </span>
       <h2 className="mt-4 text-2xl font-extrabold text-[#0F2D6B]"><T k="aff.portal.w9-head">Sign Your W-9</T></h2>
