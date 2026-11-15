@@ -1,7 +1,9 @@
 # Keeps the partner-pitch screenshots (public/partner-pitch) matching the site.
-# After every change to the site on main, it builds the site, retakes the four
-# screenshots with sample data, and commits them if anything changed. That commit
-# deploys like any other, so the pictures a new partner receives are always current.
+# Runs after every change to the site on main and once a day (so wording edits made
+# with the pencil, which live in the database, are picked up too). It builds the site,
+# retakes the four screenshots with sample data and the agency's saved wording, and
+# commits them only if they visibly changed. That commit deploys like any other, so the
+# pictures a new affiliate receives always match the site.
 name: Partner pitch screenshots
 
 on:
@@ -13,14 +15,27 @@ on:
       - 'index.html'
       - 'tailwind.config.*'
       - 'scripts/partner-pitch.cjs'
+      - '.github/workflows/partner-pitch.yml'
+  schedule:
+    - cron: '17 9 * * *' # daily, 4:17am Eastern (5:17 in summer)
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: partner-pitch
+  cancel-in-progress: false
+
+env:
+  SUPABASE_URL: https://ghnpzllykteelveezhnv.supabase.co
+  # The publishable key: public by design (it ships in every page of the site).
+  SUPABASE_PUBLISHABLE_KEY: sb_publishable_buYz6tKABrI7M1J1uUSdlw_Z9pR56cP
+
 jobs:
   screenshots:
-    runs-on: ubuntu-latest
+    # Pinned: Playwright can't install Chromium on ubuntu-latest (26.04) yet.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,16 +44,45 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Saved wording
+        # The pencil edits (site_copy), so the shots read like the live site. Fails the
+        # run rather than taking shots with default wording.
+        run: |
+          curl -sf "$SUPABASE_URL/rest/v1/site_copy?select=key,value" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -o site_copy.json
+          node -e "const c=require('./site_copy.json'); if(!Array.isArray(c)) process.exit(1); console.log(c.length+' saved edits')"
       - name: Build
         run: npx vite build
         env:
-          VITE_SUPABASE_URL: https://ghnpzllykteelveezhnv.supabase.co
+          VITE_SUPABASE_URL: ${{ env.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: screenshots-only
       - name: Retake screenshots
         run: |
           npx vite preview --port 4173 --strictPort &
           for i in $(seq 1 30); do curl -sf http://localhost:4173 >/dev/null && break; sleep 1; done
-          node scripts/partner-pitch.cjs http://localhost:4173
+          SITE_COPY=$PWD/site_copy.json node scripts/partner-pitch.cjs http://localhost:4173
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Keep only visible changes
+        # JPEGs can differ by a few bytes with nothing visibly different; put those back.
+        run: |
+          pip install -q pillow
+          python3 - <<'PY'
+          import subprocess, io
+          from PIL import Image, ImageChops, ImageStat
+          files = subprocess.run(['git', 'diff', '--name-only', '--', 'public/partner-pitch'], capture_output=True, text=True).stdout.split()
+          for f in files:
+              old = subprocess.run(['git', 'show', f'HEAD:{f}'], capture_output=True).stdout
+              if not old:
+                  continue
+              a = Image.open(io.BytesIO(old)).convert('RGB'); b = Image.open(f).convert('RGB')
+              if a.size == b.size and max(ImageStat.Stat(ImageChops.difference(a, b)).mean) < 0.5:
+                  subprocess.run(['git', 'checkout', '--', f], check=True)
+                  print('no visible change:', f)
+              else:
+                  print('changed:', f)
+          PY
       - name: Commit if changed
         run: |
           git add public/partner-pitch
@@ -46,4 +90,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Partner pitch screenshots: retaken from the current site"
+          git pull --rebase origin main
           git push
