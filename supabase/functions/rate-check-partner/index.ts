@@ -543,7 +543,7 @@ async function fillW9(w: W9, ctx: { agency: string; mm: string; dd: string; yyyy
   page.drawText(w.signed_name, { x: 150, y: sigY, size: 13, font: sig, color: rgb(0.05, 0.1, 0.4) })
   if (hasDateFields) { text('f1_16[0]', ctx.mm); text('f1_17[0]', ctx.dd); text('f1_18[0]', ctx.yyyy) }
   else page.drawText(`${ctx.mm}/${ctx.dd}/${ctx.yyyy}`, { x: 468, y: sigY, size: 11, font: small, color: rgb(0.05, 0.1, 0.4) })
-  page.drawText(`Electronically signed by ${w.signed_name} on ${ctx.mm}/${ctx.dd}/${ctx.yyyy} (${ctx.when.toISOString()}) from IP ${ctx.ip} via the ${ctx.agency} affiliate portal.`,
+  page.drawText(`Electronically signed by ${w.signed_name} on ${ctx.mm}/${ctx.dd}/${ctx.yyyy} (${ctx.when.toISOString()}) from IP ${ctx.ip} via the ${ctx.agency} Affiliate Portal.`,
     { x: 112, y: sigY - 11, size: 5, font: small, color: rgb(0.3, 0.3, 0.3) })
   form.flatten()
   return await doc.save()
