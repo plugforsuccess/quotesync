@@ -26,6 +26,10 @@ import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 import { isSiteEditor } from '../lib/siteEditor';
 
+// The reminder checklist pops up on login when something is due. Off for now; flip to
+// true to bring it back.
+const AUTO_SHOW_CHECKLIST = false;
+
 function Layout({ forcePlane = null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -61,8 +65,10 @@ function Layout({ forcePlane = null }) {
     i => i.status === 'due' || i.status === 'overdue'
   ).length + (overdueCadences?.length || 0) + (overdueCommitments?.length || 0);
 
-  // Auto-show modal once per session if principal has actionable items
+  // Auto-show modal once per session if principal has actionable items.
+  // Off for now (AUTO_SHOW_CHECKLIST); the bell still opens it.
   useEffect(() => {
+    if (!AUTO_SHOW_CHECKLIST) return;
     const sessionKey = 'qs_checklist_shown_v2';
     if (sessionStorage.getItem(sessionKey)) return;
     if (currentAgencyRole !== 'principal') return;
