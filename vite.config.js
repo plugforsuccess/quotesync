@@ -14,10 +14,10 @@ const SHARE_PAGES = [
   {
     file: 'affiliates.html', path: '/affiliates',
     title: 'Become an Affiliate | Cam Wiley Agency',
-    ogTitle: 'Get Paid for Referring Insurance Quotes',
+    ogTitle: 'Get Paid for Referrals',
     description: 'You probably know someone who’s paying too much for insurance. As an agency affiliate, you get your own Rate Check link, and you’re paid for every household that sends their declarations page through it, whether or not they buy.',
     image: '/og-affiliates.jpg',
-    imageAlt: 'Get Paid for Referring Insurance Quotes: Cam Wiley Agency affiliate program',
+    imageAlt: 'Get Paid for Referrals: Cam Wiley Agency affiliate program',
   },
 ];
 

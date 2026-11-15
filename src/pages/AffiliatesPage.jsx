@@ -82,7 +82,7 @@ export default function AffiliatesPage() {
           <div className="pb-12 pt-8 lg:pb-20 lg:pt-14">
             <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: GOLD }}><T k="aff.hero.eyebrow">Cam Wiley Agency Affiliate Program</T></p>
             <h1 className="mt-3 max-w-3xl text-[36px] font-extrabold leading-[1.08] tracking-tight lg:text-[52px]">
-              <T k="aff.hero.title">Get Paid to Share a Free Rate Check</T>
+              <T k="aff.hero.title">Get Paid for Referrals</T>
             </h1>
             <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
               <T k="de.partner.body">Already an Allstate customer? You probably know someone who’s paying too much. As a Cam Wiley Agency affiliate, you get your own Rate Check link, and you’re paid for every household that sends their declarations page through it, whether or not they buy.</T>

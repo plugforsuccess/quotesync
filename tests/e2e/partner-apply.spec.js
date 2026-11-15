@@ -27,7 +27,7 @@ async function mock(page) {
 test('the affiliate page: plain about pay and the rules, then apply', async ({ page }) => {
   const posts = await mock(page);
   await page.goto('/affiliates');
-  await expect(page.getByRole('heading', { level: 1, name: 'Get Paid to Share a Free Rate Check' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Get Paid for Referrals' })).toBeVisible();
   // What it pays, from the agency's rules.
   const pay = page.getByLabel('Pay per household');
   await expect(pay.getByText('Auto + Home or Condo', { exact: true })).toBeVisible();
